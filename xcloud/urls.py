@@ -15,7 +15,9 @@ Including another URLconf
 """
 from django.conf.urls import include, url
 from django.contrib import admin
+import xpro
 
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^xpro/api', include(xpro.urls))
 ]

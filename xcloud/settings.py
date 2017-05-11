@@ -129,7 +129,7 @@ LOGGING = {
                 },
             },
         'handlers': {
-            'scould': {
+            'xpro': {
                 'level': 'INFO',
                 'class': 'logging.FileHandler',
                 'filename': LOG_DIR + 'debug.log',
@@ -138,7 +138,7 @@ LOGGING = {
                 },
             },
         'loggers': {
-            'django.scloud': {
+            'django.xpro': {
                 'handlers': ['xpro'],
                 'level': 'DEBUG',
                 'propagate': True,
