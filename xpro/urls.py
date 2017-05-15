@@ -1,5 +1,5 @@
 # _*_coding:utf-8_*_
-"""xcloud URL Configuration
+"""xpro URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/1.8/topics/http/urls/
@@ -14,11 +14,11 @@ Including another URLconf
     1. Add an import:  from blog import urls as blog_urls
     2. Add a URL to urlpatterns:  url(r'^blog/', include(blog_urls))
 """
-from django.conf.urls import include, url
-from django.contrib import admin
-from xpro import urls as xpro_url
+from django.conf.urls import url
+from xpro import views
 
 urlpatterns = [
-    url(r'^admin/', include(admin.site.urls)),
-    url(r'^xpro/api/', include(xpro_url))
+        # repository
+        url(r'repo/$', views.RepoItemView.as_view()),
+        url(r'repo_detail/(?P<item_id>[^\s/]+)/$', views.RepoItemDetail.as_view())
 ]

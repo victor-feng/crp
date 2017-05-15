@@ -26,8 +26,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '^yy9x0t)e((*y7z504123am0js+gl+ak$-+n#!2rp2ns^qfie&'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-#DEBUG = True
-DEBUG = False
+DEBUG = True
+# DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -82,8 +82,13 @@ WSGI_APPLICATION = 'xcloud.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        # 'ENGINE': 'django.db.backends.sqlite3',
+        # 'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'cmdb',
+        'USER': 'cmdb',
+        'PASSWORD': 'cmdb',
+        'HOST': '172.28.20.124',
     }
 }
 
@@ -114,7 +119,8 @@ if not settings.DEBUG:
         os.system('cd /tmp && cd logs')
     # LOG_DIR = '/Users/victorfeng/project/cmdb/data/logs/scloud'
 else:
-    LOG_DIR = '/Users/victorfeng/project/cmdb/data/logs/xpro'
+    # LOG_DIR = '/Users/victorfeng/project/cmdb/data/logs/xpro'
+    LOG_DIR = '/tmp/logs/xpro'
 
 
 LOGGING = {
