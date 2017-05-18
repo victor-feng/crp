@@ -7,6 +7,7 @@ from flask_restful import reqparse, abort, Api, Resource, fields, marshal_with
 from crp.user import user_blueprint
 from crp.models import User
 from crp.user.errors import user_errors
+from async import *
 
 user_api = Api(user_blueprint, errors=user_errors)
 
@@ -34,6 +35,14 @@ class UserRegister(Resource):
             user_set['email'] = email
             user_set['first_name'] = first_name
             user_set['last_name'] = last_name
+
+            # 示例代码
+            scheduler = Scheduler(SLEEPTIME, TIMEOUT, query_modify_db, "testargs1", "testargs2")
+            scheduler.start()
+            # thread_id = scheduler.start()
+            # print thread_id
+            # 添加线程到线程列表
+            threads.append(scheduler)
 
         except Exception as e:
             code = 500
