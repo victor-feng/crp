@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "title": "UOP API Spec"
   },
-  "host": "localhost:5000",
+  "host": "localhost:8000",
   "basePath": "/",
   "tags": [
     {
@@ -21,7 +21,7 @@
     "http"
   ],
   "paths": {
-    "/user/users": {
+    "/api/user/users": {
       "get": {
         "tags": [
           "user"
