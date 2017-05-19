@@ -91,6 +91,7 @@ SLEEP_TIME = 5
 
 # 示例用延时方法
 def delay(handler):
+    """ 延时函数 """
     old = datetime.datetime.now()
     print "delay start at " + old.__str__() + " by " + handler
     for _ in range(10000):
@@ -104,12 +105,13 @@ def delay(handler):
 
 # 示例用功能函数
 def query_modify_db(thread_id=None, args1=None, args2=None):
+    """ 需要定时处理的任务函数 """
     handler = "Thread id " + thread_id.__str__() + " query_db"
     delta_time = delay(handler)
     print "IM QUERYING A DB use " + delta_time.__str__() + " microseconds" + " by " + handler
     print "Test args is args1: " + args1 + "; args2:" + args2 + " by " + handler
     try:
-        """ TODO: Timer Handle """
+        # TODO(handle): Timer Handle
         res = requests.get(url)
         ret = eval(res.content)
         res_list = ret['result']['res']
@@ -122,10 +124,10 @@ def query_modify_db(thread_id=None, args1=None, args2=None):
                 }
                 u['email'] = "modify@edu.cn"
                 requests.post(url + "/callback_success", data=req)
-                # 执行成功停止定时任务退出线程
+                # TODO(thread exit): 执行成功停止定时任务退出线程
                 thread_exit(thread_id)
     except Exception as e:
-        """ TODO: Error Handle """
+        # TODO(error handle): Error Handle
         ret = {
             "code": 500,
             "result": {
@@ -134,10 +136,10 @@ def query_modify_db(thread_id=None, args1=None, args2=None):
             }
         }
         requests.post(url + "/callback_exception", data=ret)
-        # 抛出异常停止定时任务退出线程
+        # TODO(thread exit): 抛出异常停止定时任务退出线程
         thread_exit(thread_id)
 
 
-# # 定时任务示例代码，需要添加到API处理方法中
+# # TODO(scheduler): 定时任务示例代码，实例化Scheduler并start定时任务，需要添加到API处理方法中
 # scheduler = Scheduler(SLEEP_TIME, TIMEOUT, query_modify_db, "testargs1", "testargs2")
 # scheduler.start()

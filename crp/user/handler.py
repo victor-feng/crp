@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask_restful import reqparse, Api, Resource
 
-from crp.async import *
+from crp.sched import *
 from crp.models import User
 from crp.user import user_blueprint
 from crp.user.errors import user_errors
@@ -33,7 +33,7 @@ class UserRegister(Resource):
             user_set['first_name'] = first_name
             user_set['last_name'] = last_name
 
-            # 定时任务示例代码
+            # TODO(scheduler): 定时任务示例代码
             scheduler = Scheduler(SLEEP_TIME, TIMEOUT, query_modify_db, "testargs1", "testargs2")
             scheduler.start()
         except Exception as e:
