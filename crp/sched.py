@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from threading import Timer, Thread
+from threading import Timer, Thread, Lock
 from time import sleep
 import datetime
 import requests
@@ -9,6 +9,8 @@ import requests
 threads = []
 # 全局唯一线程ID
 global_thread_id = 0
+# 创建全局锁
+global_mutex = Lock()
 
 
 # 线程退出方法
@@ -33,10 +35,16 @@ class Scheduler(Thread):
 
     def start(self):
         if self._t is None:
-            # 生成线程ID
-            global global_thread_id
-            global_thread_id += 1
-            self.thread_id = global_thread_id
+            # 生成线程ID，全局加锁
+            global global_mutex
+            with global_mutex:
+                # 锁定全局锁
+                # mutex.acquire()
+                global global_thread_id
+                global_thread_id += 1
+                self.thread_id = global_thread_id
+                # 释放全局锁
+                # mutex.release()
             print "Thread id " + self.thread_id.__str__() + " start."
             # 启动线程定时器
             self._t = Timer(self.sleep_time, self._run, self.args, self.kwargs)
