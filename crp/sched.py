@@ -5,22 +5,22 @@ import datetime
 import requests
 
 
-# 全局线程列表
-threads = []
-# 全局唯一线程ID
-global_thread_id = 0
+# 全局任务列表
+tasks = []
+# 全局唯一任务ID
+global_task_id = 0
 # 创建全局锁
 global_mutex = Lock()
 
 
-# 线程退出方法
-def thread_exit(thread_id):
-    for thread in threads:
-        if thread.thread_id == thread_id:
-            thread.stop()
+# 任务退出方法
+def task_exit(task_id):
+    for task in tasks:
+        if task.task_id == task_id:
+            task.stop()
 
 
-# class Scheduler(Thread): 定时任务线程类
+# class Scheduler(Thread): 定时任务类，每一个任务起一个线程单独处理
 class Scheduler(Thread):
     def __init__(self, sleep_time, time_out, function, *args, **kwargs):
         self.sleep_time = sleep_time
@@ -29,62 +29,62 @@ class Scheduler(Thread):
         self.args = args
         self.kwargs = kwargs
         self._t = None
-        self.thread_id = 0
+        self.task_id = 0
         self.delta_time = 0
         self.exit_flag = False
 
     def start(self):
         if self._t is None:
-            # 生成线程ID，全局加锁
+            # 生成任务ID，全局加锁
             global global_mutex
             with global_mutex:
                 # 锁定全局锁
                 # mutex.acquire()
-                global global_thread_id
-                global_thread_id += 1
-                self.thread_id = global_thread_id
+                global global_task_id
+                global_task_id += 1
+                self.task_id = global_task_id
                 # 释放全局锁
                 # mutex.release()
-            print "Thread id " + self.thread_id.__str__() + " start."
-            # 启动线程定时器
+            print "Task id " + self.task_id.__str__() + " start."
+            # 启动任务定时器
             self._t = Timer(self.sleep_time, self._run, self.args, self.kwargs)
             self._t.start()
-            # 添加线程到线程列表
-            threads.append(self)
+            # 添加任务线程到任务列表中
+            tasks.append(self)
         else:
             raise Exception("this timer is already running")
         return
 
     def _run(self, *args, **kwargs):
         # 执行定时任务
-        if self.thread_id is not None:
-            self.function(self.thread_id, *args, **kwargs)
+        if self.task_id is not None:
+            self.function(self.task_id, *args, **kwargs)
         else:
             self.function(*args, **kwargs)
         if self.exit_flag is True:
-            # 任务主动触发线程退出
+            # 任务主动触发任务线程退出
             return
         # 超时退出
         self.delta_time += self.sleep_time
         if self.delta_time >= self.timeout:
-            print "Thread id " + self.thread_id.__str__() + " timeout."
+            print "Task id " + self.task_id.__str__() + " timeout."
             self.stop()
             return
-        # 循环间隔时间启动线程定时器
+        # 循环间隔时间启动任务线程定时器
         self._t = Timer(self.sleep_time, self._run, self.args, self.kwargs)
         self._t.start()
         return
 
     def stop(self):
         if self._t is not None:
-            # 终止线程定时器
+            # 终止任务线程定时器
             self._t.cancel()
             self._t = None
-            # 标记线程退出标记
+            # 标记任务线程退出标记
             self.exit_flag = True
-            print "Thread id " + self.thread_id.__str__() + " exit."
-            # 从线程列表中删除已停止线程
-            threads.remove(self)
+            print "Task id " + self.task_id.__str__() + " exit."
+            # 从任务列表中删除已停止的任务线程
+            tasks.remove(self)
         return
 
     def run(self):
@@ -112,9 +112,9 @@ def delay(handler):
 
 
 # 示例用功能函数
-def query_modify_db(thread_id=None, args1=None, args2=None):
+def query_modify_db(task_id=None, args1=None, args2=None):
     """ 需要定时处理的任务函数 """
-    handler = "Thread id " + thread_id.__str__() + " query_db"
+    handler = "Task id " + task_id.__str__() + " query_db"
     delta_time = delay(handler)
     print "IM QUERYING A DB use " + delta_time.__str__() + " microseconds" + " by " + handler
     print "Test args is args1: " + args1 + "; args2:" + args2 + " by " + handler
@@ -132,8 +132,8 @@ def query_modify_db(thread_id=None, args1=None, args2=None):
                 }
                 u['email'] = "modify@edu.cn"
                 requests.post(url + "/callback_success", data=req)
-                # TODO(thread exit): 执行成功停止定时任务退出线程
-                thread_exit(thread_id)
+                # TODO(thread exit): 执行成功停止定时任务退出任务线程
+                task_exit(task_id)
     except Exception as e:
         # TODO(error handle): Error Handle
         ret = {
@@ -144,8 +144,8 @@ def query_modify_db(thread_id=None, args1=None, args2=None):
             }
         }
         requests.post(url + "/callback_exception", data=ret)
-        # TODO(thread exit): 抛出异常停止定时任务退出线程
-        thread_exit(thread_id)
+        # TODO(thread exit): 抛出异常停止定时任务退出任务线程
+        task_exit(task_id)
 
 
 # # TODO(scheduler): 定时任务示例代码，实例化Scheduler并start定时任务，需要添加到API处理方法中
