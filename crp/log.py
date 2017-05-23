@@ -47,22 +47,27 @@ def logger_setting(app):
     app.logger.addHandler(handler)
 
     # set Log logger
-    Log.set_logger(app.logger)
+    Log.logger = app.logger
 
 
 class Log(object):
-    logger = None
+    flask_app_logger = None
 
     @property
     def logger(self):
-        if Log.logger is not None:
-            return Log.logger
+        if Log.flask_app_logger is not None:
+            return Log.flask_app_logger
+
+    @logger.setter
+    def logger(self, value):
+        if value is not None:
+            Log.flask_app_logger = value
 
     @staticmethod
     def set_logger(logger_to_set):
-        Log.logger = logger_to_set
+        Log.flask_app_logger = logger_to_set
 
     @staticmethod
     def get_logger():
-        if Log.logger is not None:
-            return Log.logger
+        if Log.flask_app_logger is not None:
+            return Log.flask_app_logger
