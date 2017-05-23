@@ -6,6 +6,7 @@ from models import db
 from crp.user import user_blueprint
 from crp.log import logger_setting, Log
 from crp.openstack import openstack_client_setting
+from crp.res_set import resource_set_blueprint
 
 
 def create_app(config_name):
@@ -16,6 +17,7 @@ def create_app(config_name):
 
     logger_setting(app)
     openstack_client_setting()
+
     # swagger docs
     @app.route('/docs')
     def docs():
@@ -23,5 +25,6 @@ def create_app(config_name):
 
     # blueprint
     app.register_blueprint(user_blueprint, url_prefix='/api/user')
+    app.register_blueprint(resource_set_blueprint, url_prefix='/api/resource')
 
     return app
