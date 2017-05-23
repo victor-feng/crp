@@ -84,7 +84,7 @@ class Scheduler(Thread):
     def start(self, task_id):
         if self._t is None:
             self.task_id = task_id
-            Log.get_logger().debug("Task id " + self.task_id.__str__() + " start.")
+            Log.logger.debug("Task id " + self.task_id.__str__() + " start.")
             # 启动任务定时器
             self._t = Timer(self.sleep_time, self._run, self.args, self.kwargs)
             self._t.start()
@@ -96,7 +96,7 @@ class Scheduler(Thread):
         # 超时退出
         self.delta_time += self.sleep_time
         if self.delta_time >= self.timeout:
-            Log.get_logger().debug("Task id " + self.task_id.__str__() + " timeout.")
+            Log.logger.debug("Task id " + self.task_id.__str__() + " timeout.")
             self.stop()
             return
         # 执行定时任务
@@ -119,7 +119,7 @@ class Scheduler(Thread):
             self._t = None
             # 标记任务线程退出标记
             self.exit_flag = True
-            Log.get_logger().debug("Task id " + self.task_id.__str__() + " exit.")
+            Log.logger.debug("Task id " + self.task_id.__str__() + " exit.")
         return
 
     def run(self):
@@ -136,12 +136,12 @@ SLEEP_TIME = 3
 def delay(handler):
     """ 延时函数 """
     old = datetime.datetime.now()
-    Log.get_logger().debug("delay start at " + old.__str__() + " by " + handler)
+    Log.logger.debug("delay start at " + old.__str__() + " by " + handler)
     for _ in range(10000):
         for j in range(500):
             i = 1
     now = datetime.datetime.now()
-    Log.get_logger().debug("delay end at" + now.__str__() + " by " + handler)
+    Log.logger.debug("delay end at" + now.__str__() + " by " + handler)
     delta_time = (now - old).seconds*1000 + (now - old).microseconds/1000
     return delta_time
 
@@ -151,8 +151,8 @@ def query_modify_db(task_id=None, args1=None, args2=None):
     """ 需要定时处理的任务函数 """
     handler = "Task id " + task_id.__str__() + " query_db"
     delta_time = delay(handler)
-    Log.get_logger().debug("IM QUERYING A DB use " + delta_time.__str__() + " microseconds" + " by " + handler)
-    Log.get_logger().debug("Test args is args1: " + args1 + "; args2:" + args2 + " by " + handler)
+    Log.logger.debug("IM QUERYING A DB use " + delta_time.__str__() + " microseconds" + " by " + handler)
+    Log.logger.debug("Test args is args1: " + args1 + "; args2:" + args2 + " by " + handler)
     try:
         # TODO(handle): Timer Handle
         res = requests.get(URL)
@@ -188,4 +188,4 @@ def query_modify_db(task_id=None, args1=None, args2=None):
 #
 # TaskManager.task_start(SLEEP_TIME, TIMEOUT, query_modify_db, "testargs1", "testargs2")
 #
-# Log.get_logger().debug("This is debug.")
+# Log.logger.debug("This is debug.")

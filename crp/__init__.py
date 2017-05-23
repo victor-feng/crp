@@ -13,9 +13,7 @@ def create_app(config_name):
     app.config.from_object(configs[config_name])
     db.init_app(app)
 
-    handler = logger_setting(app)
-    app.logger.addHandler(handler)
-    Log.set_logger(app.logger)
+    logger_setting(app)
 
     # swagger docs
     @app.route('/docs')
