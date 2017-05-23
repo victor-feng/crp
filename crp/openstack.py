@@ -14,8 +14,23 @@ def openstack_client_setting():
     OpenStack.keystone_client = keystone_client.Client(token=info.keystone_token, endpoint=info.auth_url, tenant_name=info.tenant_name)
     OpenStack.neutron_client = neutron_client.Client('2.0', username=info.user_name, password=info.user_password, tenant_name=info.tenant_name, auth_url=info.auth_url)
     OpenStack.cinder_client =   cinder_client.Client(username=info.user_name, api_key=info.user_password, project_id=info.tenant_name, auth_url=info.auth_url)
+    OpenStack.cinder_client .format = 'json'
 
+    # just for glance now.
+    def get_endpoint():
+        service_list = OpenStack.keystone_client.services.list()
+        for i in range(len(service_list)):
+            if service_list[i].type == "image":
+                glance_id = service_list[i].id
+        if glance_id == None:
+            return
+        endpoint_list = OpenStack.keystone_client.endpoints.list()
+        for j in range(len(endpoint_list)):
+            if endpoint_list[j].service_id == glance_id:
+                return endpoint_list[j].publicurl
 
+    glance_endpoint = get_endpoint()
+    OpenStack.glance_client = glance_client.Client(endpoint=glance_endpoint,username=info.user_name, password=info.user_password, tenant_name=info.tenant_name, auth_url=info.auth_url)
 
 class AuthInfo(object):
     """
