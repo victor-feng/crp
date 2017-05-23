@@ -5,6 +5,7 @@ from config import configs
 from models import db
 from crp.user import user_blueprint
 from crp.log import logger_setting, Log
+from crp.openstack import openstack_client_setting
 
 
 def create_app(config_name):
@@ -14,7 +15,7 @@ def create_app(config_name):
     db.init_app(app)
 
     logger_setting(app)
-
+    openstack_client_setting()
     # swagger docs
     @app.route('/docs')
     def docs():
