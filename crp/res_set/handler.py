@@ -42,7 +42,7 @@ def _create_resource_set(task_id=None, args1=None, args2=None):
 def _query_resource_set_status(task_id=None, res_id=None, int_id=None):
     nova_client = OpenStack.nova_client
     int = nova_client.servers.get(int_id)
-    Log.logger.debug("Task ID "+task_id.__str__()+" query"+int.status)
+    Log.logger.debug("Task ID "+task_id.__str__()+" query "+int.status)
     if int.status == 'ACTIVE':
         # TODO(thread exit): 执行成功停止定时任务退出任务线程
         TaskManager.task_exit(task_id)

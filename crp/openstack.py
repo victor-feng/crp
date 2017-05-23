@@ -10,10 +10,14 @@ from glanceclient.v1 import client as glance_client
 def openstack_client_setting():
     info = AuthInfo('/root/openrc')
     info.get_env(info.rc)
-    OpenStack.nova_client = nova_client.Client(username=info.user_name, api_key=info.user_password, project_id=info.tenant_name, auth_url=info.auth_url)
-    OpenStack.keystone_client = keystone_client.Client(token=info.keystone_token, endpoint=info.auth_url, tenant_name=info.tenant_name)
-    OpenStack.neutron_client = neutron_client.Client('2.0', username=info.user_name, password=info.user_password, tenant_name=info.tenant_name, auth_url=info.auth_url)
-    OpenStack.cinder_client =   cinder_client.Client(username=info.user_name, api_key=info.user_password, project_id=info.tenant_name, auth_url=info.auth_url)
+    OpenStack.nova_client = nova_client.Client(username=info.user_name, api_key=info.user_password,
+                                               project_id=info.tenant_name, auth_url=info.auth_url)
+    OpenStack.keystone_client = keystone_client.Client(token=info.keystone_token, endpoint=info.auth_url,
+                                                       tenant_name=info.tenant_name)
+    OpenStack.neutron_client = neutron_client.Client('2.0', username=info.user_name, password=info.user_password,
+                                                     tenant_name=info.tenant_name, auth_url=info.auth_url)
+    OpenStack.cinder_client = cinder_client.Client(username=info.user_name, api_key=info.user_password,
+                                                   project_id=info.tenant_name, auth_url=info.auth_url)
     OpenStack.cinder_client .format = 'json'
 
     # just for glance now.
