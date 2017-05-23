@@ -5,3 +5,8 @@ flask-mongoengine==0.9.3
 flask-restful-swagger==0.19
 Flask-RESTful==0.3.5
 requests==2.10.0
+python-novaclient==2.20.0
+python-keystoneclient==0.11.1
+oslo.config==1.4.0
+oslo.utils==1.0.0
+oslo.i18n==1.0.0
