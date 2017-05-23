@@ -3,6 +3,7 @@ from threading import Timer, Thread, Lock
 from time import sleep
 import datetime
 import requests
+from crp.log import Log
 
 
 class TaskManager(object):
@@ -83,7 +84,7 @@ class Scheduler(Thread):
     def start(self, task_id):
         if self._t is None:
             self.task_id = task_id
-            print "Task id " + self.task_id.__str__() + " start."
+            Log.get_logger().debug("Task id " + self.task_id.__str__() + " start.")
             # 启动任务定时器
             self._t = Timer(self.sleep_time, self._run, self.args, self.kwargs)
             self._t.start()
@@ -95,7 +96,7 @@ class Scheduler(Thread):
         # 超时退出
         self.delta_time += self.sleep_time
         if self.delta_time >= self.timeout:
-            print "Task id " + self.task_id.__str__() + " timeout."
+            Log.get_logger().debug("Task id " + self.task_id.__str__() + " timeout.")
             self.stop()
             return
         # 执行定时任务
@@ -118,7 +119,7 @@ class Scheduler(Thread):
             self._t = None
             # 标记任务线程退出标记
             self.exit_flag = True
-            print "Task id " + self.task_id.__str__() + " exit."
+            Log.get_logger().debug("Task id " + self.task_id.__str__() + " exit.")
         return
 
     def run(self):
@@ -126,7 +127,7 @@ class Scheduler(Thread):
 
 
 # 以下为使用示例
-CALLBACKURL = "http://localhost:8000/api/user/users"
+URL = "http://localhost:8000/api/user/users"
 TIMEOUT = 10
 SLEEP_TIME = 3
 
@@ -135,12 +136,12 @@ SLEEP_TIME = 3
 def delay(handler):
     """ 延时函数 """
     old = datetime.datetime.now()
-    print "delay start at " + old.__str__() + " by " + handler
+    Log.get_logger().debug("delay start at " + old.__str__() + " by " + handler)
     for _ in range(10000):
         for j in range(500):
             i = 1
     now = datetime.datetime.now()
-    print "delay end at" + now.__str__() + " by " + handler
+    Log.get_logger().debug("delay end at" + now.__str__() + " by " + handler)
     delta_time = (now - old).seconds*1000 + (now - old).microseconds/1000
     return delta_time
 
@@ -150,11 +151,11 @@ def query_modify_db(task_id=None, args1=None, args2=None):
     """ 需要定时处理的任务函数 """
     handler = "Task id " + task_id.__str__() + " query_db"
     delta_time = delay(handler)
-    print "IM QUERYING A DB use " + delta_time.__str__() + " microseconds" + " by " + handler
-    print "Test args is args1: " + args1 + "; args2:" + args2 + " by " + handler
+    Log.get_logger().debug("IM QUERYING A DB use " + delta_time.__str__() + " microseconds" + " by " + handler)
+    Log.get_logger().debug("Test args is args1: " + args1 + "; args2:" + args2 + " by " + handler)
     try:
         # TODO(handle): Timer Handle
-        res = requests.get(CALLBACKURL)
+        res = requests.get(URL)
         ret = eval(res.content)
         res_list = ret['result']['res']
         for u in res_list:
@@ -165,7 +166,7 @@ def query_modify_db(task_id=None, args1=None, args2=None):
                     "last_name": u['last_name']
                 }
                 u['email'] = "modify@edu.cn"
-                requests.post(CALLBACKURL + "/callback_success", data=req)
+                requests.post(URL + "/callback_success", data=req)
                 # TODO(thread exit): 执行成功停止定时任务退出任务线程
                 TaskManager.task_exit(task_id)
     except Exception as e:
@@ -177,7 +178,7 @@ def query_modify_db(task_id=None, args1=None, args2=None):
                 "msg": "Error Msg"
             }
         }
-        requests.post(CALLBACKURL + "/callback_exception", data=ret)
+        requests.post(URL + "/callback_exception", data=ret)
         # TODO(thread exit): 抛出异常停止定时任务退出任务线程
         TaskManager.task_exit(task_id)
 
@@ -186,3 +187,5 @@ def query_modify_db(task_id=None, args1=None, args2=None):
 # from crp.sched import *
 #
 # TaskManager.task_start(SLEEP_TIME, TIMEOUT, query_modify_db, "testargs1", "testargs2")
+#
+# Log.get_logger().debug("This is debug.")

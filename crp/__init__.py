@@ -4,6 +4,7 @@ from flask_restful import Resource, Api
 from config import configs
 from models import db
 from crp.user import user_blueprint
+from crp.log import logger_setting, Log
 
 
 def create_app(config_name):
@@ -11,6 +12,10 @@ def create_app(config_name):
 
     app.config.from_object(configs[config_name])
     db.init_app(app)
+
+    handler = logger_setting(app)
+    app.logger.addHandler(handler)
+    Log.set_logger(app.logger)
 
     # swagger docs
     @app.route('/docs')
