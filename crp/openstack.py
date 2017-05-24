@@ -20,7 +20,7 @@ def openstack_client_setting():
                                                      tenant_name=info.tenant_name, auth_url=info.auth_url)
     OpenStack.cinder_client = cinder_client.Client(username=info.user_name, api_key=info.user_password,
                                                    project_id=info.tenant_name, auth_url=info.auth_url)
-    OpenStack.cinder_client .format = 'json'
+    OpenStack.cinder_client.format = 'json'
 
     # just for glance now.
     def get_endpoint():
