@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from keystoneclient.v2_0 import client as keystone_client
 from novaclient.v1_1 import client as nova_client
 from cinderclient.v1 import client as cinder_client
 from neutronclient.neutron import client as neutron_client
@@ -8,6 +7,7 @@ from glanceclient.v1 import client as glance_client
 from config import APP_ENV, configs
 
 OPENRC_PATH = configs[APP_ENV].OPENRC_PATH
+
 
 def openstack_client_setting():
     info = AuthInfo(OPENRC_PATH)
