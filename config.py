@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 
+# APP_ENV = "default"
+APP_ENV = "testing"
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -17,7 +19,8 @@ class DevelopmentConfig(BaseConfig):
         'username': 'crp',
         'password': 'crp'
     }
-
+    UOP_URL = "http://develop.mongodb.db:5000/"
+    OPENRC_PATH = "/root/openrc"
 
 class TestingConfig(BaseConfig):
     TESTING = True
@@ -28,6 +31,8 @@ class TestingConfig(BaseConfig):
         'username': 'crp',
         'password': 'crp',
     }
+    UOP_URL = "http://172.28.20.124:5000/"
+    OPENRC_PATH = "/root/openrc"
 
 
 configs = {
