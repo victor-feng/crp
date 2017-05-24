@@ -13,11 +13,37 @@ TIMEOUT = 500
 SLEEP_TIME = 3
 
 
+images_dict = {
+    'mysql': {
+        'uuid': '9d9c2029-cd1e-41d3-ab2e-9b1ab6eca7df',
+        'name': 'mysqlsas-50G-20170428',
+    },
+    'redis': {
+        'uuid': '3da55e5b-814c-4935-abf0-1469ae606286',
+        'name': 'redis-50G-20170428',
+    },
+    'mongo': {
+        'uuid': '95863650-6816-4588-846a-c0423b5baae0',
+        'name': 'mongosas-50G-20170428',
+    },
+}
+
+
+# cirros-0.3.3
+IMAGE_MINI = 'c63884fb-399b-400c-a5fd-810cefb50dc0'
+# mini
+FLAVOR_MINI = 'aadb6488-a64f-4868-82dd-7b832cd047ac'
+# scm2-dev--1C2G80G
+FLAVOR_1C2G = 'scm2-dev--1C2G80G'
+AVAILABILITY_ZONE = 'AZ_GENERAL'
+DEV_NETWORK_ID = 'c12740e6-33c8-49e9-b17d-6255bb10cd0c'
+
+
 # 向OpenStack申请资源
-def _create_instance():
+def _create_instance(name, image, flavor, availability_zone, network_id):
     nova_client = OpenStack.nova_client
-    ints = nova_client.servers.list()
-    Log.logger.debug(ints)
+    # ints = nova_client.servers.list()
+    # Log.logger.debug(ints)
     # def create(self, name, image, flavor, meta=None, files=None,
     #            reservation_id=None, min_count=None,
     #            max_count=None, security_groups=None, userdata=None,
@@ -27,16 +53,24 @@ def _create_instance():
     #            config_drive=None, disk_config=None, **kwargs):
 
     nics_list = []
-    nic_info = {'net-id': 'c12740e6-33c8-49e9-b17d-6255bb10cd0c'}
+    nic_info = {'net-id': network_id}
     nics_list.append(nic_info)
-    int = nova_client.servers.create('testfromcrp', 'c63884fb-399b-400c-a5fd-810cefb50dc0',
-                                      'aadb6488-a64f-4868-82dd-7b832cd047ac',
-                                      availability_zone='AZ_GENERAL',
-                                      nics=nics_list)
+    int = nova_client.servers.create(name, image, flavor,
+                                     availability_zone=availability_zone,
+                                     nics=nics_list)
     Log.logger.debug(int)
     Log.logger.debug(int.id)
 
     return int.id
+
+
+# 依据资源类型创建资源
+def create_instance_by_type(ins_type, name):
+    image = images_dict.get(ins_type)
+    image_uuid = image.get('uuid')
+    Log.logger.debug("Select Image UUID: "+image_uuid+" by Instance Type "+ins_type)
+    return _create_instance(name, image_uuid, FLAVOR_1C2G, AVAILABILITY_ZONE, DEV_NETWORK_ID)
+
 
 # 申请资源定时任务
 def _create_resource_set(task_id=None, resource_list=None, compute_list=None):
@@ -52,7 +86,7 @@ def _create_resource_set(task_id=None, resource_list=None, compute_list=None):
         quantity = resource.get('quantity')
         version = resource.get('version')
 
-        osint_id = _create_instance()
+        osint_id = create_instance_by_type(ins_type, ins_name)
         ins_id_list.append(osint_id)
 
     for compute in compute_list:
@@ -63,8 +97,8 @@ def _create_resource_set(task_id=None, resource_list=None, compute_list=None):
         mem = compute.get('mem')
         url = compute.get('url')
 
-        osint_id = _create_instance()
-        ins_id_list.append(osint_id)
+        # osint_id = _create_instance()
+        # ins_id_list.append(osint_id)
 
     return ins_id_list
 
@@ -95,8 +129,8 @@ def _query_resource_set_status(task_id=None, result_list=None, osins_id_list=Non
     if rollback_flag:
         fail_list = list(set(osins_id_list) - set(result_list))
         Log.logger.debug("Task ID "+task_id.__str__()+" have one or more instance create failed." +
-                         "Successful instance id set is "+result_list[:].__str__() +
-                         "Failed instance id set is "+fail_list[:].__str__())
+                         " Successful instance id set is "+result_list[:].__str__() +
+                         " Failed instance id set is "+fail_list[:].__str__())
         # 删除全部，完成rollback
         for int_id in osins_id_list:
             nova_client.servers.delete(int_id)
