@@ -36,7 +36,9 @@ def openstack_client_setting():
                 return endpoint_list[j].publicurl
 
     glance_endpoint = get_endpoint()
-    OpenStack.glance_client = glance_client.Client(endpoint=glance_endpoint,username=info.user_name, password=info.user_password, tenant_name=info.tenant_name, auth_url=info.auth_url)
+    OpenStack.glance_client = glance_client.Client(endpoint=glance_endpoint,username=info.user_name,
+                                                   password=info.user_password, tenant_name=info.tenant_name,
+                                                   auth_url=info.auth_url)
 
 class AuthInfo(object):
     """
