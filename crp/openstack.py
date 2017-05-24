@@ -5,10 +5,12 @@ from cinderclient.v1 import client as cinder_client
 from neutronclient.neutron import client as neutron_client
 from keystoneclient.v2_0 import client as keystone_client
 from glanceclient.v1 import client as glance_client
+from config import APP_ENV, configs
 
+OPENRC_PATH = configs[APP_ENV].OPENRC_PATH
 
 def openstack_client_setting():
-    info = AuthInfo('/root/openrc')
+    info = AuthInfo(OPENRC_PATH)
     info.get_env(info.rc)
     OpenStack.nova_client = nova_client.Client(username=info.user_name, api_key=info.user_password,
                                                project_id=info.tenant_name, auth_url=info.auth_url)
@@ -18,7 +20,7 @@ def openstack_client_setting():
                                                      tenant_name=info.tenant_name, auth_url=info.auth_url)
     OpenStack.cinder_client = cinder_client.Client(username=info.user_name, api_key=info.user_password,
                                                    project_id=info.tenant_name, auth_url=info.auth_url)
-    OpenStack.cinder_client .format = 'json'
+    OpenStack.cinder_client.format = 'json'
 
     # just for glance now.
     def get_endpoint():
@@ -34,7 +36,9 @@ def openstack_client_setting():
                 return endpoint_list[j].publicurl
 
     glance_endpoint = get_endpoint()
-    OpenStack.glance_client = glance_client.Client(endpoint=glance_endpoint,username=info.user_name, password=info.user_password, tenant_name=info.tenant_name, auth_url=info.auth_url)
+    OpenStack.glance_client = glance_client.Client(endpoint=glance_endpoint,username=info.user_name,
+                                                   password=info.user_password, tenant_name=info.tenant_name,
+                                                   auth_url=info.auth_url)
 
 class AuthInfo(object):
     """
