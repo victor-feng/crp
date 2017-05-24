@@ -172,7 +172,7 @@ def query_modify_db(task_id=None, task_var_list=None, args1=None, args2=None):
     handler = "Task id " + task_id.__str__() + " query_db"
     delta_time = delay(handler)
     Log.logger.debug("IM QUERYING A DB use " + delta_time.__str__() + " microseconds" + " by " + handler)
-    Log.logger.debug("Test task_var_list object id is " + id(task_var_list).__str__() +
+    Log.logger.debug("Test Task Scheduler Class task_var_list object id is " + id(task_var_list).__str__() +
                      ", Content is " + task_var_list[:].__str__() + " by " + handler)
     Log.logger.debug("Test args is args1: " + args1 + "; args2:" + args2 + " by " + handler)
     try:

@@ -13,8 +13,8 @@ TIMEOUT = 500
 SLEEP_TIME = 3
 
 
-# 向OpenStack申请资源定时任务
-def _create_resource_set(task_id=None, args1=None, args2=None):
+# 向OpenStack申请资源
+def _create_instance():
     nova_client = OpenStack.nova_client
     ints = nova_client.servers.list()
     Log.logger.debug(ints)
@@ -25,6 +25,7 @@ def _create_resource_set(task_id=None, args1=None, args2=None):
     #            block_device_mapping=None, block_device_mapping_v2=None,
     #            nics=None, scheduler_hints=None,
     #            config_drive=None, disk_config=None, **kwargs):
+
     nics_list = []
     nic_info = {'net-id': 'c12740e6-33c8-49e9-b17d-6255bb10cd0c'}
     nics_list.append(nic_info)
@@ -37,14 +38,72 @@ def _create_resource_set(task_id=None, args1=None, args2=None):
 
     return int.id
 
+# 申请资源定时任务
+def _create_resource_set(task_id=None, resource_list=None, compute_list=None):
+    ins_id_list = []
+    for resource in resource_list:
+        ins_name = resource.get('res_name')
+        ins_id = resource.get('res_id')
+        # ins_id = str(uuid.uuid1())
+        ins_type = resource.get('res_type')
+        cpu = resource.get('cpu')
+        mem = resource.get('mem')
+        disk = resource.get('disk')
+        quantity = resource.get('quantity')
+        version = resource.get('version')
+
+        osint_id = _create_instance()
+        ins_id_list.append(osint_id)
+
+    for compute in compute_list:
+        ins_name = compute.get('ins_name')
+        ins_id = compute.get('ins_id')
+        # ins_id = str(uuid.uuid1())
+        cpu = compute.get('cpu')
+        mem = compute.get('mem')
+        url = compute.get('url')
+
+        osint_id = _create_instance()
+        ins_id_list.append(osint_id)
+
+    return ins_id_list
+
 
 # 向OpenStack查询已申请资源的定时任务
-def _query_resource_set_status(task_id=None, res_id=None, int_id=None):
+def _query_resource_set_status(task_id=None, result_list=None, osins_id_list=None):
+    rollback_flag = False
+    osint_id_wait_query = list(set(osins_id_list) - set(result_list))
+    Log.logger.debug("Query Task ID "+task_id.__str__()+", remain "+osint_id_wait_query[:].__str__())
+    Log.logger.debug("Test Task Scheduler Class result_list object id is " + id(result_list).__str__() +
+                     ", Content is " + result_list[:].__str__())
     nova_client = OpenStack.nova_client
-    int = nova_client.servers.get(int_id)
-    Log.logger.debug("Task ID "+task_id.__str__()+" query "+int.status)
-    if int.status == 'ACTIVE':
-        # TODO(thread exit): 执行成功停止定时任务退出任务线程
+    for int_id in osint_id_wait_query:
+        int = nova_client.servers.get(int_id)
+        Log.logger.debug("Task ID "+task_id.__str__()+" query Instance ID "+int_id+" Status is "+int.status)
+        if int.status == 'ACTIVE':
+            result_list.append(int_id)
+        if int.status == 'ERROR':
+            # TODO: 删除全部
+            rollback_flag = True
+
+    if result_list.__len__() == osins_id_list.__len__():
+        # TODO(thread exit): 执行成功调用UOP CallBack停止定时任务退出任务线程
+        Log.logger.debug("Task ID "+task_id.__str__()+" all instance create success." +
+                         " instance id set is "+result_list[:].__str__())
+        TaskManager.task_exit(task_id)
+
+    if rollback_flag:
+        fail_list = list(set(osins_id_list) - set(result_list))
+        Log.logger.debug("Task ID "+task_id.__str__()+" have one or more instance create failed." +
+                         "Successful instance id set is "+result_list[:].__str__() +
+                         "Failed instance id set is "+fail_list[:].__str__())
+        # 删除全部，完成rollback
+        for int_id in osins_id_list:
+            nova_client.servers.delete(int_id)
+
+        # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
+
+        # 停止定时任务并退出
         TaskManager.task_exit(task_id)
 
 
@@ -102,7 +161,7 @@ class ResourceSet(Resource):
         #                                      application_status=application_status)
         for resource in resource_list:
             ins_name = resource.get('res_name')
-            # ins_id = resource.get('res_id')
+            ins_id = resource.get('res_id')
             # ins_id = str(uuid.uuid1())
             ins_type = resource.get('res_type')
             cpu = resource.get('cpu')
@@ -116,7 +175,7 @@ class ResourceSet(Resource):
 
         for compute in compute_list:
             ins_name = compute.get('ins_name')
-            # ins_id = compute.get('ins_id')
+            ins_id = compute.get('ins_id')
             # ins_id = str(uuid.uuid1())
             cpu = compute.get('cpu')
             mem = compute.get('mem')
@@ -127,9 +186,12 @@ class ResourceSet(Resource):
         Log.logger.debug(resource_list)
         Log.logger.debug(compute_list)
 
-        int_id = _create_resource_set()
+        osins_id_list = _create_resource_set(res_id, resource_list, compute_list)
         # TODO(TaskManager.task_start()): 定时任务示例代码
-        TaskManager.task_start(SLEEP_TIME, TIMEOUT, _query_resource_set_status, res_id, int_id)
+        result_list = []
+        Log.logger.debug("Test API handler result_list object id is " + id(result_list).__str__() +
+                         ", Content is " + result_list[:].__str__())
+        TaskManager.task_start(SLEEP_TIME, TIMEOUT, result_list, _query_resource_set_status, osins_id_list)
         # try:
         #     resource_application.save()
         # except Exception as e:
