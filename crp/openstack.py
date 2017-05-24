@@ -131,3 +131,14 @@ class OpenStack(object):
     def keystone_client(self, value):
         if value is not None:
             OpenStack.keystone_c = value
+
+    @classmethod
+    def find_vm_from_ipv4(cls, ip):
+        search_opts = {'ip': ip}
+        if cls.nova_c is not None:
+            vms = cls.nova_c.servers.list(detailed=True, search_opts=search_opts)
+            for vm in vms:
+                for _, ips in vm.addresses.items():
+                    for ip in ips:
+                        if ip['addr'] == ip :
+                            return vm
