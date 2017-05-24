@@ -2,10 +2,16 @@
 from flask_restful import reqparse, Api, Resource
 from crp.app_deployment import app_deploy_blueprint
 from crp.app_deployment.errors import user_errors
+import requests
+import json
 import commands
 import os
 
 app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
+
+#url = "http://172.28.11.111:8001/cmdb/api/"
+#url = "http://cmdb-test.syswin.com/api/dep_result/"
+url = "http://172.28.11.111:5001/api/dep_result/"
 
 class AppDeploy(Resource):
     def post(self):
@@ -29,6 +35,11 @@ class AppDeploy(Resource):
             image_url = args.image_url
             image_name = args.image_name
             sql_ret = self._sql_exec(args)
+            data = {}
+            data["result"] = "success"
+            data_str = json.dumps(data)
+            res = requests.put(url + deploy_id , data=data_str)
+            ret = eval(res.content.decode('unicode_escape'))
         except Exception as e:
             code = 500
             msg = "internal server error"

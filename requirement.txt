@@ -13,3 +13,4 @@ python-glanceclient == 0.14.2
 oslo.config==1.4.0
 oslo.utils==1.0.0
 oslo.i18n==1.0.0
+ansible==2.3.0.0
