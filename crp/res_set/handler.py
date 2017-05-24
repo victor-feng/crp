@@ -4,6 +4,7 @@ from flask_restful import reqparse, Api, Resource
 from crp.taskmgr import *
 from crp.res_set import resource_set_blueprint
 from crp.res_set.errors import resource_set_errors
+from crp.log import Log
 from crp.openstack import OpenStack
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)

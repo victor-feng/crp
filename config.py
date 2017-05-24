@@ -21,6 +21,7 @@ class DevelopmentConfig(BaseConfig):
     UOP_URL = "http://develop.mongodb.db:5000/"
     OPENRC_PATH = "/root/openrc"
 
+
 class TestingConfig(BaseConfig):
     TESTING = True
     MONGODB_SETTINGS = {
