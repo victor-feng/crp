@@ -3,6 +3,7 @@ from threading import Timer, Thread, Lock
 from time import sleep
 import datetime
 import requests
+import copy
 from crp.log import Log
 
 
@@ -23,17 +24,18 @@ class TaskManager(object):
 
     # 任务添加方法
     @staticmethod
-    def task_start(sleep_time, time_out, function, *args, **kwargs):
+    def task_start(sleep_time, time_out, task_var_list, function, *args, **kwargs):
         """ 生成任务ID，并添加任务线程到任务列表中
          :param sleep_time: 定时任务定时间隔时间，单位秒
          :param time_out: 定时任务超时时间，单位秒
+         :param task_var_list: 定时任务任务类变量列表，任务线程类深度复制，每任务单独实例，用于存储类临时变量，随任务生命周期存亡
          :param function: 定时任务函数体
          :param args: 参数透传
          :param kwargs: 参数透传
         """
         _has_task = False
         _task_id = 0
-        task_thread = Scheduler(sleep_time, time_out, function, *args, **kwargs)
+        task_thread = Scheduler(sleep_time, time_out, task_var_list, function, *args, **kwargs)
         # 锁定和释放全局锁
         with TaskManager.global_mutex:
             for task in TaskManager.tasks:
@@ -70,9 +72,11 @@ task_manager = TaskManager()
 
 # class Scheduler(Thread): 定时任务类，每一个任务起一个线程单独处理
 class Scheduler(Thread):
-    def __init__(self, sleep_time, time_out, function, *args, **kwargs):
+    def __init__(self, sleep_time, time_out, task_var_list, function, *args, **kwargs):
         self.sleep_time = sleep_time
         self.timeout = time_out
+        # 深度复制列表，以完成类变量完整初始化
+        self.task_var_list = copy.deepcopy(task_var_list)
         self.function = function
         self.args = args
         self.kwargs = kwargs
@@ -100,8 +104,12 @@ class Scheduler(Thread):
             self.stop()
             return
         # 执行定时任务
-        if self.task_id is not None:
+        if self.task_id is not None and self.task_var_list is not None:
+            self.function(self.task_id, self.task_var_list, *args, **kwargs)
+        elif self.task_id is not None:
             self.function(self.task_id, *args, **kwargs)
+        elif self.task_var_list is not None:
+            self.function(self.task_var_list, *args, **kwargs)
         else:
             self.function(*args, **kwargs)
         if self.exit_flag is True:
@@ -127,14 +135,21 @@ class Scheduler(Thread):
 
 
 # 以下为使用示例
+# 示例用定时任务使用API的URL
 URL = "http://localhost:8000/api/user/users"
+# 示例用定时任务定时间隔时间，单位秒
 TIMEOUT = 10
+# 示例用定时任务超时时间，单位秒
 SLEEP_TIME = 3
+# 示例用定时任务任务类变量列表，任务线程类深度复制，每任务单独实例，用于存储类临时变量，随任务生命周期存亡
+TASK_VAR_LIST = ['test_var_list']
 
 
 # 示例用延时方法
 def delay(handler):
-    """ 延时函数 """
+    """ 延时函数
+    :param handler:
+    """
     old = datetime.datetime.now()
     Log.logger.debug("delay start at " + old.__str__() + " by " + handler)
     for _ in range(10000):
@@ -147,11 +162,18 @@ def delay(handler):
 
 
 # 示例用功能函数
-def query_modify_db(task_id=None, args1=None, args2=None):
-    """ 需要定时处理的任务函数 """
+def query_modify_db(task_id=None, task_var_list=None, args1=None, args2=None):
+    """ 需要定时处理的任务函数
+     :param task_id: 任务ID
+     :param task_var_list: 任务类变量列表，任务线程类深度复制，每任务单独实例，随任务生命周期存亡
+     :param args1: 示例方法参数
+     :param args2: 示例方法参数
+    """
     handler = "Task id " + task_id.__str__() + " query_db"
     delta_time = delay(handler)
     Log.logger.debug("IM QUERYING A DB use " + delta_time.__str__() + " microseconds" + " by " + handler)
+    Log.logger.debug("Test task_var_list object id is " + id(task_var_list).__str__() +
+                     ", Content is " + task_var_list[:].__str__() + " by " + handler)
     Log.logger.debug("Test args is args1: " + args1 + "; args2:" + args2 + " by " + handler)
     try:
         # TODO(handle): Timer Handle
@@ -184,8 +206,8 @@ def query_modify_db(task_id=None, args1=None, args2=None):
 
 
 # # TODO(scheduler): 定时任务示例代码，实例化Scheduler并start定时任务，需要添加到API处理方法中
-# from crp.sched import *
+# from crp.taskmgr import *
 #
-# TaskManager.task_start(SLEEP_TIME, TIMEOUT, query_modify_db, "testargs1", "testargs2")
+# TaskManager.task_start(SLEEP_TIME, TIMEOUT, TASK_VAR_LIST, query_modify_db, "testargs1", "testargs2")
 #
 # Log.logger.debug("This is debug.")
