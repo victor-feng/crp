@@ -3,7 +3,6 @@ import os
 
 # APP_ENV = "default"
 APP_ENV = "testing"
-basedir = os.path.abspath(os.path.dirname(__file__))
 
 
 class BaseConfig:
