@@ -7,15 +7,17 @@ from crp.log import Log
 # from glanceclient import Client as GlanceClient
 # from keystoneclient.auth.identity import v2 as v2_auth
 # from keystoneclient import session
+from config import APP_ENV, configs
 
-DK_URL = 'unix://var/run/docker.sock'
-CLI_VERSION = '1.22'
+DK_SOCK_URL = configs[APP_ENV].DK_SOCK_URL
+DK_CLI_VERSION = configs[APP_ENV].DK_CLI_VERSION
+DK_TAR_PATH = configs[APP_ENV].DK_TAR_PATH
 
 
 def _dk_py_cli():
     client = docker.DockerClient(
-        base_url=DK_URL,
-        version=CLI_VERSION)
+        base_url=DK_SOCK_URL,
+        version=DK_CLI_VERSION)
     return client
 
 
@@ -32,14 +34,11 @@ def _dk_img_pull(dk_cli, _image_url):
         return None
 
 
-TAR_PATH = '/home/dk/'
-
-
 def _dk_img_save(dk_cli, _image_url):
     image = dk_cli.images.get(_image_url)
     resp = image.save()
     tar_name = str(uuid.uuid1()) + '.tar'
-    tar_file = TAR_PATH + tar_name
+    tar_file = DK_TAR_PATH + tar_name
     try:
         with open(tar_file, 'w') as f:
             for chunk in resp.stream():

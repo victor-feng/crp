@@ -133,11 +133,12 @@ class OpenStack(object):
     @classmethod
     def find_vm_from_ipv4(cls, ip):
         search_opts = {'ip': ip}
-        if cls.nova_c is not None:
-            vms = cls.nova_c.servers.list(detailed=True, search_opts=search_opts)
+        if cls.nova_client is not None:
+            vms = cls.nova_client.servers.list(detailed=True, search_opts=search_opts)
             for vm in vms:
                 for _, ips in vm.addresses.items():
-                    for ip in ips:
-                        if ip['addr'] == ip :
+                    for i in ips:
+                        i = i['addr'].encode("utf-8")
+                        if i == ip :
                             return vm
         return None
