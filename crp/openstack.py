@@ -15,8 +15,8 @@ def openstack_client_setting():
     info.get_env(info.rc)
     OpenStack.nova_client = nova_client.Client(username=info.user_name, api_key=info.user_password,
                                                project_id=info.tenant_name, auth_url=info.auth_url)
-    OpenStack.keystone_client = keystone_client.Client(token=info.keystone_token, endpoint=info.auth_url,
-                                                       tenant_name=info.tenant_name)
+    OpenStack.keystone_client = keystone_client.Client(username=info.user_name, password=info.user_password,
+                                                       tenant_name=info.tenant_name, auth_url=info.auth_url)
     OpenStack.neutron_client = neutron_client.Client('2.0', username=info.user_name, password=info.user_password,
                                                      tenant_name=info.tenant_name, auth_url=info.auth_url)
     OpenStack.cinder_client = cinder_client.Client(username=info.user_name, api_key=info.user_password,
@@ -37,9 +37,7 @@ def openstack_client_setting():
                 return endpoint_list[j].publicurl
 
     glance_endpoint = get_endpoint()
-    OpenStack.glance_client = glance_client.Client(endpoint=glance_endpoint,username=info.user_name,
-                                                   password=info.user_password, tenant_name=info.tenant_name,
-                                                   auth_url=info.auth_url)
+    OpenStack.glance_client = glance_client.Client(endpoint=glance_endpoint, token=OpenStack.keystone_client.auth_token)
 
 class AuthInfo(object):
     """
