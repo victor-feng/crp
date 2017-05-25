@@ -20,6 +20,8 @@ class DevelopmentConfig(BaseConfig):
     }
     UOP_URL = "http://develop.mongodb.db:5000/"
     OPENRC_PATH = "/root/openrc"
+    DK_SOCK_URL = 'unix://var/run/docker.sock'
+    DK_CLI_VERSION = '1.22'
 
 
 class TestingConfig(BaseConfig):
@@ -33,6 +35,8 @@ class TestingConfig(BaseConfig):
     }
     UOP_URL = "http://172.28.20.124:5000/"
     OPENRC_PATH = "/root/openrc"
+    DK_SOCK_URL = 'unix://var/run/docker.sock'
+    DK_CLI_VERSION = '1.22'
 
 
 configs = {

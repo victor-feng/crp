@@ -7,15 +7,16 @@ from crp.log import Log
 # from glanceclient import Client as GlanceClient
 # from keystoneclient.auth.identity import v2 as v2_auth
 # from keystoneclient import session
+from config import APP_ENV, configs
 
-DK_URL = 'unix://var/run/docker.sock'
-CLI_VERSION = '1.22'
+DK_SOCK_URL = configs[APP_ENV].DK_SOCK_URL
+DK_CLI_VERSION = configs[APP_ENV].DK_CLI_VERSION
 
 
 def _dk_py_cli():
     client = docker.DockerClient(
-        base_url=DK_URL,
-        version=CLI_VERSION)
+        base_url=DK_SOCK_URL,
+        version=DK_CLI_VERSION)
     return client
 
 
