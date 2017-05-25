@@ -48,6 +48,9 @@ DEV_NETWORK_ID = 'c12740e6-33c8-49e9-b17d-6255bb10cd0c'
 # res_callback
 RES_CALLBACK = 'http://uop-test.syswin.com/api/res_callback/res'
 
+# use localhost for ip is none
+IP_NONE = "localhost"
+
 
 # 向OpenStack申请资源
 def _create_instance(name, image, flavor, availability_zone, network_id):
@@ -106,8 +109,9 @@ def _create_resource_set(task_id=None, resource_list=None, compute_list=None):
         quantity = resource.get('quantity')
         version = resource.get('version')
 
-        osint_id = create_instance_by_type(ins_type, ins_name)
-        osins_id_list.append(osint_id)
+        for i in range(1, quantity, 1):
+            osint_id = create_instance_by_type(ins_type, ins_name)
+            osins_id_list.append(osint_id)
 
     for compute in compute_list:
         ins_name = compute.get('ins_name')
@@ -318,9 +322,12 @@ def request_res_callback(req_dict):
     mongodb["port"] = req_dict["mongodb_port"]
     mongodb["ip"] = req_dict["mongodb_ip"]
 
-    db_info["mysql"] = mysql
-    db_info["redis"] = redis
-    db_info["mongodb"] = mongodb
+    if mysql["ip"] is not IP_NONE:
+        db_info["mysql"] = mysql
+    if redis["ip"] is not IP_NONE:
+        db_info["redis"] = redis
+    if mongodb["ip"] is not IP_NONE:
+        db_info["mongodb"] = mongodb
     project_name["db_info"] = db_info
 
     project_name_list.append(project_name)
@@ -409,15 +416,15 @@ class ResourceSet(Resource):
         req_dict["mysql_username"] = "root"
         req_dict["mysql_password"] = "123456"
         req_dict["mysql_port"] = "3306"
-        req_dict["mysql_ip"] = "localhost"
+        req_dict["mysql_ip"] = IP_NONE
         req_dict["redis_username"] = "root"
         req_dict["redis_password"] = "123456"
         req_dict["redis_port"] = "6379"
-        req_dict["redis_ip"] = "localhost"
+        req_dict["redis_ip"] = IP_NONE
         req_dict["mongodb_username"] = "root"
         req_dict["mongodb_password"] = "123456"
         req_dict["mongodb_port"] = "27017"
-        req_dict["mongodb_ip"] = "localhost"
+        req_dict["mongodb_ip"] = IP_NONE
 
         osins_id_list = _create_resource_set(res_id, resource_list, compute_list)
         if osins_id_list.__len__() == 0:
