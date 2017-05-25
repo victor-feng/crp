@@ -42,7 +42,11 @@ FLAVOR_1C2G = 'scm2-dev--1C2G80G'
 # docker-2C4G25G
 DOCKER_FLAVOR_2C4G = 'e90d8d25-c5c7-46d7-ba4e-2465a5b1d266'
 AVAILABILITY_ZONE = 'AZ_GENERAL'
+# AVAILABILITY_ZONE = 'AZ-SELF-SERVICE'
 DEV_NETWORK_ID = 'c12740e6-33c8-49e9-b17d-6255bb10cd0c'
+
+# res_callback
+RES_CALLBACK = 'http://uop-test.syswin.com/api/res_callback/res'
 
 
 # 向OpenStack申请资源
@@ -116,7 +120,8 @@ def _create_resource_set(task_id=None, resource_list=None, compute_list=None):
         if err_msg is None:
             osins_id_list.append(osint_id)
         else:
-            result_inst_id_list = [err_msg]
+            Log.logger.debug(err_msg)
+            result_inst_id_list = []
             # 删除全部
             _rollback_all(task_id, osins_id_list, result_inst_id_list)
             osins_id_list = []
@@ -214,6 +219,84 @@ def _query_resource_set_status(task_id=None, result_list=None, osins_id_list=Non
         TaskManager.task_exit(task_id)
 
 
+# request UOP res_callback
+"""
+{
+    "project_id": "项目id",
+    "project_name": [
+        {
+            "resource_name": "资源名称",
+            "under_name": "所属项目",
+            "resource_id": "资源id",
+            "domain": "域名",
+            "container": {
+                "container_name": "容器名称",
+                "image_addr": "镜像地址",
+                "stardand_ins": "实例规格",
+                "cpu": "2",
+                "memory": "4",
+                "ins_id": "实例id"
+            },
+            "db_info": {
+                "mysql": {
+                    "username": "数据库名",
+                    "password": "密码",
+                    "port": "端口",
+                    "ip": ""
+                },
+                "redis": {
+                    "username": "数据库名",
+                    "password": "密码",
+                    "port": "端口",
+                    "ip": ""
+                },
+                "mongodb": {
+                    "username": "数据库名",
+                    "password": "密码",
+                    "port": "端口",
+                    "ip": ""
+                }
+            }
+        }
+    ]
+}
+"""
+# def request_res_callback(project_id):
+#     data = {}
+#     data["project_id"] = project_id
+#
+#     project_name_list = []
+#     project_name = {}
+#     project_name[project_name[]]
+#     project_name[]
+#     project_name[]
+#     project_name[]
+#     project_name[]
+#
+#
+#
+#
+#     data["layer_id"] = "business"
+#     data["group_id"] = "BusinessLine"
+#     data["item_id"] = "project_item"
+#
+#     property_list = []
+#     property_list.append({"type": "string", "name": "项目编号", "value": args.item_code})
+#     property_list.append({"type": "string", "name": "项目名称", "value": args.item_name})
+#     property_list.append({"type": "string", "name": "归属部门", "value": args.item_department})
+#     property_list.append({"type": "string", "name": "项目描述", "value": args.item_description})
+#     property_list.append({"type": "string", "name": "创建人", "value": args.user_name})
+#     property_list.append({"type" : "datetime","name" : "创建日期","value" : datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')})
+#     data["property_list"] = property_list
+#
+#     data_str = json.dumps(data)
+#     res = requests.post(RES_CALLBACK + "repo/", data=data_str)
+#     ret = eval(res.content.decode('unicode_escape'))
+#     if res.status_code == 200:
+#         pass
+
+
+# res_set REST API Controller
 class ResourceSet(Resource):
     @classmethod
     def post(cls):
@@ -294,11 +377,15 @@ class ResourceSet(Resource):
         Log.logger.debug(compute_list)
 
         osins_id_list = _create_resource_set(res_id, resource_list, compute_list)
-        # TODO(TaskManager.task_start()): 定时任务示例代码
-        result_list = []
-        Log.logger.debug("Test API handler result_list object id is " + id(result_list).__str__() +
-                         ", Content is " + result_list[:].__str__())
-        TaskManager.task_start(SLEEP_TIME, TIMEOUT, result_list, _query_resource_set_status, osins_id_list)
+        if osins_id_list.__len__() == 0:
+            # TODO(callback): 执行失败调用UOP CallBack
+            pass
+        else:
+            # TODO(TaskManager.task_start()): 定时任务示例代码
+            result_list = []
+            Log.logger.debug("Test API handler result_list object id is " + id(result_list).__str__() +
+                             ", Content is " + result_list[:].__str__())
+            TaskManager.task_start(SLEEP_TIME, TIMEOUT, result_list, _query_resource_set_status, osins_id_list)
         # try:
         #     resource_application.save()
         # except Exception as e:
