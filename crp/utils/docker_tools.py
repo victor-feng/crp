@@ -99,8 +99,15 @@ def _glance_img_create(glance_cli, image_name, tar_file):
         "name": image_name,
         "file": tar_file
     }
-    image = glance_cli.images.create(**fields)
-    return image
+    if 'location' not in fields and 'copy_from' not in fields:
+        open(fields['file'], 'rb')
+    # image = glance_cli.images.create(**fields)
+    # return image
+    images = glance_cli.images.list()
+    return images
+    # image = glance_cli.images.get('3027f868-8f87-45cd-b85b-8b0da3ecaa84')
+    # return image
+
 
 
 def image_transit(_image_url):
@@ -116,7 +123,7 @@ def image_transit(_image_url):
     #         glance_cli = _glance_cli()
     #         image = _glance_img_create(glance_cli, _image_url, tar_file)
     #         return image
-    return '3027f868-8f87-45cd-b85b-8b0da3ecaa84'
+    return None, '3027f868-8f87-45cd-b85b-8b0da3ecaa84'
 
 
 if __name__ == '__main__':
@@ -125,4 +132,4 @@ if __name__ == '__main__':
     # print err_msg, tar_file
     tar_file = '/home/dk/03224b48-4069-11e7-b211-000c29bca56a.tar'
     glance_cli = _glance_cli()
-    image = _glance_img_create(glance_cli, image_url, tar_file)
+    print dir(_glance_img_create(glance_cli, image_url, tar_file))
