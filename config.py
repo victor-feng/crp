@@ -22,6 +22,7 @@ class DevelopmentConfig(BaseConfig):
     OPENRC_PATH = "/root/openrc"
     DK_SOCK_URL = 'unix://var/run/docker.sock'
     DK_CLI_VERSION = '1.22'
+    DK_TAR_PATH = '/home/dk/'
 
 
 class TestingConfig(BaseConfig):
@@ -38,6 +39,7 @@ class TestingConfig(BaseConfig):
     OPENRC_PATH = "/root/openrc"
     DK_SOCK_URL = 'unix://var/run/docker.sock'
     DK_CLI_VERSION = '1.22'
+    DK_TAR_PATH = '/home/dk/'
 
 
 configs = {

@@ -41,8 +41,12 @@ FLAVOR_MINI = 'aadb6488-a64f-4868-82dd-7b832cd047ac'
 FLAVOR_1C2G = 'scm2-dev--1C2G80G'
 # docker-2C4G25G
 DOCKER_FLAVOR_2C4G = 'e90d8d25-c5c7-46d7-ba4e-2465a5b1d266'
-AVAILABILITY_ZONE = 'AZ_GENERAL'
+# AVAILABILITY_ZONE = 'AZ_GENERAL'
+AVAILABILITY_ZONE = 'AZ-SELF-SERVICE'
 DEV_NETWORK_ID = 'c12740e6-33c8-49e9-b17d-6255bb10cd0c'
+
+# res_callback
+RES_CALLBACK = 'http://uop-test.syswin.com/api/res_callback/res'
 
 
 # 向OpenStack申请资源
@@ -82,6 +86,7 @@ def create_instance_by_type(ins_type, name):
 def create_docker_by_url(name, image_url):
     err_msg, image_uuid = image_transit(image_url)
     if err_msg is None:
+        Log.logger.debug("Transit harbor docker image success. The result glance image UUID is " + image_uuid)
         return None, _create_instance(name, image_uuid, DOCKER_FLAVOR_2C4G, AVAILABILITY_ZONE, DEV_NETWORK_ID)
     else:
         return err_msg, None
@@ -116,7 +121,8 @@ def _create_resource_set(task_id=None, resource_list=None, compute_list=None):
         if err_msg is None:
             osins_id_list.append(osint_id)
         else:
-            result_inst_id_list = [err_msg]
+            Log.logger.debug(err_msg)
+            result_inst_id_list = []
             # 删除全部
             _rollback_all(task_id, osins_id_list, result_inst_id_list)
             osins_id_list = []
@@ -149,7 +155,7 @@ def _rollback_all(task_id, osins_id_list, result_inst_id_list):
 
 
 # 向OpenStack查询已申请资源的定时任务
-def _query_resource_set_status(task_id=None, result_list=None, osins_id_list=None):
+def _query_resource_set_status(task_id=None, result_list=None, osins_id_list=None, req_dict=None):
     if result_list.__len__() == 0:
         result_inst_id_list = []
         result_info_list = []
@@ -176,18 +182,19 @@ def _query_resource_set_status(task_id=None, result_list=None, osins_id_list=Non
     Log.logger.debug("Test Task Scheduler Class result_inst_id_list object id is " + id(result_inst_id_list).__str__() +
                      ", Content is " + result_inst_id_list[:].__str__())
     nova_client = OpenStack.nova_client
-    for inst_id in os_inst_id_wait_query:
-        inst = nova_client.servers.get(inst_id)
-        Log.logger.debug("Task ID "+task_id.__str__()+" query Instance ID "+inst_id+" Status is "+inst.status)
+    for os_inst_id in os_inst_id_wait_query:
+        inst = nova_client.servers.get(os_inst_id)
+        Log.logger.debug("Task ID "+task_id.__str__()+" query Instance ID "+os_inst_id+" Status is "+inst.status)
         if inst.status == 'ACTIVE':
             _ips = _get_ip_from_instance(inst)
             _data = {
-                        'inst_id': inst_id,
+                        'uop_ins_id': req_dict["ins_id"],
+                        'os_inst_id': os_inst_id,
                         'ip': _ips.pop() if _ips.__len__() >= 1 else '',
                     }
             result_info_list.append(_data)
             Log.logger.debug("Instance Info: " + _data.__str__())
-            result_inst_id_list.append(inst_id)
+            result_inst_id_list.append(os_inst_id)
         if inst.status == 'ERROR':
             # 置回滚标志位
             Log.logger.debug("ERROR Instance Info: " + inst.to_dict().__str__())
@@ -198,7 +205,16 @@ def _query_resource_set_status(task_id=None, result_list=None, osins_id_list=Non
         Log.logger.debug("Task ID " + task_id.__str__() + " all instance create success." +
                          " instance id set is " + result_inst_id_list[:].__str__() +
                          " instance info set is "+result_info_list[:].__str__())
-
+        for info in result_info_list:
+            if info["uop_ins_id"] == req_dict["container_ins_id"]:
+                req_dict["container_ip"] = info["ip"]
+            if info["uop_ins_id"] == req_dict["mysql_ins_id"]:
+                req_dict["mysql_ip"] = info["ip"]
+            if info["uop_ins_id"] == req_dict["redis_ins_id"]:
+                req_dict["redis_ip"] = info["ip"]
+            if info["uop_ins_id"] == req_dict["mongodb_ins_id"]:
+                req_dict["mongodb_ip"] = info["ip"]
+        request_res_callback(req_dict)
         Log.logger.debug("Call UOP CallBack Post Success Info.")
         TaskManager.task_exit(task_id)
 
@@ -214,12 +230,118 @@ def _query_resource_set_status(task_id=None, result_list=None, osins_id_list=Non
         TaskManager.task_exit(task_id)
 
 
+# request UOP res_callback
+def request_res_callback(req_dict):
+    # project_id, resource_name,under_name, resource_id, domain,
+    # container_name, image_addr, stardand_ins,cpu, memory, ins_id,
+    # mysql_username, mysql_password, mysql_port, mysql_ip,
+    # redis_username, redis_password, redis_port, redis_ip,
+    # mongodb_username, mongodb_password, mongodb_port, mongodb_ip
+    """
+    :param req_dict: req字段字典
+    API JOSN:
+    {
+        "project_id": "项目id",
+        "project_name": [
+            {
+                "resource_name": "资源名称",
+                "under_name": "所属项目",
+                "resource_id": "资源id",
+                "domain": "域名",
+                "container": {
+                    "container_name": "容器名称",
+                    "image_addr": "镜像地址",
+                    "stardand_ins": "实例规格",
+                    "cpu": "2",
+                    "memory": "4",
+                    "ins_id": "实例id"
+                },
+                "db_info": {
+                    "mysql": {
+                        "username": "数据库名",
+                        "password": "密码",
+                        "port": "端口",
+                        "ip": ""
+                    },
+                    "redis": {
+                        "username": "数据库名",
+                        "password": "密码",
+                        "port": "端口",
+                        "ip": ""
+                    },
+                    "mongodb": {
+                        "username": "数据库名",
+                        "password": "密码",
+                        "port": "端口",
+                        "ip": ""
+                    }
+                }
+            }
+        ]
+    }
+    """
+    data = {}
+    data["project_id"] = req_dict["project_id"]
+
+    project_name_list = []
+    project_name = {}
+    project_name["resource_name"] = req_dict["resource_name"]
+    project_name["under_name"] = req_dict["under_name"]
+    project_name["resource_id"] = req_dict["resource_id"]
+    project_name["domain"] = req_dict["domain"]
+
+    container = {}
+    container["container_name"] = req_dict["container_name"]
+    container["image_addr"] = req_dict["image_addr"]
+    container["stardand_ins"] = req_dict["stardand_ins"]
+    container["cpu"] = req_dict["cpu"]
+    container["memory"] = req_dict["memory"]
+    container["ins_id"] = req_dict["ins_id"]
+    project_name["container"] = container
+
+    db_info = {}
+    mysql = {}
+    mysql["username"] = req_dict["mysql_username"]
+    mysql["password"] = req_dict["mysql_password"]
+    mysql["port"] = req_dict["mysql_port"]
+    mysql["ip"] = req_dict["mysql_ip"]
+
+    redis = {}
+    redis["username"] = req_dict["redis_username"]
+    redis["password"] = req_dict["redis_password"]
+    redis["port"] = req_dict["redis_port"]
+    redis["ip"] = req_dict["redis_ip"]
+
+    mongodb = {}
+    mongodb["username"] = req_dict["mongodb_username"]
+    mongodb["password"] = req_dict["mongodb_password"]
+    mongodb["port"] = req_dict["mongodb_port"]
+    mongodb["ip"] = req_dict["mongodb_ip"]
+
+    db_info["mysql"] = mysql
+    db_info["redis"] = redis
+    db_info["mongodb"] = mongodb
+    project_name["db_info"] = db_info
+
+    project_name_list.append(project_name)
+
+    data["project_name_list"] = project_name_list
+
+    data_str = json.dumps(data)
+    res = requests.post(RES_CALLBACK, data=data_str)
+    ret = eval(res.content.decode('unicode_escape'))
+    Log.logger.debug(res.status_code)
+    Log.logger.debug(res.content)
+
+
+# res_set REST API Controller
 class ResourceSet(Resource):
     @classmethod
     def post(cls):
         parser = reqparse.RequestParser()
         parser.add_argument('resource_name', type=str)
         parser.add_argument('project', type=str)
+        parser.add_argument('project_id', type=str)
         parser.add_argument('department', type=str)
         # parser.add_argument('department_id', type=str)
         parser.add_argument('res_id', type=str)
@@ -233,8 +355,11 @@ class ResourceSet(Resource):
         parser.add_argument('compute_list', type=list, location='json')
         args = parser.parse_args()
 
+        req_dict = {}
+
         resource_name = args.resource_name
         project = args.project
+        project_id = args.project_id
         department = args.department
         department_id = '1'
         res_id = args.res_id
@@ -248,24 +373,6 @@ class ResourceSet(Resource):
         resource_list = args.resource_list
         compute_list = args.compute_list
 
-        # try:
-        #     if ResourceModel.objects.filter(resource_name=resource_name).count():
-        #         res = {
-        #             'code': 200,
-        #             'result': {
-        #                 'res': 'success',
-        #                 'msg': 'Resource already exist.',
-        #                 'res_name': resource_name
-        #             }
-        #         }
-        #         return res, 404
-        # except Exception as e:
-        #     print e
-        #     return
-        # resource_application = ResourceModel(resource_name=resource_name, project=project, department=department,
-        #                                      department_id=department_id, res_id=res_id,
-        #                                      user_name=user_name, user_id=user_id, domain=domain, env=env,
-        #                                      application_status=application_status)
         for resource in resource_list:
             ins_name = resource.get('res_name')
             ins_id = resource.get('res_id')
@@ -276,9 +383,6 @@ class ResourceSet(Resource):
             disk = resource.get('disk')
             quantity = resource.get('quantity')
             version = resource.get('version')
-            # db_ins = DBIns(ins_name=ins_name, ins_id=ins_id, ins_type=ins_type, cpu=cpu, mem=mem, disk=disk,
-            #                quantity=quantity, version=version)
-            # resource_application.resource_list.append(db_ins)
 
         for compute in compute_list:
             ins_name = compute.get('ins_name')
@@ -287,29 +391,44 @@ class ResourceSet(Resource):
             cpu = compute.get('cpu')
             mem = compute.get('mem')
             url = compute.get('url')
-            # compute_ins = ComputeIns(ins_name=ins_name, ins_id=ins_id, cpu=cpu, mem=mem, url=url)
-            # resource_application.compute_list.append(compute_ins)
 
         Log.logger.debug(resource_list)
         Log.logger.debug(compute_list)
 
+        req_dict["project_id"] = project_id
+        req_dict["resource_name"] = resource_name
+        req_dict["under_name"] = project
+        req_dict["resource_id"] = res_id
+        req_dict["domain"] = domain
+        req_dict["container_name"] = ins_name
+        req_dict["image_addr"] = url
+        req_dict["stardand_ins"] = "2C4G"
+        req_dict["cpu"] = cpu
+        req_dict["memory"] = mem
+        req_dict["ins_id"] = ins_id
+        req_dict["mysql_username"] = "root"
+        req_dict["mysql_password"] = "123456"
+        req_dict["mysql_port"] = "3306"
+        req_dict["mysql_ip"] = "localhost"
+        req_dict["redis_username"] = "root"
+        req_dict["redis_password"] = "123456"
+        req_dict["redis_port"] = "6379"
+        req_dict["redis_ip"] = "localhost"
+        req_dict["mongodb_username"] = "root"
+        req_dict["mongodb_password"] = "123456"
+        req_dict["mongodb_port"] = "27017"
+        req_dict["mongodb_ip"] = "localhost"
+
         osins_id_list = _create_resource_set(res_id, resource_list, compute_list)
-        # TODO(TaskManager.task_start()): 定时任务示例代码
-        result_list = []
-        Log.logger.debug("Test API handler result_list object id is " + id(result_list).__str__() +
-                         ", Content is " + result_list[:].__str__())
-        TaskManager.task_start(SLEEP_TIME, TIMEOUT, result_list, _query_resource_set_status, osins_id_list)
-        # try:
-        #     resource_application.save()
-        # except Exception as e:
-        #     code = 500
-        #     res = {"code": code,
-        #            "result": {
-        #                'res': 'fail',
-        #                'msg': 'Create resource application fail.'
-        #            }
-        #     }
-        #     return res, code
+        if osins_id_list.__len__() == 0:
+            # TODO(callback): 执行失败调用UOP CallBack
+            pass
+        else:
+            # TODO(TaskManager.task_start()): 定时任务示例代码
+            result_list = []
+            Log.logger.debug("Test API handler result_list object id is " + id(result_list).__str__() +
+                             ", Content is " + result_list[:].__str__())
+            TaskManager.task_start(SLEEP_TIME, TIMEOUT, result_list, _query_resource_set_status, osins_id_list, req_dict)
 
         # return http code 202 (Accepted)
         res_id = 'testid'
