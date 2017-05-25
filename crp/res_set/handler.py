@@ -86,6 +86,7 @@ def create_instance_by_type(ins_type, name):
 def create_docker_by_url(name, image_url):
     err_msg, image_uuid = image_transit(image_url)
     if err_msg is None:
+        Log.logger.debug("Transit harbor docker image success. The result glance image UUID is " + image_uuid)
         return None, _create_instance(name, image_uuid, DOCKER_FLAVOR_2C4G, AVAILABILITY_ZONE, DEV_NETWORK_ID)
     else:
         return err_msg, None
