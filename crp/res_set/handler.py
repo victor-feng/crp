@@ -6,6 +6,9 @@ from crp.res_set import resource_set_blueprint
 from crp.res_set.errors import resource_set_errors
 from crp.log import Log
 from crp.openstack import OpenStack
+from crp.utils.docker_tools import image_transit
+import json
+
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 
@@ -36,6 +39,8 @@ IMAGE_MINI = 'c63884fb-399b-400c-a5fd-810cefb50dc0'
 FLAVOR_MINI = 'aadb6488-a64f-4868-82dd-7b832cd047ac'
 # scm2-dev--1C2G80G
 FLAVOR_1C2G = 'scm2-dev--1C2G80G'
+# docker-2C4G25G
+DOCKER_FLAVOR_2C4G = 'e90d8d25-c5c7-46d7-ba4e-2465a5b1d266'
 AVAILABILITY_ZONE = 'AZ_GENERAL'
 DEV_NETWORK_ID = 'c12740e6-33c8-49e9-b17d-6255bb10cd0c'
 
@@ -73,9 +78,18 @@ def create_instance_by_type(ins_type, name):
     return _create_instance(name, image_uuid, FLAVOR_1C2G, AVAILABILITY_ZONE, DEV_NETWORK_ID)
 
 
+# 依据镜像URL创建NovaDocker容器
+def create_docker_by_url(name, image_url):
+    err_msg, image_uuid = image_transit(image_url)
+    if err_msg is None:
+        return None, _create_instance(name, image_uuid, DOCKER_FLAVOR_2C4G, AVAILABILITY_ZONE, DEV_NETWORK_ID)
+    else:
+        return err_msg, None
+
+
 # 申请资源定时任务
 def _create_resource_set(task_id=None, resource_list=None, compute_list=None):
-    ins_id_list = []
+    osins_id_list = []
     for resource in resource_list:
         ins_name = resource.get('res_name')
         ins_id = resource.get('res_id')
@@ -88,7 +102,7 @@ def _create_resource_set(task_id=None, resource_list=None, compute_list=None):
         version = resource.get('version')
 
         osint_id = create_instance_by_type(ins_type, ins_name)
-        ins_id_list.append(osint_id)
+        osins_id_list.append(osint_id)
 
     for compute in compute_list:
         ins_name = compute.get('ins_name')
@@ -98,45 +112,103 @@ def _create_resource_set(task_id=None, resource_list=None, compute_list=None):
         mem = compute.get('mem')
         url = compute.get('url')
 
-        # osint_id = _create_instance()
-        # ins_id_list.append(osint_id)
+        err_msg, osint_id = create_docker_by_url(ins_name, url)
+        if err_msg is None:
+            osins_id_list.append(osint_id)
+        else:
+            result_inst_id_list = [err_msg]
+            # 删除全部
+            _rollback_all(task_id, osins_id_list, result_inst_id_list)
+            osins_id_list = []
 
-    return ins_id_list
+    return osins_id_list
+
+
+def _get_ip_from_instance(server):
+    ips_address = []
+    for _, ips in server.addresses.items():
+        for ip in ips:
+            if isinstance(ip, dict):
+                if ip.has_key('addr'):
+                    ip_address = ip['addr']
+                    ips_address.append(ip_address)
+    return ips_address
+
+
+# 回滚删除全部资源和容器
+def _rollback_all(task_id, osins_id_list, result_inst_id_list):
+    nova_client = OpenStack.nova_client
+    fail_list = list(set(osins_id_list) - set(result_inst_id_list))
+    Log.logger.debug("Task ID " + task_id.__str__() + " have one or more instance create failed." +
+                     " Successful instance id set is " + result_inst_id_list[:].__str__() +
+                     " Failed instance id set is " + fail_list[:].__str__())
+    # 删除全部，完成rollback
+    for inst_id in osins_id_list:
+        nova_client.servers.delete(inst_id)
+    Log.logger.debug("Task ID " + task_id.__str__() + " rollback done.")
 
 
 # 向OpenStack查询已申请资源的定时任务
 def _query_resource_set_status(task_id=None, result_list=None, osins_id_list=None):
+    if result_list.__len__() == 0:
+        result_inst_id_list = []
+        result_info_list = []
+        result_inst_id_dict = {
+                                  'type': 'id',
+                                  'list': result_inst_id_list
+                              }
+        result_info_dict = {
+                               'type': 'info',
+                               'list': result_info_list
+                           }
+        result_list.append(result_inst_id_dict)
+        result_list.append(result_info_dict)
+    else:
+        for res_dict in result_list:
+            if res_dict['type'] == 'id':
+                result_inst_id_list = res_dict['list']
+            elif res_dict['type'] == 'info':
+                result_info_list = res_dict['list']
+
     rollback_flag = False
-    osint_id_wait_query = list(set(osins_id_list) - set(result_list))
-    Log.logger.debug("Query Task ID "+task_id.__str__()+", remain "+osint_id_wait_query[:].__str__())
-    Log.logger.debug("Test Task Scheduler Class result_list object id is " + id(result_list).__str__() +
-                     ", Content is " + result_list[:].__str__())
+    os_inst_id_wait_query = list(set(osins_id_list) - set(result_inst_id_list))
+    Log.logger.debug("Query Task ID "+task_id.__str__()+", remain "+os_inst_id_wait_query[:].__str__())
+    Log.logger.debug("Test Task Scheduler Class result_inst_id_list object id is " + id(result_inst_id_list).__str__() +
+                     ", Content is " + result_inst_id_list[:].__str__())
     nova_client = OpenStack.nova_client
-    for int_id in osint_id_wait_query:
-        int = nova_client.servers.get(int_id)
-        Log.logger.debug("Task ID "+task_id.__str__()+" query Instance ID "+int_id+" Status is "+int.status)
-        if int.status == 'ACTIVE':
-            result_list.append(int_id)
-        if int.status == 'ERROR':
-            # TODO: 删除全部
+    for inst_id in os_inst_id_wait_query:
+        inst = nova_client.servers.get(inst_id)
+        Log.logger.debug("Task ID "+task_id.__str__()+" query Instance ID "+inst_id+" Status is "+inst.status)
+        if inst.status == 'ACTIVE':
+            _ips = _get_ip_from_instance(inst)
+            _data = {
+                        'inst_id': inst_id,
+                        'ip': _ips.pop() if _ips.__len__() >= 1 else '',
+                    }
+            result_info_list.append(_data)
+            Log.logger.debug("Instance Info: " + _data.__str__())
+            result_inst_id_list.append(inst_id)
+        if inst.status == 'ERROR':
+            # 置回滚标志位
+            Log.logger.debug("ERROR Instance Info: " + inst.to_dict().__str__())
             rollback_flag = True
 
-    if result_list.__len__() == osins_id_list.__len__():
+    if result_inst_id_list.__len__() == osins_id_list.__len__():
         # TODO(thread exit): 执行成功调用UOP CallBack停止定时任务退出任务线程
-        Log.logger.debug("Task ID "+task_id.__str__()+" all instance create success." +
-                         " instance id set is "+result_list[:].__str__())
+        Log.logger.debug("Task ID " + task_id.__str__() + " all instance create success." +
+                         " instance id set is " + result_inst_id_list[:].__str__() +
+                         " instance info set is "+result_info_list[:].__str__())
+
+        Log.logger.debug("Call UOP CallBack Post Success Info.")
         TaskManager.task_exit(task_id)
 
+    # 回滚全部资源和容器
     if rollback_flag:
-        fail_list = list(set(osins_id_list) - set(result_list))
-        Log.logger.debug("Task ID "+task_id.__str__()+" have one or more instance create failed." +
-                         " Successful instance id set is "+result_list[:].__str__() +
-                         " Failed instance id set is "+fail_list[:].__str__())
-        # 删除全部，完成rollback
-        for int_id in osins_id_list:
-            nova_client.servers.delete(int_id)
+        # 删除全部
+        _rollback_all(task_id, osins_id_list, result_inst_id_list)
 
         # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
+        Log.logger.debug("Call UOP CallBack Post Fail Info.")
 
         # 停止定时任务并退出
         TaskManager.task_exit(task_id)
