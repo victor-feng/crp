@@ -142,3 +142,4 @@ class OpenStack(object):
                     for ip in ips:
                         if ip['addr'] == ip :
                             return vm
+        return None
