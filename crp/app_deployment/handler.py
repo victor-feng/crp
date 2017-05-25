@@ -2,6 +2,7 @@
 from flask_restful import reqparse, Api, Resource
 from crp.app_deployment import app_deploy_blueprint
 from crp.app_deployment.errors import user_errors
+from json import *
 import requests
 import json
 import commands
@@ -21,14 +22,9 @@ class AppDeploy(Resource):
         try:
             parser = reqparse.RequestParser()
             parser.add_argument('deploy_id', type=str)
-            parser.add_argument('ip', type=str)
-            parser.add_argument('port', type=str)
-            parser.add_argument('database', type=str)
-            parser.add_argument('user', type=str)
-            parser.add_argument('password', type=str)
-            parser.add_argument('sql', type=str)
             parser.add_argument('image_url', type=str)
             parser.add_argument('image_name', type=str)
+            parser.add_argument('mysql', type=dict)
             args = parser.parse_args()
 
             deploy_id = args.deploy_id
@@ -36,10 +32,17 @@ class AppDeploy(Resource):
             image_name = args.image_name
             sql_ret = self._sql_exec(args)
             data = {}
-            data["result"] = "success"
+            data["result"] = "failed"
+            if sql_ret:
+                data["result"] = "success"
             data_str = json.dumps(data)
-            res = requests.put(url + deploy_id , data=data_str)
-            ret = eval(res.content.decode('unicode_escape'))
+
+            headers = {'Content-Type': 'application/json'}
+            res = requests.put(url + deploy_id + "/" , data = data_str,headers = headers )
+            if res.status_code != 200:
+                code = 500
+                msg = "uop server error"
+            ddd = 999
         except Exception as e:
             code = 500
             msg = "internal server error"
@@ -55,12 +58,12 @@ class AppDeploy(Resource):
         return res, code
     def _sql_exec(self,args):
         workdir = os.getcwd()
-        password = args.password
-        ip = args.ip
-        port = args.port
-        database = args.database
-        user = args.user
-        sql = args.sql
+        password = args.mysql.get("password")
+        ip = args.mysql.get("ip")
+        port = args.mysql.get("port")
+        database = args.mysql.get("database")
+        user = args.mysql.get("user")
+        sql = args.mysql.get("sql_script")
 
         file_object = open(workdir + '/sql.sh', "wb+")
         file_object.write("#!/bin/bash\n")
