@@ -26,6 +26,7 @@ class DevelopmentConfig(BaseConfig):
 
 class TestingConfig(BaseConfig):
     TESTING = True
+    DEBUG = True
     MONGODB_SETTINGS = {
         'db': 'crp',
         'host': 'test.mongodb.db',
