@@ -276,6 +276,7 @@ def request_res_callback(status, req_dict):
 {
     "resource_id": "资源id",
     "resource_name": "资源名",
+    "env": "开发测试生产环境"
     "under_id": "所属部署单元id",
     "domain": "qitoon.syswin.com",
     "status": "成功",
@@ -285,7 +286,6 @@ def request_res_callback(status, req_dict):
         "ip": "容器IP",
         "container_name": "容器名称",
         "image_addr": "镜像地址",
-        "stardand_ins": "实例规格",
         "cpu": "2",
         "memory": "4",
         "ins_id": "实例id"
@@ -329,7 +329,6 @@ def request_res_callback(status, req_dict):
     container["ip"] = req_dict["container_ip"]
     container["container_name"] = req_dict["container_name"]
     container["image_addr"] = req_dict["image_addr"]
-    container["stardand_ins"] = req_dict["stardand_ins"]
     container["cpu"] = req_dict["cpu"]
     container["memory"] = req_dict["memory"]
     container["ins_id"] = req_dict["container_inst_id"]
@@ -423,7 +422,6 @@ class ResourceSet(Resource):
 
             req_dict["container_name"] = instance_name
             req_dict["image_addr"] = image_url
-            req_dict["stardand_ins"] = "2C4G"
             req_dict["cpu"] = cpu
             req_dict["memory"] = mem
             req_dict["container_inst_id"] = instance_id
