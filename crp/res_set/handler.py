@@ -372,6 +372,18 @@ def request_res_callback(status, req_dict):
     Log.logger.debug(res.content)
 
 
+# 创建资源集合定时任务，成功或失败后调用UOP资源预留CallBack（目前仅允许全部成功或全部失败，不允许部分成功）
+def _create_resource_set_and_query(task_id, result_list, resource_id, resource_list, compute_list, req_dict):
+    uop_os_inst_id_list = _create_resource_set(resource_id, resource_list, compute_list)
+    if uop_os_inst_id_list.__len__() == 0:
+        # TODO(callback): 执行失败调用UOP CallBack
+        request_res_callback(STATUS_FAIL, req_dict)
+    else:
+        Log.logger.debug("Test API handler result_list object id is " + id(result_list).__str__() +
+                         ", Content is " + result_list[:].__str__())
+        _query_resource_set_status(task_id, result_list, uop_os_inst_id_list, req_dict)
+
+
 # res_set REST API Controller
 class ResourceSet(Resource):
     @classmethod
@@ -452,16 +464,10 @@ class ResourceSet(Resource):
         req_dict["mongodb_port"] = "27017"
         req_dict["mongodb_ip"] = IP_NONE
 
-        uop_os_inst_id_list = _create_resource_set(resource_id, resource_list, compute_list)
-        if uop_os_inst_id_list.__len__() == 0:
-            # TODO(callback): 执行失败调用UOP CallBack
-            request_res_callback(STATUS_FAIL, req_dict)
-        else:
-            # TODO(TaskManager.task_start()): 定时任务示例代码
-            result_list = []
-            Log.logger.debug("Test API handler result_list object id is " + id(result_list).__str__() +
-                             ", Content is " + result_list[:].__str__())
-            TaskManager.task_start(SLEEP_TIME, TIMEOUT, result_list, _query_resource_set_status, uop_os_inst_id_list, req_dict)
+        result_list = []
+        # TODO(TaskManager.task_start()): 定时任务示例代码
+        TaskManager.task_start(SLEEP_TIME, TIMEOUT, result_list,
+                               _create_resource_set_and_query, resource_id, resource_list, compute_list, req_dict)
 
         # return http code 202 (Accepted)
         res_id = 'testid'
