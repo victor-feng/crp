@@ -15,7 +15,7 @@ app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 
 #url = "http://172.28.11.111:8001/cmdb/api/"
 #url = "http://uop-test.syswin.com/api/dep_result/"
-url = "http://172.28.11.111:5001/api/dep_result/"
+url = "http://uop-test.syswin.com/api/dep_result/"
 
 def _dep_callback(deploy_id, success):
     data = dict()
@@ -67,11 +67,24 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
         # 停止定时任务并退出
         TaskManager.task_exit(task_id)
 
+
+def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, ip = None, image_url = None):
+    err_msg, image_uuid = image_transit(image_url)
+    if err_msg is None:
+        Log.logger.debug(
+            "Transit harbor docker image success. The result glance image UUID is " + image_uuid)
+        obj._deploy_docker(ip, deploy_id, image_uuid)
+    else:
+        Log.logger.error(
+            "Transit harbor docker image failed. image_url is " + image_url)
+
+    Log.logger.debug("call image transit error msg:" + err_msg + " image uuid: " + image_uuid)
+    TaskManager.task_exit(task_id)
+
 class AppDeploy(Resource):
     def post(self):
         code = 200
-        msg = "success"
-
+        msg = "ok"
         try:
             parser = reqparse.RequestParser()
             parser.add_argument('deploy_id', type=str)
@@ -83,18 +96,9 @@ class AppDeploy(Resource):
             docker = args.docker
             sql_ret = self._deploy_mysql(args)
             if sql_ret:
-                err_msg, image_uuid = image_transit(docker.get("image_url"))
-                if err_msg is None:
-                    Log.logger.debug(
-                        "Transit harbor docker image success. The result glance image UUID is " + image_uuid)
-                    self._deploy_docker(docker.get("ip"), deploy_id, image_uuid)
-                else:
-                    Log.logger.error(
-                        "Transit harbor docker image failed. image_url is " + docker.get("image_url"))
-                    return err_msg, None
-
+                self._image_transit(deploy_id, docker.get("ip"), docker.get("image_url"))
             else:
-                res = _dep_callback(deploy_id,False)
+                res = _dep_callback(deploy_id, False)
                 if res.status_code == 500:
                     code = 500
                     msg = "uop server error"
@@ -129,9 +133,10 @@ class AppDeploy(Resource):
         self._make_hosts_file(workdir, ip, host_user, host_password)
 
         (status, output) = commands.getstatusoutput(
-            'ansible -i ' + workdir + '/myhosts ' + ip + ' -u root -m script -a ' + workdir + '/sql.sh')
-        ret = output.find("ERROR")
-        return True if ret == -1 else False
+            'ansible -i ' + workdir + '/myhosts ' + ip + ' --private-key=/root/pre_id_rsa_no -u root -m script -a ' + workdir + '/sql.sh')
+        if output.lower().find("error") == -1 and output.lower().find("failed") == -1:
+            return True
+        return  False
 
     def _make_sql_file(self,workdir,password,user,port,database,sql):
         with open(workdir + '/sql.sh', "wb+") as file_object:
@@ -147,7 +152,7 @@ class AppDeploy(Resource):
 
     def _make_hosts_file(self,workdir,ip,user,password):
         with open(workdir + '/myhosts', "wb+") as file_object:
-            file_object.write(ip + " ansible_ssh_pass=" + password + " ansible_ssh_user=" + user)
+            file_object.write(ip)
 
     def _deploy_docker(self, ip, deploy_id, image_uuid):
         server = OpenStack.find_vm_from_ipv4(ip=ip)
@@ -159,5 +164,10 @@ class AppDeploy(Resource):
         result_list = []
         timeout = 10
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, _query_instance_set_status, vm_id_list, deploy_id)
+
+    def _image_transit(self,deploy_id, ip, image_url):
+        result_list = []
+        timeout = 10
+        TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, ip, image_url)
 
 app_deploy_api.add_resource(AppDeploy, '/deploys')
