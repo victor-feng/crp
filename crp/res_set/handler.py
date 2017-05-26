@@ -19,8 +19,8 @@ SLEEP_TIME = 3
 
 images_dict = {
     'mysql': {
-        'uuid': '9d9c2029-cd1e-41d3-ab2e-9b1ab6eca7df',
-        'name': 'mysqlsas-50G-20170428',
+        'uuid': '817d3140-0b82-4722-9816-3cee734f22b6',
+        'name': 'mysqluop-80G-20170426',
     },
     'redis': {
         'uuid': '3da55e5b-814c-4935-abf0-1469ae606286',
@@ -447,7 +447,7 @@ class ResourceSet(Resource):
         # init default data
         req_dict["mysql_username"] = "root"
         req_dict["mysql_password"] = "123456"
-        req_dict["mysql_port"] = "3306"
+        req_dict["mysql_port"] = "3316"
         req_dict["mysql_ip"] = IP_NONE
         req_dict["redis_username"] = "root"
         req_dict["redis_password"] = "123456"
