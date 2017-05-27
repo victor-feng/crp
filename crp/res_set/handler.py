@@ -248,6 +248,7 @@ def _query_resource_set_status(task_id=None, result_list=None, uop_os_inst_id_li
                 req_dict["mongodb_ip"] = info["ip"]
         request_res_callback(STATUS_OK, req_dict)
         Log.logger.debug("Call UOP CallBack Post Success Info.")
+        # 停止定时任务并退出
         TaskManager.task_exit(task_id)
 
     # 回滚全部资源和容器
@@ -258,7 +259,6 @@ def _query_resource_set_status(task_id=None, result_list=None, uop_os_inst_id_li
         # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
         request_res_callback(STATUS_FAIL, req_dict)
         Log.logger.debug("Call UOP CallBack Post Fail Info.")
-
         # 停止定时任务并退出
         TaskManager.task_exit(task_id)
 
@@ -374,14 +374,62 @@ def request_res_callback(status, req_dict):
 
 # 创建资源集合定时任务，成功或失败后调用UOP资源预留CallBack（目前仅允许全部成功或全部失败，不允许部分成功）
 def _create_resource_set_and_query(task_id, result_list, resource_id, resource_list, compute_list, req_dict):
-    uop_os_inst_id_list = _create_resource_set(resource_id, resource_list, compute_list)
-    if uop_os_inst_id_list.__len__() == 0:
-        # TODO(callback): 执行失败调用UOP CallBack
-        request_res_callback(STATUS_FAIL, req_dict)
+    if result_list.__len__() == 0:
+        result_sub_is_create_resource_done_dict = {'is_create_done': False}
+        result_sub_result_list = []
+        uop_os_inst_id_list = []
+        result_is_create_resource_done_dict = {
+                                  'type': 'is_create_done',
+                                  'nested': result_sub_is_create_resource_done_dict
+                              }
+        result_sub_result_dict = {
+                               'type': 'sub_result',
+                               'nested': result_sub_result_list
+                           }
+        result_sub_uop_os_inst_id_dict = {
+                               'type': 'sub_uop_os_inst_id',
+                               'nested': uop_os_inst_id_list
+                           }
+        result_list.append(result_is_create_resource_done_dict)
+        result_list.append(result_sub_result_dict)
+        result_list.append(result_sub_uop_os_inst_id_dict)
+        print '+++++++++++++++++++++++++++++++++++++++++++++'
+        print id(uop_os_inst_id_list)
     else:
-        Log.logger.debug("Test API handler result_list object id is " + id(result_list).__str__() +
-                         ", Content is " + result_list[:].__str__())
-        _query_resource_set_status(task_id, result_list, uop_os_inst_id_list, req_dict)
+        for res_dict in result_list:
+            if res_dict['type'] == 'is_create_done':
+                result_sub_is_create_resource_done_dict = res_dict['nested']
+            elif res_dict['type'] == 'sub_result':
+                result_sub_result_list = res_dict['nested']
+            elif res_dict['type'] == 'sub_uop_os_inst_id':
+                uop_os_inst_id_list = res_dict['nested']
+                print '+++++++++++++++++++++++++++++++++++++++++++++'
+                print id(uop_os_inst_id_list)
+
+    if result_sub_is_create_resource_done_dict['is_create_done'] is not True:
+        temp_uop_os_inst_id_list = _create_resource_set(resource_id, resource_list, compute_list)
+        for temp in temp_uop_os_inst_id_list:
+            uop_os_inst_id_list.append(temp)
+        print '+++++++++++++++++++++++++++++++++++++++++++++'
+        print id(uop_os_inst_id_list)
+        result_sub_is_create_resource_done_dict['is_create_done'] = True
+        if uop_os_inst_id_list.__len__() == 0:
+            # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
+            request_res_callback(STATUS_FAIL, req_dict)
+            Log.logger.debug("Call UOP CallBack Post Fail Info.")
+            # 停止定时任务并退出
+            TaskManager.task_exit(task_id)
+    else:
+        if uop_os_inst_id_list.__len__() == 0:
+            # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
+            request_res_callback(STATUS_FAIL, req_dict)
+            Log.logger.debug("Call UOP CallBack Post Fail Info.")
+            # 停止定时任务并退出
+            TaskManager.task_exit(task_id)
+        else:
+            Log.logger.debug("Test API handler result_list object id is " + id(result_sub_result_list).__str__() +
+                             ", Content is " + result_sub_result_list[:].__str__())
+            _query_resource_set_status(task_id, result_sub_result_list, uop_os_inst_id_list, req_dict)
 
 
 # res_set REST API Controller
