@@ -10,6 +10,7 @@ import requests
 import json
 import commands
 import os
+import time
 
 app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 
@@ -70,6 +71,7 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
 
 def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, ip = None, image_url = None):
     err_msg, image_uuid = image_transit(image_url)
+    time.sleep(10)
     if err_msg is None:
         Log.logger.debug(
             "Transit harbor docker image success. The result glance image UUID is " + image_uuid)
