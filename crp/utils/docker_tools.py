@@ -104,7 +104,7 @@ def _glance_img_create(glance_cli, image_name, tar_file):
 
 
 def image_transit(_image_url):
-    return None, 'd9645ca0-f771-4d90-8a18-0bd44c26abd7'
+    # return None, 'd9645ca0-f771-4d90-8a18-0bd44c26abd7'
     dk_cli = _dk_py_cli()
     err_msg = _dk_img_pull(dk_cli, _image_url)
     if err_msg:
