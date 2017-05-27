@@ -59,8 +59,8 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
                          " Successful instance id set is "+result_list[:].__str__() +
                          " Failed instance id set is "+fail_list[:].__str__())
         # 删除全部，完成rollback
-        for int_id in osins_id_list:
-            nova_client.servers.delete(int_id)
+        #for int_id in osins_id_list:
+         #   nova_client.servers.delete(int_id)
 
         # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
         _dep_callback(deploy_id, False)
