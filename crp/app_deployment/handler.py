@@ -91,7 +91,7 @@ class AppDeploy(Resource):
             parser.add_argument('mysql', type=dict)
             parser.add_argument('docker', type=dict)
             args = parser.parse_args()
-
+            Log.logger.debug("AppDeploy receive post request. args is " + str(args))
             deploy_id = args.deploy_id
             docker = args.docker
             sql_ret = self._deploy_mysql(args)
@@ -132,10 +132,12 @@ class AppDeploy(Resource):
         self._make_sql_file(workdir, mysql_password, mysql_user, port, database, sql)
         self._make_hosts_file(workdir, ip, host_user, host_password)
 
-        (status, output) = commands.getstatusoutput(
-            'ansible -i ' + workdir + '/myhosts ' + ip + ' --private-key=/root/pre_id_rsa_no -u root -m script -a ' + workdir + '/sql.sh')
+        ansible_cmd =  'ansible -i ' + workdir + '/myhosts ' + ip + ' --private-key=/root/id_rsa_new_root -u root -m script -a ' + workdir + '/sql.sh'
+        (status, output) = commands.getstatusoutput( ansible_cmd )
         if output.lower().find("error") == -1 and output.lower().find("failed") == -1:
+            Log.logger.debug("ansible exec succeed,command: " + ansible_cmd)
             return True
+        Log.logger.debug("ansible exec failed,command: " + ansible_cmd)
         return  False
 
     def _make_sql_file(self,workdir,password,user,port,database,sql):
