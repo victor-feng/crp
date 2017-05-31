@@ -607,6 +607,10 @@ class ResourceSet(Resource):
         req_dict["mongodb_ip"] = IP_NONE
 
         result_list = []
+        Log.logger.debug('req_dict\'s object id is :')
+        Log.logger.debug(id(req_dict))
+        Log.logger.debug('result_list\'s object id is :')
+        Log.logger.debug(id(result_list))
         # TODO(TaskManager.task_start()): 定时任务示例代码
         TaskManager.task_start(SLEEP_TIME, TIMEOUT, result_list,
                                _create_resource_set_and_query, resource_id, resource_list, compute_list, req_dict)
