@@ -77,7 +77,7 @@ def _glance_cli():
     # endpoint, token = _get_endpoint_and_token(auth_url, user_name, user_password, tenant_name)
     # _glance_cli = GlanceClient('1', endpoint=endpoint, token=token)
     from crp.openstack import OpenStack
-    return OpenStack.glance_client
+    return OpenStack.glance_client()
 
 
 def _glance_img_create(glance_cli, image_name, tar_file):
