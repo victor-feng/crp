@@ -38,6 +38,7 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
     Log.logger.debug("Test Task Scheduler Class result_list object id is " + id(result_list).__str__() +
                      ", Content is " + result_list[:].__str__())
     nova_client = OpenStack.nova_client
+
     for int_id in osint_id_wait_query:
         vm = nova_client.servers.get(int_id)
         vm_state = getattr(vm, 'OS-EXT-STS:vm_state')
@@ -71,7 +72,13 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
 
 def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, ip = None, image_url = None):
     err_msg, image_uuid = image_transit(image_url)
-    time.sleep(10)
+    nova_client = OpenStack.nova_client
+    img = nova_client.images.get(image_uuid)
+    for i in range(5):
+        if(img.status.lower() != "active"):
+            time.sleep(5)
+        else:
+            break
     if err_msg is None:
         Log.logger.debug(
             "Transit harbor docker image success. The result glance image UUID is " + image_uuid)
@@ -148,7 +155,7 @@ class AppDeploy(Resource):
             file_object.write("TMP_PWD=$MYSQL_PWD\n")
             file_object.write("export MYSQL_PWD=" + password + "\n")
             file_object.write("mysql -u" + user + " -P" + port + " -e \"\n")
-            file_object.write("use " + database + ";\n")
+            #file_object.write("use " + database + ";\n")
             file_object.write(sql + "\n")
             file_object.write("quit \"\n")
             file_object.write("export MYSQL_PWD=$TMP_PWD\n")
