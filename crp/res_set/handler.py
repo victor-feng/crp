@@ -52,8 +52,9 @@ RES_CALLBACK = 'http://uop-test.syswin.com/api/res_callback/res'
 # use localhost for ip is none
 IP_NONE = "localhost"
 
-STATUS_OK = "ok"
-STATUS_FAIL = "fail"
+RES_STATUS_OK = "ok"
+RES_STATUS_FAIL = "fail"
+RES_STATUS_DEFAULT = 'unreserved'
 
 DEFAULT_USERNAME = "root"
 DEFAULT_PASSWORD = "123456"
@@ -246,7 +247,7 @@ def _query_resource_set_status(task_id=None, result_list=None, uop_os_inst_id_li
                 req_dict["redis_ip"] = info["ip"]
             if info["uop_inst_id"] == req_dict["mongodb_inst_id"]:
                 req_dict["mongodb_ip"] = info["ip"]
-        request_res_callback(STATUS_OK, req_dict)
+        request_res_callback(RES_STATUS_OK, req_dict)
         Log.logger.debug("Call UOP CallBack Post Success Info.")
         # 停止定时任务并退出
         TaskManager.task_exit(task_id)
@@ -257,7 +258,7 @@ def _query_resource_set_status(task_id=None, result_list=None, uop_os_inst_id_li
         _rollback_all(task_id, uop_os_inst_id_list, result_uop_os_inst_id_list)
 
         # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
-        request_res_callback(STATUS_FAIL, req_dict)
+        request_res_callback(RES_STATUS_FAIL, req_dict)
         Log.logger.debug("Call UOP CallBack Post Fail Info.")
         # 停止定时任务并退出
         TaskManager.task_exit(task_id)
@@ -274,10 +275,16 @@ def request_res_callback(status, req_dict):
     :param req_dict: req字段字典
     API JOSN:
 {
+    "unit_name":"部署单元名称",
+    "unit_id":"部署单元编号",
+    "unit_des":"部署单元描述",
+    "user_id":"创建人工号",
+    "username":"创建人姓名",
+    "department":"创建人归属部门",
+    "created_time":"部署单元创建时间",
     "resource_id": "资源id",
     "resource_name": "资源名",
-    "env": "开发测试生产环境"
-    "under_id": "所属部署单元id",
+    "env": "开发测试生产环境",
     "domain": "qitoon.syswin.com",
     "status": "成功",
     "container": {
@@ -316,22 +323,29 @@ def request_res_callback(status, req_dict):
 }
     """
     data = {}
+    data["unit_name"] = req_dict["unit_name"]
+    data["unit_id"] = req_dict["unit_id"]
+    data["unit_des"] = req_dict["unit_des"]
+    data["user_id"] = req_dict["user_id"]
+    data["username"] = req_dict["username"]
+    data["department"] = req_dict["department"]
+    data["created_time"] = req_dict["created_time"]
     data["resource_id"] = req_dict["resource_id"]
     data["resource_name"] = req_dict["resource_name"]
     data["env"] = req_dict["env"]
-    data["under_id"] = req_dict["under_id"]
     data["domain"] = req_dict["domain"]
     data["status"] = status
 
     container = {}
-    container["username"] = req_dict["container_username"]
-    container["password"] = req_dict["container_password"]
-    container["ip"] = req_dict["container_ip"]
-    container["container_name"] = req_dict["container_name"]
-    container["image_addr"] = req_dict["image_addr"]
-    container["cpu"] = req_dict["cpu"]
-    container["memory"] = req_dict["memory"]
-    container["ins_id"] = req_dict["container_inst_id"]
+    if req_dict["container_ip"] is not IP_NONE:
+        container["username"] = req_dict["container_username"]
+        container["password"] = req_dict["container_password"]
+        container["ip"] = req_dict["container_ip"]
+        container["container_name"] = req_dict["container_name"]
+        container["image_addr"] = req_dict["image_addr"]
+        container["cpu"] = req_dict["cpu"]
+        container["memory"] = req_dict["memory"]
+        container["ins_id"] = req_dict["container_inst_id"]
     data["container"] = container
 
     db_info = {}
@@ -416,14 +430,14 @@ def _create_resource_set_and_query(task_id, result_list, resource_id, resource_l
         result_sub_is_create_resource_done_dict['is_create_done'] = True
         if uop_os_inst_id_list.__len__() == 0:
             # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
-            request_res_callback(STATUS_FAIL, req_dict)
+            request_res_callback(RES_STATUS_FAIL, req_dict)
             Log.logger.debug("Call UOP CallBack Post Fail Info.")
             # 停止定时任务并退出
             TaskManager.task_exit(task_id)
     else:
         if uop_os_inst_id_list.__len__() == 0:
             # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
-            request_res_callback(STATUS_FAIL, req_dict)
+            request_res_callback(RES_STATUS_FAIL, req_dict)
             Log.logger.debug("Call UOP CallBack Post Fail Info.")
             # 停止定时任务并退出
             TaskManager.task_exit(task_id)
@@ -437,11 +451,75 @@ def _create_resource_set_and_query(task_id, result_list, resource_id, resource_l
 class ResourceSet(Resource):
     @classmethod
     def post(cls):
+        """
+        API JOSN:
+{
+    "unit_name" : "部署单元名称",
+    "unit_id" : "部署单元编号",
+    "unit_des" : "部署单元描述",
+    "user_id" : "创建人工号",
+    "username" : "创建人姓名",
+    "department" : "创建人归属部门",
+    "created_time" : "部署单元创建时间",
+    "resource_id": "资源id",
+    "resource_name": "资源名",
+    "env": "开发测试生产环境",
+    "domain": "qitoon.syswin.com",
+    "resource_list": [
+        {
+            "instance_name": "crp-mysql1",
+            "instance_id": "实例id1",
+            "instance_type": "mysql",
+            "cpu": 1,
+            "mem": 1,
+            "disk": 50,
+            "quantity": 1,
+            "version": "mysql5.6"
+        },
+        {
+            "instance_name": "crp-mongodb1",
+            "instance_id": "实例id2",
+            "instance_type": "mongo",
+            "cpu": 1,
+            "mem": 1,
+            "disk": 50,
+            "quantity": 1,
+            "version": "mongo3.0"
+        },
+        {
+            "instance_name": "crp-redis1",
+            "instance_id": "实例id3",
+            "instance_type": "redis",
+            "cpu": 1,
+            "mem": 1,
+            "disk": 50,
+            "quantity": 1,
+            "version": "redis3.0"
+        }
+    ],
+    "compute_list": [
+        {
+            "instance_name": "crp-tomcat1",
+            "instance_id": "容器实例id",
+            "cpu": 1,
+            "mem": 1,
+            "image_url": "arp.reg.innertoon.com/qitoon.checkin/qitoon.checkin:20170517101336"
+        }
+    ]
+}
+        """
         parser = reqparse.RequestParser()
+        parser.add_argument('unit_name', type=str)
+        parser.add_argument('unit_id', type=str)
+        parser.add_argument('unit_des', type=str)
+        parser.add_argument('user_id', type=str)
+        parser.add_argument('username', type=str)
+        parser.add_argument('department', type=str)
+        parser.add_argument('created_time', type=str)
+
         parser.add_argument('resource_id', type=str)
         parser.add_argument('resource_name', type=str)
         parser.add_argument('env', type=str)
-        parser.add_argument('under_id', type=str)
         parser.add_argument('domain', type=str)
         parser.add_argument('resource_list', type=list, location='json')
         parser.add_argument('compute_list', type=list, location='json')
@@ -449,10 +527,17 @@ class ResourceSet(Resource):
 
         req_dict = {}
 
+        unit_name = args.unit_name
+        unit_id = args.unit_id
+        unit_des = args.unit_des
+        user_id = args.user_id
+        username = args.username
+        department = args.department
+        created_time = args.created_time
+
         resource_id = args.resource_id
         resource_name = args.resource_name
         env = args.env
-        under_id = args.under_id
         domain = args.domain
         resource_list = args.resource_list
         compute_list = args.compute_list
@@ -490,11 +575,19 @@ class ResourceSet(Resource):
         Log.logger.debug(resource_list)
         Log.logger.debug(compute_list)
 
+        req_dict["unit_name"] = unit_name
+        req_dict["unit_id"] = unit_id
+        req_dict["unit_des"] = unit_des
+        req_dict["user_id"] = user_id
+        req_dict["username"] = username
+        req_dict["department"] = department
+        req_dict["created_time"] = created_time
+
         req_dict["resource_id"] = resource_id
         req_dict["resource_name"] = resource_name
         req_dict["env"] = env
-        req_dict["under_id"] = under_id
         req_dict["domain"] = domain
+        req_dict["status"] = RES_STATUS_DEFAULT
 
         # init default data
         req_dict["container_username"] = DEFAULT_USERNAME
