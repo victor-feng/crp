@@ -508,121 +508,127 @@ class ResourceSet(Resource):
     ]
 }
         """
-        parser = reqparse.RequestParser()
-        parser.add_argument('unit_name', type=str)
-        parser.add_argument('unit_id', type=str)
-        parser.add_argument('unit_des', type=str)
-        parser.add_argument('user_id', type=str)
-        parser.add_argument('username', type=str)
-        parser.add_argument('department', type=str)
-        parser.add_argument('created_time', type=str)
+        # success return http code 202 (Accepted)
+        code = 202
+        msg = 'Create Resource Set Accepted.'
+        try:
+            parser = reqparse.RequestParser()
+            parser.add_argument('unit_name', type=str)
+            parser.add_argument('unit_id', type=str)
+            parser.add_argument('unit_des', type=str)
+            parser.add_argument('user_id', type=str)
+            parser.add_argument('username', type=str)
+            parser.add_argument('department', type=str)
+            parser.add_argument('created_time', type=str)
 
-        parser.add_argument('resource_id', type=str)
-        parser.add_argument('resource_name', type=str)
-        parser.add_argument('env', type=str)
-        parser.add_argument('domain', type=str)
-        parser.add_argument('resource_list', type=list, location='json')
-        parser.add_argument('compute_list', type=list, location='json')
-        args = parser.parse_args()
+            parser.add_argument('resource_id', type=str)
+            parser.add_argument('resource_name', type=str)
+            parser.add_argument('env', type=str)
+            parser.add_argument('domain', type=str)
+            parser.add_argument('resource_list', type=list, location='json')
+            parser.add_argument('compute_list', type=list, location='json')
+            args = parser.parse_args()
 
-        req_dict = {}
+            req_dict = {}
 
-        unit_name = args.unit_name
-        unit_id = args.unit_id
-        unit_des = args.unit_des
-        user_id = args.user_id
-        username = args.username
-        department = args.department
-        created_time = args.created_time
+            unit_name = args.unit_name
+            unit_id = args.unit_id
+            unit_des = args.unit_des
+            user_id = args.user_id
+            username = args.username
+            department = args.department
+            created_time = args.created_time
 
-        resource_id = args.resource_id
-        resource_name = args.resource_name
-        env = args.env
-        domain = args.domain
-        resource_list = args.resource_list
-        compute_list = args.compute_list
+            resource_id = args.resource_id
+            resource_name = args.resource_name
+            env = args.env
+            domain = args.domain
+            resource_list = args.resource_list
+            compute_list = args.compute_list
 
-        for resource in resource_list:
-            instance_name = resource.get('instance_name')
-            instance_id = resource.get('instance_id')
-            instance_type = resource.get('instance_type')
-            cpu = resource.get('cpu')
-            mem = resource.get('mem')
-            disk = resource.get('disk')
-            quantity = resource.get('quantity')
-            version = resource.get('version')
+            for resource in resource_list:
+                instance_name = resource.get('instance_name')
+                instance_id = resource.get('instance_id')
+                instance_type = resource.get('instance_type')
+                cpu = resource.get('cpu')
+                mem = resource.get('mem')
+                disk = resource.get('disk')
+                quantity = resource.get('quantity')
+                version = resource.get('version')
 
-            if instance_type == 'mysql':
-                req_dict["mysql_inst_id"] = instance_id
-            if instance_type == 'redis':
-                req_dict["redis_inst_id"] = instance_id
-            if instance_type == 'mongo':
-                req_dict["mongodb_inst_id"] = instance_id
+                if instance_type == 'mysql':
+                    req_dict["mysql_inst_id"] = instance_id
+                if instance_type == 'redis':
+                    req_dict["redis_inst_id"] = instance_id
+                if instance_type == 'mongo':
+                    req_dict["mongodb_inst_id"] = instance_id
 
-        for compute in compute_list:
-            instance_name = compute.get('instance_name')
-            instance_id = compute.get('instance_id')
-            cpu = compute.get('cpu')
-            mem = compute.get('mem')
-            image_url = compute.get('image_url')
+            for compute in compute_list:
+                instance_name = compute.get('instance_name')
+                instance_id = compute.get('instance_id')
+                cpu = compute.get('cpu')
+                mem = compute.get('mem')
+                image_url = compute.get('image_url')
 
-            req_dict["container_name"] = instance_name
-            req_dict["image_addr"] = image_url
-            req_dict["cpu"] = cpu
-            req_dict["memory"] = mem
-            req_dict["container_inst_id"] = instance_id
+                req_dict["container_name"] = instance_name
+                req_dict["image_addr"] = image_url
+                req_dict["cpu"] = cpu
+                req_dict["memory"] = mem
+                req_dict["container_inst_id"] = instance_id
 
-        Log.logger.debug(resource_list)
-        Log.logger.debug(compute_list)
+            Log.logger.debug(resource_list)
+            Log.logger.debug(compute_list)
 
-        req_dict["unit_name"] = unit_name
-        req_dict["unit_id"] = unit_id
-        req_dict["unit_des"] = unit_des
-        req_dict["user_id"] = user_id
-        req_dict["username"] = username
-        req_dict["department"] = department
-        req_dict["created_time"] = created_time
+            req_dict["unit_name"] = unit_name
+            req_dict["unit_id"] = unit_id
+            req_dict["unit_des"] = unit_des
+            req_dict["user_id"] = user_id
+            req_dict["username"] = username
+            req_dict["department"] = department
+            req_dict["created_time"] = created_time
 
-        req_dict["resource_id"] = resource_id
-        req_dict["resource_name"] = resource_name
-        req_dict["env"] = env
-        req_dict["domain"] = domain
-        req_dict["status"] = RES_STATUS_DEFAULT
+            req_dict["resource_id"] = resource_id
+            req_dict["resource_name"] = resource_name
+            req_dict["env"] = env
+            req_dict["domain"] = domain
+            req_dict["status"] = RES_STATUS_DEFAULT
 
-        # init default data
-        req_dict["container_username"] = DEFAULT_USERNAME
-        req_dict["container_password"] = DEFAULT_PASSWORD
-        req_dict["container_ip"] = IP_NONE
-        req_dict["mysql_username"] = DEFAULT_USERNAME
-        req_dict["mysql_password"] = DEFAULT_PASSWORD
-        req_dict["mysql_port"] = "3316"
-        req_dict["mysql_ip"] = IP_NONE
-        req_dict["redis_username"] = DEFAULT_USERNAME
-        req_dict["redis_password"] = DEFAULT_PASSWORD
-        req_dict["redis_port"] = "6379"
-        req_dict["redis_ip"] = IP_NONE
-        req_dict["mongodb_username"] = DEFAULT_USERNAME
-        req_dict["mongodb_password"] = DEFAULT_PASSWORD
-        req_dict["mongodb_port"] = "27017"
-        req_dict["mongodb_ip"] = IP_NONE
+            # init default data
+            req_dict["container_username"] = DEFAULT_USERNAME
+            req_dict["container_password"] = DEFAULT_PASSWORD
+            req_dict["container_ip"] = IP_NONE
+            req_dict["mysql_username"] = DEFAULT_USERNAME
+            req_dict["mysql_password"] = DEFAULT_PASSWORD
+            req_dict["mysql_port"] = "3316"
+            req_dict["mysql_ip"] = IP_NONE
+            req_dict["redis_username"] = DEFAULT_USERNAME
+            req_dict["redis_password"] = DEFAULT_PASSWORD
+            req_dict["redis_port"] = "6379"
+            req_dict["redis_ip"] = IP_NONE
+            req_dict["mongodb_username"] = DEFAULT_USERNAME
+            req_dict["mongodb_password"] = DEFAULT_PASSWORD
+            req_dict["mongodb_port"] = "27017"
+            req_dict["mongodb_ip"] = IP_NONE
 
-        result_list = []
-        Log.logger.debug('req_dict\'s object id is :')
-        Log.logger.debug(id(req_dict))
-        Log.logger.debug('result_list\'s object id is :')
-        Log.logger.debug(id(result_list))
-        # TODO(TaskManager.task_start()): 定时任务示例代码
-        TaskManager.task_start(SLEEP_TIME, TIMEOUT, result_list,
-                               _create_resource_set_and_query, resource_id, resource_list, compute_list, req_dict)
+            result_list = []
+            Log.logger.debug('req_dict\'s object id is :')
+            Log.logger.debug(id(req_dict))
+            Log.logger.debug('result_list\'s object id is :')
+            Log.logger.debug(id(result_list))
+            # TODO(TaskManager.task_start()): 定时任务示例代码
+            TaskManager.task_start(SLEEP_TIME, TIMEOUT, result_list,
+                                   _create_resource_set_and_query, resource_id, resource_list, compute_list, req_dict)
+        except Exception as e:
+            # exception return http code 500 (Internal Server Error)
+            code = 500
+            msg = e.message
 
-        # return http code 202 (Accepted)
-        res_id = 'testid'
         res = {
-            'code': 202,
+            'code': code,
             'result': {
                 'res': 'success',
-                'msg': 'Create Resource Set Accepted.',
-                'res_id': res_id,
+                'msg': msg,
+                'res_id': resource_id,
                 'res_name': resource_name
             }
         }
