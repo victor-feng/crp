@@ -381,9 +381,9 @@ def request_res_callback(status, req_dict):
     data_str = json.dumps(data)
     Log.logger.debug("UOP res_callback Request Body is: "+data_str)
     res = requests.post(RES_CALLBACK, data=data_str)
-    ret = eval(res.content.decode('unicode_escape'))
     Log.logger.debug(res.status_code)
     Log.logger.debug(res.content)
+    ret = eval(res.content.decode('unicode_escape'))
 
 
 # 创建资源集合定时任务，成功或失败后调用UOP资源预留CallBack（目前仅允许全部成功或全部失败，不允许部分成功）
