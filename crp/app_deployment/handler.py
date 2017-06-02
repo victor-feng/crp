@@ -11,6 +11,10 @@ import json
 import commands
 import os
 import time
+import uuid
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 
@@ -126,6 +130,7 @@ class AppDeploy(Resource):
 
     def _deploy_mysql(self,args):
         workdir = os.getcwd()
+        remotedir = "/root/"
         host_password = args.mysql.get("host_password")
         host_user = args.mysql.get("host_user")
         mysql_password = args.mysql.get("mysql_password")
@@ -134,39 +139,55 @@ class AppDeploy(Resource):
         port = args.mysql.get("port")
         database = args.mysql.get("database")
 
-        sql = args.mysql.get("sql_script")
+        sql = args.mysql.get("sql_script").replace('\xc2\xa0', ' ')
         if not sql:
             return True
 
-        self._make_sql_file(workdir, mysql_password, mysql_user, port, database, sql)
+        sql_srcipt_file_name = self._make_sql_script_file(workdir,sql)
+        self._make_command_file(workdir, mysql_password, mysql_user, port, database, remotedir + sql_srcipt_file_name)
         self._make_hosts_file(workdir, ip, host_user, host_password)
+        ansible_sql_cmd = 'ansible -i ' + workdir + '/myhosts ' + ip + \
+                          ' --private-key=/root/id_rsa_new_root -u root -m copy -a "src=' + \
+                          workdir + '/' + sql_srcipt_file_name + ' dest=' + remotedir + sql_srcipt_file_name + '"'
+        ansible_sh_cmd =  'ansible -i ' + workdir + '/myhosts ' + ip + \
+                          ' --private-key=/root/id_rsa_new_root -u root -m script -a ' + workdir + '/sql.sh'
+        if self._exec_ansible_cmd(ansible_sql_cmd):
+            return self._exec_ansible_cmd(ansible_sh_cmd)
+        else:
+            return False
 
-        ansible_cmd =  'ansible -i ' + workdir + '/myhosts ' + ip + ' --private-key=/root/id_rsa_new_root -u root -m script -a ' + workdir + '/sql.sh'
-        (status, output) = commands.getstatusoutput( ansible_cmd )
+    def _exec_ansible_cmd(self,cmd):
+        (status, output) = commands.getstatusoutput(cmd)
         if output.lower().find("error") == -1 and output.lower().find("failed") == -1:
-            Log.logger.debug("ansible exec succeed,command: " + ansible_cmd)
+            Log.logger.debug("ansible exec succeed,command: " + cmd)
             return True
-        Log.logger.debug("ansible exec failed,command: " + ansible_cmd)
-        return  False
+        Log.logger.debug("ansible exec failed,command: " + cmd)
+        return False
 
-    def _make_sql_file(self,workdir,password,user,port,database,sql):
+    def _make_command_file(self,workdir,password,user,port,database,sqlfile):
         with open(workdir + '/sql.sh', "wb+") as file_object:
             file_object.write("#!/bin/bash\n")
             file_object.write("TMP_PWD=$MYSQL_PWD\n")
             file_object.write("export MYSQL_PWD=" + password + "\n")
             file_object.write("mysql -u" + user + " -P" + port + " -e \"\n")
             #file_object.write("use " + database + ";\n")
-            file_object.write(sql + "\n")
+            file_object.write("source " + sqlfile + "\n")
             file_object.write("quit \"\n")
             file_object.write("export MYSQL_PWD=$TMP_PWD\n")
             file_object.write("exit;")
+
+    def _make_sql_script_file(self,workdir,sql):
+        file_name = "mysql_crp_" + str(uuid.uuid1()) + ".sql"
+        with open(workdir + '/' + file_name, "wb+") as file_object:
+            file_object.write(sql + "\n")
+        return file_name
 
     def _make_hosts_file(self,workdir,ip,user,password):
         with open(workdir + '/myhosts', "wb+") as file_object:
             file_object.write(ip)
 
     def _deploy_docker(self, ip, deploy_id, image_uuid):
-        server = OpenStack.find_vm_from_ipv4(ip=ip)
+        server = OpenStack.find_vm_from_ipv4(ip = ip)
         newserver = OpenStack.nova_client.servers.rebuild(server=server, image=image_uuid)
         # newserver = OpenStack.nova_client.servers.rebuild(server=server, image='3027f868-8f87-45cd-b85b-8b0da3ecaa84')
         vm_id_list = []
