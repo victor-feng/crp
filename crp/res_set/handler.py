@@ -448,11 +448,11 @@ def _create_resource_set_and_query(task_id, result_list, resource_id, resource_l
                 _query_resource_set_status(task_id, result_sub_result_list, uop_os_inst_id_list, req_dict)
     except Exception as e:
         # TODO(thread exit): 执行捕获异常调用UOP CallBack停止定时任务退出任务线程
+        Log.logger.debug("Catch an exception. All instance which were created rollback starting. Error message is: ")
         Log.logger.error(e.message)
 
         # 回滚全部资源和容器
-        # _rollback_all(task_id, uop_os_inst_id_list, result_uop_os_inst_id_list)
-        _rollback_all(task_id, uop_os_inst_id_list, [])
+        _rollback_all(task_id, temp_uop_os_inst_id_list, [])
 
         request_res_callback(RES_STATUS_FAIL, req_dict)
         Log.logger.debug("Call UOP CallBack Post Fail Info.")
