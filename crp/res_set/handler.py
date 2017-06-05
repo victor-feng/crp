@@ -185,8 +185,8 @@ def _uop_os_list_sub(uop_os_inst_id_list, result_uop_os_inst_id_list):
 
 
 # 向OpenStack查询已申请资源的定时任务
-def _query_resource_set_status(task_id=None, result_list=None, uop_os_inst_id_list=None, req_dict=None):
-    if result_list.__len__() == 0:
+def _query_resource_set_status(task_id=None, result_sub_result_list=None, uop_os_inst_id_list=None, req_dict=None):
+    if result_sub_result_list.__len__() == 0:
         result_uop_os_inst_id_list = []
         result_info_list = []
         result_inst_id_dict = {
@@ -197,10 +197,10 @@ def _query_resource_set_status(task_id=None, result_list=None, uop_os_inst_id_li
                                'type': 'info',
                                'list': result_info_list
                            }
-        result_list.append(result_inst_id_dict)
-        result_list.append(result_info_dict)
+        result_sub_result_list.append(result_inst_id_dict)
+        result_sub_result_list.append(result_info_dict)
     else:
-        for res_dict in result_list:
+        for res_dict in result_sub_result_list:
             if res_dict['type'] == 'id':
                 result_uop_os_inst_id_list = res_dict['list']
             elif res_dict['type'] == 'info':
@@ -447,7 +447,17 @@ def _create_resource_set_and_query(task_id, result_list, resource_id, resource_l
                                  ", Content is " + result_sub_result_list[:].__str__())
                 _query_resource_set_status(task_id, result_sub_result_list, uop_os_inst_id_list, req_dict)
     except Exception as e:
+        # TODO(thread exit): 执行捕获异常调用UOP CallBack停止定时任务退出任务线程
         Log.logger.error(e.message)
+
+        # 回滚全部资源和容器
+        # _rollback_all(task_id, uop_os_inst_id_list, result_uop_os_inst_id_list)
+        _rollback_all(task_id, uop_os_inst_id_list, [])
+
+        request_res_callback(RES_STATUS_FAIL, req_dict)
+        Log.logger.debug("Call UOP CallBack Post Fail Info.")
+        # 停止定时任务并退出
+        TaskManager.task_exit(task_id)
 
 
 # res_set REST API Controller
