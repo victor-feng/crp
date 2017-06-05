@@ -76,23 +76,30 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
 
 def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, ip = None, image_url = None):
     err_msg, image_uuid = image_transit(image_url)
-    nova_client = OpenStack.nova_client
-    img = nova_client.images.get(image_uuid)
-    for i in range(5):
-        if(img.status.lower() != "active"):
-            time.sleep(5)
-        else:
-            break
     if err_msg is None:
         Log.logger.debug(
             "Transit harbor docker image success. The result glance image UUID is " + image_uuid)
-        obj._deploy_docker(ip, deploy_id, image_uuid)
+        if _check_image_status(image_uuid):
+            obj._deploy_docker(ip, deploy_id, image_uuid)
     else:
         Log.logger.error(
             "Transit harbor docker image failed. image_url is " + image_url)
 
     Log.logger.debug("call image transit error msg:" + err_msg + " image uuid: " + image_uuid)
     TaskManager.task_exit(task_id)
+
+def _check_image_status(image_uuid):
+    nova_client = OpenStack.nova_client
+    check_times = 5
+    check_interval = 5
+    for i in range(check_times):
+        img = nova_client.images.get(image_uuid)
+        Log.logger.debug("check image status " + str(i) + " times, status: " + img.status.lower())
+        if (img.status.lower() != "active"):
+            time.sleep(check_interval)
+        else:
+            return True
+    return False
 
 class AppDeploy(Resource):
     def post(self):
@@ -116,6 +123,7 @@ class AppDeploy(Resource):
                     code = 500
                     msg = "uop server error"
         except Exception as e:
+            Log.logger.error("AppDeploy exception: " + e.message)
             code = 500
             msg = "internal server error"
 
@@ -144,13 +152,16 @@ class AppDeploy(Resource):
             return True
 
         sql_srcipt_file_name = self._make_sql_script_file(workdir,sql)
-        self._make_command_file(workdir, mysql_password, mysql_user, port, database, remotedir + sql_srcipt_file_name)
+        self._make_command_file(workdir, mysql_password, mysql_user, port,
+                                database, remotedir + sql_srcipt_file_name)
         self._make_hosts_file(workdir, ip, host_user, host_password)
-        ansible_sql_cmd = 'ansible -i ' + workdir + '/myhosts ' + ip + \
-                          ' --private-key=/root/id_rsa_new_root -u root -m copy -a "src=' + \
-                          workdir + '/' + sql_srcipt_file_name + ' dest=' + remotedir + sql_srcipt_file_name + '"'
-        ansible_sh_cmd =  'ansible -i ' + workdir + '/myhosts ' + ip + \
-                          ' --private-key=/root/id_rsa_new_root -u root -m script -a ' + workdir + '/sql.sh'
+
+        ansible_cmd = 'ansible -i ' + workdir + '/myhosts ' + ip + \
+                      ' --private-key=/root/id_rsa_new_root -u root -m'
+        ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + workdir + '/' + \
+                          sql_srcipt_file_name + ' dest=' + remotedir + \
+                          sql_srcipt_file_name + '"'
+        ansible_sh_cmd =  ansible_cmd + ' script -a ' + workdir + '/sql.sh'
         if self._exec_ansible_cmd(ansible_sql_cmd):
             return self._exec_ansible_cmd(ansible_sh_cmd)
         else:
@@ -159,9 +170,9 @@ class AppDeploy(Resource):
     def _exec_ansible_cmd(self,cmd):
         (status, output) = commands.getstatusoutput(cmd)
         if output.lower().find("error") == -1 and output.lower().find("failed") == -1:
-            Log.logger.debug("ansible exec succeed,command: " + cmd)
+            Log.logger.debug("ansible exec succeed,command: " + cmd + " output: " + output)
             return True
-        Log.logger.debug("ansible exec failed,command: " + cmd)
+        Log.logger.debug("ansible exec failed,command: " + cmd + " output: " + output)
         return False
 
     def _make_command_file(self,workdir,password,user,port,database,sqlfile):
