@@ -447,7 +447,7 @@ def _create_resource_set_and_query(task_id, result_list, resource_id, resource_l
                                  ", Content is " + result_sub_result_list[:].__str__())
                 _query_resource_set_status(task_id, result_sub_result_list, uop_os_inst_id_list, req_dict)
     except Exception as e:
-        Log.logger.Error(e.message)
+        Log.logger.error(e.message)
 
 
 # res_set REST API Controller
