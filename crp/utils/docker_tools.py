@@ -175,22 +175,38 @@ def _glance_img_reservation(glance_cli, current_image_id, reservation_quantity):
 
 def image_transit(_image_url):
     # return None, 'd9645ca0-f771-4d90-8a18-0bd44c26abd7'
+    img_tag = _image_url.split(':', 2)
+    Log.logger.debug("Docker image url split list is:")
+    Log.logger.debug(img_tag)
     glance_cli = _glance_cli()
-    properties = {'name': _image_url}
-    images = glance_cli.images.list(filters=properties)
-    for image in images:
-        return None, image.id
+
+    # Docker image tag 为 latest 的镜像总是转换并创建glance image，其它均为glance 中存在则不创建
+    if img_tag[1] != 'latest':
+        properties = {'name': _image_url}
+        images = glance_cli.images.list(filters=properties)
+        for image in images:
+            Log.logger.debug("Docker image with tag is already existed in glance images. glance image id is \'" +
+                             image.id + "\'.")
+            return None, image.id
 
     dk_cli = _dk_py_cli()
+    Log.logger.debug("Docker image pull from harbor url \'" + _image_url + "\' is started.")
     err_msg = _dk_img_pull(dk_cli, _image_url)
+    Log.logger.debug("Docker image pull from harbor url \'" + _image_url + "\' is done.")
     if err_msg:
         return err_msg, None
     else:
+        Log.logger.debug("Docker image save as a tar package from harbor url \'" + _image_url + "\' is started.")
         err_msg, tar_file = _dk_img_save(dk_cli, _image_url)
+        Log.logger.debug("Docker image save as a tar package from harbor url \'" + _image_url + "\' is done.")
         if err_msg:
             return err_msg, None
         else:
+            Log.logger.debug("Docker image tar package create glance image from harbor url \'" +
+                             _image_url + "\' is started.")
             err_msg, image = _glance_img_create(glance_cli, _image_url, tar_file)
+            Log.logger.debug("Docker image tar package create glance image from harbor url \'" +
+                             _image_url + "\' is done.")
             if err_msg:
                 return err_msg, None
             else:
