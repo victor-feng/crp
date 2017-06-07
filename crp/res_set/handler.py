@@ -185,7 +185,8 @@ def _uop_os_list_sub(uop_os_inst_id_list, result_uop_os_inst_id_list):
 
 
 # 向OpenStack查询已申请资源的定时任务
-def _query_resource_set_status(task_id=None, result_sub_result_list=None, uop_os_inst_id_list=None, req_dict=None):
+def _query_resource_set_status(task_id=None, resource_id=None,
+                               result_sub_result_list=None, uop_os_inst_id_list=None, req_dict=None):
     if result_sub_result_list.__len__() == 0:
         result_uop_os_inst_id_list = []
         result_info_list = []
@@ -255,7 +256,7 @@ def _query_resource_set_status(task_id=None, result_sub_result_list=None, uop_os
     # 回滚全部资源和容器
     if rollback_flag:
         # 删除全部
-        _rollback_all(task_id, uop_os_inst_id_list, result_uop_os_inst_id_list)
+        _rollback_all(resource_id, uop_os_inst_id_list, result_uop_os_inst_id_list)
 
         # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
         request_res_callback(RES_STATUS_FAIL, req_dict)
@@ -388,6 +389,7 @@ def request_res_callback(status, req_dict):
 
 # 创建资源集合定时任务，成功或失败后调用UOP资源预留CallBack（目前仅允许全部成功或全部失败，不允许部分成功）
 def _create_resource_set_and_query(task_id, result_list, resource_id, resource_list, compute_list, req_dict):
+    temp_uop_os_inst_id_list = None
     try:
         if result_list.__len__() == 0:
             result_sub_is_create_resource_done_dict = {'is_create_done': False}
@@ -445,14 +447,15 @@ def _create_resource_set_and_query(task_id, result_list, resource_id, resource_l
             else:
                 Log.logger.debug("Test API handler result_list object id is " + id(result_sub_result_list).__str__() +
                                  ", Content is " + result_sub_result_list[:].__str__())
-                _query_resource_set_status(task_id, result_sub_result_list, uop_os_inst_id_list, req_dict)
+                _query_resource_set_status(task_id, resource_id, result_sub_result_list, uop_os_inst_id_list, req_dict)
     except Exception as e:
         # TODO(thread exit): 执行捕获异常调用UOP CallBack停止定时任务退出任务线程
         Log.logger.debug("Catch an exception. All instance which were created rollback starting. Error message is: ")
         Log.logger.error(e.message)
 
         # 回滚全部资源和容器
-        _rollback_all(task_id, temp_uop_os_inst_id_list, [])
+        if temp_uop_os_inst_id_list is not None:
+            _rollback_all(resource_id, temp_uop_os_inst_id_list, [])
 
         request_res_callback(RES_STATUS_FAIL, req_dict)
         Log.logger.debug("Call UOP CallBack Post Fail Info.")

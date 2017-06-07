@@ -93,6 +93,7 @@ def _glance_img_create(glance_cli, image_name, tar_file):
         "is_public": True,
         "container_format": 'docker',
         "disk_format": 'raw',
+        "properties": {"created_from": "uop-crp"},
     }
     try:
         fields['data'] = open(tar_file, 'rb')
@@ -101,6 +102,51 @@ def _glance_img_create(glance_cli, image_name, tar_file):
     except Exception as e:
         Log.logger.error(e.message)
         return e.message, None
+
+
+def _cmp_img_info_time(img_item1, img_item2):
+    """
+    cmp(x, y) -> -1, 0, 1
+    :param time1
+    :param time2
+    """
+    import time
+
+    time1 = img_item1.get('created_at')
+    time2 = img_item2.get('created_at')
+    t1 = time.strptime(time1, "%Y-%m-%dT%H:%M:%S")
+    t2 = time.strptime(time2, "%Y-%m-%dT%H:%M:%S")
+    if t1 < t2:
+        return -1
+    if t1 == t2:
+        return 0
+    if t1 > t2:
+        return 1
+
+
+def _glance_img_reservation(glance_cli, current_image_id, reservation_quantity):
+    img_sum = 0
+    sort_img_info_list = []
+    img_info_to_be_delete = []
+    img_list = glance_cli.images.list()
+    for img in img_list:
+        if img.id == current_image_id:
+            img_sum += 1
+            continue
+        if img.properties.get('created_from') == 'uop-crp':
+            img_info = {
+                "id": img.id,
+                "created_at": img.created_at
+            }
+            sort_img_info_list.append(img_info)
+    if sort_img_info_list.__len__() >= 1:
+        Log.logger.debug("Original sort_img_info_list:")
+        Log.logger.debug(sort_img_info_list)
+        sort_img_info_list.sort(_cmp_img_info_time, key=None, reverse=True)
+    Log.logger.debug("Sorted sort_img_info_list:")
+    Log.logger.debug(sort_img_info_list)
+
+    reservation_quantity = reservation_quantity - img_sum
 
 
 def image_transit(_image_url):
@@ -119,6 +165,7 @@ def image_transit(_image_url):
             if err_msg:
                 return err_msg, None
             else:
+                _glance_img_reservation(glance_cli, image.id, 3)
                 return None, image.id
 
 
