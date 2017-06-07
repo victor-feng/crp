@@ -23,6 +23,7 @@ class DevelopmentConfig(BaseConfig):
     DK_SOCK_URL = 'unix://var/run/docker.sock'
     DK_CLI_VERSION = '1.22'
     DK_TAR_PATH = '/home/dk/'
+    GLANCE_RESERVATION_QUANTITY = 3
 
 
 class TestingConfig(BaseConfig):
@@ -40,6 +41,7 @@ class TestingConfig(BaseConfig):
     DK_SOCK_URL = 'unix://var/run/docker.sock'
     DK_CLI_VERSION = '1.22'
     DK_TAR_PATH = '/home/dk/'
+    GLANCE_RESERVATION_QUANTITY = 3
 
 
 configs = {

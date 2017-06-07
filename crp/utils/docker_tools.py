@@ -12,6 +12,7 @@ from config import APP_ENV, configs
 DK_SOCK_URL = configs[APP_ENV].DK_SOCK_URL
 DK_CLI_VERSION = configs[APP_ENV].DK_CLI_VERSION
 DK_TAR_PATH = configs[APP_ENV].DK_TAR_PATH
+GLANCE_RESERVATION_QUANTITY = configs[APP_ENV].GLANCE_RESERVATION_QUANTITY
 
 DK_CREATED_FROM = 'created_from'
 DK_UOP_CRP = 'uop-crp'
@@ -210,7 +211,7 @@ def image_transit(_image_url):
             if err_msg:
                 return err_msg, None
             else:
-                _glance_img_reservation(glance_cli, image.id, 3)
+                _glance_img_reservation(glance_cli, image.id, GLANCE_RESERVATION_QUANTITY)
                 return None, image.id
 
 
