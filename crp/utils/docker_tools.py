@@ -151,8 +151,8 @@ def _glance_img_reservation(glance_cli, current_image_id, reservation_quantity):
         Log.logger.debug("Original sort_img_reserv_info_list:")
         Log.logger.debug(sort_img_reserv_info_list)
         sort_img_reserv_info_list.sort(_cmp_img_info_time, key=None, reverse=True)
-    Log.logger.debug("Sorted sort_img_reserv_info_list:")
-    Log.logger.debug(sort_img_reserv_info_list)
+        Log.logger.debug("Sorted sort_img_reserv_info_list:")
+        Log.logger.debug(sort_img_reserv_info_list)
 
     quantity = 0
     img_sum = sort_img_reserv_info_list.__len__() + img_current
@@ -160,14 +160,14 @@ def _glance_img_reservation(glance_cli, current_image_id, reservation_quantity):
         quantity = img_sum - reservation_quantity
 
     if quantity > 0:
-        img_info_to_be_delete = sort_img_reserv_info_list[reservation_quantity:]
-        Log.logger.debug("image quantity is "+img_sum.__str__() +
-                         " big than "+reservation_quantity.__str__()+", img_info_to_be_delete:")
+        img_info_to_be_delete = sort_img_reserv_info_list[reservation_quantity-1:]
+        Log.logger.debug("image quantity is " + img_sum.__str__() +
+                         " big than " + reservation_quantity.__str__() + ", img_info_to_be_delete:")
         Log.logger.debug(img_info_to_be_delete)
         for img in img_info_to_be_delete:
             img_id = img.get('id')
             glance_cli.images.delete(img_id)
-            Log.logger.debug("Image ID "+img_id+" is deleting.")
+            Log.logger.debug("Image ID " + img_id + " is deleting.")
 
 
 def image_transit(_image_url):
