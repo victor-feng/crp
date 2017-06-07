@@ -297,7 +297,7 @@ def request_res_callback(task_id, status, req_dict):
     "resource_name": "资源名",
     "env": "开发测试生产环境",
     "domain": "qitoon.syswin.com",
-    "cmdb_repo_id": "CMDB仓库实例ID"
+    "cmdb_repo_id": "CMDB仓库实例ID",
     "status": "成功",
     "container": {
         "username": "root",
@@ -496,6 +496,7 @@ class ResourceSet(Resource):
     "resource_name": "资源名",
     "env": "开发测试生产环境",
     "domain": "qitoon.syswin.com",
+    "cmdb_repo_id": "CMDB仓库实例ID",
     "resource_list": [
         {
             "instance_name": "crp-mysql1",

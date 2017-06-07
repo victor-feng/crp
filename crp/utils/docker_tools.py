@@ -13,6 +13,9 @@ DK_SOCK_URL = configs[APP_ENV].DK_SOCK_URL
 DK_CLI_VERSION = configs[APP_ENV].DK_CLI_VERSION
 DK_TAR_PATH = configs[APP_ENV].DK_TAR_PATH
 
+DK_CREATED_FROM = 'created_from'
+DK_UOP_CRP = 'uop-crp'
+
 
 def _dk_py_cli():
     client = docker.DockerClient(
@@ -93,7 +96,7 @@ def _glance_img_create(glance_cli, image_name, tar_file):
         "is_public": True,
         "container_format": 'docker',
         "disk_format": 'raw',
-        "properties": {"created_from": "uop-crp"},
+        "properties": {DK_CREATED_FROM: DK_UOP_CRP},
     }
     try:
         fields['data'] = open(tar_file, 'rb')
@@ -141,7 +144,7 @@ def _glance_img_reservation(glance_cli, current_image_id, reservation_quantity):
         if img.id == current_image_id:
             img_current += 1
             continue
-        if img.properties.get('created_from') == 'uop-crp':
+        if img.properties.get(DK_CREATED_FROM) == DK_UOP_CRP:
             img_info = {
                 "id": img.id,
                 "created_at": img.created_at
@@ -172,6 +175,12 @@ def _glance_img_reservation(glance_cli, current_image_id, reservation_quantity):
 
 def image_transit(_image_url):
     # return None, 'd9645ca0-f771-4d90-8a18-0bd44c26abd7'
+    glance_cli = _glance_cli()
+    properties = {'name': _image_url}
+    images = glance_cli.images.list(filters=properties)
+    for image in images:
+        return None, image.id
+
     dk_cli = _dk_py_cli()
     err_msg = _dk_img_pull(dk_cli, _image_url)
     if err_msg:
@@ -181,7 +190,6 @@ def image_transit(_image_url):
         if err_msg:
             return err_msg, None
         else:
-            glance_cli = _glance_cli()
             err_msg, image = _glance_img_create(glance_cli, _image_url, tar_file)
             if err_msg:
                 return err_msg, None
