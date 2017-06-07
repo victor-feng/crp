@@ -45,12 +45,15 @@ DOCKER_FLAVOR_2C4G = 'e90d8d25-c5c7-46d7-ba4e-2465a5b1d266'
 AVAILABILITY_ZONE_GENERAL = 'AZ_GENERAL'
 AVAILABILITY_ZONE_SELF_SERVICE = 'AZ-SELF-SERVICE'
 DEV_NETWORK_ID = 'c12740e6-33c8-49e9-b17d-6255bb10cd0c'
+OS_EXT_PHYSICAL_SERVER_ATTR = 'OS-EXT-SRV-ATTR:host'
 
 # res_callback
 RES_CALLBACK = 'http://uop-test.syswin.com/api/res_callback/res'
 
 # use localhost for ip is none
 IP_NONE = "localhost"
+# use localhost for physical_server is none
+PHYSICAL_SERVER_NONE = "localhost"
 
 RES_STATUS_OK = "ok"
 RES_STATUS_FAIL = "fail"
@@ -233,6 +236,7 @@ def _query_resource_set_status(task_id=None, resource_id=None,
                         'uop_inst_id': uop_os_inst_id['uop_inst_id'],
                         'os_inst_id': uop_os_inst_id['os_inst_id'],
                         'ip': _ips.pop() if _ips.__len__() >= 1 else '',
+                        'physical_server': getattr(inst, OS_EXT_PHYSICAL_SERVER_ATTR),
                     }
             result_info_list.append(_data)
             Log.logger.debug("Query Task ID " + task_id.__str__() + " Instance Info: " + _data.__str__())
@@ -250,12 +254,16 @@ def _query_resource_set_status(task_id=None, resource_id=None,
         for info in result_info_list:
             if info["uop_inst_id"] == req_dict["container_inst_id"]:
                 req_dict["container_ip"] = info["ip"]
+                req_dict["container_physical_server"] = info["physical_server"]
             if info["uop_inst_id"] == req_dict["mysql_inst_id"]:
                 req_dict["mysql_ip"] = info["ip"]
+                req_dict["mysql_physical_server"] = info["physical_server"]
             if info["uop_inst_id"] == req_dict["redis_inst_id"]:
                 req_dict["redis_ip"] = info["ip"]
+                req_dict["redis_physical_server"] = info["physical_server"]
             if info["uop_inst_id"] == req_dict["mongodb_inst_id"]:
                 req_dict["mongodb_ip"] = info["ip"]
+                req_dict["mongodb_physical_server"] = info["physical_server"]
         request_res_callback(task_id, RES_STATUS_OK, req_dict)
         Log.logger.debug("Query Task ID " + task_id.__str__() + " Call UOP CallBack Post Success Info.")
         # 停止定时任务并退出
@@ -307,7 +315,8 @@ def request_res_callback(task_id, status, req_dict):
         "image_addr": "镜像地址",
         "cpu": "2",
         "memory": "4",
-        "ins_id": "实例id"
+        "ins_id": "实例id",
+        "physical_server": "所在物理机"
     },
     "db_info": {
         "mysql": {
@@ -315,21 +324,24 @@ def request_res_callback(task_id, status, req_dict):
             "username": "数据库名",
             "password": "密码",
             "port": "端口",
-            "ip": "MySQLIP"
+            "ip": "MySQLIP"，
+            "physical_server": "所在物理机"
         },
         "redis": {
             "ins_id": "redis_inst_id",
             "username": "数据库名",
             "password": "密码",
             "port": "端口",
-            "ip": "RedisIP"
+            "ip": "RedisIP"，
+            "physical_server": "所在物理机"
         },
         "mongodb": {
             "ins_id": "mongodb_inst_id",
             "username": "数据库名",
             "password": "密码",
             "port": "端口",
-            "ip": "MongodbIP"
+            "ip": "MongodbIP"，
+            "physical_server": "所在物理机"
         }
     }
 }
@@ -359,6 +371,7 @@ def request_res_callback(task_id, status, req_dict):
         container["cpu"] = req_dict["cpu"]
         container["memory"] = req_dict["memory"]
         container["ins_id"] = req_dict["container_inst_id"]
+        container["physical_server"] = req_dict["container_physical_server"]
     data["container"] = container
 
     db_info = {}
@@ -368,6 +381,7 @@ def request_res_callback(task_id, status, req_dict):
     mysql["password"] = req_dict["mysql_password"]
     mysql["port"] = req_dict["mysql_port"]
     mysql["ip"] = req_dict["mysql_ip"]
+    mysql["physical_server"] = req_dict["mysql_physical_server"]
 
     redis = {}
     redis["ins_id"] = req_dict["redis_inst_id"]
@@ -375,6 +389,7 @@ def request_res_callback(task_id, status, req_dict):
     redis["password"] = req_dict["redis_password"]
     redis["port"] = req_dict["redis_port"]
     redis["ip"] = req_dict["redis_ip"]
+    redis["physical_server"] = req_dict["redis_physical_server"]
 
     mongodb = {}
     mongodb["ins_id"] = req_dict["mongodb_inst_id"]
@@ -382,6 +397,7 @@ def request_res_callback(task_id, status, req_dict):
     mongodb["password"] = req_dict["mongodb_password"]
     mongodb["port"] = req_dict["mongodb_port"]
     mongodb["ip"] = req_dict["mongodb_ip"]
+    mongodb["physical_server"] = req_dict["mongodb_physical_server"]
 
     if mysql["ip"] is not IP_NONE:
         db_info["mysql"] = mysql
@@ -620,7 +636,6 @@ class ResourceSet(Resource):
             req_dict["username"] = username
             req_dict["department"] = department
             req_dict["created_time"] = created_time
-
             req_dict["resource_id"] = resource_id
             req_dict["resource_name"] = resource_name
             req_dict["env"] = env
@@ -632,18 +647,22 @@ class ResourceSet(Resource):
             req_dict["container_username"] = DEFAULT_USERNAME
             req_dict["container_password"] = DEFAULT_PASSWORD
             req_dict["container_ip"] = IP_NONE
+            req_dict["container_physical_server"] = PHYSICAL_SERVER_NONE
             req_dict["mysql_username"] = DEFAULT_USERNAME
             req_dict["mysql_password"] = DEFAULT_PASSWORD
             req_dict["mysql_port"] = "3316"
             req_dict["mysql_ip"] = IP_NONE
+            req_dict["mysql_physical_server"] = PHYSICAL_SERVER_NONE
             req_dict["redis_username"] = DEFAULT_USERNAME
             req_dict["redis_password"] = DEFAULT_PASSWORD
             req_dict["redis_port"] = "6379"
             req_dict["redis_ip"] = IP_NONE
+            req_dict["redis_physical_server"] = PHYSICAL_SERVER_NONE
             req_dict["mongodb_username"] = DEFAULT_USERNAME
             req_dict["mongodb_password"] = DEFAULT_PASSWORD
             req_dict["mongodb_port"] = "27017"
             req_dict["mongodb_ip"] = IP_NONE
+            req_dict["mongodb_physical_server"] = PHYSICAL_SERVER_NONE
 
             result_list = []
             Log.logger.debug('req_dict\'s object id is :')
