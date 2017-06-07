@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import os
 import docker
 import uuid
 
@@ -97,18 +97,27 @@ def _glance_img_create(glance_cli, image_name, tar_file):
     }
     try:
         fields['data'] = open(tar_file, 'rb')
+        Log.logger.debug(tar_file+" is opened now.")
         image = glance_cli.images.create(**fields)
         return None, image
     except Exception as e:
         Log.logger.error(e.message)
         return e.message, None
+    finally:
+        fields['data'].close()
+        Log.logger.debug(tar_file+" is closed now.")
+        Log.logger.debug(fields['data'].closed)
+        if fields['data'].closed:
+            os.remove(tar_file)
+            Log.logger.debug(tar_file+" was removed.")
 
 
 def _cmp_img_info_time(img_item1, img_item2):
     """
+    custom compare function like this:
     cmp(x, y) -> -1, 0, 1
-    :param time1
-    :param time2
+    :param img_item1
+    :param img_item2
     """
     import time
 
@@ -125,28 +134,40 @@ def _cmp_img_info_time(img_item1, img_item2):
 
 
 def _glance_img_reservation(glance_cli, current_image_id, reservation_quantity):
-    img_sum = 0
-    sort_img_info_list = []
-    img_info_to_be_delete = []
+    img_current = 0
+    sort_img_reserv_info_list = []
     img_list = glance_cli.images.list()
     for img in img_list:
         if img.id == current_image_id:
-            img_sum += 1
+            img_current += 1
             continue
         if img.properties.get('created_from') == 'uop-crp':
             img_info = {
                 "id": img.id,
                 "created_at": img.created_at
             }
-            sort_img_info_list.append(img_info)
-    if sort_img_info_list.__len__() >= 1:
-        Log.logger.debug("Original sort_img_info_list:")
-        Log.logger.debug(sort_img_info_list)
-        sort_img_info_list.sort(_cmp_img_info_time, key=None, reverse=True)
-    Log.logger.debug("Sorted sort_img_info_list:")
-    Log.logger.debug(sort_img_info_list)
+            sort_img_reserv_info_list.append(img_info)
+    if sort_img_reserv_info_list.__len__() >= 1:
+        Log.logger.debug("Original sort_img_reserv_info_list:")
+        Log.logger.debug(sort_img_reserv_info_list)
+        sort_img_reserv_info_list.sort(_cmp_img_info_time, key=None, reverse=True)
+    Log.logger.debug("Sorted sort_img_reserv_info_list:")
+    Log.logger.debug(sort_img_reserv_info_list)
 
-    reservation_quantity = reservation_quantity - img_sum
+    quantity = 0
+    img_sum = sort_img_reserv_info_list.__len__() + img_current
+    if img_sum >= reservation_quantity:
+        quantity = img_sum - reservation_quantity
+
+    if quantity > 0:
+        img_info_to_be_delete = sort_img_reserv_info_list[reservation_quantity:]
+        Log.logger.debug("image quantity is "+img_sum.__str__() +
+                         " big than "+reservation_quantity.__str__()+", img_info_to_be_delete:")
+        Log.logger.debug(img_info_to_be_delete)
+        for img in img_info_to_be_delete:
+            img_id = img.get('id')
+            glance_cli.images.delete(img_id)
+            Log.logger.debug("Image ID "+img_id+" is deleting.")
 
 
 def image_transit(_image_url):

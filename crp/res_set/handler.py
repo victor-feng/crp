@@ -218,7 +218,8 @@ def _query_resource_set_status(task_id=None, resource_id=None,
     nova_client = OpenStack.nova_client
     for uop_os_inst_id in uop_os_inst_id_wait_query:
         inst = nova_client.servers.get(uop_os_inst_id['os_inst_id'])
-        Log.logger.debug("Task ID "+task_id.__str__()+" query Instance ID "+uop_os_inst_id['os_inst_id']+" Status is "+inst.status)
+        Log.logger.debug("Task ID "+task_id.__str__()+" query Instance ID " +
+                         uop_os_inst_id['os_inst_id']+" Status is "+inst.status)
         if inst.status == 'ACTIVE':
             _ips = _get_ip_from_instance(inst)
             _data = {
