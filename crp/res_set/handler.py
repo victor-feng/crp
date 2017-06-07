@@ -297,6 +297,7 @@ def request_res_callback(task_id, status, req_dict):
     "resource_name": "资源名",
     "env": "开发测试生产环境",
     "domain": "qitoon.syswin.com",
+    "cmdb_repo_id": "CMDB仓库实例ID"
     "status": "成功",
     "container": {
         "username": "root",
@@ -345,6 +346,7 @@ def request_res_callback(task_id, status, req_dict):
     data["resource_name"] = req_dict["resource_name"]
     data["env"] = req_dict["env"]
     data["domain"] = req_dict["domain"]
+    data["cmdb_repo_id"] = req_dict["cmdb_repo_id"]
     data["status"] = status
 
     container = {}
@@ -554,6 +556,7 @@ class ResourceSet(Resource):
             parser.add_argument('resource_name', type=str)
             parser.add_argument('env', type=str)
             parser.add_argument('domain', type=str)
+            parser.add_argument('cmdb_repo_id', type=str)
             parser.add_argument('resource_list', type=list, location='json')
             parser.add_argument('compute_list', type=list, location='json')
             args = parser.parse_args()
@@ -572,6 +575,7 @@ class ResourceSet(Resource):
             resource_name = args.resource_name
             env = args.env
             domain = args.domain
+            cmdb_repo_id = args.cmdb_repo_id
             resource_list = args.resource_list
             compute_list = args.compute_list
 
@@ -620,6 +624,7 @@ class ResourceSet(Resource):
             req_dict["resource_name"] = resource_name
             req_dict["env"] = env
             req_dict["domain"] = domain
+            req_dict["cmdb_repo_id"] = cmdb_repo_id
             req_dict["status"] = RES_STATUS_DEFAULT
 
             # init default data
