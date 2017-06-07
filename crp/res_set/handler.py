@@ -294,13 +294,13 @@ def request_res_callback(task_id, status, req_dict):
     :param req_dict: req字段字典
     API JOSN:
 {
-    "unit_name":"部署单元名称",
-    "unit_id":"部署单元编号",
-    "unit_des":"部署单元描述",
-    "user_id":"创建人工号",
-    "username":"创建人姓名",
-    "department":"创建人归属部门",
-    "created_time":"部署单元创建时间",
+    "unit_name": "部署单元名称",
+    "unit_id": "部署单元编号",
+    "unit_des": "部署单元描述",
+    "user_id": "创建人工号",
+    "username": "创建人姓名",
+    "department": "创建人归属部门",
+    "created_time": "部署单元创建时间",
     "resource_id": "资源id",
     "resource_name": "资源名",
     "env": "开发测试生产环境",
@@ -324,7 +324,7 @@ def request_res_callback(task_id, status, req_dict):
             "username": "数据库名",
             "password": "密码",
             "port": "端口",
-            "ip": "MySQLIP"，
+            "ip": "MySQLIP",
             "physical_server": "所在物理机"
         },
         "redis": {
@@ -332,7 +332,7 @@ def request_res_callback(task_id, status, req_dict):
             "username": "数据库名",
             "password": "密码",
             "port": "端口",
-            "ip": "RedisIP"，
+            "ip": "RedisIP",
             "physical_server": "所在物理机"
         },
         "mongodb": {
@@ -340,7 +340,7 @@ def request_res_callback(task_id, status, req_dict):
             "username": "数据库名",
             "password": "密码",
             "port": "端口",
-            "ip": "MongodbIP"，
+            "ip": "MongodbIP",
             "physical_server": "所在物理机"
         }
     }
@@ -501,13 +501,13 @@ class ResourceSet(Resource):
         """
         API JOSN:
 {
-    "unit_name" : "部署单元名称",
-    "unit_id" : "部署单元编号",
-    "unit_des" : "部署单元描述",
-    "user_id" : "创建人工号",
-    "username" : "创建人姓名",
-    "department" : "创建人归属部门",
-    "created_time" : "部署单元创建时间",
+    "unit_name": "部署单元名称",
+    "unit_id": "部署单元编号",
+    "unit_des": "部署单元描述",
+    "user_id": "创建人工号",
+    "username": "创建人姓名",
+    "department": "创建人归属部门",
+    "created_time": "部署单元创建时间",
     "resource_id": "资源id",
     "resource_name": "资源名",
     "env": "开发测试生产环境",
