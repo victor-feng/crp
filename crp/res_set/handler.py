@@ -44,7 +44,8 @@ DOCKER_FLAVOR_2C4G = 'e90d8d25-c5c7-46d7-ba4e-2465a5b1d266'
 # AVAILABILITY_ZONE
 AVAILABILITY_ZONE_GENERAL = 'AZ_GENERAL'
 AVAILABILITY_ZONE_SELF_SERVICE = 'AZ-SELF-SERVICE'
-DEV_NETWORK_ID = 'c12740e6-33c8-49e9-b17d-6255bb10cd0c'
+AVAILABILITY_ZONE_AZ_UOP = 'AZ_UOP'
+DEV_NETWORK_ID = '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'
 OS_EXT_PHYSICAL_SERVER_ATTR = 'OS-EXT-SRV-ATTR:host'
 
 # res_callback
@@ -95,8 +96,7 @@ def create_instance_by_type(task_id, ins_type, name):
     image_uuid = image.get('uuid')
     Log.logger.debug("Task ID " + task_id.__str__() +
                      " Select Image UUID: " + image_uuid + " by Instance Type " + ins_type)
-    return _create_instance(task_id, name, image_uuid, FLAVOR_1C2G, AVAILABILITY_ZONE_SELF_SERVICE, DEV_NETWORK_ID)
-    # return _create_instance(name, image_uuid, FLAVOR_1C2G, AVAILABILITY_ZONE_GENERAL, DEV_NETWORK_ID)
+    return _create_instance(task_id, name, image_uuid, FLAVOR_1C2G, AVAILABILITY_ZONE_AZ_UOP, DEV_NETWORK_ID)
 
 
 # 依据镜像URL创建NovaDocker容器
@@ -105,7 +105,7 @@ def create_docker_by_url(task_id, name, image_url):
     if err_msg is None:
         Log.logger.debug("Task ID " + task_id.__str__() +
                          " Transit harbor docker image success. The result glance image UUID is " + image_uuid)
-        return None, _create_instance(task_id, name, image_uuid, DOCKER_FLAVOR_2C4G, AVAILABILITY_ZONE_GENERAL,
+        return None, _create_instance(task_id, name, image_uuid, DOCKER_FLAVOR_2C4G, AVAILABILITY_ZONE_AZ_UOP,
                                       DEV_NETWORK_ID)
     else:
         return err_msg, None
