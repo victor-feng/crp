@@ -26,24 +26,19 @@ def _dk_py_cli():
     return client
 
 
-def _dk_img_pull(dk_cli, _image_url):
+def _dk_img_pull(dk_cli, _image_url, repository_hash, tag):
     try:
         dk_cli.images.pull(_image_url)
-        _image_url_array = _image_url.split(':', 2)
-        repository = _image_url_array[0]
-        repository_hash = hashlib.sha224(repository).hexdigest()
-        tag = _image_url_array[1]
         image = dk_cli.images.get(_image_url)
         image.tag(repository_hash, tag=tag)
-        _new_image_url = repository_hash + ':' + tag
     except docker.errors.ImageNotFound as img_err:
         Log.logger.error(img_err.message)
-        return img_err.message, None
+        return img_err.message
     except Exception as e:
         Log.logger.error(e.message)
-        return e.message, None
+        return e.message
     else:
-        return None, _new_image_url
+        return None
 
 
 def _dk_img_save(dk_cli, _image_url):
@@ -188,10 +183,12 @@ def image_transit(_image_url):
     Log.logger.debug("Docker image url split list is:")
     Log.logger.debug(img_tag)
     glance_cli = _glance_cli()
+    repository_hash = hashlib.sha224(img_tag[0]).hexdigest()
+    _image_url_hash = repository_hash + ':' + img_tag[1]
 
     # Docker image tag 为 latest 的镜像总是转换并创建glance image，其它均为glance 中存在则不创建
     if img_tag[1] != 'latest':
-        properties = {'name': _image_url}
+        properties = {'name': _image_url_hash}
         images = glance_cli.images.list(filters=properties)
         for image in images:
             Log.logger.debug("Docker image with tag is already existed in glance images. glance image id is \'" +
@@ -200,22 +197,22 @@ def image_transit(_image_url):
 
     dk_cli = _dk_py_cli()
     Log.logger.debug("Docker image pull from harbor url \'" + _image_url + "\' is started.")
-    err_msg, _image_url = _dk_img_pull(dk_cli, _image_url)
+    err_msg = _dk_img_pull(dk_cli, _image_url, repository_hash, img_tag[1])
     Log.logger.debug("Docker image pull from harbor url \'" + _image_url + "\' is done.")
     if err_msg:
         return err_msg, None
     else:
-        Log.logger.debug("Docker image save as a tar package from harbor url \'" + _image_url + "\' is started.")
-        err_msg, tar_file = _dk_img_save(dk_cli, _image_url)
-        Log.logger.debug("Docker image save as a tar package from harbor url \'" + _image_url + "\' is done.")
+        Log.logger.debug("Docker image save as a tar package from harbor url \'" + _image_url_hash + "\' is started.")
+        err_msg, tar_file = _dk_img_save(dk_cli, _image_url_hash)
+        Log.logger.debug("Docker image save as a tar package from harbor url \'" + _image_url_hash + "\' is done.")
         if err_msg:
             return err_msg, None
         else:
             Log.logger.debug("Docker image tar package create glance image from harbor url \'" +
-                             _image_url + "\' is started.")
-            err_msg, image = _glance_img_create(glance_cli, _image_url, tar_file)
+                             _image_url_hash + "\' is started.")
+            err_msg, image = _glance_img_create(glance_cli, _image_url_hash, tar_file)
             Log.logger.debug("Docker image tar package create glance image from harbor url \'" +
-                             _image_url + "\' is done.")
+                             _image_url_hash + "\' is done.")
             if err_msg:
                 return err_msg, None
             else:
