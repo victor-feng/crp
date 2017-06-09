@@ -202,17 +202,19 @@ def image_transit(_image_url):
     if err_msg:
         return err_msg, None
     else:
-        Log.logger.debug("Docker image save as a tar package from harbor url \'" + _image_url_hash + "\' is started.")
+        Log.logger.debug("Docker image save as a tar package from harbor url \'" + _image_url +
+                         " witch name with tag transit to sha224 " + _image_url_hash + "\' is started.")
         err_msg, tar_file = _dk_img_save(dk_cli, _image_url_hash)
-        Log.logger.debug("Docker image save as a tar package from harbor url \'" + _image_url_hash + "\' is done.")
+        Log.logger.debug("Docker image save as a tar package from harbor url \'" + _image_url +
+                         " witch name with tag transit to sha224 " + _image_url_hash + "\' is done.")
         if err_msg:
             return err_msg, None
         else:
-            Log.logger.debug("Docker image tar package create glance image from harbor url \'" +
-                             _image_url_hash + "\' is started.")
+            Log.logger.debug("Docker image tar package create glance image from harbor url \'" + _image_url +
+                             " witch name with tag transit to sha224 " + _image_url_hash + "\' is started.")
             err_msg, image = _glance_img_create(glance_cli, _image_url_hash, tar_file)
-            Log.logger.debug("Docker image tar package create glance image from harbor url \'" +
-                             _image_url_hash + "\' is done.")
+            Log.logger.debug("Docker image tar package create glance image from harbor url \'" + _image_url +
+                             " witch name with tag transit to sha224 " + _image_url_hash + "\' is done.")
             if err_msg:
                 return err_msg, None
             else:
