@@ -105,9 +105,7 @@ def create_docker_by_url(task_id, name, image_url):
     if err_msg is None:
         Log.logger.debug("Task ID " + task_id.__str__() +
                          " Transit harbor docker image success. The result glance image UUID is " + image_uuid)
-        # return None, _create_instance(task_id, name, image_uuid, DOCKER_FLAVOR_2C4G, AVAILABILITY_ZONE_AZ_UOP,
-        #                               DEV_NETWORK_ID)
-        return None, _create_instance(task_id, name, image_uuid, DOCKER_FLAVOR_2C4G, AVAILABILITY_ZONE_GENERAL,
+        return None, _create_instance(task_id, name, image_uuid, DOCKER_FLAVOR_2C4G, AVAILABILITY_ZONE_AZ_UOP,
                                       DEV_NETWORK_ID)
     else:
         return err_msg, None
