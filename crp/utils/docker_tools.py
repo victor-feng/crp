@@ -2,6 +2,7 @@
 import os
 import docker
 import uuid
+import hashlib
 
 from crp.log import Log
 # from glanceclient import Client as GlanceClient
@@ -28,14 +29,21 @@ def _dk_py_cli():
 def _dk_img_pull(dk_cli, _image_url):
     try:
         dk_cli.images.pull(_image_url)
+        _image_url_array = _image_url.split(':', 2)
+        repository = _image_url_array[0]
+        repository_hash = hashlib.sha224(repository).hexdigest()
+        tag = _image_url_array[1]
+        image = dk_cli.images.get(_image_url)
+        image.tag(repository_hash, tag=tag)
+        _new_image_url = repository_hash + ':' + tag
     except docker.errors.ImageNotFound as img_err:
         Log.logger.error(img_err.message)
-        return img_err.message
+        return img_err.message, None
     except Exception as e:
         Log.logger.error(e.message)
-        return e.message
+        return e.message, None
     else:
-        return None
+        return None, _new_image_url
 
 
 def _dk_img_save(dk_cli, _image_url):
@@ -192,7 +200,7 @@ def image_transit(_image_url):
 
     dk_cli = _dk_py_cli()
     Log.logger.debug("Docker image pull from harbor url \'" + _image_url + "\' is started.")
-    err_msg = _dk_img_pull(dk_cli, _image_url)
+    err_msg, _image_url = _dk_img_pull(dk_cli, _image_url)
     Log.logger.debug("Docker image pull from harbor url \'" + _image_url + "\' is done.")
     if err_msg:
         return err_msg, None
