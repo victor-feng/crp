@@ -86,7 +86,7 @@ def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_i
             obj._deploy_docker(ip, deploy_id, image_uuid)
     else:
         Log.logger.error(
-            "Transit harbor docker image failed. image_url is " + image_url + " error msg:" + err_msg)
+            "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + err_msg)
     TaskManager.task_exit(task_id)
 
 def _check_image_status(image_uuid):
@@ -172,9 +172,9 @@ class AppDeploy(Resource):
     def _exec_ansible_cmd(self,cmd):
         (status, output) = commands.getstatusoutput(cmd)
         if output.lower().find("error") == -1 and output.lower().find("failed") == -1:
-            Log.logger.debug("ansible exec succeed,command: " + cmd + " output: " + output)
+            Log.logger.debug("ansible exec succeed,command: " + str(cmd) + " output: " + output)
             return True
-        Log.logger.debug("ansible exec failed,command: " + cmd + " output: " + output)
+        Log.logger.debug("ansible exec failed,command: " + str(cmd) + " output: " + output)
         return False
 
     def _make_command_file(self,workdir,password,user,port,database,sqlfile):
