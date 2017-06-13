@@ -3,6 +3,7 @@ import os
 import docker
 import uuid
 import hashlib
+import commands
 
 from crp.log import Log
 # from glanceclient import Client as GlanceClient
@@ -42,19 +43,32 @@ def _dk_img_pull(dk_cli, _image_url, repository_hash, tag):
 
 
 def _dk_img_save(dk_cli, _image_url):
-    image = dk_cli.images.get(_image_url)
-    resp = image.save()
+    # image = dk_cli.images.get(_image_url)
+    # resp = image.save()
+    # tar_name = str(uuid.uuid1()) + '.tar'
+    # tar_file = DK_TAR_PATH + tar_name
+    # try:
+    #     with open(tar_file, 'w') as f:
+    #         for chunk in resp.stream():
+    #             f.write(chunk)
+    # except Exception as e:
+    #     Log.logger.error(e.message)
+    #     return e.message, None
+    # else:
+    #     return None, tar_file
+
     tar_name = str(uuid.uuid1()) + '.tar'
     tar_file = DK_TAR_PATH + tar_name
+    cmd = 'docker save --output '+tar_file+' '+_image_url
     try:
-        with open(tar_file, 'w') as f:
-            for chunk in resp.stream():
-                f.write(chunk)
+        code, msg = commands.getstatusoutput(cmd)
+        if code == 0:
+            return None, tar_file
+        else:
+            return msg, None
     except Exception as e:
         Log.logger.error(e.message)
         return e.message, None
-    else:
-        return None, tar_file
 
 
 # def _get_endpoint_and_token(auth_url, username, password, tenant_name):
