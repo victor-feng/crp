@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from flask_restful import reqparse, Api, Resource
+from flask import request
 from crp.app_deployment import app_deploy_blueprint
 from crp.app_deployment.errors import user_errors
 from crp.utils.docker_tools import image_transit
@@ -7,6 +8,7 @@ from crp.openstack import OpenStack
 from crp.taskmgr import *
 from crp.log import Log
 import requests
+import werkzeug
 import json
 import commands
 import os
@@ -32,6 +34,7 @@ def _dep_callback(deploy_id, success):
 
     headers = {'Content-Type': 'application/json'}
     res = requests.put(url + deploy_id + "/", data=data_str, headers=headers)
+    Log.logger.debug("call dep_result callback,res: " + str(res))
     return res
 
 
@@ -83,9 +86,7 @@ def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_i
             obj._deploy_docker(ip, deploy_id, image_uuid)
     else:
         Log.logger.error(
-            "Transit harbor docker image failed. image_url is " + image_url)
-
-    Log.logger.debug("call image transit error msg:" + err_msg + " image uuid: " + image_uuid)
+            "Transit harbor docker image failed. image_url is " + image_url + " error msg:" + err_msg)
     TaskManager.task_exit(task_id)
 
 def _check_image_status(image_uuid):
@@ -107,9 +108,10 @@ class AppDeploy(Resource):
         msg = "ok"
         try:
             parser = reqparse.RequestParser()
-            parser.add_argument('deploy_id', type=str)
             parser.add_argument('mysql', type=dict)
             parser.add_argument('docker', type=dict)
+            parser.add_argument('deploy_id', type=str)
+            #parser.add_argument('file', type=werkzeug.datastructures.FileStorage, location='files')
             args = parser.parse_args()
             Log.logger.debug("AppDeploy receive post request. args is " + str(args))
             deploy_id = args.deploy_id
@@ -125,7 +127,7 @@ class AppDeploy(Resource):
         except Exception as e:
             Log.logger.error("AppDeploy exception: " + e.message)
             code = 500
-            msg = "internal server error"
+            msg = "internal server error: " + e.message
 
         res = {
             "code": code,
