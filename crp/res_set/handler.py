@@ -487,6 +487,8 @@ def _create_resource_set_and_query(task_id, result_list, resource_id, resource_l
         # 回滚全部资源和容器
         if temp_uop_os_inst_id_list is not None:
             _rollback_all(task_id, resource_id, temp_uop_os_inst_id_list, [])
+        else:
+            _rollback_all(task_id, resource_id, uop_os_inst_id_list, [])
 
         request_res_callback(task_id, RES_STATUS_FAIL, req_dict)
         Log.logger.debug("Task ID " + task_id.__str__() + " Call UOP CallBack Post Fail Info.")
