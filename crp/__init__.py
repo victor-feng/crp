@@ -8,6 +8,7 @@ from crp.log import logger_setting, Log
 from crp.openstack import openstack_client_setting
 from crp.res_set import resource_set_blueprint
 from crp.app_deployment import app_deploy_blueprint
+from crp.glance_image import glance_image_blueprint
 
 def create_app(config_name):
     app = Flask(__name__)
@@ -27,4 +28,5 @@ def create_app(config_name):
     app.register_blueprint(user_blueprint, url_prefix='/api/user')
     app.register_blueprint(resource_set_blueprint, url_prefix='/api/resource')
     app.register_blueprint(app_deploy_blueprint, url_prefix='/api/deploy')
+    app.register_blueprint(glance_image_blueprint, url_prefix='/api/image')
     return app
