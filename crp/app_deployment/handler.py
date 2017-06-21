@@ -233,7 +233,7 @@ class Upload(object):
                 file_path = os.path.join(UPLOAD_FOLDER, type, file.filename)
                 file.save(file_path)
                 if type in file_dic:
-                    file_dic[type],append(file_path)
+                    file_dic[type].append(file_path)
                 else:
                     file_dic[type] = [file_path]
 
