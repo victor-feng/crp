@@ -250,4 +250,4 @@ class Upload(object):
 
 
 app_deploy_api.add_resource(AppDeploy, '/deploys')
-app_deploy_api.add_resource(AppDeploy, '/upload')
+app_deploy_api.add_resource(Upload, '/upload')
