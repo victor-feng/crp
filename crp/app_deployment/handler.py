@@ -224,7 +224,7 @@ class AppDeploy(Resource):
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, ip, image_url)
 
 
-class Upload(object):
+class Upload(Resource):
     def post(self):
         try:
             file_dic = {}
