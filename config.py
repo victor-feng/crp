@@ -24,6 +24,7 @@ class DevelopmentConfig(BaseConfig):
     DK_CLI_VERSION = '1.22'
     DK_TAR_PATH = '/home/dk/'
     GLANCE_RESERVATION_QUANTITY = 3
+    UPLOAD_FOLDER = '/tmp/'
 
 
 class TestingConfig(BaseConfig):
@@ -42,6 +43,7 @@ class TestingConfig(BaseConfig):
     DK_CLI_VERSION = '1.22'
     DK_TAR_PATH = '/home/dk/'
     GLANCE_RESERVATION_QUANTITY = 3
+    UPLOAD_FOLDER = '/tmp/'
 
 
 configs = {

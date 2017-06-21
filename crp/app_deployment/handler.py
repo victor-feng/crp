@@ -17,12 +17,14 @@ import uuid
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
+from config import APP_ENV, configs
 
 app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 
 #url = "http://172.28.11.111:8001/cmdb/api/"
 #url = "http://uop-test.syswin.com/api/dep_result/"
 url = "http://uop-test.syswin.com/api/dep_result/"
+UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 
 def _dep_callback(deploy_id, success):
     data = dict()
@@ -150,12 +152,18 @@ class AppDeploy(Resource):
         database = args.mysql.get("database")
 
         sql = args.mysql.get("sql_script").replace('\xc2\xa0', ' ')
-        if not sql:
+        filenames = args.mysql.get("filenames")
+        if not (sql or filenames):
             return True
 
-        sql_srcipt_file_name = self._make_sql_script_file(workdir,sql)
-        self._make_command_file(workdir, mysql_password, mysql_user, port,
-                                database, remotedir + sql_srcipt_file_name)
+        if sql:
+            sql_srcipt_file_name = self._make_sql_script_file(workdir,sql)
+
+            self._make_command_file(workdir, mysql_password, mysql_user, port,
+                                    database, remotedir + sql_srcipt_file_name)
+        if filenames:
+            [self._make_command_file(workdir, mysql_password, mysql_user, port,
+                                    database, remotedir + filename) for filename in filenames]
         self._make_hosts_file(workdir, ip, host_user, host_password)
 
         ansible_cmd = 'ansible -i ' + workdir + '/myhosts ' + ip + \
@@ -215,4 +223,31 @@ class AppDeploy(Resource):
         timeout = 10
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, ip, image_url)
 
+
+class Upload(object):
+    def post(self):
+        try:
+            file_dic = {}
+            for _type, file in request.files.items():
+                type = _type.split('_')[0]
+                file_path = os.path.join(UPLOAD_FOLDER, type, file.filename)
+                file.save(file_path)
+                if type in file_dic:
+                    file_dic[type],append(file_path)
+                else:
+                    file_dic[type] = [file_path]
+
+        except Exception as e:
+            return {
+                'code': 500,
+                'msg': e.message
+            }
+        return {
+            'code': 200,
+            'msg': '上传成功！',
+            'file_info': file_dic,
+        }
+
+
 app_deploy_api.add_resource(AppDeploy, '/deploys')
+app_deploy_api.add_resource(AppDeploy, '/upload')
