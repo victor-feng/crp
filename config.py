@@ -25,6 +25,9 @@ class DevelopmentConfig(BaseConfig):
     DK_TAR_PATH = '/home/dk/'
     GLANCE_RESERVATION_QUANTITY = 3
     UPLOAD_FOLDER = '/tmp/'
+    AP_NETWORK_CONF = {
+        'AZ_UOP': '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'
+    }
 
 
 class TestingConfig(BaseConfig):
@@ -44,6 +47,9 @@ class TestingConfig(BaseConfig):
     DK_TAR_PATH = '/home/dk/'
     GLANCE_RESERVATION_QUANTITY = 3
     UPLOAD_FOLDER = '/tmp/'
+    AP_NETWORK_CONF = {
+        'AZ_UOP': '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'
+    }
 
 
 configs = {

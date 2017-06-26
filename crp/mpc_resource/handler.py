@@ -16,6 +16,12 @@ mpc_resource_api = Api(mpc_resource_blueprint, errors=mpc_resource_errors)
 TIMEOUT = 500
 SLEEP_TIME = 3
 
+CREATE_VM = 0
+QUERY_VM = 1
+CREATE_VOLUME = 2
+QUERY_VOLUME = 3
+ATTACH_VOLUME = 4
+
 
 images_dict = {
     'mysql': {
@@ -417,82 +423,20 @@ def request_res_callback(task_id, status, req_dict):
 
 
 # 创建资源集合定时任务，成功或失败后调用UOP资源预留CallBack（目前仅允许全部成功或全部失败，不允许部分成功）
-def _create_resource_set_and_query(task_id, result_list, resource_id, resource_list, compute_list, req_dict):
-    temp_uop_os_inst_id_list = None
-    try:
-        if result_list.__len__() == 0:
-            result_sub_is_create_resource_done_dict = {'is_create_done': False}
-            result_sub_result_list = []
-            uop_os_inst_id_list = []
-            result_is_create_resource_done_dict = {
-                                      'type': 'is_create_done',
-                                      'nested': result_sub_is_create_resource_done_dict
-                                  }
-            result_sub_result_dict = {
-                                   'type': 'sub_result',
-                                   'nested': result_sub_result_list
-                               }
-            result_sub_uop_os_inst_id_dict = {
-                                   'type': 'sub_uop_os_inst_id',
-                                   'nested': uop_os_inst_id_list
-                               }
-            result_list.append(result_is_create_resource_done_dict)
-            result_list.append(result_sub_result_dict)
-            result_list.append(result_sub_uop_os_inst_id_dict)
-            Log.logger.debug("Task ID " + task_id.__str__() + " uop_os_inst_id_list\'s object id is :")
-            Log.logger.debug(id(uop_os_inst_id_list))
-        else:
-            for res_dict in result_list:
-                if res_dict['type'] == 'is_create_done':
-                    result_sub_is_create_resource_done_dict = res_dict['nested']
-                elif res_dict['type'] == 'sub_result':
-                    result_sub_result_list = res_dict['nested']
-                elif res_dict['type'] == 'sub_uop_os_inst_id':
-                    uop_os_inst_id_list = res_dict['nested']
-                    Log.logger.debug("Task ID " + task_id.__str__() + " uop_os_inst_id_list\'s object id is :")
-                    Log.logger.debug(id(uop_os_inst_id_list))
-
-        if result_sub_is_create_resource_done_dict['is_create_done'] is not True:
-            temp_uop_os_inst_id_list = _create_resource_set(task_id, resource_id, resource_list, compute_list)
-            for temp in temp_uop_os_inst_id_list:
-                uop_os_inst_id_list.append(temp)
-                Log.logger.debug("Task ID " + task_id.__str__() + " uop_os_inst_id_list\'s object id is :")
-                Log.logger.debug(id(uop_os_inst_id_list))
-
-            result_sub_is_create_resource_done_dict['is_create_done'] = True
-            if uop_os_inst_id_list.__len__() == 0:
-                # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
-                request_res_callback(task_id, RES_STATUS_FAIL, req_dict)
-                Log.logger.debug("Task ID " + task_id.__str__() + " Call UOP CallBack Post Fail Info.")
-                # 停止定时任务并退出
-                TaskManager.task_exit(task_id)
-        else:
-            if uop_os_inst_id_list.__len__() == 0:
-                # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
-                request_res_callback(task_id, RES_STATUS_FAIL, req_dict)
-                Log.logger.debug("Task ID " + task_id.__str__() + " Call UOP CallBack Post Fail Info.")
-                # 停止定时任务并退出
-                TaskManager.task_exit(task_id)
-            else:
-                Log.logger.debug("Task ID " + task_id.__str__() +
-                                 " Test API handler result_list object id is " + id(result_sub_result_list).__str__() +
-                                 ", Content is " + result_sub_result_list[:].__str__())
-                _query_resource_set_status(task_id, resource_id, result_sub_result_list, uop_os_inst_id_list, req_dict)
-    except Exception as e:
-        # TODO(thread exit): 执行捕获异常调用UOP CallBack停止定时任务退出任务线程
-        Log.logger.error("Task ID " + task_id.__str__() +
-                         " Catch an exception. All instance which were created rollback starting. Error message is: ")
-        Log.logger.error(e.message)
-
-        # 回滚全部资源和容器
-        if temp_uop_os_inst_id_list is not None:
-            _rollback_all(task_id, resource_id, temp_uop_os_inst_id_list, [])
-        else:
-            _rollback_all(task_id, resource_id, uop_os_inst_id_list, [])
-
-        request_res_callback(task_id, RES_STATUS_FAIL, req_dict)
-        Log.logger.debug("Task ID " + task_id.__str__() + " Call UOP CallBack Post Fail Info.")
-        # 停止定时任务并退出
+def _create_resource_set_and_query(task_id, result, resource):
+    Log.logger.debug(
+        "Task ID %s, result %s, resource %s ." %
+        (task_id, result, resource))
+    current_status = result.get('current_status', None)
+    if current_status == CREATE_VM:
+        result['current_status'] = QUERY_VM
+    elif current_status == QUERY_VM:
+        result['current_status'] = CREATE_VOLUME
+    elif current_status == CREATE_VOLUME:
+        result['current_status'] = QUERY_VOLUME
+    elif current_status == QUERY_VOLUME:
+        result['current_status'] = ATTACH_VOLUME
+    elif current_status == ATTACH_VOLUME:
         TaskManager.task_exit(task_id)
 
 
@@ -507,7 +451,11 @@ class ResourceAPI(Resource):
         args = parser.parse_args()
         Log.logger.debug(args.resources)
         try:
-            pass
+            for item in args.resources:
+                TaskManager.task_start(
+                    SLEEP_TIME, TIMEOUT, {'current_status': CREATE_VM},
+                    _create_resource_set_and_query, item)
+
         except Exception as e:
             err_msg = e.message
             Log.logger.error('err: %s' % err_msg)
@@ -523,7 +471,7 @@ class ResourceAPI(Resource):
             res = {
                 "code": 200,
                 "result": {
-                    "msg": "请求成功",
+                    "msg": "提交成功",
                 }
             }
             return res, 200
