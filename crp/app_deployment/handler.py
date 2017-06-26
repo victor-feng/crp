@@ -35,6 +35,7 @@ def _dep_callback(deploy_id, success):
     data_str = json.dumps(data)
 
     headers = {'Content-Type': 'application/json'}
+    Log.logger.debug("data string:", data_str)
     res = requests.put(url + deploy_id + "/", data=data_str, headers=headers)
     Log.logger.debug("call dep_result callback,res: " + str(res))
     return res
