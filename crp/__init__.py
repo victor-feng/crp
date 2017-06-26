@@ -10,6 +10,8 @@ from crp.res_set import resource_set_blueprint
 from crp.app_deployment import app_deploy_blueprint
 from crp.glance_image import glance_image_blueprint
 from crp.availability_zone import az_blueprint
+from crp.mpc_resource import mpc_resource_blueprint
+from crp.flavor import flavor_blueprint
 
 def create_app(config_name):
     app = Flask(__name__)
@@ -31,4 +33,6 @@ def create_app(config_name):
     app.register_blueprint(app_deploy_blueprint, url_prefix='/api/deploy')
     app.register_blueprint(glance_image_blueprint, url_prefix='/api/image')
     app.register_blueprint(az_blueprint, url_prefix='/api/az')
+    app.register_blueprint(mpc_resource_blueprint, url_prefix='/api/mpc')
+    app.register_blueprint(flavor_blueprint, url_prefix='/api/flavor')
     return app
