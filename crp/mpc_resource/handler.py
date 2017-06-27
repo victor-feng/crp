@@ -28,7 +28,7 @@ ATTACH_VOLUME = 4
 
 
 # res_callback
-MPC_RES_CALLBACK_URL = MPC_URL+'/api/mpc_resource/mpc_resources_callback'
+MPC_RES_CALLBACK_URL = MPC_URL+'api/mpc_resource/mpc_resources_callback'
 
 
 # 向OpenStack申请资源
@@ -139,7 +139,7 @@ def request_res_callback(task_id, result):
         Log.logger.debug(
             "Query Task ID " + str(task_id) + '\r\n' +
             url + ' ' + json.dumps(headers) + ' ' + data_str)
-        cbk_result = requests.post(url=url, headers=headers, data=data_str)
+        cbk_result = requests.put(url=url, headers=headers, data=data_str)
         cbk_result = json.dumps(cbk_result.json())
     except requests.exceptions.ConnectionError as rq:
         err_msg = rq.message.message
