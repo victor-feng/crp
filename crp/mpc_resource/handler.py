@@ -137,7 +137,7 @@ def request_res_callback(task_id, result):
         url = MPC_RES_CALLBACK_URL
         headers = {'Content-Type': 'application/json'}
         Log.logger.debug(
-            "Query Task ID " + str(task_id) + '\r\n' +
+            "Callback Task ID " + str(task_id) + '\r\n' +
             url + ' ' + json.dumps(headers) + ' ' + data_str)
         cbk_result = requests.put(url=url, headers=headers, data=data_str)
         cbk_result = json.dumps(cbk_result.json())
@@ -147,11 +147,11 @@ def request_res_callback(task_id, result):
         err_msg = e.message
     finally:
         Log.logger.debug(
-            "Query Task ID " + str(task_id) + '\r\n' +
+            "Callback Task ID " + str(task_id) + '\r\n' +
             'mpc_res_callback result ' + str(cbk_result))
         if err_msg:
             Log.logger.debug(
-                "Query Task ID " + str(task_id) + '\r\n' +
+                "Callback Task ID " + str(task_id) + '\r\n' +
                 'mpc_res_callback err_msg ' + str(err_msg))
 
 
