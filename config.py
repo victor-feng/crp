@@ -19,6 +19,7 @@ class DevelopmentConfig(BaseConfig):
         'password': 'crp'
     }
     UOP_URL = "http://develop.mongodb.db:5000/"
+    MPC_URL = "http://mpc-test.syswin.com/"
     OPENRC_PATH = "/root/openrc"
     DK_SOCK_URL = 'unix://var/run/docker.sock'
     DK_CLI_VERSION = '1.22'
@@ -41,6 +42,7 @@ class TestingConfig(BaseConfig):
         'password': 'crp',
     }
     UOP_URL = "http://172.28.20.124:5000/"
+    MPC_URL = "http://mpc-test.syswin.com/"
     OPENRC_PATH = "/root/openrc"
     DK_SOCK_URL = 'unix://var/run/docker.sock'
     DK_CLI_VERSION = '1.22'
