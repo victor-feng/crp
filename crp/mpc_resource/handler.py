@@ -12,6 +12,7 @@ from crp.openstack import OpenStack
 from config import APP_ENV, configs
 
 AP_NETWORK_CONF = configs[APP_ENV].AP_NETWORK_CONF
+MPC_URL = configs[APP_ENV].MPC_URL
 
 mpc_resource_api = Api(mpc_resource_blueprint, errors=mpc_resource_errors)
 
@@ -27,7 +28,7 @@ ATTACH_VOLUME = 4
 
 
 # res_callback
-RES_CALLBACK = 'http://uop-test.syswin.com/api/res_callback/res'
+MPC_RES_CALLBACK_URL = MPC_URL+'/api/mpc_resource/mpc_resources_callback'
 
 
 # 向OpenStack申请资源
@@ -54,7 +55,7 @@ def _create_instance_by_az(task_id, result, resource):
     az = resource.get('az', '')
     image = resource.get('image', '')
     flavor = resource.get('flavor', '')
-    volume = resource.get('volume', 0)
+    # volume = resource.get('volume', 0)
     network_id = AP_NETWORK_CONF.get(az, None)
 
     result['current_status'] = QUERY_VM
@@ -69,7 +70,7 @@ def _create_instance_by_az(task_id, result, resource):
             % (task_id, err_msg))
         result['vm']['status'] = 'error'
         result['vm']['err_msg'] = err_msg
-        # todo:callback
+        request_res_callback(task_id, result)
         TaskManager.task_exit(task_id)
     else:
         os_inst_id = _create_instance(task_id, vm_name, image, flavor, az, network_id)
@@ -107,24 +108,57 @@ def _query_instance_status(task_id, result):
         Log.logger.debug(
             "Query Task ID " + str(task_id) +
             " Instance Info: " + str(result['vm']))
+        request_res_callback(task_id, result)
+        TaskManager.task_exit(task_id)
     elif inst.status == 'ERROR':
         Log.logger.debug(
             "Query Task ID " + str(task_id) +
             " ERROR Instance Info: " + str(inst.to_dict()))
         result['vm']['status'] = 'error'
-        # todo: callback
+        request_res_callback(task_id, result)
         TaskManager.task_exit(task_id)
 
 
 # request MPC res_callback
-def request_res_callback(task_id, result, resource):
-    pass
+def request_res_callback(task_id, result):
+    vm = result.get('vm', {})
+    data = {
+        'mpc_inst_id': vm.get('mpc_inst_id', ''),
+        'os_inst_id': vm.get('os_inst_id', ''),
+        'ip': vm.get('ip', ''),
+        'host_name': vm.get('physical_server', ''),
+        'status': vm.get('status', ''),
+        'err_msg': vm.get('err_msg', ''),
+    }
+    err_msg = None
+    cbk_result = None
+    try:
+        data_str = json.dumps(data)
+        url = MPC_RES_CALLBACK_URL
+        headers = {'Content-Type': 'application/json'}
+        Log.logger.debug(
+            "Query Task ID " + str(task_id) + '\r\n' +
+            url + ' ' + json.dumps(headers) + ' ' + data_str)
+        cbk_result = requests.post(url=url, headers=headers, data=data_str)
+        cbk_result = json.dumps(cbk_result.json())
+    except requests.exceptions.ConnectionError as rq:
+        err_msg = rq.message.message
+    except BaseException as e:
+        err_msg = e.message
+    finally:
+        Log.logger.debug(
+            "Query Task ID " + str(task_id) + '\r\n' +
+            'mpc_res_callback result ' + str(cbk_result))
+        if err_msg:
+            Log.logger.debug(
+                "Query Task ID " + str(task_id) + '\r\n' +
+                'mpc_res_callback err_msg ' + str(err_msg))
 
 
 # 申请资源
 # 1. 创建虚机
-# 2. 创建volume
-# 3. 挂载volume到虚机
+# 2. 创建volume【暂未实现】
+# 3. 挂载volume到虚机【暂未实现】
 def _create_resource_set_and_query(task_id, result, resource):
     current_status = result.get('current_status', None)
     Log.logger.debug(
@@ -139,18 +173,18 @@ def _create_resource_set_and_query(task_id, result, resource):
             _create_instance_by_az(task_id, result, resource)
         elif current_status == QUERY_VM:
             _query_instance_status(task_id, result)
-        elif current_status == CREATE_VOLUME:
-            result['current_status'] = QUERY_VOLUME
-        elif current_status == QUERY_VOLUME:
-            result['current_status'] = ATTACH_VOLUME
-        elif current_status == ATTACH_VOLUME:
-            TaskManager.task_exit(task_id)
+        # elif current_status == CREATE_VOLUME:
+        #     result['current_status'] = QUERY_VOLUME
+        # elif current_status == QUERY_VOLUME:
+        #     result['current_status'] = ATTACH_VOLUME
+        # elif current_status == ATTACH_VOLUME:
+        #     TaskManager.task_exit(task_id)
     except Exception as e:
         err_msg = e.message
         Log.logger.error(err_msg)
         result['vm']['status'] = 'error'
         result['vm']['err_msg'] = err_msg
-        # todo: callback
+        request_res_callback(task_id, result)
         TaskManager.task_exit(task_id)
 
 
