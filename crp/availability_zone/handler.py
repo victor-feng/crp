@@ -108,7 +108,7 @@ class StatisticAPI(Resource):
         try:
             nova_cli = OpenStack.nova_client
             statistics = nova_cli.hypervisors.statistics()
-            Log.logger.debug(dir(statistics))
+            # Log.logger.debug(dir(statistics))
             if statistics:
                 hypervisors_statistics["running_vms"]= statistics.running_vms
                 hypervisors_statistics["vcpu_total"]= statistics.vcpus
