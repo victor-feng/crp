@@ -166,27 +166,32 @@ class OpenStack(object):
         return None
 
     @classmethod
-    def glance_client(self):
+    def _get_endpoint_and_token(
+            cls, service_type,
+            auth_url, username,
+            password, tenant_name):
+        kwargs = {
+            'auth_url': auth_url,
+            'username': username,
+            'password': password,
+            'tenant_name': tenant_name,
+        }
+        ks_session = session.Session.construct(kwargs)
+        auth = v2_auth.Password(
+            auth_url=auth_url, username=username,
+            password=password, tenant_name=tenant_name)
+        ks_session.auth = auth
+        token = ks_session.get_token()
+        endpoint = ks_session.get_endpoint(
+            service_type=service_type, endpoint_type='public')
+        return endpoint, token
 
-        def _get_endpoint_and_token(auth_url, username, password, tenant_name):
-            kwargs = {
-                'auth_url': auth_url,
-                'username': username,
-                'password': password,
-                'tenant_name': tenant_name,
-            }
-            ks_session = session.Session.construct(kwargs)
-            auth = v2_auth.Password(
-                auth_url=auth_url, username=username,
-                password=password, tenant_name=tenant_name)
-            ks_session.auth = auth
-            token = ks_session.get_token()
-            endpoint = ks_session.get_endpoint(
-                service_type='image', endpoint_type='public')
-            return endpoint, token
+    @classmethod
+    def glance_client(cls):
 
         if OpenStack.auth_info is not None:
-            glance_endpoint, token = _get_endpoint_and_token(
+            glance_endpoint, token = cls._get_endpoint_and_token(
+                'image',
                 OpenStack.auth_info.auth_url,
                 OpenStack.auth_info.user_name,
                 OpenStack.auth_info.user_password,
@@ -197,3 +202,13 @@ class OpenStack(object):
 
         if OpenStack.glance_c is not None:
             return OpenStack.glance_c
+
+    @classmethod
+    def get_cinder_endpoint_and_token(cls):
+        cinder_endpoint, token = cls._get_endpoint_and_token(
+            'volume',
+            OpenStack.auth_info.auth_url,
+            OpenStack.auth_info.user_name,
+            OpenStack.auth_info.user_password,
+            OpenStack.auth_info.tenant_name)
+        return cinder_endpoint, token
