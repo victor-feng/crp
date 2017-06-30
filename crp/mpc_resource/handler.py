@@ -6,6 +6,7 @@ from flask_restful import reqparse, Api, Resource
 
 from crp.taskmgr import *
 from crp.mpc_resource import mpc_resource_blueprint
+from crp.mpc_resource import mpc_resource_callback
 from crp.mpc_resource.errors import mpc_resource_errors
 from crp.log import Log
 from crp.openstack import OpenStack
@@ -13,7 +14,6 @@ from crp.openstack import OpenStack
 from config import APP_ENV, configs
 
 AP_NETWORK_CONF = configs[APP_ENV].AP_NETWORK_CONF
-MPC_URL = configs[APP_ENV].MPC_URL
 
 mpc_resource_api = Api(mpc_resource_blueprint, errors=mpc_resource_errors)
 
@@ -27,10 +27,6 @@ CREATE_VOLUME = 2
 QUERY_VOLUME = 3
 ATTACH_VOLUME = 4
 QUERY_ATTACH = 5
-
-
-# res_callback
-MPC_RES_CALLBACK_URL = MPC_URL+'api/mpc_resource/mpc_resources_callback'
 
 
 # 向OpenStack申请资源
@@ -245,28 +241,20 @@ def _instance_attach_volume(task_id, result):
 # request MPC res_callback
 def request_res_callback(task_id, result):
     vm = result.get('vm', {})
-    data = {
-        'vms': [
-            {
-                'mpc_inst_id': vm.get('mpc_inst_id', ''),
-                'os_inst_id': vm.get('os_inst_id', ''),
-                'ip': vm.get('ip', ''),
-                'host_name': vm.get('physical_server', ''),
-                'status': vm.get('status', ''),
-                'err_msg': vm.get('err_msg', ''),
-            }
-        ]
-    }
+    vms = [
+        {
+            'mpc_inst_id': vm.get('mpc_inst_id', ''),
+            'os_inst_id': vm.get('os_inst_id', ''),
+            'ip': vm.get('ip', ''),
+            'host_name': vm.get('physical_server', ''),
+            'status': vm.get('status', ''),
+            'err_msg': vm.get('err_msg', ''),
+        }
+    ]
     err_msg = None
     cbk_result = None
     try:
-        data_str = json.dumps(data)
-        url = MPC_RES_CALLBACK_URL
-        headers = {'Content-Type': 'application/json'}
-        Log.logger.debug(
-            "Callback Task ID " + str(task_id) + '\r\n' +
-            url + ' ' + json.dumps(headers) + ' ' + data_str)
-        cbk_result = requests.put(url=url, headers=headers, data=data_str)
+        cbk_result = mpc_resource_callback(vms)
         cbk_result = json.dumps(cbk_result.json())
     except requests.exceptions.ConnectionError as rq:
         err_msg = rq.message.message

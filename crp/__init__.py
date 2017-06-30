@@ -11,6 +11,7 @@ from crp.app_deployment import app_deploy_blueprint
 from crp.glance_image import glance_image_blueprint
 from crp.availability_zone import az_blueprint
 from crp.mpc_resource import mpc_resource_blueprint
+from crp.mpc_resource import instance_status_sync
 from crp.flavor import flavor_blueprint
 from crp.vm_operation import vm_operation_blueprint
 
@@ -22,6 +23,7 @@ def create_app(config_name):
 
     logger_setting(app)
     openstack_client_setting()
+    instance_status_sync()
 
     # swagger docs
     @app.route('/docs')
