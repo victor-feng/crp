@@ -78,7 +78,7 @@ def _create_instance_by_az(task_id, result, resource):
         inst = _create_instance(task_id, vm_name, image, flavor, az, network_id)
         result['current_status'] = QUERY_VM
         result['vm']['os_inst_id'] = inst.id
-        result['vm']['status'] = 'spawning'
+        result['vm']['status'] = inst.status
         request_res_callback(task_id, result)
 
 
@@ -104,7 +104,7 @@ def _query_instance_status(task_id, result, resource):
         " query Instance ID " + os_inst_id +
         " Status is " + inst.status)
     if inst.status == 'ACTIVE':
-        result['vm']['status'] = 'running'
+        result['vm']['status'] = inst.status
         result['vm']['physical_server'] = getattr(
             inst, 'OS-EXT-SRV-ATTR:host', '')
         _ips = _get_ip_from_instance(inst)
@@ -246,12 +246,16 @@ def _instance_attach_volume(task_id, result):
 def request_res_callback(task_id, result):
     vm = result.get('vm', {})
     data = {
-        'mpc_inst_id': vm.get('mpc_inst_id', ''),
-        'os_inst_id': vm.get('os_inst_id', ''),
-        'ip': vm.get('ip', ''),
-        'host_name': vm.get('physical_server', ''),
-        'status': vm.get('status', ''),
-        'err_msg': vm.get('err_msg', ''),
+        'vms': [
+            {
+                'mpc_inst_id': vm.get('mpc_inst_id', ''),
+                'os_inst_id': vm.get('os_inst_id', ''),
+                'ip': vm.get('ip', ''),
+                'host_name': vm.get('physical_server', ''),
+                'status': vm.get('status', ''),
+                'err_msg': vm.get('err_msg', ''),
+            }
+        ]
     }
     err_msg = None
     cbk_result = None
