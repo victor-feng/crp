@@ -94,7 +94,7 @@ def _get_ip_from_instance(server):
 
 
 # 向OpenStack查询vm状态
-def _query_instance_status(task_id, result):
+def _query_instance_status(task_id, result, resource):
     vm = result.get('vm', {})
     os_inst_id = vm.get('os_inst_id', '')
     nova_client = OpenStack.nova_client
@@ -104,7 +104,6 @@ def _query_instance_status(task_id, result):
         " query Instance ID " + os_inst_id +
         " Status is " + inst.status)
     if inst.status == 'ACTIVE':
-        result['current_status'] = CREATE_VOLUME
         result['vm']['status'] = 'running'
         result['vm']['physical_server'] = getattr(
             inst, 'OS-EXT-SRV-ATTR:host', '')
@@ -113,7 +112,13 @@ def _query_instance_status(task_id, result):
         Log.logger.debug(
             "Query Task ID " + str(task_id) +
             " Instance Info: " + str(result['vm']))
-        # request_res_callback(task_id, result)
+
+        size = resource.get('volume', 0)
+        if size > 0:
+            result['current_status'] = CREATE_VOLUME
+        else:
+            request_res_callback(task_id, result)
+            TaskManager.task_exit(task_id)
     elif inst.status == 'ERROR':
         Log.logger.debug(
             "Query Task ID " + str(task_id) +
@@ -292,7 +297,7 @@ def _create_resource_set_and_query(task_id, result, resource):
         if current_status == CREATE_VM:
             _create_instance_by_az(task_id, result, resource)
         elif current_status == QUERY_VM:
-            _query_instance_status(task_id, result)
+            _query_instance_status(task_id, result, resource)
         elif current_status == CREATE_VOLUME:
             _create_volume(task_id, result, resource)
         elif current_status == QUERY_VOLUME:
