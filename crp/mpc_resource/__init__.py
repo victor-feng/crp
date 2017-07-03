@@ -13,7 +13,7 @@ from config import APP_ENV, configs
 mpc_resource_blueprint = Blueprint('mpc_resource_blueprint', __name__)
 
 SYNC_SLEEP_TIME = 10
-SYNC_TIMEOUT = 60 * 60 * 24 * 365
+SYNC_TIMEOUT = 60 * 60 * 24 * 365 * 100
 MPC_URL = configs[APP_ENV].MPC_URL
 MPC_RES_CALLBACK_URL = MPC_URL+'api/mpc_resource/mpc_resources_callback'
 
