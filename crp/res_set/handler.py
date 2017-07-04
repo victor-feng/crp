@@ -9,6 +9,7 @@ from crp.openstack import OpenStack
 from crp.utils.docker_tools import image_transit
 from transitions import Machine
 import json
+import subprocess
 
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
@@ -16,7 +17,7 @@ resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 
 TIMEOUT = 500
 SLEEP_TIME = 3
-
+GLOBAL_MONGO_CLUSTER_IP = None
 
 images_dict = {
     'mysql': {
@@ -684,5 +685,50 @@ def tick_announce(task_id, res_provider_list):
             res_provider.create()
         else:
             res_provider.query()
+"""
+cmd1 = 'ansible -i /home/wanggang/hosts  new-host -u root --private-key=/home/wanggang/old_id_rsa -m script -a "/home/wanggang/mongoclu_install/mongoslave1.sh sys95"'
+cmd2 = 'ansible -i /home/wanggang/hosts  new-host -u root --private-key=/home/wanggang/old_id_rsa -m script -a "/home/wanggang/mongoclu_install/mongoslave2.sh sys95"'
+cmd3 = 'ansible -i /home/wanggang/hosts  new-host -u root --private-key=/home/wanggang/old_id_rsa -m script -a "/home/wanggang/mongoclu_install/mongomaster1.sh"'
+cmd4 = 'ansible -i /home/wanggang/hosts  new-host -u root --private-key=/home/wanggang/old_id_rsa -m script -a "/home/wanggang/mongoclu_install/mongomaster2.sh sys95"'
+cmd = [cmd1, cmd2, cmd3, cmd4]
+"""
+
+
+class MongodbCluster(object):
+    def __init__(self, cmd_list):
+        self.ip = GLOBAL_MONGO_CLUSTER_IP
+        self.cmd_list = cmd_list
+        self.write_ip()
+        self.flag = False
+        self.telnet_ack()
+        # self.mongodb_cluster_push()
+
+    def write_ip(self):
+        for ip in self.ip:
+            with open('/home/wanggang/hosts', 'a') as f:
+                f.write('%s\n' % ip)
+
+    def telnet_ack(self):
+        while not self.flag:
+            for ip in self.ip:
+                p = subprocess.Popen('nmap %s -p 22' % ip, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                try:
+                    a = p.stdout.readlines()[5]
+                    Log.logger.debug('nmap ack result:%s' % a)
+                except Exception as e:
+                    print e
+                    a = 'false'
+                    Log.logger.debug('%s' % a)
+                if 'open' in a:
+                    self.mongodb_cluster_push()
+                    self.flag = True
+
+    def mongodb_cluster_push(self):
+        for cmd in self.cmd_list:
+            p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            for line in p.stdout.readlines():
+                print line,
+                Log.logger.debug('mongodb cluster push result:%s' % line)
+
 
 resource_set_api.add_resource(ResourceSet, '/sets')
