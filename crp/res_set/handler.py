@@ -102,7 +102,7 @@ class ResourceProvider(object):
         self.task_id = task_id
 
     def do_success(self):
-        # TODO(thread exit): 执行成功调用UOP CallBack停止定时任务退出任务线程
+        # 执行成功调用UOP CallBack，提交成功
         Log.logger.debug("Query Task ID " + self.task_id.__str__() + " all instance create success." +
                          " instance id set is " + self.result_inst_id_list[:].__str__() +
                          " instance info set is " + self.result_info_list[:].__str__())
@@ -125,7 +125,7 @@ class ResourceProvider(object):
         self.stop()
 
     def do_fail(self):
-        # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
+        # 执行失败调用UOP CallBack，提交失败
         request_res_callback(self.task_id, RES_STATUS_FAIL, self.req_dict)
         Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Fail Info.")
         # 停止定时任务并退出
@@ -637,7 +637,6 @@ class ResourceSet(Resource):
             Log.logger.debug(id(req_dict))
             Log.logger.debug('result_list\'s object id is :')
             Log.logger.debug(id(result_list))
-            # TODO(TaskManager.task_start()): 定时任务示例代码
             # 创建资源集合定时任务，成功或失败后调用UOP资源预留CallBack（目前仅允许全部成功或全部失败，不允许部分成功）
             res_provider = ResourceProvider(resource_id, resource_list, compute_list, req_dict)
             res_provider_list = [res_provider]
