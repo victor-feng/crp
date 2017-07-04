@@ -67,11 +67,13 @@ DEFAULT_PASSWORD = "123456"
 
 class ResourceProvider(object):
     # Define some states.
-    states = ['init', 'create_instance', 'instance_state_query', 'os_state_query', 'init_cluster', 'rollback', 'stop']
+    states = ['init', 'create_instance', 'instance_state_query', 'os_state_query', 'init_cluster', 'success', 'fail', 'rollback', 'stop']
 
     # Define transitions.
     transitions = [
-        {'trigger': 'error', 'source': '*', 'dest': 'rollback', 'after': 'do_rollback'},
+        {'trigger': 'success', 'source': 'instance_state_query', 'dest': 'success', 'after': 'do_success'},
+        {'trigger': 'rollback', 'source': '*', 'dest': 'rollback', 'after': 'do_rollback'},
+        {'trigger': 'fail', 'source': 'rollback', 'dest': 'fail', 'after': 'do_fail'},
         {'trigger': 'stop', 'source': '*', 'dest': 'stop', 'after': 'do_stop'},
         {'trigger': 'create', 'source': 'init', 'dest': 'create_instance', 'after': 'do_create_instance'},
         {'trigger': 'query', 'source': 'create_instance', 'dest': 'instance_state_query', 'after': 'do_query_resource_set_status'},
@@ -85,9 +87,11 @@ class ResourceProvider(object):
         self.resource_list = resource_list
         self.compute_list = compute_list
         self.req_dict = req_dict
+        self.is_rollback = False
         self.result_list = []
-        self.result_uop_os_inst_id_list = []
+        self.result_inst_id_list = []
         self.uop_os_inst_id_list = []
+        self.result_info_list = []
 
         # Initialize the state machine
         self.machine = Machine(model=self,
@@ -98,21 +102,61 @@ class ResourceProvider(object):
     def set_task_id(self, task_id):
         self.task_id = task_id
 
-    def do_rollback(self):
-        _rollback_all(self.task_id, self.resource_id, self.uop_os_inst_id_list, self.result_uop_os_inst_id_list)
+    def do_success(self):
+        # TODO(thread exit): 执行成功调用UOP CallBack停止定时任务退出任务线程
+        Log.logger.debug("Query Task ID " + self.task_id.__str__() + " all instance create success." +
+                         " instance id set is " + self.result_inst_id_list[:].__str__() +
+                         " instance info set is " + self.result_info_list[:].__str__())
+        for info in self.result_info_list:
+            if info["uop_inst_id"] == self.req_dict["container_inst_id"]:
+                self.req_dict["container_ip"] = info["ip"]
+                self.req_dict["container_physical_server"] = info["physical_server"]
+            if info["uop_inst_id"] == self.req_dict["mysql_inst_id"]:
+                self.req_dict["mysql_ip"] = info["ip"]
+                self.req_dict["mysql_physical_server"] = info["physical_server"]
+            if info["uop_inst_id"] == self.req_dict["redis_inst_id"]:
+                self.req_dict["redis_ip"] = info["ip"]
+                self.req_dict["redis_physical_server"] = info["physical_server"]
+            if info["uop_inst_id"] == self.req_dict["mongodb_inst_id"]:
+                self.req_dict["mongodb_ip"] = info["ip"]
+                self.req_dict["mongodb_physical_server"] = info["physical_server"]
+        request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict)
+        Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Success Info.")
+        # 停止定时任务并退出
         self.stop()
 
+    def do_fail(self):
+        # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
+        request_res_callback(self.task_id, RES_STATUS_FAIL, self.req_dict)
+        Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Fail Info.")
+        # 停止定时任务并退出
+        self.stop()
+
+    def do_rollback(self):
+        _rollback_all(self.task_id, self.resource_id, self.uop_os_inst_id_list, self.result_inst_id_list)
+        self.fail()
+
     def do_stop(self):
-        pass
+        # 停止定时任务退出任务线程
+        Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Stop.")
+        # 停止定时任务并退出
+        TaskManager.task_exit(self.task_id)
 
     def do_create_instance(self):
-        _create_resource_set(self.task_id, self.resource_id, self.resource_list, self.compute_list,
-                             self.uop_os_inst_id_list)
-        self.query()
+        self.is_rollback, self.uop_os_inst_id_list = _create_resource_set(self.task_id, self.resource_id,
+                                                                          self.resource_list, self.compute_list)
+        if self.is_rollback:
+            self.rollback()
+        else:
+            self.query()
 
     def do_query_resource_set_status(self):
-        _query_resource_set_status(self.task_id, self.resource_id,
-                                   self.result_list, self.uop_os_inst_id_list, self.req_dict)
+        is_finished, self.is_rollback = _query_resource_set_status(self.task_id, self.uop_os_inst_id_list,
+                                                                   self.result_inst_id_list, self.result_info_list)
+        if is_finished:
+            self.success()
+        if self.is_rollback:
+            self.rollback()
 
 
 # 向OpenStack申请资源
@@ -163,9 +207,9 @@ def create_docker_by_url(task_id, name, image_url):
 
 
 # 申请资源定时任务
-def _create_resource_set(task_id, resource_id=None, resource_list=None, compute_list=None, uop_os_inst_id_list=None):
-    if uop_os_inst_id_list is None:
-        uop_os_inst_id_list = []
+def _create_resource_set(task_id, resource_id=None, resource_list=None, compute_list=None):
+    is_rollback = False
+    uop_os_inst_id_list = []
     for resource in resource_list:
         instance_name = resource.get('instance_name')
         instance_id = resource.get('instance_id')
@@ -201,12 +245,11 @@ def _create_resource_set(task_id, resource_id=None, resource_list=None, compute_
         else:
             Log.logger.error("Task ID " + task_id.__str__() + " ERROR. Error Message is:")
             Log.logger.error(err_msg)
-            result_inst_id_list = []
             # 删除全部
-            _rollback_all(task_id, resource_id, uop_os_inst_id_list, result_inst_id_list)
+            is_rollback = True
             uop_os_inst_id_list = []
 
-    return uop_os_inst_id_list
+    return is_rollback, uop_os_inst_id_list
 
 
 def _get_ip_from_instance(server):
@@ -246,42 +289,22 @@ def _uop_os_list_sub(uop_os_inst_id_list, result_uop_os_inst_id_list):
 
 
 # 向OpenStack查询已申请资源的定时任务
-def _query_resource_set_status(task_id=None, resource_id=None,
-                               result_sub_result_list=None, uop_os_inst_id_list=None, req_dict=None):
-    if result_sub_result_list.__len__() == 0:
-        result_uop_os_inst_id_list = []
-        result_info_list = []
-        result_inst_id_dict = {
-                                  'type': 'id',
-                                  'list': result_uop_os_inst_id_list
-                              }
-        result_info_dict = {
-                               'type': 'info',
-                               'list': result_info_list
-                           }
-        result_sub_result_list.append(result_inst_id_dict)
-        result_sub_result_list.append(result_info_dict)
-    else:
-        for res_dict in result_sub_result_list:
-            if res_dict['type'] == 'id':
-                result_uop_os_inst_id_list = res_dict['list']
-            elif res_dict['type'] == 'info':
-                result_info_list = res_dict['list']
-
-    rollback_flag = False
-    # uop_os_inst_id_wait_query = list(set(uop_os_inst_id_list) - set(result_uop_os_inst_id_list))
-    uop_os_inst_id_wait_query = _uop_os_list_sub(uop_os_inst_id_list, result_uop_os_inst_id_list)
+def _query_resource_set_status(task_id=None, uop_os_inst_id_list=None, result_inst_id_list=None, result_info_list=None):
+    is_finish = False
+    is_rollback = False
+    # uop_os_inst_id_wait_query = list(set(uop_os_inst_id_list) - set(result_inst_id_list))
+    uop_os_inst_id_wait_query = _uop_os_list_sub(uop_os_inst_id_list, result_inst_id_list)
 
     Log.logger.debug("Query Task ID " + task_id.__str__() + ", remain " + uop_os_inst_id_wait_query[:].__str__())
     Log.logger.debug("Query Task ID " + task_id.__str__() +
-                     " Test Task Scheduler Class result_uop_os_inst_id_list object id is " +
-                     id(result_uop_os_inst_id_list).__str__() +
-                     ", Content is " + result_uop_os_inst_id_list[:].__str__())
+                     " Test Task Scheduler Class result_inst_id_list object id is " +
+                     id(result_inst_id_list).__str__() +
+                     ", Content is " + result_inst_id_list[:].__str__())
     nova_client = OpenStack.nova_client
     for uop_os_inst_id in uop_os_inst_id_wait_query:
         inst = nova_client.servers.get(uop_os_inst_id['os_inst_id'])
         Log.logger.debug("Query Task ID " + task_id.__str__() + " query Instance ID " +
-                         uop_os_inst_id['os_inst_id'] + " Status is "+inst.status)
+                         uop_os_inst_id['os_inst_id'] + " Status is " + inst.status)
         if inst.status == 'ACTIVE':
             _ips = _get_ip_from_instance(inst)
             _data = {
@@ -292,45 +315,17 @@ def _query_resource_set_status(task_id=None, resource_id=None,
                     }
             result_info_list.append(_data)
             Log.logger.debug("Query Task ID " + task_id.__str__() + " Instance Info: " + _data.__str__())
-            result_uop_os_inst_id_list.append(uop_os_inst_id)
+            result_inst_id_list.append(uop_os_inst_id)
         if inst.status == 'ERROR':
             # 置回滚标志位
             Log.logger.debug("Query Task ID " + task_id.__str__() + " ERROR Instance Info: " + inst.to_dict().__str__())
-            rollback_flag = True
+            is_rollback = True
 
-    if result_uop_os_inst_id_list.__len__() == uop_os_inst_id_list.__len__():
-        # TODO(thread exit): 执行成功调用UOP CallBack停止定时任务退出任务线程
-        Log.logger.debug("Query Task ID " + task_id.__str__() + " all instance create success." +
-                         " instance id set is " + result_uop_os_inst_id_list[:].__str__() +
-                         " instance info set is "+result_info_list[:].__str__())
-        for info in result_info_list:
-            if info["uop_inst_id"] == req_dict["container_inst_id"]:
-                req_dict["container_ip"] = info["ip"]
-                req_dict["container_physical_server"] = info["physical_server"]
-            if info["uop_inst_id"] == req_dict["mysql_inst_id"]:
-                req_dict["mysql_ip"] = info["ip"]
-                req_dict["mysql_physical_server"] = info["physical_server"]
-            if info["uop_inst_id"] == req_dict["redis_inst_id"]:
-                req_dict["redis_ip"] = info["ip"]
-                req_dict["redis_physical_server"] = info["physical_server"]
-            if info["uop_inst_id"] == req_dict["mongodb_inst_id"]:
-                req_dict["mongodb_ip"] = info["ip"]
-                req_dict["mongodb_physical_server"] = info["physical_server"]
-        request_res_callback(task_id, RES_STATUS_OK, req_dict)
-        Log.logger.debug("Query Task ID " + task_id.__str__() + " Call UOP CallBack Post Success Info.")
-        # 停止定时任务并退出
-        TaskManager.task_exit(task_id)
+    if result_inst_id_list.__len__() == uop_os_inst_id_list.__len__():
+        is_finish = True
 
     # 回滚全部资源和容器
-    if rollback_flag:
-        # 删除全部
-        _rollback_all(task_id, resource_id, uop_os_inst_id_list, result_uop_os_inst_id_list)
-
-        # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
-        request_res_callback(task_id, RES_STATUS_FAIL, req_dict)
-        Log.logger.debug("Query Task ID " + task_id.__str__() + " Call UOP CallBack Post Fail Info.")
-        # 停止定时任务并退出
-        TaskManager.task_exit(task_id)
+    return is_finish, is_rollback
 
 
 # request UOP res_callback
@@ -466,86 +461,6 @@ def request_res_callback(task_id, status, req_dict):
     Log.logger.debug(res.content)
     ret = eval(res.content.decode('unicode_escape'))
     return ret
-
-
-# 创建资源集合定时任务，成功或失败后调用UOP资源预留CallBack（目前仅允许全部成功或全部失败，不允许部分成功）
-def _create_resource_set_and_query(task_id, result_list, resource_id, resource_list, compute_list, req_dict):
-    temp_uop_os_inst_id_list = None
-    try:
-        if result_list.__len__() == 0:
-            result_sub_is_create_resource_done_dict = {'is_create_done': False}
-            result_sub_result_list = []
-            uop_os_inst_id_list = []
-            result_is_create_resource_done_dict = {
-                                      'type': 'is_create_done',
-                                      'nested': result_sub_is_create_resource_done_dict
-                                  }
-            result_sub_result_dict = {
-                                   'type': 'sub_result',
-                                   'nested': result_sub_result_list
-                               }
-            result_sub_uop_os_inst_id_dict = {
-                                   'type': 'sub_uop_os_inst_id',
-                                   'nested': uop_os_inst_id_list
-                               }
-            result_list.append(result_is_create_resource_done_dict)
-            result_list.append(result_sub_result_dict)
-            result_list.append(result_sub_uop_os_inst_id_dict)
-            Log.logger.debug("Task ID " + task_id.__str__() + " uop_os_inst_id_list\'s object id is :")
-            Log.logger.debug(id(uop_os_inst_id_list))
-        else:
-            for res_dict in result_list:
-                if res_dict['type'] == 'is_create_done':
-                    result_sub_is_create_resource_done_dict = res_dict['nested']
-                elif res_dict['type'] == 'sub_result':
-                    result_sub_result_list = res_dict['nested']
-                elif res_dict['type'] == 'sub_uop_os_inst_id':
-                    uop_os_inst_id_list = res_dict['nested']
-                    Log.logger.debug("Task ID " + task_id.__str__() + " uop_os_inst_id_list\'s object id is :")
-                    Log.logger.debug(id(uop_os_inst_id_list))
-
-        if result_sub_is_create_resource_done_dict['is_create_done'] is not True:
-            temp_uop_os_inst_id_list = _create_resource_set(task_id, resource_id, resource_list, compute_list)
-            for temp in temp_uop_os_inst_id_list:
-                uop_os_inst_id_list.append(temp)
-                Log.logger.debug("Task ID " + task_id.__str__() + " uop_os_inst_id_list\'s object id is :")
-                Log.logger.debug(id(uop_os_inst_id_list))
-
-            result_sub_is_create_resource_done_dict['is_create_done'] = True
-            if uop_os_inst_id_list.__len__() == 0:
-                # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
-                request_res_callback(task_id, RES_STATUS_FAIL, req_dict)
-                Log.logger.debug("Task ID " + task_id.__str__() + " Call UOP CallBack Post Fail Info.")
-                # 停止定时任务并退出
-                TaskManager.task_exit(task_id)
-        else:
-            if uop_os_inst_id_list.__len__() == 0:
-                # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
-                request_res_callback(task_id, RES_STATUS_FAIL, req_dict)
-                Log.logger.debug("Task ID " + task_id.__str__() + " Call UOP CallBack Post Fail Info.")
-                # 停止定时任务并退出
-                TaskManager.task_exit(task_id)
-            else:
-                Log.logger.debug("Task ID " + task_id.__str__() +
-                                 " Test API handler result_list object id is " + id(result_sub_result_list).__str__() +
-                                 ", Content is " + result_sub_result_list[:].__str__())
-                _query_resource_set_status(task_id, resource_id, result_sub_result_list, uop_os_inst_id_list, req_dict)
-    except Exception as e:
-        # TODO(thread exit): 执行捕获异常调用UOP CallBack停止定时任务退出任务线程
-        Log.logger.error("Task ID " + task_id.__str__() +
-                         " Catch an exception. All instance which were created rollback starting. Error message is: ")
-        Log.logger.error(e.message)
-
-        # 回滚全部资源和容器
-        if temp_uop_os_inst_id_list is not None:
-            _rollback_all(task_id, resource_id, temp_uop_os_inst_id_list, [])
-        else:
-            _rollback_all(task_id, resource_id, uop_os_inst_id_list, [])
-
-        request_res_callback(task_id, RES_STATUS_FAIL, req_dict)
-        Log.logger.debug("Task ID " + task_id.__str__() + " Call UOP CallBack Post Fail Info.")
-        # 停止定时任务并退出
-        TaskManager.task_exit(task_id)
 
 
 # res_set REST API Controller
@@ -723,9 +638,8 @@ class ResourceSet(Resource):
             Log.logger.debug(id(req_dict))
             Log.logger.debug('result_list\'s object id is :')
             Log.logger.debug(id(result_list))
-            # # TODO(TaskManager.task_start()): 定时任务示例代码
-            # TaskManager.task_start(SLEEP_TIME, TIMEOUT, result_list,
-            #                        _create_resource_set_and_query, resource_id, resource_list, compute_list, req_dict)
+            # TODO(TaskManager.task_start()): 定时任务示例代码
+            # 创建资源集合定时任务，成功或失败后调用UOP资源预留CallBack（目前仅允许全部成功或全部失败，不允许部分成功）
             res_provider = ResourceProvider(resource_id, resource_list, compute_list, req_dict)
             res_provider_list = [res_provider]
             TaskManager.task_start(SLEEP_TIME, TIMEOUT, res_provider_list, tick_announce)
@@ -745,6 +659,7 @@ class ResourceSet(Resource):
         }
 
         return res, 202
+
 
 def tick_announce(task_id, res_provider_list):
     if res_provider_list is not None and len(res_provider_list) >= 1:
