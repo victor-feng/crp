@@ -67,17 +67,17 @@ DEFAULT_PASSWORD = "123456"
 
 class ResourceProvider(object):
     # Define some states.
-    states = ['init', 'create_instance', 'instance_state_query', 'os_state_query', 'init_cluster', 'success', 'fail', 'rollback', 'stop']
+    states = ['init', 'success', 'fail', 'rollback', 'stop', 'create', 'query']
 
     # Define transitions.
     transitions = [
-        {'trigger': 'success', 'source': 'instance_state_query', 'dest': 'success', 'after': 'do_success'},
-        {'trigger': 'rollback', 'source': '*', 'dest': 'rollback', 'after': 'do_rollback'},
+        {'trigger': 'success', 'source': 'query', 'dest': 'success', 'after': 'do_success'},
         {'trigger': 'fail', 'source': 'rollback', 'dest': 'fail', 'after': 'do_fail'},
-        {'trigger': 'stop', 'source': '*', 'dest': 'stop', 'after': 'do_stop'},
-        {'trigger': 'create', 'source': 'init', 'dest': 'create_instance', 'after': 'do_create_instance'},
-        {'trigger': 'query', 'source': 'create_instance', 'dest': 'instance_state_query', 'after': 'do_query_resource_set_status'},
-        {'trigger': 'query', 'source': 'instance_state_query', 'dest': 'instance_state_query', 'after': 'do_query_resource_set_status'},
+        {'trigger': 'rollback', 'source': ['create', 'query'], 'dest': 'rollback', 'after': 'do_rollback'},
+        {'trigger': 'stop', 'source': ['success', 'fail'], 'dest': 'stop', 'after': 'do_stop'},
+        {'trigger': 'create', 'source': 'init', 'dest': 'create', 'after': 'do_create_instance'},
+        {'trigger': 'query', 'source': 'create', 'dest': 'query', 'after': 'do_query_resource_set_status'},
+        {'trigger': 'query', 'source': 'query', 'dest': 'query', 'after': 'do_query_resource_set_status'},
     ]
 
     def __init__(self, resource_id, resource_list, compute_list, req_dict):
@@ -88,7 +88,6 @@ class ResourceProvider(object):
         self.compute_list = compute_list
         self.req_dict = req_dict
         self.is_rollback = False
-        self.result_list = []
         self.result_inst_id_list = []
         self.uop_os_inst_id_list = []
         self.result_info_list = []
