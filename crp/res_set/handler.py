@@ -7,6 +7,7 @@ from crp.res_set.errors import resource_set_errors
 from crp.log import Log
 from crp.openstack import OpenStack
 from crp.utils.docker_tools import image_transit
+from transitions import Machine
 import json
 
 
@@ -64,6 +65,56 @@ DEFAULT_USERNAME = "root"
 DEFAULT_PASSWORD = "123456"
 
 
+class ResourceProvider(object):
+    # Define some states.
+    states = ['init', 'create_instance', 'instance_state_query', 'os_state_query', 'init_cluster', 'rollback', 'stop']
+
+    # Define transitions.
+    transitions = [
+        {'trigger': 'error', 'source': '*', 'dest': 'rollback', 'after': 'do_rollback'},
+        {'trigger': 'stop', 'source': '*', 'dest': 'stop', 'after': 'do_stop'},
+        {'trigger': 'create', 'source': 'init', 'dest': 'create_instance', 'after': 'do_create_instance'},
+        {'trigger': 'query', 'source': 'create_instance', 'dest': 'instance_state_query', 'after': 'do_query_resource_set_status'},
+        {'trigger': 'query', 'source': 'instance_state_query', 'dest': 'instance_state_query', 'after': 'do_query_resource_set_status'},
+    ]
+
+    def __init__(self, resource_id, resource_list, compute_list, req_dict):
+        # Initialize the variable
+        self.task_id = None
+        self.resource_id = resource_id
+        self.resource_list = resource_list
+        self.compute_list = compute_list
+        self.req_dict = req_dict
+        self.result_list = []
+        self.result_uop_os_inst_id_list = []
+        self.uop_os_inst_id_list = []
+
+        # Initialize the state machine
+        self.machine = Machine(model=self,
+                               states=ResourceProvider.states,
+                               transitions=ResourceProvider.transitions,
+                               initial='init')
+
+    def set_task_id(self, task_id):
+        self.task_id = task_id
+
+    def do_rollback(self):
+        _rollback_all(self.task_id, self.resource_id, self.uop_os_inst_id_list, self.result_uop_os_inst_id_list)
+        self.stop()
+
+    def do_stop(self):
+        pass
+
+    def do_create_instance(self):
+        _create_resource_set(self.task_id, self.resource_id, self.resource_list, self.compute_list,
+                             self.uop_os_inst_id_list)
+        self.query()
+
+    def do_query_resource_set_status(self):
+        _query_resource_set_status(self.task_id, self.resource_id,
+                                   self.result_list, self.uop_os_inst_id_list, self.req_dict)
+
+
 # 向OpenStack申请资源
 def _create_instance(task_id, name, image, flavor, availability_zone, network_id):
     nova_client = OpenStack.nova_client
@@ -112,8 +163,9 @@ def create_docker_by_url(task_id, name, image_url):
 
 
 # 申请资源定时任务
-def _create_resource_set(task_id, resource_id=None, resource_list=None, compute_list=None):
-    uop_os_inst_id_list = []
+def _create_resource_set(task_id, resource_id=None, resource_list=None, compute_list=None, uop_os_inst_id_list=None):
+    if uop_os_inst_id_list is None:
+        uop_os_inst_id_list = []
     for resource in resource_list:
         instance_name = resource.get('instance_name')
         instance_id = resource.get('instance_id')
@@ -671,9 +723,12 @@ class ResourceSet(Resource):
             Log.logger.debug(id(req_dict))
             Log.logger.debug('result_list\'s object id is :')
             Log.logger.debug(id(result_list))
-            # TODO(TaskManager.task_start()): 定时任务示例代码
-            TaskManager.task_start(SLEEP_TIME, TIMEOUT, result_list,
-                                   _create_resource_set_and_query, resource_id, resource_list, compute_list, req_dict)
+            # # TODO(TaskManager.task_start()): 定时任务示例代码
+            # TaskManager.task_start(SLEEP_TIME, TIMEOUT, result_list,
+            #                        _create_resource_set_and_query, resource_id, resource_list, compute_list, req_dict)
+            res_provider = ResourceProvider(resource_id, resource_list, compute_list, req_dict)
+            res_provider_list = [res_provider]
+            TaskManager.task_start(SLEEP_TIME, TIMEOUT, res_provider_list, tick_announce)
         except Exception as e:
             # exception return http code 500 (Internal Server Error)
             code = 500
@@ -691,5 +746,15 @@ class ResourceSet(Resource):
 
         return res, 202
 
+def tick_announce(task_id, res_provider_list):
+    if res_provider_list is not None and len(res_provider_list) >= 1:
+        res_provider = res_provider_list[0]
+        if res_provider.task_id is None:
+            res_provider.set_task_id(task_id)
+        Log.logger.debug(res_provider.state)
+        if res_provider.state == 'init':
+            res_provider.create()
+        else:
+            res_provider.query()
 
 resource_set_api.add_resource(ResourceSet, '/sets')
