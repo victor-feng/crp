@@ -79,6 +79,7 @@ class ResourceProvider(object):
         {'trigger': 'create', 'source': 'init', 'dest': 'create', 'after': 'do_create_instance'},
         {'trigger': 'query', 'source': 'create', 'dest': 'query', 'after': 'do_query_resource_set_status'},
         {'trigger': 'query', 'source': 'query', 'dest': 'query', 'after': 'do_query_resource_set_status'},
+        {'trigger': 'app_push', 'source': ['success', 'fail'], 'desc': 'nginx_push', 'after':'do_push_nginx_config'}
     ]
 
     def __init__(self, resource_id, resource_list, compute_list, req_dict):
@@ -159,9 +160,29 @@ class ResourceProvider(object):
         is_finished, self.is_rollback = _query_resource_set_status(self.task_id, self.uop_os_inst_id_list,
                                                                    self.result_inst_id_list, self.result_info_list)
         if is_finished:
+            # self.do_push_nginx_config({'domain': 'uop.syswin.com', 'ip': '172.28.2.122'})
             self.success()
         if self.is_rollback:
             self.rollback()
+
+    def do_push_nginx_config(self, kwargs):
+        run_cmd('ansible 172.28.32.32 --private-key=/root/.ssh/id_rsa_12 -m shell -a '
+                '"/shell/update.py {domain} {ip}:8081"'.format(domain=kwargs.get('domain'), ip=kwargs.get('ip')))
+
+
+def run_cmd(cmd):
+    msg = ''
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True)
+    while True:
+        line = p.stdout.readline()
+        Log.logger.debug('The nginx config push result is %s' % line)
+        if not line and p.poll() is not None:
+            break
+        else:
+            msg += line
+            Log.logger.debug('The nginx config push msg is %s' % msg)
+    code = p.wait()
+    return msg, code
 
 
 # 向OpenStack申请资源
@@ -733,4 +754,6 @@ class MongodbCluster(object):
 resource_set_api.add_resource(ResourceSet, '/sets')
 
 if "__name__" == "__main__":
-    MongodbCluster(cmd_list=cmd)
+    r = ResourceProvider()
+    r.do_push_nginx_config({'domain': 'uop.syswin.com', 'ip': '172.1.1.1'})
+    # MongodbCluster(cmd_list=cmd)
