@@ -106,10 +106,15 @@ class ResourceProvider(object):
         Log.logger.debug("Query Task ID " + self.task_id.__str__() + " all instance create success." +
                          " instance id set is " + self.result_inst_id_list[:].__str__() +
                          " instance info set is " + self.result_info_list[:].__str__())
+        app_cluster_ins = dict()
         for info in self.result_info_list:
             if info["uop_inst_id"] == self.req_dict["container_inst_id"]:
-                self.req_dict["container_ip"] = info["ip"]
-                self.req_dict["container_physical_server"] = info["physical_server"]
+                app_cluster_ins['container_ip'] = info["ip"]
+                app_cluster_ins["container_physical_server"] = info["physical_server"]
+                app_cluster_ins["vip"] = info["vip"]
+                self.req_dict["app_cluster_list"].append(app_cluster_ins)
+                # self.req_dict["container_ip"] = info["ip"]
+                # self.req_dict["container_physical_server"] = info["physical_server"]
             if info["uop_inst_id"] == self.req_dict["mysql_inst_id"]:
                 self.req_dict["mysql_ip"] = info["ip"]
                 self.req_dict["mysql_physical_server"] = info["physical_server"]
@@ -233,20 +238,22 @@ def _create_resource_set(task_id, resource_id=None, resource_list=None, compute_
         cpu = compute.get('cpu')
         mem = compute.get('mem')
         image_url = compute.get('image_url')
+        quantity = compute.get('quantity')
 
-        err_msg, osint_id = create_docker_by_url(task_id, instance_name, image_url)
-        if err_msg is None:
-            uopinst_info = {
-                   'uop_inst_id': instance_id,
-                   'os_inst_id': osint_id
-               }
-            uop_os_inst_id_list.append(uopinst_info)
-        else:
-            Log.logger.error("Task ID " + task_id.__str__() + " ERROR. Error Message is:")
-            Log.logger.error(err_msg)
-            # 删除全部
-            is_rollback = True
-            uop_os_inst_id_list = []
+        for i in range(1, quantity+1, 1):
+            err_msg, osint_id = create_docker_by_url(task_id, instance_name, image_url)
+            if err_msg is None:
+                uopinst_info = {
+                       'uop_inst_id': instance_id,
+                       'os_inst_id': osint_id
+                   }
+                uop_os_inst_id_list.append(uopinst_info)
+            else:
+                Log.logger.error("Task ID " + task_id.__str__() + " ERROR. Error Message is:")
+                Log.logger.error(err_msg)
+                # 删除全部
+                is_rollback = True
+                uop_os_inst_id_list = []
 
     return is_rollback, uop_os_inst_id_list
 
@@ -547,6 +554,7 @@ class ResourceSet(Resource):
             args = parser.parse_args()
 
             req_dict = {}
+            req_list = []
 
             unit_name = args.unit_name
             unit_id = args.unit_id
@@ -580,19 +588,23 @@ class ResourceSet(Resource):
                     req_dict["redis_inst_id"] = instance_id
                 if instance_type == 'mongo':
                     req_dict["mongodb_inst_id"] = instance_id
+                req_list.append(req_dict)
+                req_dict = {}
 
             for compute in compute_list:
-                instance_name = compute.get('instance_name')
-                instance_id = compute.get('instance_id')
-                cpu = compute.get('cpu')
-                mem = compute.get('mem')
-                image_url = compute.get('image_url')
+                instance_name = compute.get('instance_name', None)
+                instance_id = compute.get('instance_id', None)
+                cpu = compute.get('cpu', None)
+                mem = compute.get('mem', None)
+                image_url = compute.get('image_url', None)
 
                 req_dict["container_name"] = instance_name
                 req_dict["image_addr"] = image_url
                 req_dict["cpu"] = cpu
                 req_dict["memory"] = mem
                 req_dict["container_inst_id"] = instance_id
+                req_list.append(req_dict)
+                req_dict = {}
 
             Log.logger.debug(resource_list)
             Log.logger.debug(compute_list)
@@ -610,6 +622,9 @@ class ResourceSet(Resource):
             req_dict["domain"] = domain
             req_dict["cmdb_repo_id"] = cmdb_repo_id
             req_dict["status"] = RES_STATUS_DEFAULT
+
+            # init app cluster Map(List[])
+            req_dict['app_cluster_list'] = []
 
             # init default data
             req_dict["container_username"] = DEFAULT_USERNAME
