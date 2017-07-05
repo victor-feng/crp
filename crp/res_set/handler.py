@@ -14,7 +14,7 @@ import subprocess
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 
-
+quantity = 0
 TIMEOUT = 500
 SLEEP_TIME = 3
 GLOBAL_MONGO_CLUSTER_IP = None
@@ -79,7 +79,7 @@ class ResourceProvider(object):
         {'trigger': 'create', 'source': 'init', 'dest': 'create', 'after': 'do_create_instance'},
         {'trigger': 'query', 'source': 'create', 'dest': 'query', 'after': 'do_query_resource_set_status'},
         {'trigger': 'query', 'source': 'query', 'dest': 'query', 'after': 'do_query_resource_set_status'},
-        {'trigger': 'app_push', 'source': ['success', 'fail'], 'desc': 'nginx_push', 'after':'do_push_nginx_config'}
+        {'trigger': 'app_push', 'source': ['success', 'fail'], 'dest': 'nginx_push', 'after':'do_push_nginx_config'}
     ]
 
     def __init__(self, resource_id, resource_list, compute_list, req_dict):
@@ -166,8 +166,18 @@ class ResourceProvider(object):
             self.rollback()
 
     def do_push_nginx_config(self, kwargs):
-        run_cmd('ansible 172.28.32.32 --private-key=/root/.ssh/id_rsa_12 -m shell -a '
-                '"/shell/update.py {domain} {ip}:8081"'.format(domain=kwargs.get('domain'), ip=kwargs.get('ip')))
+        """
+        need the nip domain ip
+        need write the update file into vm
+        :param kwargs:
+        :return:
+        """
+        nip = kwargs.get('nip')
+        with open('/etc/ansible/hosts', 'w') as f:
+            f.write('%s\n' % nip)
+        for i in range(quantity):
+            run_cmd('ansible {nip} --private-key=/root/.ssh/id_rsa_new_root -m shell -a '
+                    '"/shell/update.py {domain} {ip}:8081"'.format(nip=kwargs.get('nip'), domain=kwargs.get('domain'), ip=kwargs.get('ip')))
 
 
 def run_cmd(cmd):
@@ -264,7 +274,7 @@ def _create_resource_set(task_id, resource_id=None, resource_list=None, compute_
         disk = resource.get('disk')
         quantity = resource.get('quantity')
         version = resource.get('version')
-
+        global quantity
         for i in range(1, quantity+1, 1):
             osint_id = create_instance_by_type(task_id, instance_type, instance_name)
             uopinst_info = {
@@ -782,7 +792,7 @@ class MongodbCluster(object):
 
 resource_set_api.add_resource(ResourceSet, '/sets')
 
-if "__name__" == "__main__":
+if __name__ == "__main__":
     r = ResourceProvider()
     r.do_push_nginx_config({'domain': 'uop.syswin.com', 'ip': '172.1.1.1'})
     # MongodbCluster(cmd_list=cmd)
