@@ -114,16 +114,16 @@ class ResourceProvider(object):
                 if info["uop_inst_id"] == ins["container_inst_id"]:
                     ins['container_ip'] = info["ip"]
                     ins["container_physical_server"] = info["physical_server"]
-                    # ins["vip"] = info["vip"]
-                    # self.req_dict["container_ip"] = info["ip"]
-                    # self.req_dict["container_physical_server"] = info["physical_server"]
-            if info["uop_inst_id"] == self.req_dict["mysql_inst_id"]:
+                # ins["vip"] = info["vip"]
+                # self.req_dict["container_ip"] = info["ip"]
+                # self.req_dict["container_physical_server"] = info["physical_server"]
+            if 'mysql_inst_id' in self.req_dict and info["uop_inst_id"] == self.req_dict["mysql_inst_id"]:
                 self.req_dict["mysql_ip"] = info["ip"]
                 self.req_dict["mysql_physical_server"] = info["physical_server"]
-            if info["uop_inst_id"] == self.req_dict["redis_inst_id"]:
+            if "redis_inst_id" in self.req_dict and info["uop_inst_id"] == self.req_dict["redis_inst_id"]:
                 self.req_dict["redis_ip"] = info["ip"]
                 self.req_dict["redis_physical_server"] = info["physical_server"]
-            if info["uop_inst_id"] == self.req_dict["mongodb_inst_id"]:
+            if "mongodb_inst_id" in self.req_dict and info["uop_inst_id"] == self.req_dict["mongodb_inst_id"]:
                 self.req_dict["mongodb_ip"] = info["ip"]
                 self.req_dict["mongodb_physical_server"] = info["physical_server"]
         request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict)
@@ -477,51 +477,54 @@ def request_res_callback(task_id, status, req_dict):
     # if req_dict["container_ip"] is not IP_NONE:
     if req_dict['app_cluster_list'] is not None:
         ins_list = req_dict['app_cluster_list']
-        for ins in ins_list:
+        for vm in ins_list:
             container["username"] = req_dict["container_username"]
             container["password"] = req_dict["container_password"]
-            container["ip"] = ins["container_ip"]
-            container["container_name"] = req_dict["container_name"]
-            container["image_addr"] = req_dict["image_addr"]
-            container["cpu"] = req_dict["cpu"]
-            container["memory"] = req_dict["memory"]
-            container["ins_id"] = req_dict["container_inst_id"]
-            container["physical_server"] = ins["container_physical_server"]
-            container["vip"] = ins['vip']
+            container["ip"] = vm["container_ip"]
+            container["container_name"] = vm["container_name"]
+            container["image_addr"] = vm["image_addr"]
+            container["cpu"] = vm["cpu"]
+            container["memory"] = vm["memory"]
+            container["ins_id"] = vm["container_inst_id"]
+            container["physical_server"] = vm["container_physical_server"]
+            container["domain"] = vm['domain']
             container_list.append(container)
             container = {}
     data["container"] = container_list
 
     db_info = {}
     mysql = {}
-    mysql["ins_id"] = req_dict["mysql_inst_id"]
-    mysql["username"] = req_dict["mysql_username"]
-    mysql["password"] = req_dict["mysql_password"]
-    mysql["port"] = req_dict["mysql_port"]
-    mysql["ip"] = req_dict["mysql_ip"]
-    mysql["physical_server"] = req_dict["mysql_physical_server"]
+    if 'mysql_inst_id' in req_dict:
+        mysql["ins_id"] = req_dict["mysql_inst_id"]
+        mysql["username"] = req_dict["mysql_username"]
+        mysql["password"] = req_dict["mysql_password"]
+        mysql["port"] = req_dict["mysql_port"]
+        mysql["ip"] = req_dict["mysql_ip"]
+        mysql["physical_server"] = req_dict["mysql_physical_server"]
 
     redis = {}
-    redis["ins_id"] = req_dict["redis_inst_id"]
-    redis["username"] = req_dict["redis_username"]
-    redis["password"] = req_dict["redis_password"]
-    redis["port"] = req_dict["redis_port"]
-    redis["ip"] = req_dict["redis_ip"]
-    redis["physical_server"] = req_dict["redis_physical_server"]
+    if "redis_inst_id" in req_dict:
+        redis["ins_id"] = req_dict["redis_inst_id"]
+        redis["username"] = req_dict["redis_username"]
+        redis["password"] = req_dict["redis_password"]
+        redis["port"] = req_dict["redis_port"]
+        redis["ip"] = req_dict["redis_ip"]
+        redis["physical_server"] = req_dict["redis_physical_server"]
 
     mongodb = {}
-    mongodb["ins_id"] = req_dict["mongodb_inst_id"]
-    mongodb["username"] = req_dict["mongodb_username"]
-    mongodb["password"] = req_dict["mongodb_password"]
-    mongodb["port"] = req_dict["mongodb_port"]
-    mongodb["ip"] = req_dict["mongodb_ip"]
-    mongodb["physical_server"] = req_dict["mongodb_physical_server"]
+    if "mongodb_inst_id" in req_dict:
+        mongodb["ins_id"] = req_dict["mongodb_inst_id"]
+        mongodb["username"] = req_dict["mongodb_username"]
+        mongodb["password"] = req_dict["mongodb_password"]
+        mongodb["port"] = req_dict["mongodb_port"]
+        mongodb["ip"] = req_dict["mongodb_ip"]
+        mongodb["physical_server"] = req_dict["mongodb_physical_server"]
 
-    if mysql["ip"] is not IP_NONE:
+    if mysql.get('ip') and mysql["ip"] is not IP_NONE:
         db_info["mysql"] = mysql
-    if redis["ip"] is not IP_NONE:
+    if redis.get('ip') and  redis["ip"] is not IP_NONE:
         db_info["redis"] = redis
-    if mongodb["ip"] is not IP_NONE:
+    if mongodb.get('ip') and mongodb["ip"] is not IP_NONE:
         db_info["mongodb"] = mongodb
     data["db_info"] = db_info
 
@@ -621,6 +624,7 @@ class ResourceSet(Resource):
 
             req_dict = {}
             req_list = []
+            com_dict = dict()
 
             unit_name = args.unit_name
             unit_id = args.unit_id
@@ -663,14 +667,18 @@ class ResourceSet(Resource):
                 cpu = compute.get('cpu', None)
                 mem = compute.get('mem', None)
                 image_url = compute.get('image_url', None)
+                domain = compute.get('domain', None)
+                quantity = compute.get('quantity', None)
 
-                req_dict["container_name"] = instance_name
-                req_dict["image_addr"] = image_url
-                req_dict["cpu"] = cpu
-                req_dict["memory"] = mem
-                req_dict["container_inst_id"] = instance_id
-                req_list.append(req_dict)
-                req_dict = {}
+                for i in range(quantity):
+                    com_dict["container_name"] = instance_name + str(i)
+                    com_dict["image_addr"] = image_url
+                    com_dict["cpu"] = cpu
+                    com_dict["memory"] = mem
+                    com_dict["container_inst_id"] = instance_id
+                    com_dict["domain"] = domain
+                    req_list.append(com_dict)
+                    com_dict = {}
 
             Log.logger.debug(resource_list)
             Log.logger.debug(compute_list)
