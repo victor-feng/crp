@@ -160,8 +160,13 @@ class ResourceProvider(object):
         is_finished, self.is_rollback = _query_resource_set_status(self.task_id, self.uop_os_inst_id_list,
                                                                    self.result_inst_id_list, self.result_info_list)
         if is_finished:
-            # self.do_push_nginx_config({'domain': 'uop.syswin.com', 'ip': '172.28.2.122'})
-            self.success()
+            l = self.req_dict['app_cluster_list']
+            for i in l:
+                domain = i.get('domain')
+                ip = i.get('ip')
+                nip = '172.28.36.231'
+                self.do_push_nginx_config({'nip': nip, 'domain': domain, 'ip': ip})
+                self.success()
         if self.is_rollback:
             self.rollback()
 
@@ -175,9 +180,9 @@ class ResourceProvider(object):
         nip = kwargs.get('nip')
         with open('/etc/ansible/hosts', 'w') as f:
             f.write('%s\n' % nip)
-        for i in range(quantity):
-            run_cmd('ansible {nip} --private-key=/root/.ssh/id_rsa_new_root -m shell -a '
-                    '"/shell/update.py {domain} {ip}:8081"'.format(nip=kwargs.get('nip'), domain=kwargs.get('domain'), ip=kwargs.get('ip')))
+        # for i in range(quantity):
+        run_cmd('ansible {nip} --private-key=/root/.ssh/id_rsa_new_root -m shell -a '
+                '"/shell/update.py {domain} {ip}:8081"'.format(nip=kwargs.get('nip'), domain=kwargs.get('domain'), ip=kwargs.get('ip')))
 
 
 def run_cmd(cmd):
