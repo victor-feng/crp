@@ -110,13 +110,13 @@ class ResourceProvider(object):
                          " instance info set is " + self.result_info_list[:].__str__())
         app_cluster_ins = dict()
         for info in self.result_info_list:
-            if info["uop_inst_id"] == self.req_dict["container_inst_id"]:
-                app_cluster_ins['container_ip'] = info["ip"]
-                app_cluster_ins["container_physical_server"] = info["physical_server"]
-                app_cluster_ins["vip"] = info["vip"]
-                self.req_dict["app_cluster_list"].append(app_cluster_ins)
-                # self.req_dict["container_ip"] = info["ip"]
-                # self.req_dict["container_physical_server"] = info["physical_server"]
+            for ins in self.req_dict['app_cluster_list']:
+                if info["uop_inst_id"] == ins["container_inst_id"]:
+                    ins['container_ip'] = info["ip"]
+                    ins["container_physical_server"] = info["physical_server"]
+                    # ins["vip"] = info["vip"]
+                    # self.req_dict["container_ip"] = info["ip"]
+                    # self.req_dict["container_physical_server"] = info["physical_server"]
             if info["uop_inst_id"] == self.req_dict["mysql_inst_id"]:
                 self.req_dict["mysql_ip"] = info["ip"]
                 self.req_dict["mysql_physical_server"] = info["physical_server"]
@@ -232,6 +232,25 @@ def create_docker_by_url(task_id, name, image_url):
         return err_msg, None
 
 
+def create_vip_port(instance_name):
+    neutron_client = OpenStack.neutron_client
+    network_id = DEV_NETWORK_ID
+
+    body_value = {
+                     "port": {
+                             "admin_state_up": True,
+                             "name": instance_name + '_port',
+                             "network_id": network_id
+                      }
+                 }
+    Log.logger.debug('Create port for cluster/instance ' + instance_name)
+    response = neutron_client.create_port(body=body_value)
+    ip = response.get('port').get('fixed_ips').pop().get('ip_address')
+    Log.logger.debug('Port id: ' + response.get('port').get('id') +
+                     'Port ip: ' + ip)
+    return None, ip
+
+
 # 申请资源定时任务
 def _create_resource_set(task_id, resource_id=None, resource_list=None, compute_list=None):
     is_rollback = False
@@ -261,6 +280,8 @@ def _create_resource_set(task_id, resource_id=None, resource_list=None, compute_
         mem = compute.get('mem')
         image_url = compute.get('image_url')
         quantity = compute.get('quantity')
+
+        # er_msg, ip = create_vip_port(instance_name)
 
         for i in range(1, quantity+1, 1):
             err_msg, osint_id = create_docker_by_url(task_id, instance_name, image_url)
@@ -437,17 +458,24 @@ def request_res_callback(task_id, status, req_dict):
     data["status"] = status
 
     container = {}
-    if req_dict["container_ip"] is not IP_NONE:
-        container["username"] = req_dict["container_username"]
-        container["password"] = req_dict["container_password"]
-        container["ip"] = req_dict["container_ip"]
-        container["container_name"] = req_dict["container_name"]
-        container["image_addr"] = req_dict["image_addr"]
-        container["cpu"] = req_dict["cpu"]
-        container["memory"] = req_dict["memory"]
-        container["ins_id"] = req_dict["container_inst_id"]
-        container["physical_server"] = req_dict["container_physical_server"]
-    data["container"] = container
+    container_list = []
+    # if req_dict["container_ip"] is not IP_NONE:
+    if req_dict['app_cluster_list'] is not None:
+        ins_list = req_dict['app_cluster_list']
+        for ins in ins_list:
+            container["username"] = req_dict["container_username"]
+            container["password"] = req_dict["container_password"]
+            container["ip"] = ins["container_ip"]
+            container["container_name"] = req_dict["container_name"]
+            container["image_addr"] = req_dict["image_addr"]
+            container["cpu"] = req_dict["cpu"]
+            container["memory"] = req_dict["memory"]
+            container["ins_id"] = req_dict["container_inst_id"]
+            container["physical_server"] = ins["container_physical_server"]
+            container["vip"] = ins['vip']
+            container_list.append(container)
+            container = {}
+    data["container"] = container_list
 
     db_info = {}
     mysql = {}
@@ -483,6 +511,7 @@ def request_res_callback(task_id, status, req_dict):
     data["db_info"] = db_info
 
     data_str = json.dumps(data)
+    Log.logger.debug('xxxxx')
     Log.logger.debug("Task ID " + task_id.__str__() + " UOP res_callback Request Body is: " + data_str)
     res = requests.post(RES_CALLBACK, data=data_str)
     Log.logger.debug(res.status_code)
@@ -610,8 +639,8 @@ class ResourceSet(Resource):
                     req_dict["redis_inst_id"] = instance_id
                 if instance_type == 'mongo':
                     req_dict["mongodb_inst_id"] = instance_id
-                req_list.append(req_dict)
-                req_dict = {}
+                # req_list.append(req_dict)
+                # req_dict = {}
 
             for compute in compute_list:
                 instance_name = compute.get('instance_name', None)
@@ -646,7 +675,7 @@ class ResourceSet(Resource):
             req_dict["status"] = RES_STATUS_DEFAULT
 
             # init app cluster Map(List[])
-            req_dict['app_cluster_list'] = []
+            req_dict['app_cluster_list'] = req_list
 
             # init default data
             req_dict["container_username"] = DEFAULT_USERNAME
