@@ -46,7 +46,9 @@ def _instance_status_sync(task_id, result):
         # Log.logger.debug(str(dir(vm)))
         insts.append({
             'os_inst_id': vm.id,
-            'status': vm.status,
+            'status': 'vm_error'
+            if vm.status == 'ERROR'
+            else vm.status,
         })
     Log.logger.debug("OpenStack vm number: "+ str(len(insts)))
     err_msg = None
