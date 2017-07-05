@@ -164,7 +164,7 @@ class ResourceProvider(object):
             for i in l:
                 domain = i.get('domain')
                 ip = i.get('ip')
-                nip = '172.28.36.231'
+                nip = '172.28.20.98'
                 self.do_push_nginx_config({'nip': nip, 'domain': domain, 'ip': ip})
                 self.success()
         if self.is_rollback:
@@ -181,7 +181,7 @@ class ResourceProvider(object):
         with open('/etc/ansible/hosts', 'w') as f:
             f.write('%s\n' % nip)
         # for i in range(quantity):
-        run_cmd('ansible {nip} --private-key=/root/.ssh/id_rsa_new_root -m shell -a '
+        run_cmd('ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a '
                 '"/shell/update.py {domain} {ip}:8081"'.format(nip=kwargs.get('nip'), domain=kwargs.get('domain'), ip=kwargs.get('ip')))
 
 
