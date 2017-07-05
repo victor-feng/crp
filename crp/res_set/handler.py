@@ -685,13 +685,12 @@ def tick_announce(task_id, res_provider_list):
             res_provider.create()
         else:
             res_provider.query()
-"""
-cmd1 = 'ansible -i /home/wanggang/hosts  new-host -u root --private-key=/home/wanggang/old_id_rsa -m script -a "/home/wanggang/mongoclu_install/mongoslave1.sh sys95"'
-cmd2 = 'ansible -i /home/wanggang/hosts  new-host -u root --private-key=/home/wanggang/old_id_rsa -m script -a "/home/wanggang/mongoclu_install/mongoslave2.sh sys95"'
-cmd3 = 'ansible -i /home/wanggang/hosts  new-host -u root --private-key=/home/wanggang/old_id_rsa -m script -a "/home/wanggang/mongoclu_install/mongomaster1.sh"'
-cmd4 = 'ansible -i /home/wanggang/hosts  new-host -u root --private-key=/home/wanggang/old_id_rsa -m script -a "/home/wanggang/mongoclu_install/mongomaster2.sh sys95"'
+
+cmd1 = 'ansible -i /home/mongo/hosts  new-host -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/mongoslave1.sh sys95"'
+cmd2 = 'ansible -i /home/mongo/hosts  new-host -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/mongoslave2.sh sys95"'
+cmd3 = 'ansible -i /home/mongo/hosts  new-host -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/mongomaster1.sh"'
+cmd4 = 'ansible -i /home/mongo/hosts  new-host -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/mongomaster2.sh sys95"'
 cmd = [cmd1, cmd2, cmd3, cmd4]
-"""
 
 
 class MongodbCluster(object):
@@ -732,3 +731,6 @@ class MongodbCluster(object):
 
 
 resource_set_api.add_resource(ResourceSet, '/sets')
+
+if "__name__" == "__main__":
+    MongodbCluster(cmd_list=cmd)
