@@ -166,6 +166,7 @@ class ResourceProvider(object):
                 ip = i.get('ip')
                 nip = '172.28.20.98'
                 print 'domain&ip:', domain, ip
+                Log.logger.debug('the receive domain and ip is %s-%s' % (domain, ip))
                 # self.do_push_nginx_config({'nip': nip, 'domain': domain, 'ip': ip})
                 self.do_push_nginx_config({'nip': nip, 'domain': 'tttttt', 'ip': 'nnnnnnnn'})
                 self.success()
@@ -183,16 +184,16 @@ class ResourceProvider(object):
         nip = kwargs.get('nip')
         with open('/etc/ansible/hosts', 'w') as f:
             f.write('%s\n' % nip)
-        print '----->start push'
+        Log.logger.debug('----->start push')
         run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip))
         run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m synchronize -a 'src=/opt/uop-crp/crp/res_set/update.py dest=/shell/'".format(nip=nip))
         run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m synchronize -a 'src=/opt/uop-crp/crp/res_set/template dest=/shell/'".format(nip=nip))
-
+        Log.logger.debug('------>上传配置文件完成')
         run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a 'chmod 777 /shell/update.py'".format(nip=nip))
         run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a 'chmod 777 /shell/template'".format(nip=nip))
         run_cmd('ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a '
                 '"/shell/update.py {domain} {ip}:8081"'.format(nip=kwargs.get('nip'), domain=kwargs.get('domain'), ip=kwargs.get('ip')))
-        print '------>end push'
+        Log.logger.debug('------>end push')
 
 
 def run_cmd(cmd):
