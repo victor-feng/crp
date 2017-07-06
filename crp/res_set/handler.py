@@ -188,8 +188,8 @@ class ResourceProvider(object):
         run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m synchronize -a 'src=/opt/uop-crp/crp/res_set/update.py dest=/shell/'".format(nip=nip))
         run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m synchronize -a 'src=/opt/uop-crp/crp/res_set/template dest=/shell/'".format(nip=nip))
 
-        run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -a 'chmod +777 /shell/update.py'".format(nip=nip))
-        run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -a 'chmod +777 /shell/template'".format(nip=nip))
+        run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a 'chmod 777 /shell/update.py'".format(nip=nip))
+        run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a 'chmod 777 /shell/template'".format(nip=nip))
         run_cmd('ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a '
                 '"/shell/update.py {domain} {ip}:8081"'.format(nip=kwargs.get('nip'), domain=kwargs.get('domain'), ip=kwargs.get('ip')))
         print '------>end push'
