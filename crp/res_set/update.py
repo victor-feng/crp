@@ -8,11 +8,15 @@ if len(sys.argv) < 3:
     print "Please Input domain, Ip:port"
 
 domain = sys.argv[1]  # 'api.wangyan.systoon.com'
-ips = sys.argv[2]     #'172.28.265.32:8081'          #
+ips = sys.argv[2]     #'172.28.265.32:8081'
 subdomain = '.'.join(domain.split('.')[:-2])
 
-subprocess.Popen('mkdir /usr/local/nginx/conf/servers_systoon', shell=True, stdout=subprocess.PIPE)
-subprocess.Popen('mkdir /shell', shell=True, stdout=subprocess.PIPE)
+conf_url = '/usr/local/nginx/conf/servers_systoon'
+shell_url = '/shell'
+if not os.path.isdir(conf_url):
+    subprocess.Popen('mkdir /usr/local/nginx/conf/servers_systoon', shell=True, stdout=subprocess.PIPE)
+if not os.path.exists(shell_url):
+    subprocess.Popen('mkdir /shell', shell=True, stdout=subprocess.PIPE)
 
 nginx_dir = '/usr/local/nginx/conf/servers_systoon'
 nginx_conf = os.path.join(nginx_dir, domain)

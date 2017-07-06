@@ -184,7 +184,7 @@ class ResourceProvider(object):
         nip = kwargs.get('nip')
         with open('/etc/ansible/hosts', 'w') as f:
             f.write('%s\n' % nip)
-        Log.logger.debug('----->start push')
+        Log.logger.debug('----->start push', kwargs)
         run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip))
         run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m synchronize -a 'src=/opt/uop-crp/crp/res_set/update.py dest=/shell/'".format(nip=nip))
         run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m synchronize -a 'src=/opt/uop-crp/crp/res_set/template dest=/shell/'".format(nip=nip))
