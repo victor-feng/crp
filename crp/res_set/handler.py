@@ -165,7 +165,9 @@ class ResourceProvider(object):
                 domain = i.get('domain')
                 ip = i.get('ip')
                 nip = '172.28.20.98'
-                self.do_push_nginx_config({'nip': nip, 'domain': domain, 'ip': ip})
+                print 'domain&ip:', domain, ip
+                # self.do_push_nginx_config({'nip': nip, 'domain': domain, 'ip': ip})
+                self.do_push_nginx_config({'nip': nip, 'domain': 'tttttt', 'ip': 'nnnnnnnn'})
                 self.success()
         if self.is_rollback:
             self.rollback()
