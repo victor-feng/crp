@@ -810,7 +810,7 @@ class MongodbCluster(object):
 
 resource_set_api.add_resource(ResourceSet, '/sets')
 
-if __name__ == "__main__":
-    r = ResourceProvider('1', [], [], {})
-    r.do_push_nginx_config({'nip': '172.28.20.98', 'domain': 'uop.syswin.com', 'ip': '172.1.1.1'})
-    # MongodbCluster(cmd_list=cmd)
+# if __name__ == "__main__":
+#     r = ResourceProvider('1', [], [], {})
+#     r.do_push_nginx_config({'nip': '172.28.20.98', 'domain': 'uop.syswin.com', 'ip': '172.1.1.1'})
+#     # MongodbCluster(cmd_list=cmd)
