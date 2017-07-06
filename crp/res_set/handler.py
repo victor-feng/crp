@@ -180,7 +180,8 @@ class ResourceProvider(object):
         nip = kwargs.get('nip')
         with open('/etc/ansible/hosts', 'w') as f:
             f.write('%s\n' % nip)
-        # for i in range(quantity):
+        run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -a 'yum install rsync -y'")
+        run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m synchronize -a 'src=/opt/uop-crp/crp/res_set/update.py dest=/shell/'")
         run_cmd('ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a '
                 '"/shell/update.py {domain} {ip}:8081"'.format(nip=kwargs.get('nip'), domain=kwargs.get('domain'), ip=kwargs.get('ip')))
 
@@ -806,6 +807,6 @@ class MongodbCluster(object):
 resource_set_api.add_resource(ResourceSet, '/sets')
 
 if __name__ == "__main__":
-    r = ResourceProvider()
-    r.do_push_nginx_config({'domain': 'uop.syswin.com', 'ip': '172.1.1.1'})
+    r = ResourceProvider('1', [], [], {})
+    r.do_push_nginx_config({'nip': '172.28.20.98', 'domain': 'uop.syswin.com', 'ip': '172.1.1.1'})
     # MongodbCluster(cmd_list=cmd)
