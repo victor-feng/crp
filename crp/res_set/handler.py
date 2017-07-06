@@ -173,6 +173,7 @@ class ResourceProvider(object):
     def do_push_nginx_config(self, kwargs):
         """
         need the nip domain ip
+        nip:这是nginx那台机器的ip
         need write the update file into vm
         :param kwargs:
         :return:
@@ -180,10 +181,13 @@ class ResourceProvider(object):
         nip = kwargs.get('nip')
         with open('/etc/ansible/hosts', 'w') as f:
             f.write('%s\n' % nip)
+        print '----->start push'
         run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -a 'yum install rsync -y'")
         run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m synchronize -a 'src=/opt/uop-crp/crp/res_set/update.py dest=/shell/'")
+        run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m synchronize -a 'src=/opt/uop-crp/crp/res_set/template dest=/shell/'")
         run_cmd('ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a '
                 '"/shell/update.py {domain} {ip}:8081"'.format(nip=kwargs.get('nip'), domain=kwargs.get('domain'), ip=kwargs.get('ip')))
+        print '------>end push'
 
 
 def run_cmd(cmd):
