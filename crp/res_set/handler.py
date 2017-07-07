@@ -389,6 +389,7 @@ def _query_resource_set_status(task_id=None, uop_os_inst_id_list=None, result_in
                         'physical_server': getattr(inst, OS_EXT_PHYSICAL_SERVER_ATTR),
                     }
             result_info_list.append(_data)
+            _data = {}
             Log.logger.debug("Query Task ID " + task_id.__str__() + " Instance Info: " + _data.__str__())
             result_inst_id_list.append(uop_os_inst_id)
         if inst.status == 'ERROR':
@@ -688,6 +689,7 @@ class ResourceSet(Resource):
                     com_dict["memory"] = mem
                     com_dict["container_inst_id"] = instance_id
                     com_dict["domain"] = domain
+                    # com_dict['instances'] = []
                     req_list.append(com_dict)
                     com_dict = {}
 
