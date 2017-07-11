@@ -93,6 +93,8 @@ class ResourceProvider(object):
         self.result_inst_id_list = []
         self.uop_os_inst_id_list = []
         self.result_info_list = []
+        self.ip_list = []
+        self.container_list = copy.deepcopy(compute_list)
 
         # Initialize the state machine
         self.machine = Machine(model=self,
@@ -108,15 +110,7 @@ class ResourceProvider(object):
         Log.logger.debug("Query Task ID " + self.task_id.__str__() + " all instance create success." +
                          " instance id set is " + self.result_inst_id_list[:].__str__() +
                          " instance info set is " + self.result_info_list[:].__str__())
-        app_cluster_ins = dict()
         for info in self.result_info_list:
-            for ins in self.req_dict['app_cluster_list']:
-                if info["uop_inst_id"] == ins["container_inst_id"]:
-                    ins['container_ip'] = info["ip"]
-                    ins["container_physical_server"] = info["physical_server"]
-                # ins["vip"] = info["vip"]
-                # self.req_dict["container_ip"] = info["ip"]
-                # self.req_dict["container_physical_server"] = info["physical_server"]
             if 'mysql_inst_id' in self.req_dict and info["uop_inst_id"] == self.req_dict["mysql_inst_id"]:
                 self.req_dict["mysql_ip"] = info["ip"]
                 self.req_dict["mysql_physical_server"] = info["physical_server"]
@@ -126,7 +120,7 @@ class ResourceProvider(object):
             if "mongodb_inst_id" in self.req_dict and info["uop_inst_id"] == self.req_dict["mongodb_inst_id"]:
                 self.req_dict["mongodb_ip"] = info["ip"]
                 self.req_dict["mongodb_physical_server"] = info["physical_server"]
-        request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict)
+        request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict, self.compute_list)
         Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Success Info.")
         # 停止定时任务并退出
         self.stop()
@@ -158,7 +152,8 @@ class ResourceProvider(object):
 
     def do_query_resource_set_status(self):
         is_finished, self.is_rollback = _query_resource_set_status(self.task_id, self.uop_os_inst_id_list,
-                                                                   self.result_inst_id_list, self.result_info_list)
+                                                                   self.result_inst_id_list, self.result_info_list,
+                                                                   self.compute_list)
         if is_finished:
             l = self.req_dict['app_cluster_list']
             for i in l:
@@ -306,17 +301,22 @@ def _create_resource_set(task_id, resource_id=None, resource_list=None, compute_
         mem = compute.get('mem')
         image_url = compute.get('image_url')
         quantity = compute.get('quantity')
+        domain = compute.get('domain')
+
+        compute['instance'] = []
+
 
         # er_msg, ip = create_vip_port(instance_name)
 
-        for i in range(1, quantity+1, 1):
+        for i in range(0, quantity, 1):
             err_msg, osint_id = create_docker_by_url(task_id, instance_name, image_url)
             if err_msg is None:
                 uopinst_info = {
-                       'uop_inst_id': instance_id,
+                       'uop_inst_id': instance_id + '_' + str(i),
                        'os_inst_id': osint_id
                    }
                 uop_os_inst_id_list.append(uopinst_info)
+                compute['instance'].append({'domain': domain, 'os_inst_id': osint_id})
             else:
                 Log.logger.error("Task ID " + task_id.__str__() + " ERROR. Error Message is:")
                 Log.logger.error(err_msg)
@@ -364,7 +364,8 @@ def _uop_os_list_sub(uop_os_inst_id_list, result_uop_os_inst_id_list):
 
 
 # 向OpenStack查询已申请资源的定时任务
-def _query_resource_set_status(task_id=None, uop_os_inst_id_list=None, result_inst_id_list=None, result_info_list=None):
+def _query_resource_set_status(task_id=None, uop_os_inst_id_list=None, result_inst_id_list=None,
+                               result_info_list=None, container_list=None):
     is_finish = False
     is_rollback = False
     # uop_os_inst_id_wait_query = list(set(uop_os_inst_id_list) - set(result_inst_id_list))
@@ -382,12 +383,19 @@ def _query_resource_set_status(task_id=None, uop_os_inst_id_list=None, result_in
                          uop_os_inst_id['os_inst_id'] + " Status is " + inst.status)
         if inst.status == 'ACTIVE':
             _ips = _get_ip_from_instance(inst)
+            _ip = _ips.pop() if _ips.__len__() >= 1 else ''
+            physical_server = getattr(inst, OS_EXT_PHYSICAL_SERVER_ATTR)
             _data = {
                         'uop_inst_id': uop_os_inst_id['uop_inst_id'],
                         'os_inst_id': uop_os_inst_id['os_inst_id'],
-                        'ip': _ips.pop() if _ips.__len__() >= 1 else '',
-                        'physical_server': getattr(inst, OS_EXT_PHYSICAL_SERVER_ATTR),
+                        'ip': _ip,
+                        'physical_server': physical_server,
                     }
+            for container in container_list:
+                for instance in container.get('instance'):
+                    if instance.get('os_inst_id') == uop_os_inst_id['os_inst_id']:
+                        instance['ip'] = _ip
+                        instance['physical_server'] = physical_server
             result_info_list.append(_data)
             _data = {}
             Log.logger.debug("Query Task ID " + task_id.__str__() + " Instance Info: " + _data.__str__())
@@ -405,7 +413,7 @@ def _query_resource_set_status(task_id=None, uop_os_inst_id_list=None, result_in
 
 
 # request UOP res_callback
-def request_res_callback(task_id, status, req_dict):
+def request_res_callback(task_id, status, req_dict, container_list):
     # project_id, resource_name,under_name, resource_id, domain,
     # container_name, image_addr, stardand_ins,cpu, memory, ins_id,
     # mysql_username, mysql_password, mysql_port, mysql_ip,
@@ -484,24 +492,6 @@ def request_res_callback(task_id, status, req_dict):
     data["cmdb_repo_id"] = req_dict["cmdb_repo_id"]
     data["status"] = status
 
-    container = {}
-    container_list = []
-    # if req_dict["container_ip"] is not IP_NONE:
-    if req_dict['app_cluster_list'] is not None:
-        ins_list = req_dict['app_cluster_list']
-        for vm in ins_list:
-            container["username"] = req_dict["container_username"]
-            container["password"] = req_dict["container_password"]
-            container["ip"] = vm["container_ip"]
-            container["container_name"] = vm["container_name"]
-            container["image_addr"] = vm["image_addr"]
-            container["cpu"] = vm["cpu"]
-            container["memory"] = vm["memory"]
-            container["ins_id"] = vm["container_inst_id"]
-            container["physical_server"] = vm["container_physical_server"]
-            container["domain"] = vm['domain']
-            container_list.append(container)
-            container = {}
     data["container"] = container_list
 
     db_info = {}
@@ -637,6 +627,7 @@ class ResourceSet(Resource):
             req_dict = {}
             req_list = []
             com_dict = dict()
+            cluster_info = dict()
 
             unit_name = args.unit_name
             unit_id = args.unit_id
@@ -687,7 +678,7 @@ class ResourceSet(Resource):
                     com_dict["image_addr"] = image_url
                     com_dict["cpu"] = cpu
                     com_dict["memory"] = mem
-                    com_dict["container_inst_id"] = instance_id
+                    com_dict["container_inst_id"] = instance_id + '_' + str(i)
                     com_dict["domain"] = domain
                     # com_dict['instances'] = []
                     req_list.append(com_dict)
