@@ -155,8 +155,8 @@ class ResourceProvider(object):
                                                                    self.result_inst_id_list, self.result_info_list,
                                                                    self.compute_list)
         if is_finished:
-            l = self.req_dict['app_cluster_list']
-            for i in l:
+            l = self.req_dict['container']
+            for i in l.get('instance'):
                 domain = i.get('domain')
                 ip = i.get('ip')
                 nip = '172.28.20.98'
