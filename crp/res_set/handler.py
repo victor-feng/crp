@@ -156,13 +156,17 @@ class ResourceProvider(object):
                                                                    self.compute_list)
         if is_finished:
             l = self.compute_list['container']
-            for i in l.get('instance'):
-                domain = i.get('domain')
-                ip = i.get('ip')
+            for container in l:
+                real_ip = []
+                domain = container.get('domain')
+                instance = container.get('instance')
+                for ip in instance:
+                    real_ip.append(ip.get('ip'))
                 nip = '172.28.20.98'
-                print 'domain&ip:', domain, ip
-                Log.logger.debug('the receive domain and ip is %s-%s' % (domain, ip))
-                self.do_push_nginx_config({'nip': nip, 'domain': domain, 'ip': ip})
+                port = [8081, 9999]  # TODO 前端传值
+                print 'domain&ip:', domain, real_ip
+                Log.logger.debug('the receive domain and ip is %s-%s' % (domain, real_ip))
+                self.do_push_nginx_config({'nip': nip, 'domain': domain, 'ip': real_ip, 'port': port})
                 # self.do_push_nginx_config({'nip': nip, 'domain': 'tttttt', 'ip': 'nnnnnnnn'})
                 self.success()
         if self.is_rollback:
@@ -187,7 +191,7 @@ class ResourceProvider(object):
         run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a 'chmod 777 /shell/update.py'".format(nip=nip))
         run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a 'chmod 777 /shell/template'".format(nip=nip))
         run_cmd('ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a '
-                '"/shell/update.py {domain} {ip}:8081"'.format(nip=kwargs.get('nip'), domain=kwargs.get('domain'), ip=kwargs.get('ip')))
+                '"/shell/update.py {domain} {ip} {port}"'.format(nip=kwargs.get('nip'), domain=kwargs.get('domain'), ip=kwargs.get('ip'), port=kwargs.get('port')))
         Log.logger.debug('------>end push')
 
 
