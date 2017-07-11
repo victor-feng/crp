@@ -67,7 +67,7 @@ def resolve(ip_list, port_list):
 def write_server_config(ip_port):
     content = ''
     for i in ip_port:
-        content += '\t' + 'server  ' + i + '\n'
+        content += '\t' + 'server  ' + i + ';' + '\n'
     return content
 
 config()
