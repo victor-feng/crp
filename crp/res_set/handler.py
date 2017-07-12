@@ -94,7 +94,6 @@ class ResourceProvider(object):
         self.uop_os_inst_id_list = []
         self.result_info_list = []
         self.ip_list = []
-        self.container_list = copy.deepcopy(compute_list)
 
         # Initialize the state machine
         self.machine = Machine(model=self,
