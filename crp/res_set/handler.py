@@ -392,7 +392,8 @@ def _uop_os_list_sub(uop_os_inst_id_list, result_uop_os_inst_id_list):
 
 
 # 向OpenStack查询已申请资源的定时任务
-def _query_resource_set_status(task_id=None, uop_os_inst_id_list=None, result_inst_id_list=None, result_info_list=None):
+def _query_resource_set_status(task_id=None, uop_os_inst_id_list=None, result_inst_id_list=None,
+                               result_info_list=None, container_list=None):
     is_finish = False
     is_rollback = False
     # uop_os_inst_id_wait_query = list(set(uop_os_inst_id_list) - set(result_inst_id_list))
