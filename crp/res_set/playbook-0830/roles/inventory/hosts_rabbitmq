@@ -1,0 +1,14 @@
+[rabbitmq]
+10.252.19.176
+10.252.19.177
+
+[rabbitmq:vars]
+hostname1=bjdx-prd-qt-rab-01.sys.cn
+hostname2=bjdx-prd-qt-rab-02.sys.cn
+
+[rabbitmq_disc]
+10.252.19.176
+10.252.19.177
+
+[rabbitmq_disc:vars]
+node_mode=disc
