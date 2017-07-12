@@ -113,18 +113,9 @@ class ResourceProvider(object):
         Log.logger.debug("Query Task ID " + self.task_id.__str__() + " all instance create success." +
                          " instance id set is " + self.result_inst_id_list[:].__str__() +
                          " instance info set is " + self.result_info_list[:].__str__())
-        app_cluster_ins = dict()
         redis_master_slave = ['slave','master']
         redis_ips = []
         for info in self.result_info_list:
-            for ins in self.req_dict['app_cluster_list']:
-                if info["uop_inst_id"] == ins["container_inst_id"]:
-                    ins['container_ip'] = info["ip"]
-                    ins["container_physical_server"] = info["physical_server"]
-                # ins["vip"] = info["vip"]
-                # self.req_dict["container_ip"] = info["ip"]
-                # self.req_dict["container_physical_server"] = info["physical_server"]
-
             uop_inst_id = info["uop_inst_id"]
             os_inst_id = info["os_inst_id"]
             if uop_inst_id in self.req_dict["mysql_cluster"]:
@@ -150,16 +141,6 @@ class ResourceProvider(object):
                 self.req_dict["mongodb_cluster"][uop_inst_id][os_inst_id]["username"] = DEFAULT_USERNAME
                 self.req_dict["mongodb_cluster"][uop_inst_id][os_inst_id]["password"] = DEFAULT_PASSWORD
                 self.req_dict["mongodb_cluster"][uop_inst_id][os_inst_id]["port"] = "27017"
-        request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict)
-            if 'mysql_inst_id' in self.req_dict and info["uop_inst_id"] == self.req_dict["mysql_inst_id"]:
-                self.req_dict["mysql_ip"] = info["ip"]
-                self.req_dict["mysql_physical_server"] = info["physical_server"]
-            if "redis_inst_id" in self.req_dict and info["uop_inst_id"] == self.req_dict["redis_inst_id"]:
-                self.req_dict["redis_ip"] = info["ip"]
-                self.req_dict["redis_physical_server"] = info["physical_server"]
-            if "mongodb_inst_id" in self.req_dict and info["uop_inst_id"] == self.req_dict["mongodb_inst_id"]:
-                self.req_dict["mongodb_ip"] = info["ip"]
-                self.req_dict["mongodb_physical_server"] = info["physical_server"]
         request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict, self.compute_list)
         Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Success Info.")
         # 部署redis集群
