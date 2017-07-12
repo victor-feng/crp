@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-from flask_restful import reqparse, Api, Resource
+import os
+import json
+import subprocess
 
 from crp.taskmgr import *
 from crp.res_set import resource_set_blueprint
@@ -7,9 +9,11 @@ from crp.res_set.errors import resource_set_errors
 from crp.log import Log
 from crp.openstack import OpenStack
 from crp.utils.docker_tools import image_transit
+
+import requests
 from transitions import Machine
-import json
-import subprocess
+from flask_restful import reqparse, Api, Resource
+
 
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
@@ -109,7 +113,44 @@ class ResourceProvider(object):
         Log.logger.debug("Query Task ID " + self.task_id.__str__() + " all instance create success." +
                          " instance id set is " + self.result_inst_id_list[:].__str__() +
                          " instance info set is " + self.result_info_list[:].__str__())
+        app_cluster_ins = dict()
+        redis_master_slave = ['slave','master']
+        redis_ips = []
         for info in self.result_info_list:
+            for ins in self.req_dict['app_cluster_list']:
+                if info["uop_inst_id"] == ins["container_inst_id"]:
+                    ins['container_ip'] = info["ip"]
+                    ins["container_physical_server"] = info["physical_server"]
+                # ins["vip"] = info["vip"]
+                # self.req_dict["container_ip"] = info["ip"]
+                # self.req_dict["container_physical_server"] = info["physical_server"]
+
+            uop_inst_id = info["uop_inst_id"]
+            os_inst_id = info["os_inst_id"]
+            if uop_inst_id in self.req_dict["mysql_cluster"]:
+                self.req_dict["mysql_cluster"][uop_inst_id][os_inst_id]["ip"] = info["ip"]
+                self.req_dict["mysql_cluster"][uop_inst_id][os_inst_id]["physical_server"] = info["physical_server"]
+                self.req_dict["mysql_cluster"][uop_inst_id][os_inst_id]["username"] = DEFAULT_USERNAME
+                self.req_dict["mysql_cluster"][uop_inst_id][os_inst_id]["password"] = DEFAULT_PASSWORD
+                self.req_dict["mysql_cluster"][uop_inst_id][os_inst_id]["port"] = "3316"
+            if uop_inst_id in self.req_dict["redis_cluster"]:
+                self.req_dict["redis_cluster"][uop_inst_id][os_inst_id]["ip"] = info["ip"]
+                self.req_dict["redis_cluster"][uop_inst_id][os_inst_id]["physical_server"] = info["physical_server"]
+                self.req_dict["redis_cluster"][uop_inst_id][os_inst_id]["username"] = DEFAULT_USERNAME
+                self.req_dict["redis_cluster"][uop_inst_id][os_inst_id]["password"] = DEFAULT_PASSWORD
+                self.req_dict["redis_cluster"][uop_inst_id][os_inst_id]["port"] = "6379"
+                self.req_dict["redis_cluster"][uop_inst_id][os_inst_id]["dbtype"] = redis_master_slave.pop()
+                redis_ips.append(info["ip"])
+                if not self.req_dict["redis_cluster"].get('vip'):
+                    _, vip = create_vip_port(uop_inst_id)
+                    self.req_dict["redis_cluster"]['vip'] = vip
+            if uop_inst_id in self.req_dict["mongodb_cluster"]:
+                self.req_dict["mongodb_cluster"][uop_inst_id][os_inst_id]["ip"] = info["ip"]
+                self.req_dict["mongodb_cluster"][uop_inst_id][os_inst_id]["physical_server"] = info["physical_server"]
+                self.req_dict["mongodb_cluster"][uop_inst_id][os_inst_id]["username"] = DEFAULT_USERNAME
+                self.req_dict["mongodb_cluster"][uop_inst_id][os_inst_id]["password"] = DEFAULT_PASSWORD
+                self.req_dict["mongodb_cluster"][uop_inst_id][os_inst_id]["port"] = "27017"
+        request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict)
             if 'mysql_inst_id' in self.req_dict and info["uop_inst_id"] == self.req_dict["mysql_inst_id"]:
                 self.req_dict["mysql_ip"] = info["ip"]
                 self.req_dict["mysql_physical_server"] = info["physical_server"]
@@ -121,6 +162,9 @@ class ResourceProvider(object):
                 self.req_dict["mongodb_physical_server"] = info["physical_server"]
         request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict, self.compute_list)
         Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Success Info.")
+        # 部署redis集群
+        if len(redis_ips) >1:
+            create_redis_cluster(redis_ips[0], redis_ips[1], self.req_dict["redis_cluster"]['vip'])
         # 停止定时任务并退出
         self.stop()
 
@@ -315,7 +359,7 @@ def _create_resource_set(task_id, resource_id=None, resource_list=None, compute_
             err_msg, osint_id = create_docker_by_url(task_id, instance_name, image_url)
             if err_msg is None:
                 uopinst_info = {
-                       'uop_inst_id': instance_id + '_' + str(i),
+                       'uop_inst_id': instance_id,
                        'os_inst_id': osint_id
                    }
                 uop_os_inst_id_list.append(uopinst_info)
@@ -367,8 +411,7 @@ def _uop_os_list_sub(uop_os_inst_id_list, result_uop_os_inst_id_list):
 
 
 # 向OpenStack查询已申请资源的定时任务
-def _query_resource_set_status(task_id=None, uop_os_inst_id_list=None, result_inst_id_list=None,
-                               result_info_list=None, container_list=None):
+def _query_resource_set_status(task_id=None, uop_os_inst_id_list=None, result_inst_id_list=None, result_info_list=None):
     is_finish = False
     is_rollback = False
     # uop_os_inst_id_wait_query = list(set(uop_os_inst_id_list) - set(result_inst_id_list))
@@ -498,39 +541,21 @@ def request_res_callback(task_id, status, req_dict, container_list):
     data["container"] = container_list
 
     db_info = {}
-    mysql = {}
-    if 'mysql_inst_id' in req_dict:
-        mysql["ins_id"] = req_dict["mysql_inst_id"]
-        mysql["username"] = req_dict["mysql_username"]
-        mysql["password"] = req_dict["mysql_password"]
-        mysql["port"] = req_dict["mysql_port"]
-        mysql["ip"] = req_dict["mysql_ip"]
-        mysql["physical_server"] = req_dict["mysql_physical_server"]
+    if status == RES_STATUS_OK:
+        l = ['username', 'password', 'port']
+        for i in req_dict['mysql_cluster'].keys():
+            if i not in l:
+                _, vip = create_vip_port(i)
+                req_dict['mysql_cluster']['vip'] = vip
 
-    redis = {}
-    if "redis_inst_id" in req_dict:
-        redis["ins_id"] = req_dict["redis_inst_id"]
-        redis["username"] = req_dict["redis_username"]
-        redis["password"] = req_dict["redis_password"]
-        redis["port"] = req_dict["redis_port"]
-        redis["ip"] = req_dict["redis_ip"]
-        redis["physical_server"] = req_dict["redis_physical_server"]
+        for i in req_dict['mongodb_cluster'].keys():
+            if i not in l:
+                _, vip = create_vip_port(i)
+                req_dict['mongodb_cluster']['vip'] = vip
+    db_info["mysql"] = req_dict['mysql_cluster']
+    db_info["redis"] = req_dict['redis_cluster']
+    db_info["mongodb"] = req_dict['mongodb_cluster']
 
-    mongodb = {}
-    if "mongodb_inst_id" in req_dict:
-        mongodb["ins_id"] = req_dict["mongodb_inst_id"]
-        mongodb["username"] = req_dict["mongodb_username"]
-        mongodb["password"] = req_dict["mongodb_password"]
-        mongodb["port"] = req_dict["mongodb_port"]
-        mongodb["ip"] = req_dict["mongodb_ip"]
-        mongodb["physical_server"] = req_dict["mongodb_physical_server"]
-
-    if mysql.get('ip') and mysql["ip"] is not IP_NONE:
-        db_info["mysql"] = mysql
-    if redis.get('ip') and  redis["ip"] is not IP_NONE:
-        db_info["redis"] = redis
-    if mongodb.get('ip') and mongodb["ip"] is not IP_NONE:
-        db_info["mongodb"] = mongodb
     data["db_info"] = db_info
 
     data_str = json.dumps(data)
@@ -630,7 +655,6 @@ class ResourceSet(Resource):
             req_dict = {}
             req_list = []
             com_dict = dict()
-            cluster_info = dict()
 
             unit_name = args.unit_name
             unit_id = args.unit_id
@@ -647,23 +671,27 @@ class ResourceSet(Resource):
             cmdb_repo_id = args.cmdb_repo_id
             resource_list = args.resource_list
             compute_list = args.compute_list
-
+            req_dict["mysql_cluster"] = {}
+            req_dict["redis_cluster"] = {}
+            req_dict["mongodb_cluster"] = {}
             for resource in resource_list:
-                instance_name = resource.get('instance_name')
                 instance_id = resource.get('instance_id')
                 instance_type = resource.get('instance_type')
-                cpu = resource.get('cpu')
-                mem = resource.get('mem')
-                disk = resource.get('disk')
-                quantity = resource.get('quantity')
-                version = resource.get('version')
-
                 if instance_type == 'mysql':
-                    req_dict["mysql_inst_id"] = instance_id
+                    req_dict["mysql_cluster"]['username'] = DEFAULT_USERNAME
+                    req_dict["mysql_cluster"]['password'] = DEFAULT_PASSWORD
+                    req_dict["mysql_cluster"]['port'] = '3316'
+                    req_dict["mysql_cluster"][instance_id] = {}
                 if instance_type == 'redis':
-                    req_dict["redis_inst_id"] = instance_id
+                    req_dict["redis_cluster"]['username'] = DEFAULT_USERNAME
+                    req_dict["redis_cluster"]['password'] = DEFAULT_PASSWORD
+                    req_dict["redis_cluster"]['port'] = '6379'
+                    req_dict["redis_cluster"][instance_id] = {}
                 if instance_type == 'mongo':
-                    req_dict["mongodb_inst_id"] = instance_id
+                    req_dict["mongodb_cluster"]['username'] = DEFAULT_USERNAME
+                    req_dict["mongodb_cluster"]['password'] = DEFAULT_PASSWORD
+                    req_dict["mongodb_cluster"]['port'] = '27017'
+                    req_dict["mongodb_cluster"][instance_id] = {}
                 # req_list.append(req_dict)
                 # req_dict = {}
 
@@ -712,21 +740,6 @@ class ResourceSet(Resource):
             req_dict["container_password"] = DEFAULT_PASSWORD
             req_dict["container_ip"] = IP_NONE
             req_dict["container_physical_server"] = PHYSICAL_SERVER_NONE
-            req_dict["mysql_username"] = DEFAULT_USERNAME
-            req_dict["mysql_password"] = DEFAULT_PASSWORD
-            req_dict["mysql_port"] = "3316"
-            req_dict["mysql_ip"] = IP_NONE
-            req_dict["mysql_physical_server"] = PHYSICAL_SERVER_NONE
-            req_dict["redis_username"] = DEFAULT_USERNAME
-            req_dict["redis_password"] = DEFAULT_PASSWORD
-            req_dict["redis_port"] = "6379"
-            req_dict["redis_ip"] = IP_NONE
-            req_dict["redis_physical_server"] = PHYSICAL_SERVER_NONE
-            req_dict["mongodb_username"] = DEFAULT_USERNAME
-            req_dict["mongodb_password"] = DEFAULT_PASSWORD
-            req_dict["mongodb_port"] = "27017"
-            req_dict["mongodb_ip"] = IP_NONE
-            req_dict["mongodb_physical_server"] = PHYSICAL_SERVER_NONE
 
             result_list = []
             Log.logger.debug('req_dict\'s object id is :')
@@ -808,6 +821,17 @@ class MongodbCluster(object):
             for line in p.stdout.readlines():
                 print line,
                 Log.logger.debug('mongodb cluster push result:%s' % line)
+
+
+def create_redis_cluster(ip1, ip2, vip):
+    CMDPATH = r''
+    cmd = 'python {0}script/redis_cluster.py {1} {2} {3}'.format(CMDPATH, ip1, ip2, vip)
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    for line in p.stdout.readlines():
+        print line
+
+
+
 
 
 resource_set_api.add_resource(ResourceSet, '/sets')
