@@ -179,11 +179,11 @@ class ResourceProvider(object):
                                                                    self.result_inst_id_list, self.result_info_list,
                                                                    self.compute_list)
         if is_finished:
-            l = self.compute_list['container']
-            for container in l:
+            # l = self.compute_list['container']
+            for compute in self.compute_list:
                 real_ip = []
-                domain = container.get('domain')
-                instance = container.get('instance')
+                domain = compute.get('domain')
+                instance = compute.get('instance')
                 for ip in instance:
                     real_ip.append(ip.get('ip'))
                 nip = '172.28.20.98'
