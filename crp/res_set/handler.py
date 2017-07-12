@@ -151,7 +151,7 @@ class ResourceProvider(object):
 
     def do_fail(self):
         # 执行失败调用UOP CallBack，提交失败
-        request_res_callback(self.task_id, RES_STATUS_FAIL, self.req_dict)
+        request_res_callback(self.task_id, RES_STATUS_FAIL, self.req_dict, self.compute_list)
         Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Fail Info.")
         # 停止定时任务并退出
         self.stop()
