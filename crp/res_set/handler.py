@@ -181,16 +181,17 @@ class ResourceProvider(object):
         if is_finished:
             # l = self.compute_list['container']
             for compute in self.compute_list:
-                real_ip = []
+                real_ip = ''
                 domain = compute.get('domain')
                 instance = compute.get('instance')
                 for ip in instance:
-                    real_ip.append(str(ip.get('ip')))
+                    ip_str = str(ip.get('ip')) + ' '
+                    real_ip += ip_str
                 nip = '172.28.20.98'
                 port = [8081, 9999]  # TODO 前端传值
                 print 'domain&ip:', domain, real_ip
                 Log.logger.debug('the receive domain and ip is %s-%s' % (domain, real_ip))
-                self.do_push_nginx_config({'nip': nip, 'domain': domain, 'ip': real_ip, 'port': port})
+                self.do_push_nginx_config({'nip': nip, 'domain': domain, 'ip': real_ip.strip(), 'port': port})
                 # self.do_push_nginx_config({'nip': nip, 'domain': 'tttttt', 'ip': 'nnnnnnnn'})
                 self.success()
         if self.is_rollback:

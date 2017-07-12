@@ -11,7 +11,7 @@ def config():
         print "Please Input domain, Ip:port"
     print sys.argv
     domain = sys.argv[1]  # 'api.wangyan.systoon.com'
-    ip_list = ast.literal_eval(sys.argv[2])  # ['1.1.1.1', '2.2.2.2']
+    ip_list = sys.argv[2].split(' ')  # ['1.1.1.1', '2.2.2.2']
     port_list = ast.literal_eval(sys.argv[3])  # [11, 22]
     ip_port = resolve(ip_list, port_list)
     print 'ip + port = ', ip_port
