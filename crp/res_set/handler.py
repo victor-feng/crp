@@ -521,17 +521,6 @@ def request_res_callback(task_id, status, req_dict, container_list):
     data["container"] = container_list
 
     db_info = {}
-    if status == RES_STATUS_OK:
-        l = ['username', 'password', 'port']
-        for i in req_dict['mysql_cluster'].keys():
-            if i not in l:
-                _, vip = create_vip_port(i)
-                req_dict['mysql_cluster']['vip'] = vip
-
-        for i in req_dict['mongodb_cluster'].keys():
-            if i not in l:
-                _, vip = create_vip_port(i)
-                req_dict['mongodb_cluster']['vip'] = vip
     db_info["mysql"] = req_dict['mysql_cluster']
     db_info["redis"] = req_dict['redis_cluster']
     db_info["mongodb"] = req_dict['mongodb_cluster']
@@ -667,14 +656,14 @@ class ResourceSet(Resource):
                     req_dict["redis_cluster"]['username'] = DEFAULT_USERNAME
                     req_dict["redis_cluster"]['password'] = DEFAULT_PASSWORD
                     req_dict["redis_cluster"]['port'] = '6379'
-                    req_dict["mysql_cluster"]['ins_id'] = instance_id
-                    req_dict["mysql_cluster"]['instance'] = []
+                    req_dict["redis_cluster"]['ins_id'] = instance_id
+                    req_dict["redis_cluster"]['instance'] = []
                 if instance_type == 'mongo':
                     req_dict["mongodb_cluster"]['username'] = DEFAULT_USERNAME
                     req_dict["mongodb_cluster"]['password'] = DEFAULT_PASSWORD
                     req_dict["mongodb_cluster"]['port'] = '27017'
                     req_dict["mongodb_cluster"]['ins_id'] = instance_id
-                    req_dict["mysql_cluster"]['instance'] = []
+                    req_dict["mongodb_cluster"]['instance'] = []
                 # req_list.append(req_dict)
                 # req_dict = {}
 
