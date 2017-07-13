@@ -118,29 +118,26 @@ class ResourceProvider(object):
         for info in self.result_info_list:
             uop_inst_id = info["uop_inst_id"]
             os_inst_id = info["os_inst_id"]
-            if uop_inst_id in self.req_dict["mysql_cluster"]:
-                self.req_dict["mysql_cluster"][uop_inst_id][os_inst_id]["ip"] = info["ip"]
-                self.req_dict["mysql_cluster"][uop_inst_id][os_inst_id]["physical_server"] = info["physical_server"]
-                self.req_dict["mysql_cluster"][uop_inst_id][os_inst_id]["username"] = DEFAULT_USERNAME
-                self.req_dict["mysql_cluster"][uop_inst_id][os_inst_id]["password"] = DEFAULT_PASSWORD
-                self.req_dict["mysql_cluster"][uop_inst_id][os_inst_id]["port"] = "3316"
-            if uop_inst_id in self.req_dict["redis_cluster"]:
-                self.req_dict["redis_cluster"][uop_inst_id][os_inst_id]["ip"] = info["ip"]
-                self.req_dict["redis_cluster"][uop_inst_id][os_inst_id]["physical_server"] = info["physical_server"]
-                self.req_dict["redis_cluster"][uop_inst_id][os_inst_id]["username"] = DEFAULT_USERNAME
-                self.req_dict["redis_cluster"][uop_inst_id][os_inst_id]["password"] = DEFAULT_PASSWORD
-                self.req_dict["redis_cluster"][uop_inst_id][os_inst_id]["port"] = "6379"
-                self.req_dict["redis_cluster"][uop_inst_id][os_inst_id]["dbtype"] = redis_master_slave.pop()
+            instance = {
+                'ip': info["ip"],
+                'physical_server': info["physical_server"],
+                'username': DEFAULT_USERNAME,
+                'password': DEFAULT_PASSWORD,
+            }
+            if self.req_dict["mysql_cluster"].get('ins_id') and uop_inst_id == self.req_dict["mysql_cluster"]['ins_id']:
+                instance['port'] = "3316"
+                self.req_dict["mysql_cluster"]['instance'].append(instance)
+            if self.req_dict["redis_cluster"].get('ins_id') and uop_inst_id == self.req_dict["redis_cluster"]['ins_id']:
+                instance['port'] = '6379'
+                instance['dbtype'] = redis_master_slave.pop()
+                self.req_dict["redis_cluster"]['instance'].append(instance)
                 redis_ips.append(info["ip"])
                 if not self.req_dict["redis_cluster"].get('vip'):
                     _, vip = create_vip_port(uop_inst_id)
                     self.req_dict["redis_cluster"]['vip'] = vip
-            if uop_inst_id in self.req_dict["mongodb_cluster"]:
-                self.req_dict["mongodb_cluster"][uop_inst_id][os_inst_id]["ip"] = info["ip"]
-                self.req_dict["mongodb_cluster"][uop_inst_id][os_inst_id]["physical_server"] = info["physical_server"]
-                self.req_dict["mongodb_cluster"][uop_inst_id][os_inst_id]["username"] = DEFAULT_USERNAME
-                self.req_dict["mongodb_cluster"][uop_inst_id][os_inst_id]["password"] = DEFAULT_PASSWORD
-                self.req_dict["mongodb_cluster"][uop_inst_id][os_inst_id]["port"] = "27017"
+            if self.req_dict["mongodb_cluster"].get('ins_id') and uop_inst_id == self.req_dict["mongodb_cluster"]['ins_id']:
+                instance['port'] = '27017'
+                self.req_dict["mongodb_cluster"]['instance'].append(instance)
         request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict, self.compute_list)
         Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Success Info.")
         # 部署redis集群
@@ -664,17 +661,20 @@ class ResourceSet(Resource):
                     req_dict["mysql_cluster"]['username'] = DEFAULT_USERNAME
                     req_dict["mysql_cluster"]['password'] = DEFAULT_PASSWORD
                     req_dict["mysql_cluster"]['port'] = '3316'
-                    req_dict["mysql_cluster"][instance_id] = {}
+                    req_dict["mysql_cluster"]['ins_id'] = instance_id
+                    req_dict["mysql_cluster"]['instance'] = []
                 if instance_type == 'redis':
                     req_dict["redis_cluster"]['username'] = DEFAULT_USERNAME
                     req_dict["redis_cluster"]['password'] = DEFAULT_PASSWORD
                     req_dict["redis_cluster"]['port'] = '6379'
-                    req_dict["redis_cluster"][instance_id] = {}
+                    req_dict["mysql_cluster"]['ins_id'] = instance_id
+                    req_dict["mysql_cluster"]['instance'] = []
                 if instance_type == 'mongo':
                     req_dict["mongodb_cluster"]['username'] = DEFAULT_USERNAME
                     req_dict["mongodb_cluster"]['password'] = DEFAULT_PASSWORD
                     req_dict["mongodb_cluster"]['port'] = '27017'
-                    req_dict["mongodb_cluster"][instance_id] = {}
+                    req_dict["mongodb_cluster"]['ins_id'] = instance_id
+                    req_dict["mysql_cluster"]['instance'] = []
                 # req_list.append(req_dict)
                 # req_dict = {}
 
@@ -807,7 +807,7 @@ class MongodbCluster(object):
 
 
 def create_redis_cluster(ip1, ip2, vip):
-    CMDPATH = r''
+    CMDPATH = r'crp/res_set/playbook-0830/'
     cmd = 'python {0}script/redis_cluster.py {1} {2} {3}'.format(CMDPATH, ip1, ip2, vip)
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     for line in p.stdout.readlines():
