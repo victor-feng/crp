@@ -188,7 +188,7 @@ class ResourceProvider(object):
                     ip_str = str(ip.get('ip')) + ' '
                     real_ip += ip_str
                 nip = '172.28.20.98'
-                port = [8081, 9999]  # TODO 前端传值
+                port = '8081, 9999'  # TODO 前端传值
                 print 'domain&ip:', domain, real_ip
                 Log.logger.debug('the receive domain and ip is %s-%s' % (domain, real_ip))
                 self.do_push_nginx_config({'nip': nip, 'domain': domain, 'ip': real_ip.strip(), 'port': port})

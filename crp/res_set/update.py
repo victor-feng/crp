@@ -82,7 +82,7 @@ def statistics_port_ip(args):
     num = len(args) - 2
     ip_list = []
     port_list = []
-    first_ip_index = args[2]
+    first_ip_index = 2
     last_ip_index = (args.index(args[-1])+1)/2
 
     first_port_index = last_ip_index + 1
