@@ -9,10 +9,13 @@ import ast
 def config():
     if len(sys.argv) < 4:
         print "Please Input domain, Ip:port"
-    print sys.argv
+    print sys.argv, len(sys.argv)
     domain = sys.argv[1]  # 'api.wangyan.systoon.com'
-    ip_list = sys.argv[2].split(' ')  # ['1.1.1.1', '2.2.2.2']
-    port_list = ast.literal_eval(sys.argv[3])  # [11, 22]
+
+    # TODO
+    ip_list, port_list = statistics_port_ip(sys.argv)
+    # ip_list = [sys.argv[2], sys.argv[3]]  # ['1.1.1.1', '2.2.2.2']
+    # port_list = [sys.argv[4], sys.argv[5]]  # [11, 22]
     ip_port = resolve(ip_list, port_list)
     print 'ip + port = ', ip_port
     ips = write_server_config(ip_port)
@@ -69,5 +72,33 @@ def write_server_config(ip_port):
     for i in ip_port:
         content += '\t' + 'server  ' + i + ';' + '\n'
     return content
+
+
+def statistics_port_ip(args):
+    """
+    :param args: sys.argv ['/shell/update.py', 'crp-cluster.syswin.com', '172.28.36.31', '172.28.36.32', '8081', '999']
+    :return: ip port
+    """
+    num = len(args) - 2
+    ip_list = []
+    port_list = []
+    first_ip_index = args[2]
+    last_ip_index = args[-1]/2
+
+    first_port_index = last_ip_index + 1
+    last_port_index = len(args) - 1
+
+    for ip in args[first_ip_index:last_ip_index+1]:
+        ip_list.append(ip)
+        if args.index(ip) == last_ip_index:
+            break
+    for port in args[first_port_index:last_port_index+1]:
+        port_list.append(port)
+        if args.index(port) == last_port_index:
+            break
+
+    # last_port = args[last_port_index]
+    # last_ip = args[last_ip_index]
+    return ip_list, port_list
 
 config()
