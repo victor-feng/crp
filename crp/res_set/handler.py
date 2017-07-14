@@ -185,7 +185,7 @@ class ResourceProvider(object):
                 for ip in instance:
                     ip_str = str(ip.get('ip')) + ' '
                     real_ip += ip_str
-                    ports += compute.get('port') + ' '
+                    ports += str(compute.get('port')) + ' '
                 nip = '172.28.20.98'
                 port = '8081 9999 1010'  # TODO 前端传值
                 print 'domain&ip:', domain, real_ip
