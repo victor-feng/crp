@@ -41,11 +41,16 @@ def config():
     fp = open(nginx_conf, 'w')
     f_dst1 = re.sub(r't100ToonDomain', domain, tp_str)
     f_dst2 = re.sub(r'server  IpPort;\n', ips, f_dst1)
+
+    f_dst4 = re.sub(r'ToonDomain', domain, f_dst2)
+    sub_domain = 'http://' + domain + '/'
+    f_dst5 = re.sub(r'http://ToonDomain/', sub_domain, f_dst4)
+
     if "innertoon.com" in domain:
-        f_dst3 = re.sub(r' t100SubDomain.innertoon.com','',f_dst2)
+        f_dst3 = re.sub(r' t100SubDomain.innertoon.com','',f_dst5)
 
     else:
-        f_dst3 = re.sub(r'SubDomain', subdomain, f_dst2)
+        f_dst3 = re.sub(r'SubDomain', subdomain, f_dst5)
 
     fp.write(f_dst3)
     fp.close()
