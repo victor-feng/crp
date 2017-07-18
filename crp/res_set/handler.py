@@ -21,7 +21,7 @@ resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 quantity = 0
 TIMEOUT = 500
 SLEEP_TIME = 3
-GLOBAL_MONGO_CLUSTER_IP = None
+GLOBAL_MONGO_CLUSTER_IP = ['172.28.36.230', '172.28.36.23', '172.28.36.231', '172.28.36.231']
 
 images_dict = {
     'mysql': {
@@ -761,16 +761,29 @@ cmd = [cmd1, cmd2, cmd3, cmd4]
 
 class MongodbCluster(object):
     def __init__(self, cmd_list):
+        """
+        172.28.36.230
+        172.28.36.23
+        172.28.36.231
+        :param cmd_list:
+        """
         self.ip = GLOBAL_MONGO_CLUSTER_IP
+        self.new_host = '[new_host]'
         self.cmd_list = cmd_list
-        self.write_ip()
+        self.write_ip_to_server()
+        # self.write_ip()
         self.flag = False
         self.telnet_ack()
         # self.mongodb_cluster_push()
 
+    def write_ip_to_server(self):
+        for ip in self.ip:
+            with open('/etc/ansible/hosts', 'a') as f:
+                f.write('%s\n' % ip)
+
     def write_ip(self):
         for ip in self.ip:
-            with open('/home/wanggang/hosts', 'a') as f:
+            with open('/home/mongo/hosts', 'a') as f:
                 f.write('%s\n' % ip)
 
     def telnet_ack(self):
@@ -789,11 +802,15 @@ class MongodbCluster(object):
                     self.flag = True
 
     def mongodb_cluster_push(self):
-        for cmd in self.cmd_list:
-            p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            for line in p.stdout.readlines():
-                print line,
-                Log.logger.debug('mongodb cluster push result:%s' % line)
+        for ip in self.ip:
+            with open('/home/mongo/hosts', 'w') as f:
+                f.write('%s\n' % self.new_host)
+                f.write('%s\n' % ip)
+            for cmd in self.cmd_list:
+                p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                for line in p.stdout.readlines():
+                    print line,
+                    Log.logger.debug('mongodb cluster push result:%s' % line)
 
 
 def create_redis_cluster(ip1, ip2, vip):
@@ -809,7 +826,5 @@ def create_redis_cluster(ip1, ip2, vip):
 
 resource_set_api.add_resource(ResourceSet, '/sets')
 
-# if __name__ == "__main__":
-#     r = ResourceProvider('1', [], [], {})
-#     r.do_push_nginx_config({'nip': '172.28.20.98', 'domain': 'uop.syswin.com', 'ip': '172.1.1.1'})
-#     # MongodbCluster(cmd_list=cmd)
+if __name__ == "__main__":
+    MongodbCluster(cmd_list=cmd)
