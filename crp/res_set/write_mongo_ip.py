@@ -4,7 +4,9 @@ import sys
 
 def write_mongo():
     print sys.argv
-    ip = sys.argv[2]
+    if len(sys.argv) < 2:
+        print 'please input the ip'
+    ip = sys.argv[1]
     with open('/tmp/mongo.txt', 'w') as f:
         f.write(ip)
 
