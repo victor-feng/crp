@@ -838,22 +838,22 @@ class MongodbCluster(object):
         authority_cmd = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m shell -a "chmod 777 /tmp/write_mongo_ip.py"'.format(vip=ip)
         cmd1 = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m shell -a "python /tmp/write_mongo_ip.py {m_ip} {s1_ip} {s2_ip}"'.\
             format(vip=ip, m_ip=self.ip_master1, s1_ip=self.ip_slave1, s2_ip=self.ip_slave2)
-        print '开始上传脚本'
+        Log.logger.debug('开始上传脚本')
         p = subprocess.Popen(cmd_before, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
             print line
             Log.logger.debug('mongodb cluster cmd before:%s' % line)
-        print '开始修改权限'
+        Log.logger.debug('开始修改权限')
         p = subprocess.Popen(authority_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
             print line
             Log.logger.debug('mongodb cluster authority:%s' % line)
-        print '脚本上传完成  开始执行脚本'
+        Log.logger.debug('脚本上传完成,开始执行脚本')
         p = subprocess.Popen(cmd1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
             print line
             Log.logger.debug('mongodb cluster exec write script:%s' % line)
-        print '脚本执行完毕'
+        Log.logger.debug('脚本执行完毕 接下来会部署')
         # for ip in self.ip:
         with open('/home/mongo/hosts', 'w') as f:
             f.write('%s\n' % ip)
