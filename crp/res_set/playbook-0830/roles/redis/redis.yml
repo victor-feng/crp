@@ -1,0 +1,68 @@
+---
+- hosts: redis_servers
+  vars:
+    - user: "redis"
+  tasks:
+    - name: install the latest version of keepalived
+      yum: name=keepalived state=latest
+    
+    - name: keepalived scripts directory
+      file: path=/etc/keepalived/scripts state=directory
+    
+    - name: keepalived.conf
+      template: src=templates/keepalived/keepalived.conf dest=/etc/keepalived/keepalived.conf mode=644
+    - name: scripts redis_check.sh
+      template: src=templates/keepalived/scripts/redis_check.sh dest=/etc/keepalived/scripts/redis_check.sh mode=755
+    - name: scripts redis_master.sh
+      template: src=templates/keepalived/scripts/redis_master.sh dest=/etc/keepalived/scripts/redis_master.sh mode=755
+    - name: scripts redis_backup.sh
+      template: src=templates/keepalived/scripts/redis_backup.sh dest=/etc/keepalived/scripts/redis_backup.sh mode=755
+    - name: scripts redis_fault.sh
+      template: src=templates/keepalived/scripts/redis_fault.sh dest=/etc/keepalived/scripts/redis_fault.sh mode=755
+    - name: scripts redis_stop.sh
+      template: src=templates/keepalived/scripts/redis_stop.sh dest=/etc/keepalived/scripts/redis_stop.sh mode=755
+
+
+
+    - name: create user redis
+      user: name="{{ user }}"
+
+    - name: Unarchive redis.tar.gz
+      unarchive: src=files/{{redis_version}}.tar.gz dest=/usr/local/ owner=redis group=redis
+#      copy: src=files/redis-2.8.14 dest=/usr/local/redis-2.8.14 owner=redis group=redis mode=700
+
+- hosts: redis_master
+  sudo: True
+  sudo_user: redis
+  tasks:
+  - name: redis.conf master
+    template: src=templates/redis_master.conf dest=/usr/local/{{redis_version}}/redis.conf
+  - name: stop old redis
+    shell: ps aux|grep '/usr/local/{{redis_version}}'|grep -v grep | awk '{print $2}'|xargs kill
+    register: result
+    ignore_errors: True
+  - name: start redis
+    shell: /usr/local/{{redis_version}}/src/redis-server  /usr/local/{{redis_version}}/redis.conf
+
+  - name: start keepalived
+    sudo: True
+    sudo_user: root
+    service: name=keepalived state=restarted
+
+- hosts: redis_slave
+  sudo: True
+  sudo_user: redis
+  tasks:
+  - name: redis.conf slave
+    template: src=templates/redis_slave.conf dest=/usr/local/{{redis_version}}/redis.conf
+  - name: stop old redis
+    shell: ps aux|grep '/usr/local/{{redis_version}}'|grep -v grep | awk '{print $2}'|xargs kill
+    register: result
+    ignore_errors: True
+  - name: start redis
+    shell: /usr/local/{{redis_version}}/src/redis-server  /usr/local/{{redis_version}}/redis.conf
+
+  - name: start keepalived
+    sudo: True
+    sudo_user: root
+    service: name=keepalived state=restarted
