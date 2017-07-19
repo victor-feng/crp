@@ -9,7 +9,7 @@ from crp.res_set.errors import resource_set_errors
 from crp.log import Log
 from crp.openstack import OpenStack
 from crp.utils.docker_tools import image_transit
-
+from crp.dns.dns_api import DnsConfig
 import requests
 from transitions import Machine
 from flask_restful import reqparse, Api, Resource
@@ -154,7 +154,7 @@ class ResourceProvider(object):
         self.stop()
 
     def do_rollback(self):
-        _rollback_all(self.task_id, self.resource_id, self.uop_os_inst_id_list, self.result_inst_id_list)
+        _rollback_all(self.task_id, self.resource_id, self.uop_os_inst_id_list, self.result_inst_id_list, self.req_dict['domain'])
         self.fail()
 
     def do_stop(self):
@@ -191,6 +191,14 @@ class ResourceProvider(object):
                 Log.logger.debug('the receive domain and ip port is %s-%s-%s' % (domain, real_ip, ports))
                 self.do_push_nginx_config({'nip': nip, 'domain': domain, 'ip': real_ip.strip(), 'port': ports.strip()})
                 # self.do_push_nginx_config({'nip': nip, 'domain': 'tttttt', 'ip': 'nnnnnnnn'})
+                #####
+                dns_env = {'develop': '172.28.5.21', 'test': '172.28.18.212'}
+                ip = dns_env[self.req_dict['env']]
+                domain = self.req_dict['domain']
+                dns_server = DnsConfig.singleton()
+                dns_server.add(domain_name=domain, ip=ip)
+                dns_server.reload()
+                #####
                 self.success()
         if self.is_rollback:
             self.rollback()
@@ -366,7 +374,7 @@ def _get_ip_from_instance(server):
 
 
 # 回滚删除全部资源和容器
-def _rollback_all(task_id, resource_id, uop_os_inst_id_list, result_uop_os_inst_id_list):
+def _rollback_all(task_id, resource_id, uop_os_inst_id_list, result_uop_os_inst_id_list, domain):
     nova_client = OpenStack.nova_client
     # fail_list = list(set(uop_os_inst_id_list) - set(result_uop_os_inst_id_list))
     fail_list = _uop_os_list_sub(uop_os_inst_id_list, result_uop_os_inst_id_list)
@@ -378,7 +386,10 @@ def _rollback_all(task_id, resource_id, uop_os_inst_id_list, result_uop_os_inst_
     for uop_os_inst_id in uop_os_inst_id_list:
         nova_client.servers.delete(uop_os_inst_id['os_inst_id'])
     Log.logger.debug("Task ID " + task_id.__str__() + " Resource ID " + resource_id.__str__() + " rollback done.")
-
+    ####
+    dns_server = DnsConfig.singleton()
+    dns_server.delete(domain_name=domain)
+    dns_server.reload()
 
 # _uop_os_list_sub
 def _uop_os_list_sub(uop_os_inst_id_list, result_uop_os_inst_id_list):
