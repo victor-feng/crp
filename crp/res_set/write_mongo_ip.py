@@ -8,8 +8,8 @@ def write_mongo():
         print 'please input the ip'
     try:
         master_ip = sys.argv[-1]
-        slave1 = sys.argv[-2]
-        slave2 = sys.argv[-3]
+        slave1 = sys.argv[-3]
+        slave2 = sys.argv[-2]
     except IndexError as e:
         print e
     with open('/tmp/mongo.txt', 'w') as f:
