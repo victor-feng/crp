@@ -2,7 +2,7 @@
 import os
 import json
 import subprocess
-
+import time
 from crp.taskmgr import *
 from crp.res_set import resource_set_blueprint
 from crp.res_set.errors import resource_set_errors
@@ -115,6 +115,7 @@ class ResourceProvider(object):
                          " instance info set is " + self.result_info_list[:].__str__())
         redis_master_slave = ['slave','master']
         redis_ips = []
+        mongo_ips = []
         for info in self.result_info_list:
             uop_inst_id = info["uop_inst_id"]
             os_inst_id = info["os_inst_id"]
@@ -138,11 +139,18 @@ class ResourceProvider(object):
             if self.req_dict["mongodb_cluster"].get('ins_id') and uop_inst_id == self.req_dict["mongodb_cluster"]['ins_id']:
                 instance['port'] = '27017'
                 self.req_dict["mongodb_cluster"]['instance'].append(instance)
+                mongo_ips.append(info['ip'])
         request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict, self.compute_list)
         Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Success Info.")
         # 部署redis集群
         if len(redis_ips) >1:
             create_redis_cluster(redis_ips[0], redis_ips[1], self.req_dict["redis_cluster"]['vip'])
+        # 部署mongo集群
+        if len(mongo_ips) > 1:
+            Log.logger.debug("Start deploy the mongo master.")
+            ins = MongodbCluster(mongo_ips[0], mongo_ips[1], mongo_ips[2], mongo_ips[3])
+            ins.exec_final_script()
+            Log.logger.debug("Deploy the mongo master Done.")
         # 停止定时任务并退出
         self.stop()
 
@@ -763,38 +771,49 @@ def tick_announce(task_id, res_provider_list):
         else:
             res_provider.query()
 
-cmd1 = 'ansible -i /home/mongo/hosts  new-host -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/mongoslave1.sh sys95"'
-cmd2 = 'ansible -i /home/mongo/hosts  new-host -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/mongoslave2.sh sys95"'
-cmd3 = 'ansible -i /home/mongo/hosts  new-host -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/mongomaster1.sh"'
-cmd4 = 'ansible -i /home/mongo/hosts  new-host -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/mongomaster2.sh sys95"'
-cmd = [cmd1, cmd2, cmd3, cmd4]
-
 
 class MongodbCluster(object):
-    def __init__(self, cmd_list):
+    """
+    ip_slave1 = '172.28.36.143'
+    ip_slave2 = '172.28.36.142'
+    ip_master1 = '172.28.36.141'
+    ip_master2 = '172.28.36.141'
+
+
+    cmd1 = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/mongoslave1.sh sys95"'.format(vip=ip_slave1)
+    cmd2 = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/mongoslave2.sh sys95"'.format(vip=ip_slave2)
+    cmd3 = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/mongomaster1.sh"'.format(vip=ip_master1)
+    cmd4 = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/mongomaster2.sh sys95"'.format(vip=ip_master2)
+
+    """
+
+    def __init__(self, ip_slave1, ip_slave2, ip_master1, ip_master2):
         """
         172.28.36.230
         172.28.36.23
         172.28.36.231
         :param cmd_list:
         """
-        self.ip = GLOBAL_MONGO_CLUSTER_IP
+        self.ip_slave1 = ip_slave1
+        self.ip_slave2 = ip_slave2
+        self.ip_master1 = ip_master1
+        self.ip_master2 = ip_master2
+        self.d = {
+            self.ip_slave1: 'mongoslave1.sh',
+            self.ip_slave2: 'mongoslave2.sh',
+            self.ip_master1: 'mongomaster1.sh',
+            }
+        self.cmd = ['ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/'
+                    'mongoclu_install/mongomaster2.sh sys95"'.format(vip=ip_master2)]
+        self.ip = [ip_slave1, ip_slave2, ip_master1]
         self.new_host = '[new_host]'
-        self.cmd_list = cmd_list
         self.write_ip_to_server()
-        # self.write_ip()
         self.flag = False
         self.telnet_ack()
-        # self.mongodb_cluster_push()
 
     def write_ip_to_server(self):
         for ip in self.ip:
             with open('/etc/ansible/hosts', 'a') as f:
-                f.write('%s\n' % ip)
-
-    def write_ip(self):
-        for ip in self.ip:
-            with open('/home/mongo/hosts', 'a') as f:
                 f.write('%s\n' % ip)
 
     def telnet_ack(self):
@@ -804,24 +823,59 @@ class MongodbCluster(object):
                 try:
                     a = p.stdout.readlines()[5]
                     Log.logger.debug('nmap ack result:%s' % a)
-                except Exception as e:
+                except IndexError as e:
                     print e
                     a = 'false'
                     Log.logger.debug('%s' % a)
                 if 'open' in a:
-                    self.mongodb_cluster_push()
+                    self.mongodb_cluster_push(ip)
                     self.flag = True
 
-    def mongodb_cluster_push(self):
-        for ip in self.ip:
-            with open('/home/mongo/hosts', 'w') as f:
-                f.write('%s\n' % self.new_host)
-                f.write('%s\n' % ip)
-            for cmd in self.cmd_list:
-                p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                for line in p.stdout.readlines():
-                    print line,
-                    Log.logger.debug('mongodb cluster push result:%s' % line)
+    def mongodb_cluster_push(self, ip):
+        # vip_list = list(set(self.ip))
+        # vip_list = [ip_master1, ip_slave1, ip_slave2]
+        cmd_before = "ansible {vip} --private-key=/home/mongo/old_id_rsa -m synchronize -a 'src=/opt/uop-crp/crp/res_set/write_mongo_ip.py dest=/tmp/'".format(vip=ip)
+        authority_cmd = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m shell -a "chmod 777 /tmp/write_mongo_ip.py"'.format(vip=ip)
+        cmd1 = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m shell -a "python /tmp/write_mongo_ip.py {m_ip} {s1_ip} {s2_ip}"'.\
+            format(vip=ip, m_ip=self.ip_master1, s1_ip=self.ip_slave1, s2_ip=self.ip_slave2)
+        print '开始上传脚本'
+        p = subprocess.Popen(cmd_before, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for line in p.stdout.readlines():
+            print line
+            Log.logger.debug('mongodb cluster cmd before:%s' % line)
+        print '开始修改权限'
+        p = subprocess.Popen(authority_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for line in p.stdout.readlines():
+            print line
+            Log.logger.debug('mongodb cluster authority:%s' % line)
+        print '脚本上传完成  开始执行脚本'
+        p = subprocess.Popen(cmd1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for line in p.stdout.readlines():
+            print line
+            Log.logger.debug('mongodb cluster exec write script:%s' % line)
+        print '脚本执行完毕'
+        # for ip in self.ip:
+        with open('/home/mongo/hosts', 'w') as f:
+            f.write('%s\n' % ip)
+        print '-----', ip,type(ip)
+        script = self.d.get(ip)
+        if str(ip) != '172.28.36.105':
+            cmd_s = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/{s} sys95"'.\
+                format(vip=ip, s=script)
+        else:
+            cmd_s = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/{s}"'.\
+                format(vip=ip, s=script)
+        p = subprocess.Popen(cmd_s, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for line in p.stdout.readlines():
+            print line,
+            Log.logger.debug('mongodb cluster push result:%s' % line)
+
+    def exec_final_script(self):
+        for i in self.cmd:
+            p = subprocess.Popen(i, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            for line in p.stdout.readlines():
+                print line,
+                Log.logger.debug('mongodb cluster push result:%s' % line)
 
 
 def create_redis_cluster(ip1, ip2, vip):
@@ -832,10 +886,7 @@ def create_redis_cluster(ip1, ip2, vip):
         print line
 
 
-
-
-
 resource_set_api.add_resource(ResourceSet, '/sets')
 
 if __name__ == "__main__":
-    MongodbCluster(cmd_list=cmd)
+    a = MongodbCluster()
