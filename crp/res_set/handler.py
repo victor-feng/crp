@@ -826,9 +826,11 @@ class MongodbCluster(object):
                     print e
                     a = 'false'
                     Log.logger.debug('%s' % a)
+                    break
                 if 'open' in a:
                     self.mongodb_cluster_push(ip)
                     self.flag = True
+                    self.ip.remove(ip)
 
     def mongodb_cluster_push(self, ip):
         # vip_list = list(set(self.ip))
