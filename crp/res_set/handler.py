@@ -81,8 +81,7 @@ class ResourceProvider(object):
         {'trigger': 'rollback', 'source': ['create', 'query'], 'dest': 'rollback', 'after': 'do_rollback'},
         {'trigger': 'stop', 'source': ['success', 'fail'], 'dest': 'stop', 'after': 'do_stop'},
         {'trigger': 'create', 'source': 'init', 'dest': 'create', 'after': 'do_create_instance'},
-        {'trigger': 'query', 'source': 'create', 'dest': 'query', 'after': 'do_query_resource_set_status'},
-        {'trigger': 'query', 'source': 'query', 'dest': 'query', 'after': 'do_query_resource_set_status'},
+        {'trigger': 'query', 'source': ['create', 'query'], 'dest': 'query', 'after': 'do_query_resource_set_status'},
         {'trigger': 'app_push', 'source': ['success', 'fail'], 'dest': 'nginx_push', 'after':'do_push_nginx_config'}
     ]
 
@@ -207,7 +206,7 @@ class ResourceProvider(object):
                 dns_server.add(domain_name=domain, ip=ip)
                 dns_server.reload()
                 #####
-                self.success()
+            self.success()
         if self.is_rollback:
             self.rollback()
 
