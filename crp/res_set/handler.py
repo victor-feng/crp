@@ -825,12 +825,13 @@ class MongodbCluster(object):
                 except IndexError as e:
                     print e
                     a = 'false'
-                    Log.logger.debug('%s' % a)
+                    Log.logger.debug('%s' % e)
                     break
                 if 'open' in a:
                     self.mongodb_cluster_push(ip)
-                    self.flag = True
                     self.ip.remove(ip)
+            self.flag = True
+
 
     def mongodb_cluster_push(self, ip):
         # vip_list = list(set(self.ip))
