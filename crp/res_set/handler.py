@@ -830,7 +830,8 @@ class MongodbCluster(object):
                 if 'open' in a:
                     self.mongodb_cluster_push(ip)
                     self.ip.remove(ip)
-            self.flag = True
+            if len(self.ip) == 0:
+                self.flag = True
 
 
     def mongodb_cluster_push(self, ip):
