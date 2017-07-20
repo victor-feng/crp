@@ -139,7 +139,7 @@ class ResourceProvider(object):
                 instance['port'] = '27017'
                 self.req_dict["mongodb_cluster"]['instance'].append(instance)
                 mongo_ips.append(info['ip'])
-        request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict, self.compute_list)
+        # request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict, self.compute_list)
         Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Success Info.")
         # 部署redis集群
         if len(redis_ips) >1:
@@ -837,22 +837,22 @@ class MongodbCluster(object):
         authority_cmd = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m shell -a "chmod 777 /tmp/write_mongo_ip.py"'.format(vip=ip)
         cmd1 = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m shell -a "python /tmp/write_mongo_ip.py {m_ip} {s1_ip} {s2_ip}"'.\
             format(vip=ip, m_ip=self.ip_master1, s1_ip=self.ip_slave1, s2_ip=self.ip_slave2)
-        Log.logger.debug('开始上传脚本')
+        Log.logger.debug('开始上传脚本%s' % ip)
         p = subprocess.Popen(cmd_before, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
             print line
             Log.logger.debug('mongodb cluster cmd before:%s' % line)
-        Log.logger.debug('开始修改权限')
+        Log.logger.debug('开始修改权限%s' % ip)
         p = subprocess.Popen(authority_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
             print line
             Log.logger.debug('mongodb cluster authority:%s' % line)
-        Log.logger.debug('脚本上传完成,开始执行脚本')
+        Log.logger.debug('脚本上传完成,开始执行脚本%s' % ip)
         p = subprocess.Popen(cmd1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
             print line
             Log.logger.debug('mongodb cluster exec write script:%s' % line)
-        Log.logger.debug('脚本执行完毕 接下来会部署')
+        Log.logger.debug('脚本执行完毕 接下来会部署%s' % ip)
         # for ip in self.ip:
         with open('/home/mongo/hosts', 'w') as f:
             f.write('%s\n' % ip)
@@ -867,7 +867,7 @@ class MongodbCluster(object):
         p = subprocess.Popen(cmd_s, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
             print line,
-            Log.logger.debug('mongodb cluster push result:%s' % line)
+            Log.logger.debug('mongodb cluster push result:%s, -----%s' % (line, ip))
 
     def exec_final_script(self):
         for i in self.cmd:
