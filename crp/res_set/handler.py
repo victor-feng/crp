@@ -139,7 +139,7 @@ class ResourceProvider(object):
                 instance['port'] = '27017'
                 self.req_dict["mongodb_cluster"]['instance'].append(instance)
                 mongo_ips.append(info['ip'])
-        # request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict, self.compute_list)
+        request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict, self.compute_list)
         Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Success Info.")
         # 部署redis集群
         if len(redis_ips) >1:
@@ -832,7 +832,6 @@ class MongodbCluster(object):
                     self.ip.remove(ip)
             if len(self.ip) == 0:
                 self.flag = True
-
 
     def mongodb_cluster_push(self, ip):
         # vip_list = list(set(self.ip))
