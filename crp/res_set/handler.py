@@ -147,7 +147,7 @@ class ResourceProvider(object):
             create_redis_cluster(redis_ips[0], redis_ips[1], self.req_dict["redis_cluster"]['vip'])
         # 部署mongo集群
         if len(mongo_ips) > 1:
-            Log.logger.debug("Start deploy the mongo master.")
+            Log.logger.debug("Start deploy the mongo master.%s" % mongo_ips)
             ins = MongodbCluster(mongo_ips[0], mongo_ips[1], mongo_ips[2], mongo_ips[3])
             ins.exec_final_script()
             Log.logger.debug("Deploy the mongo master Done.")
