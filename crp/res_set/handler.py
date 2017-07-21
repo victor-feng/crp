@@ -163,6 +163,7 @@ class ResourceProvider(object):
                 mongo_ips.append(info['ip'])
         # 部署redis集群
         if len(redis_ips) >1:
+            time.sleep(5)
             create_redis_cluster(redis_ips[0], redis_ips[1], self.req_dict["redis_cluster"]['vip'])
         # 部署mysql mha的集群
         if mysql_cluster:
@@ -918,8 +919,12 @@ CMDPATH = r'crp/res_set/playbook-0830/'
 def create_redis_cluster(ip1, ip2, vip):
     cmd = 'python {0}script/redis_cluster.py {1} {2} {3}'.format(CMDPATH, ip1, ip2, vip)
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    strout = ''
     for line in p.stdout.readlines():
-        Log.logger.debug('redis cluster push result:%s' % line)
+        strout.append(line)
+        strout += line + os.linesep
+
+    Log.logger.debug('redis cluster push result:%s' % strout)
 
 
 def create_mysql_cluster(ip_info):
@@ -930,9 +935,12 @@ def create_mysql_cluster(ip_info):
 
     path = CMDPATH + 'mysqlmha'
     cmd = '/bin/sh {0}/mlm.sh {0}'.format(path)
+    strout = ''
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     for line in p.stdout.readlines():
-        Log.logger.debug('mysql cluster push result:%s' % line)
+        strout.append(line)
+        strout += line + os.linesep
+    Log.logger.debug('mysql cluster push result:%s' % strout)
 
 
 
