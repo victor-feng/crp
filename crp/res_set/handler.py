@@ -25,16 +25,20 @@ GLOBAL_MONGO_CLUSTER_IP = ['172.28.36.230', '172.28.36.23', '172.28.36.231', '17
 
 images_dict = {
     'mysql': {
-        'uuid': '817d3140-0b82-4722-9816-3cee734f22b6',
-        'name': 'mysqluop-80G-20170426',
+        'uuid': '54291935-a8af-4f56-bdfd-9f1758307f3e',
+        'name': 'mysqlsas-80G-20170627',
     },
     'redis': {
         'uuid': '3da55e5b-814c-4935-abf0-1469ae606286',
         'name': 'redis-50G-20170428',
     },
-    'mongo': {
+    'mongodb': {
         'uuid': '95863650-6816-4588-846a-c0423b5baae0',
         'name': 'mongosas-50G-20170428',
+    },
+    'mycat': {
+        'uuid': '59a5022b-3c46-47ec-8e97-b63edc4b7be0',
+        'name': 'mycat-50G-20170628'
     },
 }
 
@@ -55,7 +59,7 @@ DEV_NETWORK_ID = '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'
 OS_EXT_PHYSICAL_SERVER_ATTR = 'OS-EXT-SRV-ATTR:host'
 
 # res_callback
-RES_CALLBACK = 'http://uop-test.syswin.com/api/res_callback/res'
+RES_CALLBACK = 'http://uop-dev.syswin.com/api/res_callback/res'
 
 # use localhost for ip is none
 IP_NONE = "localhost"
@@ -113,19 +117,37 @@ class ResourceProvider(object):
                          " instance id set is " + self.result_inst_id_list[:].__str__() +
                          " instance info set is " + self.result_info_list[:].__str__())
         redis_master_slave = ['slave','master']
+        mysql_master_slave = ['slave2', 'slave1', 'master']
+        mysql_lvs = ['lvs2', 'lvs1']
         redis_ips = []
+        mysql_cluster = False
+        mysql_cluster_ip_info = []
+        mysql_cluster_ip_lvs = []
         mongo_ips = []
         for info in self.result_info_list:
             uop_inst_id = info["uop_inst_id"]
+            uop_inst_name = info["uop_inst_name"]
             os_inst_id = info["os_inst_id"]
             instance = {
                 'ip': info["ip"],
+                'server_name': uop_inst_name,
                 'physical_server': info["physical_server"],
                 'username': DEFAULT_USERNAME,
                 'password': DEFAULT_PASSWORD,
             }
             if self.req_dict["mysql_cluster"].get('ins_id') and uop_inst_id == self.req_dict["mysql_cluster"]['ins_id']:
                 instance['port'] = "3316"
+                if uop_inst_name.endswith('_4') or uop_inst_name.endswith('_5'):
+                    instance['dbtype'] =mysql_lvs.pop()
+                    mysql_cluster = True
+                    mysql_cluster_ip_lvs.append((uop_inst_name, info["ip"]))
+                else:
+                    instance['dbtype'] = mysql_master_slave.pop()
+                    mysql_cluster_ip_info.append((uop_inst_name, info["ip"]))
+                if not self.req_dict["mysql_cluster"].get('vip'):
+                    _, vip1 = create_vip_port(uop_inst_id)
+                    _, vip2 = create_vip_port(uop_inst_id)
+                    self.req_dict["mysql_cluster"]['vip'] = [vip1, vip2]
                 self.req_dict["mysql_cluster"]['instance'].append(instance)
             if self.req_dict["redis_cluster"].get('ins_id') and uop_inst_id == self.req_dict["redis_cluster"]['ins_id']:
                 instance['port'] = '6379'
@@ -139,15 +161,20 @@ class ResourceProvider(object):
                 instance['port'] = '27017'
                 self.req_dict["mongodb_cluster"]['instance'].append(instance)
                 mongo_ips.append(info['ip'])
-        request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict, self.compute_list)
-        Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Success Info.")
         # 部署redis集群
         if len(redis_ips) >1:
             create_redis_cluster(redis_ips[0], redis_ips[1], self.req_dict["redis_cluster"]['vip'])
+        # 部署mysql mha的集群
+        if mysql_cluster:
+            mysql_cluster_ip_info = mysql_cluster_ip_info + mysql_cluster_ip_lvs
+            mysql_cluster_ip_info.extend(zip(['vip1', 'vip2'], self.req_dict["mysql_cluster"]['vip']))
+            create_mysql_cluster(mysql_cluster_ip_info)
+        request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict, self.compute_list)
+        Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Success Info.")
         # 部署mongo集群
         if len(mongo_ips) > 1:
             Log.logger.debug("Start deploy the mongo master.%s" % mongo_ips)
-            ins = MongodbCluster(mongo_ips[0], mongo_ips[1], mongo_ips[2], mongo_ips[3])
+            ins = MongodbCluster(mongo_ips[0], mongo_ips[1], mongo_ips[2], mongo_ips[2])
             ins.exec_final_script()
             Log.logger.debug("Deploy the mongo master Done.")
         # 停止定时任务并退出
@@ -201,7 +228,8 @@ class ResourceProvider(object):
                 #####
                 dns_env = {'develop': '172.28.5.21', 'test': '172.28.18.212'}
                 ip = dns_env[self.req_dict['env']]
-                domain = self.req_dict['domain']
+                # domain = self.req_dict['domain']
+                domain = compute.get('domain')
                 dns_server = DnsConfig.singleton()
                 dns_server.add(domain_name=domain, ip=ip)
                 dns_server.reload()
@@ -329,10 +357,15 @@ def _create_resource_set(task_id, resource_id=None, resource_list=None, compute_
         version = resource.get('version')
         global quantity
         for i in range(1, quantity+1, 1):
-            osint_id = create_instance_by_type(task_id, instance_type, instance_name)
+            # 为mysql创建2个mycat镜像的LVS
+            if instance_type == 'mysql' and i == 4:
+                instance_type = 'mycat'
+            instance_name2 = instance_name + '_' + str(i)
+            osint_id = create_instance_by_type(task_id, instance_type, instance_name2)
             uopinst_info = {
                                'uop_inst_id': instance_id,
-                               'os_inst_id': osint_id
+                               'os_inst_id': osint_id,
+                                'uop_inst_name': instance_name2,
                            }
             uop_os_inst_id_list.append(uopinst_info)
 
@@ -433,6 +466,7 @@ def _query_resource_set_status(task_id=None, uop_os_inst_id_list=None, result_in
             _data = {
                         'uop_inst_id': uop_os_inst_id['uop_inst_id'],
                         'os_inst_id': uop_os_inst_id['os_inst_id'],
+                        'uop_inst_name': uop_os_inst_id.get('uop_inst_name'),
                         'ip': _ip,
                         'physical_server': physical_server,
                     }
@@ -825,10 +859,13 @@ class MongodbCluster(object):
                 except IndexError as e:
                     print e
                     a = 'false'
-                    Log.logger.debug('%s' % a)
+                    Log.logger.debug('%s' % e)
+                    break
                 if 'open' in a:
                     self.mongodb_cluster_push(ip)
-                    self.flag = True
+                    self.ip.remove(ip)
+            if len(self.ip) == 0:
+                self.flag = True
 
     def mongodb_cluster_push(self, ip):
         # vip_list = list(set(self.ip))
@@ -837,22 +874,22 @@ class MongodbCluster(object):
         authority_cmd = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m shell -a "chmod 777 /tmp/write_mongo_ip.py"'.format(vip=ip)
         cmd1 = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m shell -a "python /tmp/write_mongo_ip.py {m_ip} {s1_ip} {s2_ip}"'.\
             format(vip=ip, m_ip=self.ip_master1, s1_ip=self.ip_slave1, s2_ip=self.ip_slave2)
-        Log.logger.debug('开始上传脚本')
+        Log.logger.debug('开始上传脚本%s' % ip)
         p = subprocess.Popen(cmd_before, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
             print line
             Log.logger.debug('mongodb cluster cmd before:%s' % line)
-        Log.logger.debug('开始修改权限')
+        Log.logger.debug('开始修改权限%s' % ip)
         p = subprocess.Popen(authority_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
             print line
             Log.logger.debug('mongodb cluster authority:%s' % line)
-        Log.logger.debug('脚本上传完成,开始执行脚本')
+        Log.logger.debug('脚本上传完成,开始执行脚本%s' % ip)
         p = subprocess.Popen(cmd1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
             print line
             Log.logger.debug('mongodb cluster exec write script:%s' % line)
-        Log.logger.debug('脚本执行完毕 接下来会部署')
+        Log.logger.debug('脚本执行完毕 接下来会部署%s' % ip)
         # for ip in self.ip:
         with open('/home/mongo/hosts', 'w') as f:
             f.write('%s\n' % ip)
@@ -867,7 +904,7 @@ class MongodbCluster(object):
         p = subprocess.Popen(cmd_s, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
             print line,
-            Log.logger.debug('mongodb cluster push result:%s' % line)
+            Log.logger.debug('mongodb cluster push result:%s, -----%s' % (line, ip))
 
     def exec_final_script(self):
         for i in self.cmd:
@@ -877,12 +914,26 @@ class MongodbCluster(object):
                 Log.logger.debug('mongodb cluster push result:%s' % line)
 
 
+CMDPATH = r'crp/res_set/playbook-0830/'
 def create_redis_cluster(ip1, ip2, vip):
-    CMDPATH = r'crp/res_set/playbook-0830/'
     cmd = 'python {0}script/redis_cluster.py {1} {2} {3}'.format(CMDPATH, ip1, ip2, vip)
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     for line in p.stdout.readlines():
         print line
+
+
+def create_mysql_cluster(ip_info):
+    with open(os.path.join(CMDPATH, 'mysqlmha', 'mysql.txt'), 'wb') as f:
+        for host_name, ip in ip_info:
+            f.write(host_name + os.linesep)
+            f.write(ip + os.linesep)
+
+    path = CMDPATH + 'mysqlmha'
+    cmd = '/bin/sh {0}/mlm.sh {0}'.format(path)
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    for line in p.stdout.readlines():
+        print line
+
 
 
 resource_set_api.add_resource(ResourceSet, '/sets')
