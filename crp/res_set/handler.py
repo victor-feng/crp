@@ -163,10 +163,10 @@ class ResourceProvider(object):
                 mongo_ips.append(info['ip'])
         # 部署redis集群
         if len(redis_ips) >1:
-            if query_vm_status(redis_ips):
-                flag = create_redis_cluster(redis_ips[0], redis_ips[1], self.req_dict["redis_cluster"]['vip'])
-                if not flag:
-                    create_redis_cluster(redis_ips[0], redis_ips[1], self.req_dict["redis_cluster"]['vip'])
+            # if query_vm_status(redis_ips):
+            flag = create_redis_cluster(redis_ips[0], redis_ips[1], self.req_dict["redis_cluster"]['vip'])
+            if not flag:
+                create_redis_cluster(redis_ips[0], redis_ips[1], self.req_dict["redis_cluster"]['vip'])
         # 部署mysql mha的集群
         if mysql_cluster:
             mysql_cluster_ip_info = mysql_cluster_ip_info + mysql_cluster_ip_lvs
