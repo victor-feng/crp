@@ -921,7 +921,6 @@ def create_redis_cluster(ip1, ip2, vip):
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     strout = ''
     for line in p.stdout.readlines():
-        strout.append(line)
         strout += line + os.linesep
 
     Log.logger.debug('redis cluster push result:%s' % strout)
@@ -938,7 +937,6 @@ def create_mysql_cluster(ip_info):
     strout = ''
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     for line in p.stdout.readlines():
-        strout.append(line)
         strout += line + os.linesep
     Log.logger.debug('mysql cluster push result:%s' % strout)
 
