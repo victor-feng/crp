@@ -9,7 +9,7 @@ DNS_CONDIG = {
         'username': 'root',
         'password': '123456',
         'domain_path': '/var/named/syswin.com.zone',
-        'rndc_path': '/usr/local/named/sbin/rndc'
+        'rndc_path': '/usr/sbin/rndc'
         }
 response = {'success': False, 'error': ''}
 
