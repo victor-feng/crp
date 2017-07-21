@@ -24,7 +24,7 @@ def create_app(config_name):
 
     logger_setting(app)
     openstack_client_setting()
-    # instance_status_sync()
+    instance_status_sync()
 
     # swagger docs
     @app.route('/docs')
