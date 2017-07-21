@@ -36,6 +36,10 @@ images_dict = {
         'uuid': '95863650-6816-4588-846a-c0423b5baae0',
         'name': 'mongosas-50G-20170428',
     },
+    'mycat': {
+        'uuid': '59a5022b-3c46-47ec-8e97-b63edc4b7be0',
+        'name': 'mycat-50G-20170628'
+    }
 }
 
 
@@ -201,7 +205,8 @@ class ResourceProvider(object):
                 #####
                 dns_env = {'develop': '172.28.5.21', 'test': '172.28.18.212'}
                 ip = dns_env[self.req_dict['env']]
-                domain = self.req_dict['domain']
+                # domain = self.req_dict['domain']
+                domain = compute.get('domain')
                 dns_server = DnsConfig.singleton()
                 dns_server.add(domain_name=domain, ip=ip)
                 dns_server.reload()
