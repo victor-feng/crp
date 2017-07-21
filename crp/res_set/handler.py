@@ -59,7 +59,7 @@ DEV_NETWORK_ID = '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'
 OS_EXT_PHYSICAL_SERVER_ATTR = 'OS-EXT-SRV-ATTR:host'
 
 # res_callback
-RES_CALLBACK = 'http://uop-test.syswin.com/api/res_callback/res'
+RES_CALLBACK = 'http://uop-dev.syswin.com/api/res_callback/res'
 
 # use localhost for ip is none
 IP_NONE = "localhost"
