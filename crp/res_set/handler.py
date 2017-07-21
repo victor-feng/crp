@@ -32,7 +32,7 @@ images_dict = {
         'uuid': '3da55e5b-814c-4935-abf0-1469ae606286',
         'name': 'redis-50G-20170428',
     },
-    'mongo': {
+    'mongodb': {
         'uuid': '95863650-6816-4588-846a-c0423b5baae0',
         'name': 'mongosas-50G-20170428',
     },
