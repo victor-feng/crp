@@ -39,7 +39,7 @@ images_dict = {
     'mycat': {
         'uuid': '59a5022b-3c46-47ec-8e97-b63edc4b7be0',
         'name': 'mycat-50G-20170628'
-    }
+    },
 }
 
 
@@ -117,19 +117,37 @@ class ResourceProvider(object):
                          " instance id set is " + self.result_inst_id_list[:].__str__() +
                          " instance info set is " + self.result_info_list[:].__str__())
         redis_master_slave = ['slave','master']
+        mysql_master_slave = ['slave2', 'slave1', 'master']
+        mysql_lvs = ['lvs2', 'lvs1']
         redis_ips = []
+        mysql_cluster = False
+        mysql_cluster_ip_info = []
+        mysql_cluster_ip_lvs = []
         mongo_ips = []
         for info in self.result_info_list:
             uop_inst_id = info["uop_inst_id"]
+            uop_inst_name = info["uop_inst_name"]
             os_inst_id = info["os_inst_id"]
             instance = {
                 'ip': info["ip"],
+                'server_name': uop_inst_name,
                 'physical_server': info["physical_server"],
                 'username': DEFAULT_USERNAME,
                 'password': DEFAULT_PASSWORD,
             }
             if self.req_dict["mysql_cluster"].get('ins_id') and uop_inst_id == self.req_dict["mysql_cluster"]['ins_id']:
                 instance['port'] = "3316"
+                if uop_inst_name.endswith('_4') or uop_inst_name.endswith('_5'):
+                    instance['dbtype'] =mysql_lvs.pop()
+                    mysql_cluster = True
+                    mysql_cluster_ip_lvs.append((uop_inst_name, info["ip"]))
+                else:
+                    instance['dbtype'] = mysql_master_slave.pop()
+                    mysql_cluster_ip_info.append((uop_inst_name, info["ip"]))
+                if not self.req_dict["mysql_cluster"].get('vip'):
+                    _, vip1 = create_vip_port(uop_inst_id)
+                    _, vip2 = create_vip_port(uop_inst_id)
+                    self.req_dict["mysql_cluster"]['vip'] = [vip1, vip2]
                 self.req_dict["mysql_cluster"]['instance'].append(instance)
             if self.req_dict["redis_cluster"].get('ins_id') and uop_inst_id == self.req_dict["redis_cluster"]['ins_id']:
                 instance['port'] = '6379'
@@ -143,11 +161,16 @@ class ResourceProvider(object):
                 instance['port'] = '27017'
                 self.req_dict["mongodb_cluster"]['instance'].append(instance)
                 mongo_ips.append(info['ip'])
-        request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict, self.compute_list)
-        Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Success Info.")
         # 部署redis集群
         if len(redis_ips) >1:
             create_redis_cluster(redis_ips[0], redis_ips[1], self.req_dict["redis_cluster"]['vip'])
+        # 部署mysql mha的集群
+        if mysql_cluster:
+            mysql_cluster_ip_info = mysql_cluster_ip_info + mysql_cluster_ip_lvs
+            mysql_cluster_ip_info.extend(zip(['vip1', 'vip2'], self.req_dict["mysql_cluster"]['vip']))
+            create_mysql_cluster(mysql_cluster_ip_info)
+        request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict, self.compute_list)
+        Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Success Info.")
         # 部署mongo集群
         if len(mongo_ips) > 1:
             Log.logger.debug("Start deploy the mongo master.%s" % mongo_ips)
@@ -334,10 +357,15 @@ def _create_resource_set(task_id, resource_id=None, resource_list=None, compute_
         version = resource.get('version')
         global quantity
         for i in range(1, quantity+1, 1):
-            osint_id = create_instance_by_type(task_id, instance_type, instance_name)
+            # 为mysql创建2个mycat镜像的LVS
+            if instance_type == 'mysql' and i == 4:
+                instance_type = 'mycat'
+            instance_name2 = instance_name + '_' + str(i)
+            osint_id = create_instance_by_type(task_id, instance_type, instance_name2)
             uopinst_info = {
                                'uop_inst_id': instance_id,
-                               'os_inst_id': osint_id
+                               'os_inst_id': osint_id,
+                                'uop_inst_name': instance_name2,
                            }
             uop_os_inst_id_list.append(uopinst_info)
 
@@ -438,6 +466,7 @@ def _query_resource_set_status(task_id=None, uop_os_inst_id_list=None, result_in
             _data = {
                         'uop_inst_id': uop_os_inst_id['uop_inst_id'],
                         'os_inst_id': uop_os_inst_id['os_inst_id'],
+                        'uop_inst_name': uop_os_inst_id.get('uop_inst_name'),
                         'ip': _ip,
                         'physical_server': physical_server,
                     }
@@ -885,12 +914,26 @@ class MongodbCluster(object):
                 Log.logger.debug('mongodb cluster push result:%s' % line)
 
 
+CMDPATH = r'crp/res_set/playbook-0830/'
 def create_redis_cluster(ip1, ip2, vip):
-    CMDPATH = r'crp/res_set/playbook-0830/'
     cmd = 'python {0}script/redis_cluster.py {1} {2} {3}'.format(CMDPATH, ip1, ip2, vip)
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     for line in p.stdout.readlines():
         print line
+
+
+def create_mysql_cluster(ip_info):
+    with open(os.path.join(CMDPATH, 'mysqlmha', 'mysql.txt'), 'wb') as f:
+        for host_name, ip in ip_info:
+            f.write(host_name + os.linesep)
+            f.write(ip + os.linesep)
+
+    path = CMDPATH + 'mysqlmha'
+    cmd = '/bin/sh {0}/mlm.sh {0}'.format(path)
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    for line in p.stdout.readlines():
+        print line
+
 
 
 resource_set_api.add_resource(ResourceSet, '/sets')
