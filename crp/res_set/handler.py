@@ -163,8 +163,8 @@ class ResourceProvider(object):
                 mongo_ips.append(info['ip'])
         # 部署redis集群
         if len(redis_ips) >1:
-            time.sleep(5)
-            create_redis_cluster(redis_ips[0], redis_ips[1], self.req_dict["redis_cluster"]['vip'])
+            if query_vm_status(redis_ips):
+                create_redis_cluster(redis_ips[0], redis_ips[1], self.req_dict["redis_cluster"]['vip'])
         # 部署mysql mha的集群
         if mysql_cluster:
             mysql_cluster_ip_info = mysql_cluster_ip_info + mysql_cluster_ip_lvs
@@ -940,6 +940,23 @@ def create_mysql_cluster(ip_info):
         strout += line + os.linesep
     Log.logger.debug('mysql cluster push result:%s' % strout)
 
+def query_vm_status(ips):
+    flag = False
+    for ip in ips:
+        p = subprocess.Popen('nmap %s -p 22' % ip, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        try:
+            a = p.stdout.readlines()[5]
+            Log.logger.debug('nmap ack result:%s' % a)
+        except IndexError as e:
+            print e
+            a = 'false'
+            Log.logger.debug('%s' % e)
+            break
+        if 'open' in a:
+            ips.remove(ip)
+    if len(ips) == 0:
+        flag = True
+    return flag
 
 
 resource_set_api.add_resource(ResourceSet, '/sets')
