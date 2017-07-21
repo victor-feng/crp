@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 
-APP_ENV = "default"
-# APP_ENV = "testing"
+# APP_ENV = "default"
+APP_ENV = "testing"
 
 
 class BaseConfig:
