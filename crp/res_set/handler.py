@@ -919,7 +919,7 @@ def create_redis_cluster(ip1, ip2, vip):
     cmd = 'python {0}script/redis_cluster.py {1} {2} {3}'.format(CMDPATH, ip1, ip2, vip)
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     for line in p.stdout.readlines():
-        print line
+        Log.logger.debug('redis cluster push result:%s' % line)
 
 
 def create_mysql_cluster(ip_info):
@@ -932,7 +932,7 @@ def create_mysql_cluster(ip_info):
     cmd = '/bin/sh {0}/mlm.sh {0}'.format(path)
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     for line in p.stdout.readlines():
-        print line
+        Log.logger.debug('mysql cluster push result:%s' % line)
 
 
 
