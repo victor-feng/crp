@@ -25,8 +25,8 @@ GLOBAL_MONGO_CLUSTER_IP = ['172.28.36.230', '172.28.36.23', '172.28.36.231', '17
 
 images_dict = {
     'mysql': {
-        'uuid': '817d3140-0b82-4722-9816-3cee734f22b6',
-        'name': 'mysqluop-80G-20170426',
+        'uuid': '54291935-a8af-4f56-bdfd-9f1758307f3e',
+        'name': 'mysqlsas-80G-20170627',
     },
     'redis': {
         'uuid': '3da55e5b-814c-4935-abf0-1469ae606286',
