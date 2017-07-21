@@ -164,7 +164,9 @@ class ResourceProvider(object):
         # 部署redis集群
         if len(redis_ips) >1:
             if query_vm_status(redis_ips):
-                create_redis_cluster(redis_ips[0], redis_ips[1], self.req_dict["redis_cluster"]['vip'])
+                flag = create_redis_cluster(redis_ips[0], redis_ips[1], self.req_dict["redis_cluster"]['vip'])
+                if not flag:
+                    create_redis_cluster(redis_ips[0], redis_ips[1], self.req_dict["redis_cluster"]['vip'])
         # 部署mysql mha的集群
         if mysql_cluster:
             mysql_cluster_ip_info = mysql_cluster_ip_info + mysql_cluster_ip_lvs
@@ -924,6 +926,11 @@ def create_redis_cluster(ip1, ip2, vip):
         strout += line + os.linesep
 
     Log.logger.debug('redis cluster push result:%s' % strout)
+    if 'FAILED!' in strout or 'UNREACHABLE!' in strout:
+        return False
+    else:
+        return True
+
 
 
 def create_mysql_cluster(ip_info):
