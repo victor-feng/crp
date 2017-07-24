@@ -35,6 +35,7 @@ class DnServerSet(Resource):
         domain = args.domain
         try:
             dns_server = DnsConfig.singleton()
+            dns_server.zone_query(domain_name=domain)
             query_response = dns_server.query(domain_name=domain)
             code = 200
             res['code'] = code
@@ -59,12 +60,13 @@ class DnServerSet(Resource):
 
         try:
             dns_server = DnsConfig.singleton()
+            dns_server.zone_query(domain_name=domain)
             add_response = dns_server.add(domain_name=domain, ip=ip)
             reload_response = dns_server.reload()
             code = 200
             res['code'] = code
             res['result']['res'] = "success"
-            res['result']['msg'] = add_response['error']
+            res['result']['msg'] = "%s, %s" % (add_response['error'], reload_response)
         except Exception as e:
             code = 400
             res['code'] = code
@@ -83,12 +85,13 @@ class DnServerSet(Resource):
 
         try:
             dns_server = DnsConfig.singleton()
+            dns_server.zone_query(domain_name=domain)
             del_response = dns_server.delete(domain_name=domain)
             reload_response = dns_server.reload()
             code = 200
             res['code'] = code
             res['result']['res'] = "success"
-            res['result']['msg'] = del_response['error']
+            res['result']['msg'] = "%s, %s" % (del_response['error'], reload_response)
         except Exception as e:
             code = 400
             res['code'] = code
