@@ -18,43 +18,40 @@ resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 TIMEOUT = 500
 SLEEP_TIME = 3
 
-images_dict = {
+cluster_type_image_port_mappers = {
     'mysql': {
         'uuid': '817d3140-0b82-4722-9816-3cee734f22b6',
         'name': 'mysqluop-80G-20170426',
+        'port': '3316'
     },
     'redis': {
         'uuid': '3da55e5b-814c-4935-abf0-1469ae606286',
         'name': 'redis-50G-20170428',
+        'port': '6379'
     },
     'mongodb': {
         'uuid': '95863650-6816-4588-846a-c0423b5baae0',
         'name': 'mongosas-50G-20170428',
+        'port': '27017'
     },
+    'mycat': {
+        'uuid': '59a5022b-3c46-47ec-8e97-b63edc4b7be0',
+        'name': 'mycat-50G-20170628',
+        'port': '3316'
+    }
 }
 
-# cirros-0.3.3
-IMAGE_MINI = 'c63884fb-399b-400c-a5fd-810cefb50dc0'
-# mini
-FLAVOR_MINI = 'aadb6488-a64f-4868-82dd-7b832cd047ac'
 # scm2-dev--1C2G80G
 FLAVOR_1C2G = 'scm2-dev--1C2G80G'
 # docker-2C4G25G
 DOCKER_FLAVOR_2C4G = 'e90d8d25-c5c7-46d7-ba4e-2465a5b1d266'
 # AVAILABILITY_ZONE
-AVAILABILITY_ZONE_GENERAL = 'AZ_GENERAL'
-AVAILABILITY_ZONE_SELF_SERVICE = 'AZ-SELF-SERVICE'
 AVAILABILITY_ZONE_AZ_UOP = 'AZ_UOP'
 DEV_NETWORK_ID = '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'
 OS_EXT_PHYSICAL_SERVER_ATTR = 'OS-EXT-SRV-ATTR:host'
 
 # res_callback
-RES_CALLBACK = 'http://uop-test.syswin.com/api/res_callback/res'
-
-# use localhost for ip is none
-IP_NONE = "localhost"
-# use localhost for physical_server is none
-PHYSICAL_SERVER_NONE = "localhost"
+RES_CALLBACK = 'http://uop-dev.syswin.com/api/res_callback/res'
 
 RES_STATUS_OK = "ok"
 RES_STATUS_FAIL = "fail"
@@ -167,7 +164,7 @@ class ResourceProviderTransitions(object):
 
     def next_phase(self):
         index = self.phase_list.index(self.phase)
-        self.phase = self.phase_list[index+1]
+        self.phase = self.phase_list[index + 1]
         if self.phase == 'query':
             self.query()
         elif self.phase == 'status':
@@ -243,7 +240,8 @@ class ResourceProviderTransitions(object):
         # 删除全部，完成rollback
         for uop_os_inst_id in uop_os_inst_id_list:
             nova_client.servers.delete(uop_os_inst_id['os_inst_id'])
-        Log.logger.debug("Task ID " + self.task_id.__str__() + " Resource ID " + resource_id.__str__() + " rollback done.")
+        Log.logger.debug(
+            "Task ID " + self.task_id.__str__() + " Resource ID " + resource_id.__str__() + " rollback done.")
 
     # 向OpenStack申请资源
     def _create_instance(self, name, image, flavor, availability_zone, network_id):
@@ -284,7 +282,7 @@ class ResourceProviderTransitions(object):
 
     # 依据资源类型创建资源
     def _create_instance_by_type(self, ins_type, name):
-        image = images_dict.get(ins_type)
+        image = cluster_type_image_port_mappers.get(ins_type)
         image_uuid = image.get('uuid')
         Log.logger.debug("Task ID " + self.task_id.__str__() +
                          " Select Image UUID: " + image_uuid + " by Instance Type " + ins_type)
@@ -299,29 +297,43 @@ class ResourceProviderTransitions(object):
         cluster_name = propertys.get('cluster_name')
         cluster_id = propertys.get('cluster_id')
         domain = propertys.get('domain')
+        port = propertys.get('port')
         image_url = propertys.get('image_url')
         cpu = propertys.get('cpu')
         mem = propertys.get('mem')
         quantity = propertys.get('quantity')
 
-        propertys['instance'] = []
+        if quantity >= 1:
+            propertys['ins_id'] = cluster_id
+            cluster_type = 'app_cluster'
+            propertys['cluster_type'] = cluster_type
+            propertys['username'] = DEFAULT_USERNAME
+            propertys['password'] = DEFAULT_PASSWORD
+            propertys['port'] = port
+            propertys['instance'] = []
 
-        for i in range(0, quantity, 1):
-            instance_name = '%s_%s' % (cluster_name, i.__str__())
-            err_msg, osint_id = self._create_docker_by_url(instance_name, image_url)
-            if err_msg is None:
-                uopinst_info = {
-                    'uop_inst_id': cluster_id,
-                    'os_inst_id': osint_id
-                }
-                uop_os_inst_id_list.append(uopinst_info)
-                propertys['instance'].append({'domain': domain, 'os_inst_id': osint_id})
-            else:
-                Log.logger.error("Task ID " + self.task_id.__str__() + " ERROR. Error Message is:")
-                Log.logger.error(err_msg)
-                # 删除全部
-                is_rollback = True
-                uop_os_inst_id_list = []
+            for i in range(0, quantity, 1):
+                instance_name = '%s_%s' % (cluster_name, i.__str__())
+                err_msg, osint_id = self._create_docker_by_url(instance_name, image_url)
+                if err_msg is None:
+                    uopinst_info = {
+                        'uop_inst_id': cluster_id,
+                        'os_inst_id': osint_id
+                    }
+                    uop_os_inst_id_list.append(uopinst_info)
+                    propertys['instance'].append({'instance_type': cluster_type,
+                                                  'instance_name': instance_name,
+                                                  'username': DEFAULT_USERNAME,
+                                                  'password': DEFAULT_PASSWORD,
+                                                  'domain': domain,
+                                                  'port': port,
+                                                  'os_inst_id': osint_id})
+                else:
+                    Log.logger.error("Task ID " + self.task_id.__str__() + " ERROR. Error Message is:")
+                    Log.logger.error(err_msg)
+                    # 删除全部
+                    is_rollback = True
+                    uop_os_inst_id_list = []
 
         return is_rollback, uop_os_inst_id_list
 
@@ -341,14 +353,20 @@ class ResourceProviderTransitions(object):
         quantity = propertys.get('quantity')
 
         if quantity >= 1:
+            cluster_type_image_port_mapper = cluster_type_image_port_mappers.get(cluster_type)
+            if cluster_type_image_port_mapper is not None:
+                port = cluster_type_image_port_mapper.get('port')
             propertys['ins_id'] = cluster_id
+            propertys['cluster_type'] = cluster_type
             propertys['username'] = DEFAULT_USERNAME
             propertys['password'] = DEFAULT_PASSWORD
-            propertys['port'] = '6379'
-            propertys['username'] = DEFAULT_USERNAME
+            propertys['port'] = port
             propertys['instance'] = []
 
             for i in range(0, quantity, 1):
+                # 为mysql创建2个mycat镜像的LVS
+                if cluster_type == 'mysql' and i == 3:
+                    cluster_type = 'mycat'
                 instance_name = '%s_%s' % (cluster_name, i.__str__())
                 osint_id = self._create_instance_by_type(cluster_type, instance_name)
                 uopinst_info = {
@@ -356,9 +374,11 @@ class ResourceProviderTransitions(object):
                     'os_inst_id': osint_id
                 }
                 uop_os_inst_id_list.append(uopinst_info)
-                propertys['instance'].append({'username': DEFAULT_USERNAME,
+                propertys['instance'].append({'instance_type': cluster_type,
+                                              'instance_name': instance_name,
+                                              'username': DEFAULT_USERNAME,
                                               'password': DEFAULT_PASSWORD,
-                                              'port': '6379',
+                                              'port': port,
                                               'os_inst_id': osint_id})
 
         return is_rollback, uop_os_inst_id_list
@@ -371,11 +391,18 @@ class ResourceProviderTransitions(object):
         if key == 'resource_cluster':
             cluster_type = self.property_mapper.get('resource_cluster').get('cluster_type')
             cluster_type_key = '%s' % cluster_type
-            temp_property_mapper[cluster_type_key] = self.property_mapper.get('resource_cluster')
+            cluster_info = self.property_mapper.get('resource_cluster')
+            quantity = cluster_info.get('quantity')
+            if quantity is not None and quantity > 1:
+                temp_property_mapper[cluster_type_key] = cluster_info
         else:
-            temp_property_mapper['app'] = self.property_mapper.get('app_cluster')
-        self.push_mappers_list.insert(0, temp_property_mapper)
-        self.result_mappers_list.insert(0, temp_property_mapper)
+            cluster_info = self.property_mapper.get('app_cluster')
+            quantity = cluster_info.get('quantity')
+            if quantity is not None and quantity > 1:
+                temp_property_mapper['app'] = cluster_info
+        if len(temp_property_mapper) > 0:
+            self.push_mappers_list.insert(0, temp_property_mapper)
+            self.result_mappers_list.insert(0, temp_property_mapper)
 
     # 向OpenStack查询已申请资源的定时任务
     def _query_resource_set_status(self, uop_os_inst_id_list=None, result_inst_id_list=None,
@@ -385,7 +412,8 @@ class ResourceProviderTransitions(object):
         # uop_os_inst_id_wait_query = list(set(uop_os_inst_id_list) - set(result_inst_id_list))
         uop_os_inst_id_wait_query = self._uop_os_list_sub(uop_os_inst_id_list, result_inst_id_list)
 
-        Log.logger.debug("Query Task ID " + self.task_id.__str__() + ", remain " + uop_os_inst_id_wait_query[:].__str__())
+        Log.logger.debug(
+            "Query Task ID " + self.task_id.__str__() + ", remain " + uop_os_inst_id_wait_query[:].__str__())
         Log.logger.debug("Query Task ID " + self.task_id.__str__() +
                          " Test Task Scheduler Class result_inst_id_list object id is " +
                          id(result_inst_id_list).__str__() +
@@ -416,7 +444,8 @@ class ResourceProviderTransitions(object):
                 result_inst_id_list.append(uop_os_inst_id)
             if inst.status == 'ERROR':
                 # 置回滚标志位
-                Log.logger.debug("Query Task ID " + self.task_id.__str__() + " ERROR Instance Info: " + inst.to_dict().__str__())
+                Log.logger.debug(
+                    "Query Task ID " + self.task_id.__str__() + " ERROR Instance Info: " + inst.to_dict().__str__())
                 is_rollback = True
 
         if result_inst_id_list.__len__() == uop_os_inst_id_list.__len__():
@@ -500,7 +529,7 @@ class ResourceProviderTransitions(object):
 
     @transition_state_logger
     def do_app_push(self, kwargs):
-        #TODO: do app push
+        # TODO: do app push
         self.dns_push()
 
     @transition_state_logger
