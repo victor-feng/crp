@@ -134,10 +134,13 @@ class ResourceProviderTransitions(object):
     def __init__(self, resource_id, property_mappers_list, req_dict):
         # Initialize the variable
         self.is_running = False
+        self.is_need_rollback = False
         self.phase_list = ['create', 'query', 'status', 'push', 'callback', 'stop']
         self.phase = 'create'
         self.task_id = None
         self.resource_id = resource_id
+        self.result_inst_id_list = []
+        self.uop_os_inst_id_list = []
         self.property_mappers_list = copy.deepcopy(property_mappers_list)
         self.property_mappers_list.reverse()
         self.push_mappers_list = []
@@ -148,10 +151,6 @@ class ResourceProviderTransitions(object):
         # 待处理的节点
         self.property_mapper = {}
         self.req_dict = req_dict
-        self.is_need_rollback = False
-        self.result_inst_id_list = []
-        self.uop_os_inst_id_list = []
-        self.result_info_list = []
 
         # Initialize the state machine
         self.machine = Machine(model=self,
@@ -200,8 +199,11 @@ class ResourceProviderTransitions(object):
                 func = getattr(self, ('%s_push' % item_id), None)
             if not func:
                 raise NotImplementedError("Unexpected item_id=%s" % item_id)
-            func()
             Log.logger.debug('Trigger is %s', item_id)
+            func()
+            if self.phase == 'push':
+                # 从self.property_mapper中获得的cluster_info为引用类型，因此更新self.push_mapper_list中的dict则self.result_mapper_list同步更新
+                pass
         else:
             self.next_phase()
             if self.phase == 'stop':
@@ -386,27 +388,33 @@ class ResourceProviderTransitions(object):
     # 将第一阶段输出结果新增至第四阶段
     def _add_to_phase4(self, uop_os_inst_id_list):
         self.uop_os_inst_id_list.extend(uop_os_inst_id_list)
-        temp_property_mapper = {}
+        temp_push_property_mapper = {}
+        temp_result_property_mapper = {}
         key = self.property_mapper.keys()[0]
         if key == 'resource_cluster':
             cluster_type = self.property_mapper.get('resource_cluster').get('cluster_type')
             cluster_type_key = '%s' % cluster_type
             cluster_info = self.property_mapper.get('resource_cluster')
             quantity = cluster_info.get('quantity')
-            if quantity is not None and quantity > 1:
-                temp_property_mapper[cluster_type_key] = cluster_info
+            if quantity is not None:
+                temp_result_property_mapper[cluster_type_key] = cluster_info
+                if quantity > 1:
+                    temp_push_property_mapper[cluster_type_key] = cluster_info
         else:
             cluster_info = self.property_mapper.get('app_cluster')
             quantity = cluster_info.get('quantity')
-            if quantity is not None and quantity > 1:
-                temp_property_mapper['app'] = cluster_info
-        if len(temp_property_mapper) > 0:
-            self.push_mappers_list.insert(0, temp_property_mapper)
-            self.result_mappers_list.insert(0, temp_property_mapper)
+            if quantity is not None:
+                temp_result_property_mapper['app'] = cluster_info
+                if quantity > 1:
+                    temp_push_property_mapper['app'] = cluster_info
+        if len(temp_push_property_mapper) > 0:
+            self.push_mappers_list.insert(0, temp_push_property_mapper)
+        if len(temp_result_property_mapper) > 0:
+            self.result_mappers_list.insert(0, temp_result_property_mapper)
 
     # 向OpenStack查询已申请资源的定时任务
     def _query_resource_set_status(self, uop_os_inst_id_list=None, result_inst_id_list=None,
-                                   result_info_list=None, result_mappers_list=None):
+                                   result_mappers_list=None):
         is_finish = False
         is_rollback = False
         # uop_os_inst_id_wait_query = list(set(uop_os_inst_id_list) - set(result_inst_id_list))
@@ -427,20 +435,14 @@ class ResourceProviderTransitions(object):
                 _ips = self._get_ip_from_instance(inst)
                 _ip = _ips.pop() if _ips.__len__() >= 1 else ''
                 physical_server = getattr(inst, OS_EXT_PHYSICAL_SERVER_ATTR)
-                _data = {
-                    'uop_inst_id': uop_os_inst_id['uop_inst_id'],
-                    'os_inst_id': uop_os_inst_id['os_inst_id'],
-                    'ip': _ip,
-                    'physical_server': physical_server,
-                }
                 for mapper in result_mappers_list:
                     value = mapper.values()[0]
                     for instance in value.get('instance'):
                         if instance.get('os_inst_id') == uop_os_inst_id['os_inst_id']:
                             instance['ip'] = _ip
                             instance['physical_server'] = physical_server
-                result_info_list.append(_data)
-                Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Instance Info: " + _data.__str__())
+                            Log.logger.debug("Query Task ID " + self.task_id.__str__() +
+                                             " Instance Info: " + mapper.__str__())
                 result_inst_id_list.append(uop_os_inst_id)
             if inst.status == 'ERROR':
                 # 置回滚标志位
@@ -472,7 +474,7 @@ class ResourceProviderTransitions(object):
         # 执行成功调用UOP CallBack，提交成功
         Log.logger.debug("Query Task ID " + self.task_id.__str__() + " all instance create success." +
                          " instance id set is " + self.result_inst_id_list[:].__str__() +
-                         " instance info set is " + self.result_info_list[:].__str__())
+                         " instance info set is " + self.result_mappers_list[:].__str__())
         request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict, self.result_mappers_list)
         Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Success Info.")
         # 停止定时任务并退出
@@ -513,7 +515,6 @@ class ResourceProviderTransitions(object):
     def do_query(self):
         is_finished, self.is_need_rollback = self._query_resource_set_status(self.uop_os_inst_id_list,
                                                                              self.result_inst_id_list,
-                                                                             self.result_info_list,
                                                                              self.result_mappers_list)
         if self.is_need_rollback:
             self.rollback()
@@ -523,7 +524,7 @@ class ResourceProviderTransitions(object):
     @transition_state_logger
     def do_status(self):
         # 查询KVM操作系统状态
-        is_finished = False
+        is_finished = True
         if is_finished is True:
             self.next_phase()
 
