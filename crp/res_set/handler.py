@@ -740,7 +740,9 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list):
     if status == RES_STATUS_OK:
         for result_mapper in result_mappers_list:
             if result_mapper.keys()[0] == 'app':
-                container.append(result_mapper.get('app'))
+                app = result_mapper.get('app')
+                if app is not None and app.get('quantity') > 0:
+                    container.append(app)
             elif result_mapper.keys()[0] == 'mysql':
                 mysql = result_mapper.get('mysql')
             elif result_mapper.keys()[0] == 'redis':
@@ -748,10 +750,7 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list):
             elif result_mapper.keys()[0] == 'mongodb':
                 mongodb = result_mapper.get('mongodb')
 
-    if container is not None and container.get('quantity') > 0:
-        data["container"] = container
-    else:
-        data["container"] = []
+    data["container"] = container
 
     if mysql is not None and mysql.get('quantity') > 0:
         db_info["mysql"] = mysql
