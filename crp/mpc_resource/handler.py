@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
+
+import logging
 import json
 import requests
 
 from flask_restful import reqparse, Api, Resource
 
+# TODO: import* is bad!
 from crp.taskmgr import *
 from crp.mpc_resource import mpc_resource_blueprint
 from crp.mpc_resource import mpc_resource_callback
@@ -17,7 +20,7 @@ AP_NETWORK_CONF = configs[APP_ENV].AP_NETWORK_CONF
 
 mpc_resource_api = Api(mpc_resource_blueprint, errors=mpc_resource_errors)
 
-
+# TODO: move to global conf
 TIMEOUT = 600
 SLEEP_TIME = 3
 
@@ -39,9 +42,7 @@ def _create_instance(task_id, name, image, flavor, availability_zone, network_id
     inst = nova_client.servers.create(name, image, flavor,
                                      availability_zone=availability_zone,
                                      nics=nics_list)
-    Log.logger.debug("Task ID " + str(task_id) + " create instance:")
-    Log.logger.debug(inst)
-    Log.logger.debug(inst.id)
+    logging.debug("Task ID " + str(task_id) + " create instance:")
 
     return inst
 
@@ -63,7 +64,8 @@ def _create_instance_by_az(task_id, result, resource):
 
     if not network_id:
         err_msg = 'not found network_id by AZ %s' % az
-        Log.logger.error(
+        #Log.logger.error(
+        logging.error(
             "Task ID %s, %s"
             % (task_id, err_msg))
         result['vm']['status'] = 'vm_error'
@@ -95,7 +97,8 @@ def _query_instance_status(task_id, result, resource):
     os_inst_id = vm.get('os_inst_id', '')
     nova_client = OpenStack.nova_client
     inst = nova_client.servers.get(os_inst_id)
-    Log.logger.debug(
+    #Log.logger.debug(
+    logging.debug(
         "Query Task ID " + str(task_id) +
         " query Instance ID " + os_inst_id +
         " Status is " + inst.status)
@@ -105,7 +108,8 @@ def _query_instance_status(task_id, result, resource):
             inst, 'OS-EXT-SRV-ATTR:host', '')
         _ips = _get_ip_from_instance(inst)
         result['vm']['ip'] = _ips.pop() if len(_ips) >= 1 else ''
-        Log.logger.debug(
+        #Log.logger.debug(
+        logging.debug(
             "Query Task ID " + str(task_id) +
             " Instance Info: " + str(result['vm']))
 
@@ -116,7 +120,8 @@ def _query_instance_status(task_id, result, resource):
             request_res_callback(task_id, result)
             TaskManager.task_exit(task_id)
     elif inst.status == 'ERROR':
-        Log.logger.debug(
+        #Log.logger.debug(
+        logging.debug(
             "Query Task ID " + str(task_id) +
             " ERROR Instance Info: " + str(inst.to_dict()))
         result['vm']['status'] = 'vm_error'
@@ -159,7 +164,8 @@ def _create_volume(task_id, result, resource):
             'X-Auth-Token': token,
         }
         data_str = json.dumps(data_dict)
-        Log.logger.debug(
+        #Log.logger.debug(
+        logging.debug(
             "CreateVolume Task ID " + str(task_id) + '\r\n' +
             url + ' ' + json.dumps(headers) + ' ' + data_str)
         cv_result = requests.post(
@@ -169,11 +175,13 @@ def _create_volume(task_id, result, resource):
     except BaseException as e:
         err_msg = e.message
     finally:
-        Log.logger.debug(
+        #Log.logger.debug(
+        logging.debug(
             "CreateVolume Task ID " + str(task_id) + '\r\n' +
             'create_volume result ' + str(cv_result.json()))
         if err_msg:
-            Log.logger.debug(
+            #Log.logger.debug(
+            logging.debug(
                 "CreateVolume Task ID " + str(task_id) + '\r\n' +
                 'create_volume err_msg ' + str(err_msg))
             result['vm']['status'] = 'vol_error'
@@ -195,24 +203,28 @@ def _query_volume_status(task_id, result, for_create=True):
     vol_id = volume.get('id', '')
     cinder_client = OpenStack.cinder_client
     vol = cinder_client.volumes.get(vol_id)
-    Log.logger.debug(
+    #Log.logger.debug(
+    logging.debug(
         "QueryVolume Task ID " + str(task_id) +
         "\r\nVolume status: " + vol.status)
     if for_create and vol.status == 'available':
         result['current_status'] = ATTACH_VOLUME
         result['volume']['status'] = 'available'
-        Log.logger.debug(
+        #Log.logger.debug(
+        logging.debug(
             "QueryVolume Task ID " + str(task_id) +
             " volume Info: " + str(result['volume']))
     elif not for_create and vol.status == 'in-use':
         result['volume']['status'] = 'in-use'
-        Log.logger.debug(
+        #Log.logger.debug(
+        logging.debug(
             "QueryVolume Task ID " + str(task_id) +
             " volume Info: " + str(result['volume']))
         request_res_callback(task_id, result)
         TaskManager.task_exit(task_id)
     elif vol.status == 'error':
-        Log.logger.debug(
+        #Log.logger.debug(
+        logging.debug(
             "QueryVolume Task ID " + str(task_id) +
             " ERROR volume Info: " + str(vol))
         result['vm']['status'] = 'vol_error'
@@ -230,7 +242,8 @@ def _instance_attach_volume(task_id, result):
     nova_client = OpenStack.nova_client
     vol_attach_result = nova_client.volumes.create_server_volume(
         os_inst_id, os_vol_id, None)
-    Log.logger.debug(
+    #Log.logger.debug(
+    logging.debug(
         "AttachVolume Task ID " + str(task_id) +
         "\r\nvolume ID " + os_vol_id +
         "\r\ninstance ID " + os_inst_id +
@@ -261,11 +274,13 @@ def request_res_callback(task_id, result):
     except BaseException as e:
         err_msg = e.message
     finally:
-        Log.logger.debug(
+        #Log.logger.debug(
+        logging.debug(
             "Callback Task ID " + str(task_id) + '\r\n' +
             'mpc_res_callback result ' + str(cbk_result))
         if err_msg:
-            Log.logger.debug(
+            #Log.logger.debug(
+            logging.debug(
                 "Callback Task ID " + str(task_id) + '\r\n' +
                 'mpc_res_callback err_msg ' + str(err_msg))
 
@@ -276,10 +291,12 @@ def request_res_callback(task_id, result):
 # 3. 挂载volume到虚机
 def _create_resource_set_and_query(task_id, result, resource):
     current_status = result.get('current_status', None)
-    Log.logger.debug(
+    #Log.logger.debug(
+    logging.debug(
         "Task ID %s, current_status %s" %
         (task_id, current_status))
-    Log.logger.debug(
+    #Log.logger.debug(
+    logging.debug(
         "Task ID %s,\r\n result %s,\r\n resource %s ." %
         (task_id, result, resource))
 
@@ -300,7 +317,8 @@ def _create_resource_set_and_query(task_id, result, resource):
             _query_volume_status(task_id, result, for_create=False)
     except Exception as e:
         err_msg = e.message
-        Log.logger.error(err_msg)
+        logging.error(err_msg)
+        #Log.logger.error(err_msg)
         if not result.get('vm', {}):
             result['vm'] = {}
         result['vm']['status'] = 'vm_error'
@@ -318,7 +336,8 @@ class ResourceAPI(Resource):
                             required=True, location='json',
                             help="Resources cannot be blank!")
         args = parser.parse_args()
-        Log.logger.debug(args.resources)
+        logging.debug(args.resources)
+        #Log.logger.debug(args.resources)
         try:
             for item in args.resources:
                 TaskManager.task_start(
@@ -326,7 +345,8 @@ class ResourceAPI(Resource):
                     _create_resource_set_and_query, item)
         except Exception as e:
             err_msg = e.message
-            Log.logger.error('err: %s' % err_msg)
+            logging.error('err: %s' % err_msg)
+            #Log.logger.error('err: %s' % err_msg)
             res = {
                 "code": 400,
                 "result": {

@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
+import logging
+
 from flask_restful import reqparse, Api, Resource
 
+# TODO: import * is bad!!!
 from crp.taskmgr import *
 
 from crp.availability_zone import az_blueprint
@@ -22,12 +25,15 @@ class AZListAPI(Resource):
                     # Log.logger.debug(az_item.zoneName)
                     # Log.logger.debug(az_item.zoneState)
                     # Log.logger.debug(az_item.hosts)
+                    logging.debug("az_item.hosts: %s, az_item.zoneName: %s, az_item.zoneState: %s", 
+                                  az_item.hosts, az_item.zoneName, az_item.zoneState)
                     azs.append({
                         "pool_name": az_item.zoneName,
                         "hosts": az_item.hosts.keys()
                     })
         except Exception as e:
-            Log.logger.error('get az err: %s' % e.message)
+            logging.error('get az err: %s' % e.message)
+            #Log.logger.error('get az err: %s' % e.message)
             res = {
                 "code": 400,
                 "result": {
@@ -57,16 +63,20 @@ class HostsListAPI(Resource):
         host_set = None
         if args.host:
             # Log.logger.debug(type(args.host))
+            logging.debug(type(args.host))
             host_set = set(args.host)
-        Log.logger.debug('HostsListAPI: query %s' % host_set)
+        logging.debug('HostsListAPI: query %s' % host_set)
+        #Log.logger.debug('HostsListAPI: query %s' % host_set)
 
         hosts = []
         try:
             nova_cli = OpenStack.nova_client
             rst = nova_cli.hypervisors.list(detailed=True)
             # Log.logger.debug(len(rst))
+            logging.debug(len(rst))
             for host_item in rst:
                 # Log.logger.debug(dir(host_item))
+                logging.debug(dir(host_item))
                 if host_set is None or\
                                 host_item.hypervisor_hostname in host_set:
                     hosts.append({
@@ -81,7 +91,8 @@ class HostsListAPI(Resource):
                         "storage_gb_use": host_item.local_gb_used,
                     })
         except Exception as e:
-            Log.logger.error('get hosts err: %s' % e.message)
+            logging.error('get hosts err: %s' % e.message)
+            #Log.logger.error('get hosts err: %s' % e.message)
             res = {
                 "code": 400,
                 "result": {
@@ -109,6 +120,7 @@ class StatisticAPI(Resource):
             nova_cli = OpenStack.nova_client
             statistics = nova_cli.hypervisors.statistics()
             # Log.logger.debug(dir(statistics))
+            logging.debug(dir(statistics))
             if statistics:
                 hypervisors_statistics["running_vms"]= statistics.running_vms
                 hypervisors_statistics["vcpu_total"]= statistics.vcpus
@@ -118,7 +130,8 @@ class StatisticAPI(Resource):
                 hypervisors_statistics["storage_gb_total"]= statistics.local_gb
                 hypervisors_statistics["storage_gb_use"]= statistics.local_gb_used
         except Exception as e:
-            Log.logger.error('get hypervisors_statistics err: %s' % e.message)
+            #Log.logger.error('get hypervisors_statistics err: %s' % e.message)
+            logging.error('get hypervisors_statistics err: %s' % e.message)
             res = {
                 "code": 400,
                 "result": {

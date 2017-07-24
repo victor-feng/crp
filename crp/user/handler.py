@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
+import logging
+
 from flask_restful import reqparse, Api, Resource
 
+# tODO: too bad!
 from crp.taskmgr import *
 from crp.models import User
 from crp.user import user_blueprint
@@ -35,7 +38,7 @@ class UserRegister(Resource):
             user_set['last_name'] = last_name
 
             # TODO(TaskManager.task_start()): 定时任务示例代码
-            Log.logger.debug("Test API handler TASK_VAR_LIST object id is " + id(TASK_VAR_LIST).__str__() +
+            logging.debug("Test API handler TASK_VAR_LIST object id is " + id(TASK_VAR_LIST).__str__() +
                              ", Content is " + TASK_VAR_LIST[:].__str__())
             TaskManager.task_start(SLEEP_TIME, TIMEOUT, TASK_VAR_LIST, query_modify_db, "testargs1", "testargs2")
         except Exception as e:

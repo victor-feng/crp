@@ -1,26 +1,30 @@
 # -*- coding: utf-8 -*-
+import logging
+import json
+import commands
+import os
+import time
+import uuid
+
 from flask_restful import reqparse, Api, Resource
 from flask import request
+import requests
+import werkzeug
+
 from crp.app_deployment import app_deploy_blueprint
 from crp.app_deployment.errors import user_errors
 from crp.utils.docker_tools import image_transit
 from crp.openstack import OpenStack
 from crp.taskmgr import *
 from crp.log import Log
-import requests
-import werkzeug
-import json
-import commands
-import os
-import time
-import uuid
+
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
 from config import APP_ENV, configs
 
 app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
-
+#TODO: move to global conf
 #url = "http://172.28.11.111:8001/cmdb/api/"
 #url = "http://uop-test.syswin.com/api/dep_result/"
 url = "http://uop-test.syswin.com/api/dep_result/"
@@ -35,17 +39,21 @@ def _dep_callback(deploy_id, success):
     data_str = json.dumps(data)
 
     headers = {'Content-Type': 'application/json'}
-    Log.logger.debug("data string:" + str(data))
+    logging.debug("data string:" + str(data))
+    #Log.logger.debug("data string:" + str(data))
     res = requests.put(url + deploy_id + "/", data=data_str, headers=headers)
-    Log.logger.debug("call dep_result callback,res: " + str(res))
+    logging.debug("call dep_result callback,res: " + str(res))
+    #Log.logger.debug("call dep_result callback,res: " + str(res))
     return res
 
 
 def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=None, deploy_id=None):
     rollback_flag = False
     osint_id_wait_query = list(set(osins_id_list) - set(result_list))
-    Log.logger.debug("Query Task ID "+task_id.__str__()+", remain "+osint_id_wait_query[:].__str__())
-    Log.logger.debug("Test Task Scheduler Class result_list object id is " + id(result_list).__str__() +
+    logging.debug("Query Task ID "+task_id.__str__()+", remain "+osint_id_wait_query[:].__str__())
+    #Log.logger.debug("Query Task ID "+task_id.__str__()+", remain "+osint_id_wait_query[:].__str__())
+    logging.debug("Test Task Scheduler Class result_list object id is " + id(result_list).__str__() +
+    #Log.logger.debug("Test Task Scheduler Class result_list object id is " + id(result_list).__str__() +
                      ", Content is " + result_list[:].__str__())
     nova_client = OpenStack.nova_client
 
@@ -53,6 +61,7 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
         vm = nova_client.servers.get(int_id)
         vm_state = getattr(vm, 'OS-EXT-STS:vm_state')
         #Log.logger.debug("Task ID "+task_id.__str__()+" query Instance ID "+int_id.__str__()+" Status is "+ vm_state)
+        logging.debug("Task ID "+task_id.__str__()+" query Instance ID "+int_id.__str__()+" Status is "+ vm_state)
         if vm_state == 'active':
             result_list.append(int_id)
         if vm_state == 'error':
@@ -61,13 +70,15 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
     if result_list.__len__() == osins_id_list.__len__():
         # TODO(thread exit): 执行成功调用UOP CallBack停止定时任务退出任务线程
         _dep_callback(deploy_id, True)
-        Log.logger.debug("Task ID "+task_id.__str__()+" all instance create success." +
+        logging.debug("Task ID "+task_id.__str__()+" all instance create success." +
+        #Log.logger.debug("Task ID "+task_id.__str__()+" all instance create success." +
                          " instance id set is "+result_list[:].__str__())
         TaskManager.task_exit(task_id)
 
     if rollback_flag:
         fail_list = list(set(osins_id_list) - set(result_list))
-        Log.logger.debug("Task ID "+task_id.__str__()+" have one or more instance create failed." +
+        logging.debug("Task ID "+task_id.__str__()+" have one or more instance create failed." +
+        #Log.logger.debug("Task ID "+task_id.__str__()+" have one or more instance create failed." +
                          " Successful instance id set is "+result_list[:].__str__() +
                          " Failed instance id set is "+fail_list[:].__str__())
         # 删除全部，完成rollback
@@ -83,12 +94,14 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
 def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, ip = None, image_url = None):
     err_msg, image_uuid = image_transit(image_url)
     if err_msg is None:
-        Log.logger.debug(
+        #Log.logger.debug(
+        logging.debug(
             "Transit harbor docker image success. The result glance image UUID is " + image_uuid)
         if _check_image_status(image_uuid):
             obj._deploy_docker(ip, deploy_id, image_uuid)
     else:
-        Log.logger.error(
+        #Log.logger.error(
+        logging.error(
             "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + err_msg)
     TaskManager.task_exit(task_id)
 
@@ -98,7 +111,8 @@ def _check_image_status(image_uuid):
     check_interval = 5
     for i in range(check_times):
         img = nova_client.images.get(image_uuid)
-        Log.logger.debug("check image status " + str(i) + " times, status: " + img.status.lower())
+        logging.debug("check image status " + str(i) + " times, status: " + img.status.lower())
+        #Log.logger.debug("check image status " + str(i) + " times, status: " + img.status.lower())
         if (img.status.lower() != "active"):
             time.sleep(check_interval)
         else:
@@ -116,7 +130,8 @@ class AppDeploy(Resource):
             parser.add_argument('deploy_id', type=str)
             #parser.add_argument('file', type=werkzeug.datastructures.FileStorage, location='files')
             args = parser.parse_args()
-            Log.logger.debug("AppDeploy receive post request. args is " + str(args))
+            logging.debug("AppDeploy receive post request. args is " + str(args))
+            #Log.logger.debug("AppDeploy receive post request. args is " + str(args))
             deploy_id = args.deploy_id
             docker = args.docker
             sql_ret = self._deploy_mysql(args)
@@ -128,7 +143,8 @@ class AppDeploy(Resource):
                     code = 500
                     msg = "uop server error"
         except Exception as e:
-            Log.logger.error("AppDeploy exception: " + e.message)
+            logging.error("AppDeploy exception: " + e.message)
+            #Log.logger.error("AppDeploy exception: " + e.message)
             code = 500
             msg = "internal server error: " + e.message
 
@@ -181,9 +197,11 @@ class AppDeploy(Resource):
     def _exec_ansible_cmd(self,cmd):
         (status, output) = commands.getstatusoutput(cmd)
         if output.lower().find("error") == -1 and output.lower().find("failed") == -1:
-            Log.logger.debug("ansible exec succeed,command: " + str(cmd) + " output: " + output)
+            logging.debug("ansible exec succeed,command: " + str(cmd) + " output: " + output)
+            #Log.logger.debug("ansible exec succeed,command: " + str(cmd) + " output: " + output)
             return True
-        Log.logger.debug("ansible exec failed,command: " + str(cmd) + " output: " + output)
+        logging.debug("ansible exec failed,command: " + str(cmd) + " output: " + output)
+        #Log.logger.debug("ansible exec failed,command: " + str(cmd) + " output: " + output)
         return False
 
     def _make_command_file(self,workdir,password,user,port,database,sqlfile):
@@ -214,6 +232,7 @@ class AppDeploy(Resource):
         # newserver = OpenStack.nova_client.servers.rebuild(server=server, image='3027f868-8f87-45cd-b85b-8b0da3ecaa84')
         vm_id_list = []
         # Log.logger.debug("Add the id type is" + type(newserver.id))
+        logging.debug("Add the id type is" + type(newserver.id))
         vm_id_list.append(newserver.id)
         result_list = []
         timeout = 10
