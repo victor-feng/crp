@@ -2,19 +2,16 @@
 import os
 import json
 import subprocess
-import time
+import requests
+from transitions import Machine
+from flask_restful import reqparse, Api, Resource
+from flask import request
 from crp.taskmgr import *
 from crp.res_set import resource_set_blueprint
 from crp.res_set.errors import resource_set_errors
 from crp.log import Log
 from crp.openstack import OpenStack
 from crp.utils.docker_tools import image_transit
-from crp.dns.dns_api import DnsConfig
-import requests
-from transitions import Machine
-from flask_restful import reqparse, Api, Resource
-
-
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 
@@ -25,8 +22,8 @@ GLOBAL_MONGO_CLUSTER_IP = ['172.28.36.230', '172.28.36.23', '172.28.36.231', '17
 
 images_dict = {
     'mysql': {
-        'uuid': '54291935-a8af-4f56-bdfd-9f1758307f3e',
-        'name': 'mysqlsas-80G-20170627',
+        'uuid': '817d3140-0b82-4722-9816-3cee734f22b6',
+        'name': 'mysqluop-80G-20170426',
     },
     'redis': {
         'uuid': '3da55e5b-814c-4935-abf0-1469ae606286',
@@ -36,12 +33,7 @@ images_dict = {
         'uuid': '95863650-6816-4588-846a-c0423b5baae0',
         'name': 'mongosas-50G-20170428',
     },
-    'mycat': {
-        'uuid': '59a5022b-3c46-47ec-8e97-b63edc4b7be0',
-        'name': 'mycat-50G-20170628'
-    },
 }
-
 
 # cirros-0.3.3
 IMAGE_MINI = 'c63884fb-399b-400c-a5fd-810cefb50dc0'
@@ -59,7 +51,7 @@ DEV_NETWORK_ID = '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'
 OS_EXT_PHYSICAL_SERVER_ATTR = 'OS-EXT-SRV-ATTR:host'
 
 # res_callback
-RES_CALLBACK = 'http://uop-dev.syswin.com/api/res_callback/res'
+RES_CALLBACK = 'http://uop-test.syswin.com/api/res_callback/res'
 
 # use localhost for ip is none
 IP_NONE = "localhost"
@@ -73,429 +65,569 @@ RES_STATUS_DEFAULT = 'unreserved'
 DEFAULT_USERNAME = "root"
 DEFAULT_PASSWORD = "123456"
 
+# Define Request JSON Format
+items_sequence_list_config = [
+    {
+        'compute_list':
+            [
+                'app_cluster'
+            ],
+        'resource_list':
+            [
+                'resource_cluster'
+            ]
+    }]
 
-class ResourceProvider(object):
+# Define Item Property to JSON Property Mapper
+property_json_mapper_config = {
+    'app_cluster': {
+        'cluster_name': 'instance_name',
+        'cluster_id': 'instance_id',
+        'domain': 'domain',
+        'image_url': 'image_url',
+        'cpu': 'cpu',
+        'mem': 'mem',
+        'port': 'port',
+        'quantity': 'quantity'
+    },
+    'resource_cluster': {
+        'cluster_name': 'instance_name',
+        'cluster_id': 'instance_id',
+        'cluster_type': 'instance_type',
+        'version': 'version',
+        'cpu': 'cpu',
+        'mem': 'mem',
+        'disk': 'disk',
+        'quantity': 'quantity'
+    }
+}
+
+
+# Transition state Log debug decorator
+def transition_state_logger(func):
+    def wrapper(self, *args, **kwargs):
+        Log.logger.debug("Transition state is turned in " + self.state)
+        ret = func(self, *args, **kwargs)
+        Log.logger.debug("Transition state is turned out " + self.state)
+        return ret
+    return wrapper
+
+
+class ResourceProviderTransitions(object):
     # Define some states.
-    states = ['init', 'success', 'fail', 'rollback', 'stop', 'create', 'query']
+    states = ['init', 'success', 'fail', 'rollback', 'stop',
+              'app_cluster', 'resource_cluster', 'query', 'status',
+              'app_push', 'mysql_push', 'mongodb_push', 'redis_push', 'dns_push']
 
     # Define transitions.
     transitions = [
-        {'trigger': 'success', 'source': 'query', 'dest': 'success', 'after': 'do_success'},
+        {'trigger': 'success', 'source': ['query', 'app_push', 'mysql_push', 'mongodb_push', 'redis_push', 'dns_push'], 'dest': 'success', 'after': 'do_success'},
         {'trigger': 'fail', 'source': 'rollback', 'dest': 'fail', 'after': 'do_fail'},
-        {'trigger': 'rollback', 'source': ['create', 'query'], 'dest': 'rollback', 'after': 'do_rollback'},
+        {'trigger': 'rollback', 'source': '*', 'dest': 'rollback', 'after': 'do_rollback'},
         {'trigger': 'stop', 'source': ['success', 'fail'], 'dest': 'stop', 'after': 'do_stop'},
-        {'trigger': 'create', 'source': 'init', 'dest': 'create', 'after': 'do_create_instance'},
-        {'trigger': 'query', 'source': ['create', 'query'], 'dest': 'query', 'after': 'do_query_resource_set_status'},
-        {'trigger': 'app_push', 'source': ['success', 'fail'], 'dest': 'nginx_push', 'after':'do_push_nginx_config'}
+        {'trigger': 'app_cluster', 'source': ['init', 'app_cluster', 'resource_cluster'], 'dest': 'app_cluster', 'after': 'do_app_cluster'},
+        {'trigger': 'resource_cluster', 'source': ['init', 'app_cluster', 'resource_cluster'], 'dest': 'resource_cluster', 'after': 'do_resource_cluster'},
+        {'trigger': 'query', 'source': ['app_cluster', 'resource_cluster', 'query'], 'dest': 'query', 'after': 'do_query'},
+        {'trigger': 'status', 'source': ['query', 'status'], 'dest': 'status', 'after': 'do_status'},
+        {'trigger': 'app_push', 'source': ['status', 'app_push', 'dns_push', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'app_push', 'after': 'do_app_push'},
+        {'trigger': 'dns_push', 'source': ['status', 'app_push', 'dns_push', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'dns_push', 'after': 'do_dns_push'},
+        {'trigger': 'mysql_push', 'source': ['status', 'app_push', 'dns_push', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'mysql_push', 'after': 'do_mysql_push'},
+        {'trigger': 'mongodb_push', 'source': ['status', 'app_push', 'dns_push', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'mongodb_push', 'after': 'do_mongodb_push'},
+        {'trigger': 'redis_push', 'source': ['status', 'app_push', 'dns_push', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'redis_push', 'after': 'do_redis_push'},
     ]
 
-    def __init__(self, resource_id, resource_list, compute_list, req_dict):
+    def __init__(self, resource_id, property_mappers_list, req_dict):
         # Initialize the variable
+        self.is_running = False
+        self.phase_list = ['create', 'query', 'status', 'push', 'callback', 'stop']
+        self.phase = 'create'
         self.task_id = None
         self.resource_id = resource_id
-        self.resource_list = resource_list
-        self.compute_list = compute_list
+        self.property_mappers_list = copy.deepcopy(property_mappers_list)
+        self.property_mappers_list.reverse()
+        self.push_mappers_list = []
+        # 结果集
+        self.result_mappers_list = []
+        # 刚刚处理过的节点，可能为存在引用关系的父节点
+        self.pre_property_mapper = {}
+        # 待处理的节点
+        self.property_mapper = {}
         self.req_dict = req_dict
-        self.is_rollback = False
+        self.is_need_rollback = False
         self.result_inst_id_list = []
         self.uop_os_inst_id_list = []
         self.result_info_list = []
-        self.ip_list = []
 
         # Initialize the state machine
         self.machine = Machine(model=self,
-                               states=ResourceProvider.states,
-                               transitions=ResourceProvider.transitions,
+                               states=ResourceProviderTransitions.states,
+                               transitions=ResourceProviderTransitions.transitions,
                                initial='init')
 
     def set_task_id(self, task_id):
         self.task_id = task_id
 
+    def next_phase(self):
+        index = self.phase_list.index(self.phase)
+        self.phase = self.phase_list[index+1]
+        if self.phase == 'query':
+            self.query()
+        elif self.phase == 'status':
+            self.status()
+
+    def preload_property_mapper(self, property_mappers_list):
+        if len(property_mappers_list) != 0:
+            if len(self.pre_property_mapper) == 0:
+                self.pre_property_mapper = self.property_mapper
+            if len(self.pre_property_mapper) != 0 and len(self.property_mapper) != 0 \
+                    and (self.pre_property_mapper.keys()[0] != self.property_mapper.keys()[0]):
+                self.pre_property_mapper = self.property_mapper
+            self.property_mapper = property_mappers_list.pop()
+        else:
+            self.pre_property_mapper = {}
+            self.property_mapper = {}
+
+    def tick_announce(self):
+        if self.is_need_rollback:
+            self.rollback()
+        if self.phase == 'query' or self.phase == 'status' or self.phase == 'stop':
+            return
+        if self.phase == 'create':
+            self.preload_property_mapper(self.property_mappers_list)
+        elif self.phase == 'push':
+            self.preload_property_mapper(self.push_mappers_list)
+
+        if len(self.property_mapper) != 0:
+            item_id = self.property_mapper.keys()[0]
+            if self.phase == 'create':
+                func = getattr(self, item_id, None)
+            elif self.phase == 'push':
+                func = getattr(self, ('%s_push' % item_id), None)
+            if not func:
+                raise NotImplementedError("Unexpected item_id=%s" % item_id)
+            func()
+            Log.logger.debug('Trigger is %s', item_id)
+        else:
+            self.next_phase()
+            if self.phase == 'stop':
+                self.stop()
+
+    @staticmethod
+    def _get_ip_from_instance(server):
+        ips_address = []
+        for _, ips in server.addresses.items():
+            for ip in ips:
+                if isinstance(ip, dict):
+                    if ip.has_key('addr'):
+                        ip_address = ip['addr']
+                        ips_address.append(ip_address)
+        return ips_address
+
+    # _uop_os_list_sub
+    @staticmethod
+    def _uop_os_list_sub(uop_os_inst_id_list, result_uop_os_inst_id_list):
+        uop_os_inst_id_wait_query = copy.deepcopy(uop_os_inst_id_list)
+        for i in result_uop_os_inst_id_list:
+            for j in uop_os_inst_id_wait_query:
+                if j['os_inst_id'] == i['os_inst_id']:
+                    uop_os_inst_id_wait_query.remove(j)
+        return uop_os_inst_id_wait_query
+
+    # 回滚删除全部资源和容器
+    def _rollback_all(self, resource_id, uop_os_inst_id_list, result_uop_os_inst_id_list):
+        nova_client = OpenStack.nova_client
+        # fail_list = list(set(uop_os_inst_id_list) - set(result_uop_os_inst_id_list))
+        fail_list = self._uop_os_list_sub(uop_os_inst_id_list, result_uop_os_inst_id_list)
+        Log.logger.debug("Task ID " + self.task_id.__str__() +
+                         " Resource ID " + resource_id.__str__() + " have one or more instance create failed." +
+                         " Successful instance id set is " + result_uop_os_inst_id_list[:].__str__() +
+                         " Failed instance id set is " + fail_list[:].__str__())
+        # 删除全部，完成rollback
+        for uop_os_inst_id in uop_os_inst_id_list:
+            nova_client.servers.delete(uop_os_inst_id['os_inst_id'])
+        Log.logger.debug("Task ID " + self.task_id.__str__() + " Resource ID " + resource_id.__str__() + " rollback done.")
+
+    # 向OpenStack申请资源
+    def _create_instance(self, name, image, flavor, availability_zone, network_id):
+        nova_client = OpenStack.nova_client
+        """
+        ints = nova_client.servers.list()
+        Log.logger.debug(ints)
+        def create(self, name, image, flavor, meta=None, files=None,
+                   reservation_id=None, min_count=None,
+                   max_count=None, security_groups=None, userdata=None,
+                   key_name=None, availability_zone=None,
+                   block_device_mapping=None, block_device_mapping_v2=None,
+                   nics=None, scheduler_hints=None,
+                   config_drive=None, disk_config=None, **kwargs):
+        """
+        nics_list = []
+        nic_info = {'net-id': network_id}
+        nics_list.append(nic_info)
+        int = nova_client.servers.create(name, image, flavor,
+                                         availability_zone=availability_zone,
+                                         nics=nics_list)
+        Log.logger.debug("Task ID " + self.task_id.__str__() + " create instance:")
+        Log.logger.debug(int)
+        Log.logger.debug(int.id)
+
+        return int.id
+
+    # 依据镜像URL创建NovaDocker容器
+    def _create_docker_by_url(self, name, image_url):
+        err_msg, image_uuid = image_transit(image_url)
+        if err_msg is None:
+            Log.logger.debug("Task ID " + self.task_id.__str__() +
+                             " Transit harbor docker image success. The result glance image UUID is " + image_uuid)
+            return None, self._create_instance(name, image_uuid, DOCKER_FLAVOR_2C4G, AVAILABILITY_ZONE_AZ_UOP,
+                                               DEV_NETWORK_ID)
+        else:
+            return err_msg, None
+
+    # 依据资源类型创建资源
+    def _create_instance_by_type(self, ins_type, name):
+        image = images_dict.get(ins_type)
+        image_uuid = image.get('uuid')
+        Log.logger.debug("Task ID " + self.task_id.__str__() +
+                         " Select Image UUID: " + image_uuid + " by Instance Type " + ins_type)
+        return self._create_instance(name, image_uuid, FLAVOR_1C2G, AVAILABILITY_ZONE_AZ_UOP, DEV_NETWORK_ID)
+
+    # 申请应用集群docker资源
+    def _create_app_cluster(self, property_mapper):
+        is_rollback = False
+        uop_os_inst_id_list = []
+
+        propertys = property_mapper.get('app_cluster')
+        cluster_name = propertys.get('cluster_name')
+        cluster_id = propertys.get('cluster_id')
+        domain = propertys.get('domain')
+        image_url = propertys.get('image_url')
+        cpu = propertys.get('cpu')
+        mem = propertys.get('mem')
+        quantity = propertys.get('quantity')
+
+        propertys['instance'] = []
+
+        for i in range(0, quantity, 1):
+            instance_name = '%s_%s' % (cluster_name, i.__str__())
+            err_msg, osint_id = self._create_docker_by_url(instance_name, image_url)
+            if err_msg is None:
+                uopinst_info = {
+                    'uop_inst_id': cluster_id,
+                    'os_inst_id': osint_id
+                }
+                uop_os_inst_id_list.append(uopinst_info)
+                propertys['instance'].append({'domain': domain, 'os_inst_id': osint_id})
+            else:
+                Log.logger.error("Task ID " + self.task_id.__str__() + " ERROR. Error Message is:")
+                Log.logger.error(err_msg)
+                # 删除全部
+                is_rollback = True
+                uop_os_inst_id_list = []
+
+        return is_rollback, uop_os_inst_id_list
+
+    # 申请资源集群kvm资源
+    def _create_resource_cluster(self, property_mapper):
+        is_rollback = False
+        uop_os_inst_id_list = []
+
+        propertys = property_mapper.get('resource_cluster')
+        cluster_name = propertys.get('cluster_name')
+        cluster_id = propertys.get('cluster_id')
+        cluster_type = propertys.get('cluster_type')
+        version = propertys.get('version')
+        cpu = propertys.get('cpu')
+        mem = propertys.get('mem')
+        disk = propertys.get('disk')
+        quantity = propertys.get('quantity')
+
+        if quantity >= 1:
+            propertys['ins_id'] = cluster_id
+            propertys['username'] = DEFAULT_USERNAME
+            propertys['password'] = DEFAULT_PASSWORD
+            propertys['port'] = '6379'
+            propertys['username'] = DEFAULT_USERNAME
+            propertys['instance'] = []
+
+            for i in range(0, quantity, 1):
+                instance_name = '%s_%s' % (cluster_name, i.__str__())
+                osint_id = self._create_instance_by_type(cluster_type, instance_name)
+                uopinst_info = {
+                    'uop_inst_id': cluster_id,
+                    'os_inst_id': osint_id
+                }
+                uop_os_inst_id_list.append(uopinst_info)
+                propertys['instance'].append({'username': DEFAULT_USERNAME,
+                                              'password': DEFAULT_PASSWORD,
+                                              'port': '6379',
+                                              'os_inst_id': osint_id})
+
+        return is_rollback, uop_os_inst_id_list
+
+    # 将第一阶段输出结果新增至第四阶段
+    def _add_to_phase4(self, uop_os_inst_id_list):
+        self.uop_os_inst_id_list.extend(uop_os_inst_id_list)
+        temp_property_mapper = {}
+        key = self.property_mapper.keys()[0]
+        if key == 'resource_cluster':
+            cluster_type = self.property_mapper.get('resource_cluster').get('cluster_type')
+            cluster_type_key = '%s' % cluster_type
+            temp_property_mapper[cluster_type_key] = self.property_mapper.get('resource_cluster')
+        else:
+            temp_property_mapper['app'] = self.property_mapper.get('app_cluster')
+        self.push_mappers_list.insert(0, temp_property_mapper)
+        self.result_mappers_list.insert(0, temp_property_mapper)
+
+    # 向OpenStack查询已申请资源的定时任务
+    def _query_resource_set_status(self, uop_os_inst_id_list=None, result_inst_id_list=None,
+                                   result_info_list=None, result_mappers_list=None):
+        is_finish = False
+        is_rollback = False
+        # uop_os_inst_id_wait_query = list(set(uop_os_inst_id_list) - set(result_inst_id_list))
+        uop_os_inst_id_wait_query = self._uop_os_list_sub(uop_os_inst_id_list, result_inst_id_list)
+
+        Log.logger.debug("Query Task ID " + self.task_id.__str__() + ", remain " + uop_os_inst_id_wait_query[:].__str__())
+        Log.logger.debug("Query Task ID " + self.task_id.__str__() +
+                         " Test Task Scheduler Class result_inst_id_list object id is " +
+                         id(result_inst_id_list).__str__() +
+                         ", Content is " + result_inst_id_list[:].__str__())
+        nova_client = OpenStack.nova_client
+        for uop_os_inst_id in uop_os_inst_id_wait_query:
+            inst = nova_client.servers.get(uop_os_inst_id['os_inst_id'])
+            Log.logger.debug("Query Task ID " + self.task_id.__str__() + " query Instance ID " +
+                             uop_os_inst_id['os_inst_id'] + " Status is " + inst.status)
+            if inst.status == 'ACTIVE':
+                _ips = self._get_ip_from_instance(inst)
+                _ip = _ips.pop() if _ips.__len__() >= 1 else ''
+                physical_server = getattr(inst, OS_EXT_PHYSICAL_SERVER_ATTR)
+                _data = {
+                    'uop_inst_id': uop_os_inst_id['uop_inst_id'],
+                    'os_inst_id': uop_os_inst_id['os_inst_id'],
+                    'ip': _ip,
+                    'physical_server': physical_server,
+                }
+                for mapper in result_mappers_list:
+                    value = mapper.values()[0]
+                    for instance in value.get('instance'):
+                        if instance.get('os_inst_id') == uop_os_inst_id['os_inst_id']:
+                            instance['ip'] = _ip
+                            instance['physical_server'] = physical_server
+                result_info_list.append(_data)
+                Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Instance Info: " + _data.__str__())
+                result_inst_id_list.append(uop_os_inst_id)
+            if inst.status == 'ERROR':
+                # 置回滚标志位
+                Log.logger.debug("Query Task ID " + self.task_id.__str__() + " ERROR Instance Info: " + inst.to_dict().__str__())
+                is_rollback = True
+
+        if result_inst_id_list.__len__() == uop_os_inst_id_list.__len__():
+            is_finish = True
+
+        # 回滚全部资源和容器
+        return is_finish, is_rollback
+
+    def start(self):
+        self.is_running = True
+        self.run()
+
+    def run(self):
+        while self.phase != 'query' and self.phase != 'status' and self.phase != 'stop':
+            self.tick_announce()
+
+    @transition_state_logger
+    def do_init(self):
+        # 状态机初始状态
+        pass
+
+    @transition_state_logger
     def do_success(self):
         # 执行成功调用UOP CallBack，提交成功
         Log.logger.debug("Query Task ID " + self.task_id.__str__() + " all instance create success." +
                          " instance id set is " + self.result_inst_id_list[:].__str__() +
                          " instance info set is " + self.result_info_list[:].__str__())
-        redis_master_slave = ['slave','master']
-        mysql_master_slave = ['slave2', 'slave1', 'master']
-        mysql_lvs = ['lvs2', 'lvs1']
-        redis_ips = []
-        mysql_cluster = False
-        mysql_cluster_ip_info = []
-        mysql_cluster_ip_lvs = []
-        mongo_ips = []
-        for info in self.result_info_list:
-            uop_inst_id = info["uop_inst_id"]
-            uop_inst_name = info["uop_inst_name"]
-            os_inst_id = info["os_inst_id"]
-            instance = {
-                'ip': info["ip"],
-                'server_name': uop_inst_name,
-                'physical_server': info["physical_server"],
-                'username': DEFAULT_USERNAME,
-                'password': DEFAULT_PASSWORD,
-            }
-            if self.req_dict["mysql_cluster"].get('ins_id') and uop_inst_id == self.req_dict["mysql_cluster"]['ins_id']:
-                instance['port'] = "3316"
-                if uop_inst_name.endswith('_4') or uop_inst_name.endswith('_5'):
-                    instance['dbtype'] =mysql_lvs.pop()
-                    mysql_cluster = True
-                    mysql_cluster_ip_lvs.append((uop_inst_name, info["ip"]))
-                else:
-                    instance['dbtype'] = mysql_master_slave.pop()
-                    mysql_cluster_ip_info.append((uop_inst_name, info["ip"]))
-                if not self.req_dict["mysql_cluster"].get('vip'):
-                    _, vip1 = create_vip_port(uop_inst_id)
-                    _, vip2 = create_vip_port(uop_inst_id)
-                    self.req_dict["mysql_cluster"]['vip'] = [vip1, vip2]
-                self.req_dict["mysql_cluster"]['instance'].append(instance)
-            if self.req_dict["redis_cluster"].get('ins_id') and uop_inst_id == self.req_dict["redis_cluster"]['ins_id']:
-                instance['port'] = '6379'
-                instance['dbtype'] = redis_master_slave.pop()
-                self.req_dict["redis_cluster"]['instance'].append(instance)
-                redis_ips.append(info["ip"])
-                if not self.req_dict["redis_cluster"].get('vip'):
-                    _, vip = create_vip_port(uop_inst_id)
-                    self.req_dict["redis_cluster"]['vip'] = vip
-            if self.req_dict["mongodb_cluster"].get('ins_id') and uop_inst_id == self.req_dict["mongodb_cluster"]['ins_id']:
-                instance['port'] = '27017'
-                self.req_dict["mongodb_cluster"]['instance'].append(instance)
-                mongo_ips.append(info['ip'])
-        # 部署redis集群
-        if len(redis_ips) >1:
-            # if query_vm_status(redis_ips):
-            flag = create_redis_cluster(redis_ips[0], redis_ips[1], self.req_dict["redis_cluster"]['vip'])
-            if not flag:
-                create_redis_cluster(redis_ips[0], redis_ips[1], self.req_dict["redis_cluster"]['vip'])
-        # 部署mysql mha的集群
-        if mysql_cluster:
-            mysql_cluster_ip_info = mysql_cluster_ip_info + mysql_cluster_ip_lvs
-            mysql_cluster_ip_info.extend(zip(['vip1', 'vip2'], self.req_dict["mysql_cluster"]['vip']))
-            create_mysql_cluster(mysql_cluster_ip_info)
-        request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict, self.compute_list)
+        request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict, self.result_mappers_list)
         Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Success Info.")
-        # 部署mongo集群
-        if len(mongo_ips) > 1:
-            Log.logger.debug("Start deploy the mongo master.%s" % mongo_ips)
-            ins = MongodbCluster(mongo_ips[0], mongo_ips[1], mongo_ips[2], mongo_ips[2])
-            ins.exec_final_script()
-            Log.logger.debug("Deploy the mongo master Done.")
         # 停止定时任务并退出
         self.stop()
 
+    @transition_state_logger
     def do_fail(self):
         # 执行失败调用UOP CallBack，提交失败
-        request_res_callback(self.task_id, RES_STATUS_FAIL, self.req_dict, self.compute_list)
+        request_res_callback(self.task_id, RES_STATUS_FAIL, self.req_dict, self.result_mappers_list)
         Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Fail Info.")
         # 停止定时任务并退出
         self.stop()
 
+    @transition_state_logger
     def do_rollback(self):
-        _rollback_all(self.task_id, self.resource_id, self.uop_os_inst_id_list, self.result_inst_id_list, self.req_dict['domain'])
+        self._rollback_all(self.resource_id, self.uop_os_inst_id_list, self.result_inst_id_list)
         self.fail()
 
+    @transition_state_logger
     def do_stop(self):
         # 停止定时任务退出任务线程
         Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Stop.")
         # 停止定时任务并退出
         TaskManager.task_exit(self.task_id)
 
-    def do_create_instance(self):
-        self.is_rollback, self.uop_os_inst_id_list = _create_resource_set(self.task_id, self.resource_id,
-                                                                          self.resource_list, self.compute_list)
-        if self.is_rollback:
+    @transition_state_logger
+    def do_app_cluster(self):
+        self.is_need_rollback, uop_os_inst_id_list = self._create_app_cluster(self.property_mapper)
+        self._add_to_phase4(uop_os_inst_id_list)
+
+    @transition_state_logger
+    def do_resource_cluster(self):
+        self.is_need_rollback, uop_os_inst_id_list = self._create_resource_cluster(self.property_mapper)
+        self._add_to_phase4(uop_os_inst_id_list)
+
+    @transition_state_logger
+    def do_query(self):
+        is_finished, self.is_need_rollback = self._query_resource_set_status(self.uop_os_inst_id_list,
+                                                                             self.result_inst_id_list,
+                                                                             self.result_info_list,
+                                                                             self.result_mappers_list)
+        if self.is_need_rollback:
             self.rollback()
-        else:
-            self.query()
+        if is_finished is True:
+            self.next_phase()
 
-    def do_query_resource_set_status(self):
-        is_finished, self.is_rollback = _query_resource_set_status(self.task_id, self.uop_os_inst_id_list,
-                                                                   self.result_inst_id_list, self.result_info_list,
-                                                                   self.compute_list)
-        if is_finished:
-            # l = self.compute_list['container']
-            for compute in self.compute_list:
-                real_ip = ''
-                domain = compute.get('domain')
-                instance = compute.get('instance')
-                for ip in instance:
-                    ip_str = str(ip.get('ip')) + ' '
-                    real_ip += ip_str
-                ports = str(compute.get('port'))
-                nip = '172.28.20.98'
-                # port = '8081 9999 1010'  # TODO 前端传值
-                print 'domain&ip:', domain, real_ip
-                Log.logger.debug('the receive domain and ip port is %s-%s-%s' % (domain, real_ip, ports))
-                self.do_push_nginx_config({'nip': nip, 'domain': domain, 'ip': real_ip.strip(), 'port': ports.strip()})
-                # self.do_push_nginx_config({'nip': nip, 'domain': 'tttttt', 'ip': 'nnnnnnnn'})
-                #####
-                dns_env = {'develop': '172.28.5.21', 'test': '172.28.18.212'}
-                ip = dns_env[self.req_dict['env']]
-                # domain = self.req_dict['domain']
-                domain = compute.get('domain')
-                dns_server = DnsConfig.singleton()
-                dns_server.add(domain_name=domain, ip=ip)
-                dns_server.reload()
-                #####
-            self.success()
-        if self.is_rollback:
-            self.rollback()
+    @transition_state_logger
+    def do_status(self):
+        # 查询KVM操作系统状态
+        is_finished = False
+        if is_finished is True:
+            self.next_phase()
 
-    def do_push_nginx_config(self, kwargs):
-        """
-        need the nip domain ip
-        nip:这是nginx那台机器的ip
-        need write the update file into vm
-        :param kwargs:
-        :return:
-        """
-        nip = kwargs.get('nip')
-        with open('/etc/ansible/hosts', 'w') as f:
-            f.write('%s\n' % nip)
-        Log.logger.debug('----->start push', kwargs)
-        run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip))
-        run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m synchronize -a 'src=/opt/uop-crp/crp/res_set/update.py dest=/shell/'".format(nip=nip))
-        run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m synchronize -a 'src=/opt/uop-crp/crp/res_set/template dest=/shell/'".format(nip=nip))
-        Log.logger.debug('------>上传配置文件完成')
-        run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a 'chmod 777 /shell/update.py'".format(nip=nip))
-        run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a 'chmod 777 /shell/template'".format(nip=nip))
-        run_cmd('ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a '
-                '"/shell/update.py {domain} {ip} {port}"'.format(nip=kwargs.get('nip'), domain=kwargs.get('domain'), ip=kwargs.get('ip'), port=kwargs.get('port')))
-        Log.logger.debug('------>end push')
+    @transition_state_logger
+    def do_app_push(self, kwargs):
+        pass
+
+    @transition_state_logger
+    def do_app_push(self, kwargs):
+        pass
+
+    @transition_state_logger
+    def do_dns_push(self, kwargs):
+        pass
+
+    @transition_state_logger
+    def do_mysql_push(self, kwargs):
+        pass
+
+    @transition_state_logger
+    def do_mongodb_push(self, kwargs):
+        pass
+
+    @transition_state_logger
+    def do_redis_push(self, kwargs):
+        pass
 
 
-def run_cmd(cmd):
-    msg = ''
-    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True)
-    while True:
-        line = p.stdout.readline()
-        Log.logger.debug('The nginx config push result is %s' % line)
-        if not line and p.poll() is not None:
-            break
-        else:
-            msg += line
-            Log.logger.debug('The nginx config push msg is %s' % msg)
-    code = p.wait()
-    return msg, code
-
-
-# 向OpenStack申请资源
-def _create_instance(task_id, name, image, flavor, availability_zone, network_id):
-    nova_client = OpenStack.nova_client
-    # ints = nova_client.servers.list()
-    # Log.logger.debug(ints)
-    # def create(self, name, image, flavor, meta=None, files=None,
-    #            reservation_id=None, min_count=None,
-    #            max_count=None, security_groups=None, userdata=None,
-    #            key_name=None, availability_zone=None,
-    #            block_device_mapping=None, block_device_mapping_v2=None,
-    #            nics=None, scheduler_hints=None,
-    #            config_drive=None, disk_config=None, **kwargs):
-
-    nics_list = []
-    nic_info = {'net-id': network_id}
-    nics_list.append(nic_info)
-    int = nova_client.servers.create(name, image, flavor,
-                                     availability_zone=availability_zone,
-                                     nics=nics_list)
-    Log.logger.debug("Task ID " + task_id.__str__() + " create instance:")
-    Log.logger.debug(int)
-    Log.logger.debug(int.id)
-
-    return int.id
-
-
-# 依据资源类型创建资源
-def create_instance_by_type(task_id, ins_type, name):
-    image = images_dict.get(ins_type)
-    image_uuid = image.get('uuid')
-    Log.logger.debug("Task ID " + task_id.__str__() +
-                     " Select Image UUID: " + image_uuid + " by Instance Type " + ins_type)
-    return _create_instance(task_id, name, image_uuid, FLAVOR_1C2G, AVAILABILITY_ZONE_AZ_UOP, DEV_NETWORK_ID)
-
-
-# 依据镜像URL创建NovaDocker容器
-def create_docker_by_url(task_id, name, image_url):
-    err_msg, image_uuid = image_transit(image_url)
-    if err_msg is None:
-        Log.logger.debug("Task ID " + task_id.__str__() +
-                         " Transit harbor docker image success. The result glance image UUID is " + image_uuid)
-        return None, _create_instance(task_id, name, image_uuid, DOCKER_FLAVOR_2C4G, AVAILABILITY_ZONE_AZ_UOP,
-                                      DEV_NETWORK_ID)
-    else:
-        return err_msg, None
-
-
-def create_vip_port(instance_name):
-    neutron_client = OpenStack.neutron_client
-    network_id = DEV_NETWORK_ID
-
-    body_value = {
-                     "port": {
-                             "admin_state_up": True,
-                             "name": instance_name + '_port',
-                             "network_id": network_id
-                      }
-                 }
-    Log.logger.debug('Create port for cluster/instance ' + instance_name)
-    response = neutron_client.create_port(body=body_value)
-    ip = response.get('port').get('fixed_ips').pop().get('ip_address')
-    Log.logger.debug('Port id: ' + response.get('port').get('id') +
-                     'Port ip: ' + ip)
-    return None, ip
-
-
-# 申请资源定时任务
-def _create_resource_set(task_id, resource_id=None, resource_list=None, compute_list=None):
-    is_rollback = False
-    uop_os_inst_id_list = []
-    for resource in resource_list:
-        instance_name = resource.get('instance_name')
-        instance_id = resource.get('instance_id')
-        instance_type = resource.get('instance_type')
-        cpu = resource.get('cpu')
-        mem = resource.get('mem')
-        disk = resource.get('disk')
-        quantity = resource.get('quantity')
-        version = resource.get('version')
-        global quantity
-        for i in range(1, quantity+1, 1):
-            # 为mysql创建2个mycat镜像的LVS
-            if instance_type == 'mysql' and i == 4:
-                instance_type = 'mycat'
-            instance_name2 = instance_name + '_' + str(i)
-            osint_id = create_instance_by_type(task_id, instance_type, instance_name2)
-            uopinst_info = {
-                               'uop_inst_id': instance_id,
-                               'os_inst_id': osint_id,
-                                'uop_inst_name': instance_name2,
-                           }
-            uop_os_inst_id_list.append(uopinst_info)
-
-    for compute in compute_list:
-        instance_name = compute.get('instance_name')
-        instance_id = compute.get('instance_id')
-        cpu = compute.get('cpu')
-        mem = compute.get('mem')
-        image_url = compute.get('image_url')
-        quantity = compute.get('quantity')
-        domain = compute.get('domain')
-
-        compute['instance'] = []
-
-
-        # er_msg, ip = create_vip_port(instance_name)
-
-        for i in range(0, quantity, 1):
-            err_msg, osint_id = create_docker_by_url(task_id, instance_name, image_url)
-            if err_msg is None:
-                uopinst_info = {
-                       'uop_inst_id': instance_id,
-                       'os_inst_id': osint_id
-                   }
-                uop_os_inst_id_list.append(uopinst_info)
-                compute['instance'].append({'domain': domain, 'os_inst_id': osint_id})
+# Transit request_data from the JSON nest structure to the chain structure with items_sequence and porerty_json_mapper
+def transit_request_data(items_sequence, porerty_json_mapper, request_data):
+    if request_data is None:
+        return
+    if not (isinstance(items_sequence, list) or isinstance(items_sequence, dict) or isinstance(items_sequence, set)) \
+            or not (isinstance(request_data, list) or isinstance(request_data, dict)) \
+            or not isinstance(porerty_json_mapper, dict):
+        raise Exception("Need input dict for porerty_json_mapper and request_data in transit_request_data.")
+    request_items = []
+    if isinstance(items_sequence, list) or isinstance(items_sequence, set):
+        for one_item_sequence in items_sequence:
+            if isinstance(one_item_sequence, dict):
+                item_mapper_keys = one_item_sequence.keys()
+            elif isinstance(one_item_sequence, basestring):
+                item_mapper_keys = [one_item_sequence]
             else:
-                Log.logger.error("Task ID " + task_id.__str__() + " ERROR. Error Message is:")
-                Log.logger.error(err_msg)
-                # 删除全部
-                is_rollback = True
-                uop_os_inst_id_list = []
+                raise Exception("Error items_sequence_list_config")
+            for item_mapper_key in item_mapper_keys:
+                if isinstance(one_item_sequence, basestring):
+                    context = None
+                else:
+                    context = one_item_sequence.get(item_mapper_key)
+                item_mapper_body = porerty_json_mapper.get(item_mapper_key)
+                if item_mapper_body is not None:
+                    if isinstance(request_data, list) or isinstance(request_data, set):
+                        for one_req in request_data:
+                            item = {}
+                            sub_item = copy.deepcopy(one_req)
+                            item[item_mapper_key] = sub_item
+                            request_items.append(item)
+                            if context is not None and sub_item is not None:
+                                request_items.extend(transit_request_data(context, porerty_json_mapper, sub_item))
+                    else:
+                        item = {}
+                        current_item = copy.deepcopy(request_data)
+                        item[item_mapper_key] = current_item
+                        request_items.append(item)
+                        if context is not None:
+                            if hasattr(current_item, item_mapper_key):
+                                sub_item = current_item.get(item_mapper_key)
+                                if sub_item is not None:
+                                    request_items.extend(transit_request_data(context, porerty_json_mapper, sub_item))
+                            else:
+                                sub_item = current_item
+                                if sub_item is not None:
+                                    request_items.extend(transit_request_data(context, porerty_json_mapper, sub_item))
+                else:
+                    if request_data is not None:
+                        sub_item = request_data.get(item_mapper_key)
+                        if context is not None and sub_item is not None:
+                            request_items.extend(transit_request_data(context, porerty_json_mapper, sub_item))
+    elif isinstance(items_sequence, dict):
+        items_sequence_keys = items_sequence.keys()
+        current_items = copy.deepcopy(request_data)
+        current_items_keys = current_items.keys()
+        for items_sequence_key in items_sequence_keys:
+            context = items_sequence.get(items_sequence_key)
+            item_mapper_body = porerty_json_mapper.get(items_sequence_key)
+            if item_mapper_body is not None:
+                for current_item_key in current_items_keys:
+                    if current_item_key == items_sequence_key:
+                        current_item_body = current_items.get(current_item_key)
+                        if current_item_body is not None and len(current_item_body) > 0:
+                            item = current_items
+                            request_items.append(item)
+            if context is not None and request_data is not None:
+                sub_item = request_data.get(items_sequence_key)
+                if sub_item is not None:
+                    request_items.extend(transit_request_data(context, porerty_json_mapper, sub_item))
 
-    return is_rollback, uop_os_inst_id_list
+    return request_items
 
 
-def _get_ip_from_instance(server):
-    ips_address = []
-    for _, ips in server.addresses.items():
-        for ip in ips:
-            if isinstance(ip, dict):
-                if ip.has_key('addr'):
-                    ip_address = ip['addr']
-                    ips_address.append(ip_address)
-    return ips_address
+# Transit request_items from JSON property to item property with property_json_mapper
+def transit_repo_items(property_json_mapper, request_items):
+    if not isinstance(property_json_mapper, dict) and not isinstance(request_items, list):
+        raise Exception("Need input dict for property_json_mapper and list for request_items in transit_repo_items.")
+    property_mappers_list = []
+    for request_item in request_items:
+        item_id = request_item.keys()[0]
+        repo_property = {}
+        item_property_mapper = property_json_mapper.get(item_id)
+        item_property_keys = item_property_mapper.keys()
+        for item_property_key in item_property_keys:
+            value = request_item.get(item_id)
+            if value is not None:
+                repo_json_property = value.get(item_property_mapper.get(item_property_key))
+                if repo_json_property is not None:
+                    repo_property[item_property_key] = repo_json_property
+        if len(repo_property) >= 1:
+            repo_item = {}
+            repo_item[item_id] = repo_property
+            property_mappers_list.append(repo_item)
+    return property_mappers_list
 
 
-# 回滚删除全部资源和容器
-def _rollback_all(task_id, resource_id, uop_os_inst_id_list, result_uop_os_inst_id_list, domain):
-    nova_client = OpenStack.nova_client
-    # fail_list = list(set(uop_os_inst_id_list) - set(result_uop_os_inst_id_list))
-    fail_list = _uop_os_list_sub(uop_os_inst_id_list, result_uop_os_inst_id_list)
-    Log.logger.debug("Task ID " + task_id.__str__() +
-                     " Resource ID " + resource_id.__str__() + " have one or more instance create failed." +
-                     " Successful instance id set is " + result_uop_os_inst_id_list[:].__str__() +
-                     " Failed instance id set is " + fail_list[:].__str__())
-    # 删除全部，完成rollback
-    for uop_os_inst_id in uop_os_inst_id_list:
-        nova_client.servers.delete(uop_os_inst_id['os_inst_id'])
-    Log.logger.debug("Task ID " + task_id.__str__() + " Resource ID " + resource_id.__str__() + " rollback done.")
-    ####
-    dns_server = DnsConfig.singleton()
-    dns_server.delete(domain_name=domain)
-    dns_server.reload()
-
-# _uop_os_list_sub
-def _uop_os_list_sub(uop_os_inst_id_list, result_uop_os_inst_id_list):
-    uop_os_inst_id_wait_query = copy.deepcopy(uop_os_inst_id_list)
-    for i in result_uop_os_inst_id_list:
-        for j in uop_os_inst_id_wait_query:
-            if j['os_inst_id'] == i['os_inst_id']:
-                uop_os_inst_id_wait_query.remove(j)
-    return uop_os_inst_id_wait_query
-
-
-# 向OpenStack查询已申请资源的定时任务
-def _query_resource_set_status(task_id=None, uop_os_inst_id_list=None, result_inst_id_list=None,
-                               result_info_list=None, container_list=None):
-    is_finish = False
-    is_rollback = False
-    # uop_os_inst_id_wait_query = list(set(uop_os_inst_id_list) - set(result_inst_id_list))
-    uop_os_inst_id_wait_query = _uop_os_list_sub(uop_os_inst_id_list, result_inst_id_list)
-
-    Log.logger.debug("Query Task ID " + task_id.__str__() + ", remain " + uop_os_inst_id_wait_query[:].__str__())
-    Log.logger.debug("Query Task ID " + task_id.__str__() +
-                     " Test Task Scheduler Class result_inst_id_list object id is " +
-                     id(result_inst_id_list).__str__() +
-                     ", Content is " + result_inst_id_list[:].__str__())
-    nova_client = OpenStack.nova_client
-    for uop_os_inst_id in uop_os_inst_id_wait_query:
-        inst = nova_client.servers.get(uop_os_inst_id['os_inst_id'])
-        Log.logger.debug("Query Task ID " + task_id.__str__() + " query Instance ID " +
-                         uop_os_inst_id['os_inst_id'] + " Status is " + inst.status)
-        if inst.status == 'ACTIVE':
-            _ips = _get_ip_from_instance(inst)
-            _ip = _ips.pop() if _ips.__len__() >= 1 else ''
-            physical_server = getattr(inst, OS_EXT_PHYSICAL_SERVER_ATTR)
-            _data = {
-                        'uop_inst_id': uop_os_inst_id['uop_inst_id'],
-                        'os_inst_id': uop_os_inst_id['os_inst_id'],
-                        'uop_inst_name': uop_os_inst_id.get('uop_inst_name'),
-                        'ip': _ip,
-                        'physical_server': physical_server,
-                    }
-            for container in container_list:
-                for instance in container.get('instance'):
-                    if instance.get('os_inst_id') == uop_os_inst_id['os_inst_id']:
-                        instance['ip'] = _ip
-                        instance['physical_server'] = physical_server
-            result_info_list.append(_data)
-            _data = {}
-            Log.logger.debug("Query Task ID " + task_id.__str__() + " Instance Info: " + _data.__str__())
-            result_inst_id_list.append(uop_os_inst_id)
-        if inst.status == 'ERROR':
-            # 置回滚标志位
-            Log.logger.debug("Query Task ID " + task_id.__str__() + " ERROR Instance Info: " + inst.to_dict().__str__())
-            is_rollback = True
-
-    if result_inst_id_list.__len__() == uop_os_inst_id_list.__len__():
-        is_finish = True
-
-    # 回滚全部资源和容器
-    return is_finish, is_rollback
+def do_transit_repo_items(items_sequence_list, property_json_mapper, request_data):
+    request_items = transit_request_data(items_sequence_list, property_json_mapper, request_data)
+    property_mappers_list = transit_repo_items(property_json_mapper, request_items)
+    return property_mappers_list
 
 
 # request UOP res_callback
-def request_res_callback(task_id, status, req_dict, container_list):
+def request_res_callback(task_id, status, req_dict, result_mappers_list):
     # project_id, resource_name,under_name, resource_id, domain,
     # container_name, image_addr, stardand_ins,cpu, memory, ins_id,
     # mysql_username, mysql_password, mysql_port, mysql_ip,
@@ -574,17 +706,16 @@ def request_res_callback(task_id, status, req_dict, container_list):
     data["cmdb_repo_id"] = req_dict["cmdb_repo_id"]
     data["status"] = status
 
-    data["container"] = container_list
+    data["container"] = result_mappers_list.get('app')
 
     db_info = {}
-    db_info["mysql"] = req_dict['mysql_cluster']
-    db_info["redis"] = req_dict['redis_cluster']
-    db_info["mongodb"] = req_dict['mongodb_cluster']
+    db_info["mysql"] = result_mappers_list.get('mysql')
+    db_info["redis"] = result_mappers_list.get('redis')
+    db_info["mongodb"] = result_mappers_list.get('mongodb')
 
     data["db_info"] = db_info
 
     data_str = json.dumps(data)
-    Log.logger.debug('xxxxx')
     Log.logger.debug("Task ID " + task_id.__str__() + " UOP res_callback Request Body is: " + data_str)
     res = requests.post(RES_CALLBACK, data=data_str)
     Log.logger.debug(res.status_code)
@@ -659,6 +790,9 @@ class ResourceSet(Resource):
         code = 202
         msg = 'Create Resource Set Accepted.'
         try:
+            request_data = json.loads(request.data)
+            property_mappers_list = do_transit_repo_items(items_sequence_list_config, property_json_mapper_config,
+                                                          request_data)
             parser = reqparse.RequestParser()
             parser.add_argument('unit_name', type=str)
             parser.add_argument('unit_id', type=str)
@@ -720,8 +854,6 @@ class ResourceSet(Resource):
                     req_dict["mongodb_cluster"]['port'] = '27017'
                     req_dict["mongodb_cluster"]['ins_id'] = instance_id
                     req_dict["mongodb_cluster"]['instance'] = []
-                # req_list.append(req_dict)
-                # req_dict = {}
 
             for compute in compute_list:
                 instance_name = compute.get('instance_name', None)
@@ -739,7 +871,6 @@ class ResourceSet(Resource):
                     com_dict["memory"] = mem
                     com_dict["container_inst_id"] = instance_id + '_' + str(i)
                     com_dict["domain"] = domain
-                    # com_dict['instances'] = []
                     req_list.append(com_dict)
                     com_dict = {}
 
@@ -775,7 +906,7 @@ class ResourceSet(Resource):
             Log.logger.debug('result_list\'s object id is :')
             Log.logger.debug(id(result_list))
             # 创建资源集合定时任务，成功或失败后调用UOP资源预留CallBack（目前仅允许全部成功或全部失败，不允许部分成功）
-            res_provider = ResourceProvider(resource_id, resource_list, compute_list, req_dict)
+            res_provider = ResourceProviderTransitions(resource_id, property_mappers_list, req_dict)
             res_provider_list = [res_provider]
             TaskManager.task_start(SLEEP_TIME, TIMEOUT, res_provider_list, tick_announce)
         except Exception as e:
@@ -802,171 +933,13 @@ def tick_announce(task_id, res_provider_list):
         if res_provider.task_id is None:
             res_provider.set_task_id(task_id)
         Log.logger.debug(res_provider.state)
-        if res_provider.state == 'init':
-            res_provider.create()
-        else:
+        if res_provider.state == 'query':
             res_provider.query()
-
-
-class MongodbCluster(object):
-    """
-    ip_slave1 = '172.28.36.143'
-    ip_slave2 = '172.28.36.142'
-    ip_master1 = '172.28.36.141'
-    ip_master2 = '172.28.36.141'
-
-
-    cmd1 = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/mongoslave1.sh sys95"'.format(vip=ip_slave1)
-    cmd2 = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/mongoslave2.sh sys95"'.format(vip=ip_slave2)
-    cmd3 = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/mongomaster1.sh"'.format(vip=ip_master1)
-    cmd4 = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/mongomaster2.sh sys95"'.format(vip=ip_master2)
-
-    """
-
-    def __init__(self, ip_slave1, ip_slave2, ip_master1, ip_master2):
-        """
-        172.28.36.230
-        172.28.36.23
-        172.28.36.231
-        :param cmd_list:
-        """
-        self.ip_slave1 = ip_slave1
-        self.ip_slave2 = ip_slave2
-        self.ip_master1 = ip_master1
-        self.ip_master2 = ip_master2
-        self.d = {
-            self.ip_slave1: 'mongoslave1.sh',
-            self.ip_slave2: 'mongoslave2.sh',
-            self.ip_master1: 'mongomaster1.sh',
-            }
-        self.cmd = ['ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/'
-                    'mongoclu_install/mongomaster2.sh sys95"'.format(vip=ip_master2)]
-        self.ip = [ip_slave1, ip_slave2, ip_master1]
-        self.new_host = '[new_host]'
-        self.write_ip_to_server()
-        self.flag = False
-        self.telnet_ack()
-
-    def write_ip_to_server(self):
-        for ip in self.ip:
-            with open('/etc/ansible/hosts', 'a') as f:
-                f.write('%s\n' % ip)
-
-    def telnet_ack(self):
-        while not self.flag:
-            for ip in self.ip:
-                p = subprocess.Popen('nmap %s -p 22' % ip, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                try:
-                    a = p.stdout.readlines()[5]
-                    Log.logger.debug('nmap ack result:%s' % a)
-                except IndexError as e:
-                    print e
-                    a = 'false'
-                    Log.logger.debug('%s' % e)
-                    break
-                if 'open' in a:
-                    self.mongodb_cluster_push(ip)
-                    self.ip.remove(ip)
-            if len(self.ip) == 0:
-                self.flag = True
-
-    def mongodb_cluster_push(self, ip):
-        # vip_list = list(set(self.ip))
-        # vip_list = [ip_master1, ip_slave1, ip_slave2]
-        cmd_before = "ansible {vip} --private-key=/home/mongo/old_id_rsa -m synchronize -a 'src=/opt/uop-crp/crp/res_set/write_mongo_ip.py dest=/tmp/'".format(vip=ip)
-        authority_cmd = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m shell -a "chmod 777 /tmp/write_mongo_ip.py"'.format(vip=ip)
-        cmd1 = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m shell -a "python /tmp/write_mongo_ip.py {m_ip} {s1_ip} {s2_ip}"'.\
-            format(vip=ip, m_ip=self.ip_master1, s1_ip=self.ip_slave1, s2_ip=self.ip_slave2)
-        Log.logger.debug('开始上传脚本%s' % ip)
-        p = subprocess.Popen(cmd_before, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        for line in p.stdout.readlines():
-            print line
-            Log.logger.debug('mongodb cluster cmd before:%s' % line)
-        Log.logger.debug('开始修改权限%s' % ip)
-        p = subprocess.Popen(authority_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        for line in p.stdout.readlines():
-            print line
-            Log.logger.debug('mongodb cluster authority:%s' % line)
-        Log.logger.debug('脚本上传完成,开始执行脚本%s' % ip)
-        p = subprocess.Popen(cmd1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        for line in p.stdout.readlines():
-            print line
-            Log.logger.debug('mongodb cluster exec write script:%s' % line)
-        Log.logger.debug('脚本执行完毕 接下来会部署%s' % ip)
-        # for ip in self.ip:
-        with open('/home/mongo/hosts', 'w') as f:
-            f.write('%s\n' % ip)
-        print '-----', ip,type(ip)
-        script = self.d.get(ip)
-        if str(ip) != '172.28.36.105':
-            cmd_s = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/{s} sys95"'.\
-                format(vip=ip, s=script)
+        elif res_provider.state == 'status':
+            res_provider.status()
         else:
-            cmd_s = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/{s}"'.\
-                format(vip=ip, s=script)
-        p = subprocess.Popen(cmd_s, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        for line in p.stdout.readlines():
-            print line,
-            Log.logger.debug('mongodb cluster push result:%s, -----%s' % (line, ip))
-
-    def exec_final_script(self):
-        for i in self.cmd:
-            p = subprocess.Popen(i, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            for line in p.stdout.readlines():
-                print line,
-                Log.logger.debug('mongodb cluster push result:%s' % line)
-
-
-CMDPATH = r'crp/res_set/playbook-0830/'
-def create_redis_cluster(ip1, ip2, vip):
-    cmd = 'python {0}script/redis_cluster.py {1} {2} {3}'.format(CMDPATH, ip1, ip2, vip)
-    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    strout = ''
-    for line in p.stdout.readlines():
-        strout += line + os.linesep
-
-    Log.logger.debug('redis cluster push result:%s' % strout)
-    if 'FAILED!' in strout or 'UNREACHABLE!' in strout:
-        return False
-    else:
-        return True
-
-
-
-def create_mysql_cluster(ip_info):
-    with open(os.path.join(CMDPATH, 'mysqlmha', 'mysql.txt'), 'wb') as f:
-        for host_name, ip in ip_info:
-            f.write(host_name + os.linesep)
-            f.write(ip + os.linesep)
-
-    path = CMDPATH + 'mysqlmha'
-    cmd = '/bin/sh {0}/mlm.sh {0}'.format(path)
-    strout = ''
-    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    for line in p.stdout.readlines():
-        strout += line + os.linesep
-    Log.logger.debug('mysql cluster push result:%s' % strout)
-
-def query_vm_status(ips):
-    flag = False
-    for ip in ips:
-        p = subprocess.Popen('nmap %s -p 22' % ip, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        try:
-            a = p.stdout.readlines()[5]
-            Log.logger.debug('nmap ack result:%s' % a)
-        except IndexError as e:
-            print e
-            a = 'false'
-            Log.logger.debug('%s' % e)
-            break
-        if 'open' in a:
-            ips.remove(ip)
-    if len(ips) == 0:
-        flag = True
-    return flag
+            if res_provider.is_running is not True:
+                res_provider.start()
 
 
 resource_set_api.add_resource(ResourceSet, '/sets')
-
-if __name__ == "__main__":
-    a = MongodbCluster()
