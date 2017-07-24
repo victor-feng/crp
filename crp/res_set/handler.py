@@ -501,11 +501,7 @@ class ResourceProviderTransitions(object):
 
     @transition_state_logger
     def do_app_push(self, kwargs):
-        pass
-
-    @transition_state_logger
-    def do_app_push(self, kwargs):
-        pass
+        self.dns_push()
 
     @transition_state_logger
     def do_dns_push(self, kwargs):
