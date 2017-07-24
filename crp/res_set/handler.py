@@ -15,10 +15,8 @@ from crp.utils.docker_tools import image_transit
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 
-quantity = 0
 TIMEOUT = 500
 SLEEP_TIME = 3
-GLOBAL_MONGO_CLUSTER_IP = ['172.28.36.230', '172.28.36.23', '172.28.36.231', '172.28.36.231']
 
 images_dict = {
     'mysql': {
@@ -501,6 +499,7 @@ class ResourceProviderTransitions(object):
 
     @transition_state_logger
     def do_app_push(self, kwargs):
+        #TODO: do app push
         self.dns_push()
 
     @transition_state_logger
@@ -891,16 +890,8 @@ class ResourceSet(Resource):
             req_dict['app_cluster_list'] = req_list
 
             # init default data
-            req_dict["container_username"] = DEFAULT_USERNAME
-            req_dict["container_password"] = DEFAULT_PASSWORD
-            req_dict["container_ip"] = IP_NONE
-            req_dict["container_physical_server"] = PHYSICAL_SERVER_NONE
-
-            result_list = []
             Log.logger.debug('req_dict\'s object id is :')
             Log.logger.debug(id(req_dict))
-            Log.logger.debug('result_list\'s object id is :')
-            Log.logger.debug(id(result_list))
             # 创建资源集合定时任务，成功或失败后调用UOP资源预留CallBack（目前仅允许全部成功或全部失败，不允许部分成功）
             res_provider = ResourceProviderTransitions(resource_id, property_mappers_list, req_dict)
             res_provider_list = [res_provider]
