@@ -731,20 +731,32 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list):
     data["cmdb_repo_id"] = req_dict["cmdb_repo_id"]
     data["status"] = status
 
-    container = result_mappers_list.get('app')
+    container = []
+    db_info = {}
+    mysql = {}
+    redis = {}
+    mongodb = {}
+
+    if status == RES_STATUS_OK:
+        for result_mapper in result_mappers_list:
+            if result_mapper.keys()[0] == 'app':
+                container.append(result_mapper.get('app'))
+            elif result_mapper.keys()[0] == 'mysql':
+                mysql = result_mapper.get('mysql')
+            elif result_mapper.keys()[0] == 'redis':
+                redis = result_mapper.get('redis')
+            elif result_mapper.keys()[0] == 'mongodb':
+                mongodb = result_mapper.get('mongodb')
+
     if container is not None and container.get('quantity') > 0:
         data["container"] = container
     else:
         data["container"] = []
 
-    db_info = {}
-    mysql = result_mappers_list.get('mysql')
     if mysql is not None and mysql.get('quantity') > 0:
         db_info["mysql"] = mysql
-    redis = result_mappers_list.get('redis')
     if redis is not None and redis.get('quantity') > 0:
         db_info["redis"] = redis
-    mongodb = result_mappers_list.get('mongodb')
     if mongodb is not None and mongodb.get('quantity') > 0:
         db_info["mongodb"] = mongodb
 
