@@ -731,12 +731,22 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list):
     data["cmdb_repo_id"] = req_dict["cmdb_repo_id"]
     data["status"] = status
 
-    data["container"] = result_mappers_list.get('app')
+    container = result_mappers_list.get('app')
+    if container is not None and container.get('quantity') > 0:
+        data["container"] = container
+    else:
+        data["container"] = []
 
     db_info = {}
-    db_info["mysql"] = result_mappers_list.get('mysql')
-    db_info["redis"] = result_mappers_list.get('redis')
-    db_info["mongodb"] = result_mappers_list.get('mongodb')
+    mysql = result_mappers_list.get('mysql')
+    if mysql is not None and mysql.get('quantity') > 0:
+        db_info["mysql"] = mysql
+    redis = result_mappers_list.get('redis')
+    if redis is not None and redis.get('quantity') > 0:
+        db_info["redis"] = redis
+    mongodb = result_mappers_list.get('mongodb')
+    if mongodb is not None and mongodb.get('quantity') > 0:
+        db_info["mongodb"] = mongodb
 
     data["db_info"] = db_info
 
@@ -837,8 +847,6 @@ class ResourceSet(Resource):
             args = parser.parse_args()
 
             req_dict = {}
-            req_list = []
-            com_dict = dict()
 
             unit_name = args.unit_name
             unit_id = args.unit_id
@@ -855,49 +863,6 @@ class ResourceSet(Resource):
             cmdb_repo_id = args.cmdb_repo_id
             resource_list = args.resource_list
             compute_list = args.compute_list
-            req_dict["mysql_cluster"] = {}
-            req_dict["redis_cluster"] = {}
-            req_dict["mongodb_cluster"] = {}
-            for resource in resource_list:
-                instance_id = resource.get('instance_id')
-                instance_type = resource.get('instance_type')
-                if instance_type == 'mysql':
-                    req_dict["mysql_cluster"]['username'] = DEFAULT_USERNAME
-                    req_dict["mysql_cluster"]['password'] = DEFAULT_PASSWORD
-                    req_dict["mysql_cluster"]['port'] = '3316'
-                    req_dict["mysql_cluster"]['ins_id'] = instance_id
-                    req_dict["mysql_cluster"]['instance'] = []
-                if instance_type == 'redis':
-                    req_dict["redis_cluster"]['username'] = DEFAULT_USERNAME
-                    req_dict["redis_cluster"]['password'] = DEFAULT_PASSWORD
-                    req_dict["redis_cluster"]['port'] = '6379'
-                    req_dict["redis_cluster"]['ins_id'] = instance_id
-                    req_dict["redis_cluster"]['instance'] = []
-                if instance_type == 'mongo':
-                    req_dict["mongodb_cluster"]['username'] = DEFAULT_USERNAME
-                    req_dict["mongodb_cluster"]['password'] = DEFAULT_PASSWORD
-                    req_dict["mongodb_cluster"]['port'] = '27017'
-                    req_dict["mongodb_cluster"]['ins_id'] = instance_id
-                    req_dict["mongodb_cluster"]['instance'] = []
-
-            for compute in compute_list:
-                instance_name = compute.get('instance_name', None)
-                instance_id = compute.get('instance_id', None)
-                cpu = compute.get('cpu', None)
-                mem = compute.get('mem', None)
-                image_url = compute.get('image_url', None)
-                domain = compute.get('domain', None)
-                quantity = compute.get('quantity', None)
-
-                for i in range(quantity):
-                    com_dict["container_name"] = instance_name + str(i)
-                    com_dict["image_addr"] = image_url
-                    com_dict["cpu"] = cpu
-                    com_dict["memory"] = mem
-                    com_dict["container_inst_id"] = instance_id + '_' + str(i)
-                    com_dict["domain"] = domain
-                    req_list.append(com_dict)
-                    com_dict = {}
 
             Log.logger.debug(resource_list)
             Log.logger.debug(compute_list)
@@ -915,9 +880,6 @@ class ResourceSet(Resource):
             req_dict["domain"] = domain
             req_dict["cmdb_repo_id"] = cmdb_repo_id
             req_dict["status"] = RES_STATUS_DEFAULT
-
-            # init app cluster Map(List[])
-            req_dict['app_cluster_list'] = req_list
 
             # init default data
             Log.logger.debug('req_dict\'s object id is :')
