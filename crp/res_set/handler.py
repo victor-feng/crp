@@ -466,6 +466,7 @@ class ResourceProviderTransitions(object):
     def do_stop(self):
         # 停止定时任务退出任务线程
         Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Stop.")
+        self.is_running = False
         # 停止定时任务并退出
         TaskManager.task_exit(self.task_id)
 
