@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
+import logging
+
 from flask import Flask, redirect
 from flask_restful import Resource, Api
+
 from config import configs
 from models import db
 from crp.user import user_blueprint

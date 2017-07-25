@@ -1,8 +1,17 @@
 # -*- coding: utf-8 -*-
+
+# TODO: the file is too large, split it.
+
 import os
 import json
 import subprocess
 import time
+import logging
+
+import requests
+from flask_restful import reqparse, Api, Resource
+
+# TODO: import * is bad!!
 from crp.taskmgr import *
 from crp.res_set import resource_set_blueprint
 from crp.res_set.errors import resource_set_errors
@@ -10,14 +19,11 @@ from crp.log import Log
 from crp.openstack import OpenStack
 from crp.utils.docker_tools import image_transit
 from crp.dns.dns_api import DnsConfig
-import requests
 from transitions import Machine
-from flask_restful import reqparse, Api, Resource
-
-
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 
+# TODO: move to global conf!!
 quantity = 0
 TIMEOUT = 500
 SLEEP_TIME = 3
@@ -113,7 +119,8 @@ class ResourceProvider(object):
 
     def do_success(self):
         # 执行成功调用UOP CallBack，提交成功
-        Log.logger.debug("Query Task ID " + self.task_id.__str__() + " all instance create success." +
+        #Log.logger.debug("Query Task ID " + self.task_id.__str__() + " all instance create success." +
+        logging.debug("Query Task ID " + self.task_id.__str__() + " all instance create success." +
                          " instance id set is " + self.result_inst_id_list[:].__str__() +
                          " instance info set is " + self.result_info_list[:].__str__())
         redis_master_slave = ['slave','master']
@@ -173,20 +180,24 @@ class ResourceProvider(object):
             mysql_cluster_ip_info.extend(zip(['vip1', 'vip2'], self.req_dict["mysql_cluster"]['vip']))
             create_mysql_cluster(mysql_cluster_ip_info)
         request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict, self.compute_list)
-        Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Success Info.")
+        logging.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Success Info.")
+        #Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Success Info.")
         # 部署mongo集群
         if len(mongo_ips) > 1:
-            Log.logger.debug("Start deploy the mongo master.%s" % mongo_ips)
+            logging.debug("Start deploy the mongo master.%s" % mongo_ips)
+            #Log.logger.debug("Start deploy the mongo master.%s" % mongo_ips)
             ins = MongodbCluster(mongo_ips[0], mongo_ips[1], mongo_ips[2], mongo_ips[2])
             ins.exec_final_script()
-            Log.logger.debug("Deploy the mongo master Done.")
+            logging.debug("Deploy the mongo master Done.")
+            #Log.logger.debug("Deploy the mongo master Done.")
         # 停止定时任务并退出
         self.stop()
 
     def do_fail(self):
         # 执行失败调用UOP CallBack，提交失败
         request_res_callback(self.task_id, RES_STATUS_FAIL, self.req_dict, self.compute_list)
-        Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Fail Info.")
+        logging.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Fail Info.")
+        #Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Fail Info.")
         # 停止定时任务并退出
         self.stop()
 
@@ -196,7 +207,8 @@ class ResourceProvider(object):
 
     def do_stop(self):
         # 停止定时任务退出任务线程
-        Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Stop.")
+        logging.debug("Query Task ID " + self.task_id.__str__() + " Stop.")
+        #Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Stop.")
         # 停止定时任务并退出
         TaskManager.task_exit(self.task_id)
 
@@ -225,7 +237,8 @@ class ResourceProvider(object):
                 nip = '172.28.20.98'
                 # port = '8081 9999 1010'  # TODO 前端传值
                 print 'domain&ip:', domain, real_ip
-                Log.logger.debug('the receive domain and ip port is %s-%s-%s' % (domain, real_ip, ports))
+                logging.debug('the receive domain and ip port is %s-%s-%s' % (domain, real_ip, ports))
+                #Log.logger.debug('the receive domain and ip port is %s-%s-%s' % (domain, real_ip, ports))
                 self.do_push_nginx_config({'nip': nip, 'domain': domain, 'ip': real_ip.strip(), 'port': ports.strip()})
                 # self.do_push_nginx_config({'nip': nip, 'domain': 'tttttt', 'ip': 'nnnnnnnn'})
                 #####
@@ -252,16 +265,19 @@ class ResourceProvider(object):
         nip = kwargs.get('nip')
         with open('/etc/ansible/hosts', 'w') as f:
             f.write('%s\n' % nip)
-        Log.logger.debug('----->start push', kwargs)
+        logging.debug('----->start push', kwargs)
+        #Log.logger.debug('----->start push', kwargs)
         run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip))
         run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m synchronize -a 'src=/opt/uop-crp/crp/res_set/update.py dest=/shell/'".format(nip=nip))
         run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m synchronize -a 'src=/opt/uop-crp/crp/res_set/template dest=/shell/'".format(nip=nip))
-        Log.logger.debug('------>上传配置文件完成')
+        logging.debug('------>上传配置文件完成')
+        #Log.logger.debug('------>上传配置文件完成')
         run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a 'chmod 777 /shell/update.py'".format(nip=nip))
         run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a 'chmod 777 /shell/template'".format(nip=nip))
         run_cmd('ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a '
                 '"/shell/update.py {domain} {ip} {port}"'.format(nip=kwargs.get('nip'), domain=kwargs.get('domain'), ip=kwargs.get('ip'), port=kwargs.get('port')))
-        Log.logger.debug('------>end push')
+        logging.debug('------>end push')
+        #Log.logger.debug('------>end push')
 
 
 def run_cmd(cmd):
@@ -269,12 +285,14 @@ def run_cmd(cmd):
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True)
     while True:
         line = p.stdout.readline()
-        Log.logger.debug('The nginx config push result is %s' % line)
+        logging.debug('The nginx config push result is %s' % line)
+        #Log.logger.debug('The nginx config push result is %s' % line)
         if not line and p.poll() is not None:
             break
         else:
             msg += line
-            Log.logger.debug('The nginx config push msg is %s' % msg)
+            logging.debug('The nginx config push msg is %s' % msg)
+            #Log.logger.debug('The nginx config push msg is %s' % msg)
     code = p.wait()
     return msg, code
 
@@ -298,9 +316,10 @@ def _create_instance(task_id, name, image, flavor, availability_zone, network_id
     int = nova_client.servers.create(name, image, flavor,
                                      availability_zone=availability_zone,
                                      nics=nics_list)
-    Log.logger.debug("Task ID " + task_id.__str__() + " create instance:")
-    Log.logger.debug(int)
-    Log.logger.debug(int.id)
+    logging.debug("Task ID " + task_id.__str__() + " create instance:")
+    #Log.logger.debug("Task ID " + task_id.__str__() + " create instance:")
+    logging.debug(int)
+    logging.debug(int.id)
 
     return int.id
 
@@ -309,7 +328,8 @@ def _create_instance(task_id, name, image, flavor, availability_zone, network_id
 def create_instance_by_type(task_id, ins_type, name):
     image = images_dict.get(ins_type)
     image_uuid = image.get('uuid')
-    Log.logger.debug("Task ID " + task_id.__str__() +
+    #Log.logger.debug("Task ID " + task_id.__str__() +
+    logging.debug("Task ID " + task_id.__str__() +
                      " Select Image UUID: " + image_uuid + " by Instance Type " + ins_type)
     return _create_instance(task_id, name, image_uuid, FLAVOR_1C2G, AVAILABILITY_ZONE_AZ_UOP, DEV_NETWORK_ID)
 
@@ -318,7 +338,8 @@ def create_instance_by_type(task_id, ins_type, name):
 def create_docker_by_url(task_id, name, image_url):
     err_msg, image_uuid = image_transit(image_url)
     if err_msg is None:
-        Log.logger.debug("Task ID " + task_id.__str__() +
+        #Log.logger.debug("Task ID " + task_id.__str__() +
+        logging.debug("Task ID " + task_id.__str__() +
                          " Transit harbor docker image success. The result glance image UUID is " + image_uuid)
         return None, _create_instance(task_id, name, image_uuid, DOCKER_FLAVOR_2C4G, AVAILABILITY_ZONE_AZ_UOP,
                                       DEV_NETWORK_ID)
@@ -337,10 +358,12 @@ def create_vip_port(instance_name):
                              "network_id": network_id
                       }
                  }
-    Log.logger.debug('Create port for cluster/instance ' + instance_name)
+    logging.debug('Create port for cluster/instance ' + instance_name)
+    #Log.logger.debug('Create port for cluster/instance ' + instance_name)
     response = neutron_client.create_port(body=body_value)
     ip = response.get('port').get('fixed_ips').pop().get('ip_address')
-    Log.logger.debug('Port id: ' + response.get('port').get('id') +
+    #Log.logger.debug('Port id: ' + response.get('port').get('id') +
+    logging.debug('Port id: ' + response.get('port').get('id') +
                      'Port ip: ' + ip)
     return None, ip
 
@@ -396,8 +419,10 @@ def _create_resource_set(task_id, resource_id=None, resource_list=None, compute_
                 uop_os_inst_id_list.append(uopinst_info)
                 compute['instance'].append({'domain': domain, 'os_inst_id': osint_id})
             else:
-                Log.logger.error("Task ID " + task_id.__str__() + " ERROR. Error Message is:")
-                Log.logger.error(err_msg)
+                logging.error("Task ID " + task_id.__str__() + " ERROR. Error Message is:")
+                #Log.logger.error("Task ID " + task_id.__str__() + " ERROR. Error Message is:")
+                logging.error(err_msg)
+                #Log.logger.error(err_msg)
                 # 删除全部
                 is_rollback = True
                 uop_os_inst_id_list = []
@@ -421,14 +446,16 @@ def _rollback_all(task_id, resource_id, uop_os_inst_id_list, result_uop_os_inst_
     nova_client = OpenStack.nova_client
     # fail_list = list(set(uop_os_inst_id_list) - set(result_uop_os_inst_id_list))
     fail_list = _uop_os_list_sub(uop_os_inst_id_list, result_uop_os_inst_id_list)
-    Log.logger.debug("Task ID " + task_id.__str__() +
+    #Log.logger.debug("Task ID " + task_id.__str__() +
+    logging.debug("Task ID " + task_id.__str__() +
                      " Resource ID " + resource_id.__str__() + " have one or more instance create failed." +
                      " Successful instance id set is " + result_uop_os_inst_id_list[:].__str__() +
                      " Failed instance id set is " + fail_list[:].__str__())
     # 删除全部，完成rollback
     for uop_os_inst_id in uop_os_inst_id_list:
         nova_client.servers.delete(uop_os_inst_id['os_inst_id'])
-    Log.logger.debug("Task ID " + task_id.__str__() + " Resource ID " + resource_id.__str__() + " rollback done.")
+    logging.debug("Task ID " + task_id.__str__() + " Resource ID " + resource_id.__str__() + " rollback done.")
+    #Log.logger.debug("Task ID " + task_id.__str__() + " Resource ID " + resource_id.__str__() + " rollback done.")
     ####
     dns_server = DnsConfig.singleton()
     dns_server.delete(domain_name=domain)
@@ -452,15 +479,15 @@ def _query_resource_set_status(task_id=None, uop_os_inst_id_list=None, result_in
     # uop_os_inst_id_wait_query = list(set(uop_os_inst_id_list) - set(result_inst_id_list))
     uop_os_inst_id_wait_query = _uop_os_list_sub(uop_os_inst_id_list, result_inst_id_list)
 
-    Log.logger.debug("Query Task ID " + task_id.__str__() + ", remain " + uop_os_inst_id_wait_query[:].__str__())
-    Log.logger.debug("Query Task ID " + task_id.__str__() +
+    logging.debug("Query Task ID " + task_id.__str__() + ", remain " + uop_os_inst_id_wait_query[:].__str__())
+    logging.debug("Query Task ID " + task_id.__str__() +
                      " Test Task Scheduler Class result_inst_id_list object id is " +
                      id(result_inst_id_list).__str__() +
                      ", Content is " + result_inst_id_list[:].__str__())
     nova_client = OpenStack.nova_client
     for uop_os_inst_id in uop_os_inst_id_wait_query:
         inst = nova_client.servers.get(uop_os_inst_id['os_inst_id'])
-        Log.logger.debug("Query Task ID " + task_id.__str__() + " query Instance ID " +
+        logging.debug("Query Task ID " + task_id.__str__() + " query Instance ID " +
                          uop_os_inst_id['os_inst_id'] + " Status is " + inst.status)
         if inst.status == 'ACTIVE':
             _ips = _get_ip_from_instance(inst)
@@ -480,11 +507,11 @@ def _query_resource_set_status(task_id=None, uop_os_inst_id_list=None, result_in
                         instance['physical_server'] = physical_server
             result_info_list.append(_data)
             _data = {}
-            Log.logger.debug("Query Task ID " + task_id.__str__() + " Instance Info: " + _data.__str__())
+            logging.debug("Query Task ID " + task_id.__str__() + " Instance Info: " + _data.__str__())
             result_inst_id_list.append(uop_os_inst_id)
         if inst.status == 'ERROR':
             # 置回滚标志位
-            Log.logger.debug("Query Task ID " + task_id.__str__() + " ERROR Instance Info: " + inst.to_dict().__str__())
+            logging.debug("Query Task ID " + task_id.__str__() + " ERROR Instance Info: " + inst.to_dict().__str__())
             is_rollback = True
 
     if result_inst_id_list.__len__() == uop_os_inst_id_list.__len__():
@@ -584,11 +611,10 @@ def request_res_callback(task_id, status, req_dict, container_list):
     data["db_info"] = db_info
 
     data_str = json.dumps(data)
-    Log.logger.debug('xxxxx')
-    Log.logger.debug("Task ID " + task_id.__str__() + " UOP res_callback Request Body is: " + data_str)
+    logging.debug("Task ID " + task_id.__str__() + " UOP res_callback Request Body is: " + data_str)
     res = requests.post(RES_CALLBACK, data=data_str)
-    Log.logger.debug(res.status_code)
-    Log.logger.debug(res.content)
+    logging.debug(res.status_code)
+    logging.debug(res.content)
     ret = eval(res.content.decode('unicode_escape'))
     return ret
 
@@ -743,8 +769,8 @@ class ResourceSet(Resource):
                     req_list.append(com_dict)
                     com_dict = {}
 
-            Log.logger.debug(resource_list)
-            Log.logger.debug(compute_list)
+            logging.debug(resource_list)
+            logging.debug(compute_list)
 
             req_dict["unit_name"] = unit_name
             req_dict["unit_id"] = unit_id
@@ -770,10 +796,10 @@ class ResourceSet(Resource):
             req_dict["container_physical_server"] = PHYSICAL_SERVER_NONE
 
             result_list = []
-            Log.logger.debug('req_dict\'s object id is :')
-            Log.logger.debug(id(req_dict))
-            Log.logger.debug('result_list\'s object id is :')
-            Log.logger.debug(id(result_list))
+            logging.debug('req_dict\'s object id is :')
+            logging.debug(id(req_dict))
+            logging.debug('result_list\'s object id is :')
+            logging.debug(id(result_list))
             # 创建资源集合定时任务，成功或失败后调用UOP资源预留CallBack（目前仅允许全部成功或全部失败，不允许部分成功）
             res_provider = ResourceProvider(resource_id, resource_list, compute_list, req_dict)
             res_provider_list = [res_provider]
@@ -801,7 +827,7 @@ def tick_announce(task_id, res_provider_list):
         res_provider = res_provider_list[0]
         if res_provider.task_id is None:
             res_provider.set_task_id(task_id)
-        Log.logger.debug(res_provider.state)
+        logging.debug(res_provider.state)
         if res_provider.state == 'init':
             res_provider.create()
         else:
@@ -858,11 +884,10 @@ class MongodbCluster(object):
                 p = subprocess.Popen('nmap %s -p 22' % ip, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 try:
                     a = p.stdout.readlines()[5]
-                    Log.logger.debug('nmap ack result:%s' % a)
+                    logging.debug('nmap ack result:%s' % a)
                 except IndexError as e:
-                    print e
                     a = 'false'
-                    Log.logger.debug('%s' % e)
+                    logging.debug('%s' % e)
                     break
                 if 'open' in a:
                     self.mongodb_cluster_push(ip)
@@ -877,26 +902,22 @@ class MongodbCluster(object):
         authority_cmd = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m shell -a "chmod 777 /tmp/write_mongo_ip.py"'.format(vip=ip)
         cmd1 = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m shell -a "python /tmp/write_mongo_ip.py {m_ip} {s1_ip} {s2_ip}"'.\
             format(vip=ip, m_ip=self.ip_master1, s1_ip=self.ip_slave1, s2_ip=self.ip_slave2)
-        Log.logger.debug('开始上传脚本%s' % ip)
+        logging.debug('开始上传脚本%s' % ip)
         p = subprocess.Popen(cmd_before, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
-            print line
-            Log.logger.debug('mongodb cluster cmd before:%s' % line)
-        Log.logger.debug('开始修改权限%s' % ip)
+            logging.debug('mongodb cluster cmd before:%s', line)
+        logging.debug('开始修改权限%s' % ip)
         p = subprocess.Popen(authority_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
-            print line
-            Log.logger.debug('mongodb cluster authority:%s' % line)
-        Log.logger.debug('脚本上传完成,开始执行脚本%s' % ip)
+            logging.debug('mongodb cluster authority:%s', line)
+        logging.debug('脚本上传完成,开始执行脚本%s' % ip)
         p = subprocess.Popen(cmd1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
-            print line
-            Log.logger.debug('mongodb cluster exec write script:%s' % line)
-        Log.logger.debug('脚本执行完毕 接下来会部署%s' % ip)
+            logging.debug('mongodb cluster exec write script:%s', line)
+        logging.debug('脚本执行完毕 接下来会部署%s', ip)
         # for ip in self.ip:
         with open('/home/mongo/hosts', 'w') as f:
             f.write('%s\n' % ip)
-        print '-----', ip,type(ip)
         script = self.d.get(ip)
         if str(ip) != '172.28.36.105':
             cmd_s = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/{s} sys95"'.\
@@ -906,15 +927,13 @@ class MongodbCluster(object):
                 format(vip=ip, s=script)
         p = subprocess.Popen(cmd_s, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
-            print line,
-            Log.logger.debug('mongodb cluster push result:%s, -----%s' % (line, ip))
+            logging.debug('mongodb cluster push result:%s, -----%s', line, ip)
 
     def exec_final_script(self):
         for i in self.cmd:
             p = subprocess.Popen(i, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             for line in p.stdout.readlines():
-                print line,
-                Log.logger.debug('mongodb cluster push result:%s' % line)
+                logging.debug('mongodb cluster push result:%s', line)
 
 
 CMDPATH = r'crp/res_set/playbook-0830/'
@@ -925,7 +944,7 @@ def create_redis_cluster(ip1, ip2, vip):
     for line in p.stdout.readlines():
         strout += line + os.linesep
 
-    Log.logger.debug('redis cluster push result:%s' % strout)
+    logging.debug('redis cluster push result:%s', strout)
     if 'FAILED!' in strout or 'UNREACHABLE!' in strout:
         return False
     else:
@@ -945,7 +964,7 @@ def create_mysql_cluster(ip_info):
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     for line in p.stdout.readlines():
         strout += line + os.linesep
-    Log.logger.debug('mysql cluster push result:%s' % strout)
+    logging.debug('mysql cluster push result:%s', strout)
 
 def query_vm_status(ips):
     flag = False
@@ -953,11 +972,10 @@ def query_vm_status(ips):
         p = subprocess.Popen('nmap %s -p 22' % ip, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         try:
             a = p.stdout.readlines()[5]
-            Log.logger.debug('nmap ack result:%s' % a)
+            logging.debug('nmap ack result:%s', a)
         except IndexError as e:
-            print e
             a = 'false'
-            Log.logger.debug('%s' % e)
+            logging.debug('Exception: %s', e)
             break
         if 'open' in a:
             ips.remove(ip)

@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
+import logging
+
 from flask_restful import reqparse, Api, Resource
 
+# TODO: import * is bad!!!
 from crp.taskmgr import *
 from crp.models import User
 from crp.glance_image import glance_image_blueprint
@@ -43,7 +46,8 @@ class ImageListAPI(Resource):
                     })
         except Exception as e:
             err_msg = e.message
-            Log.logger.error('list glance image err: %s' % err_msg)
+            logging.error('list glance image err: %s' % err_msg)
+            #Log.logger.error('list glance image err: %s' % err_msg)
             res = {
                 "code": 400,
                 "result": {

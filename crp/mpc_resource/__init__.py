@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
+
+import logging
 import requests
 import json
 
 from flask import Blueprint
-from crp.openstack import OpenStack
+
+# TODO: import * is bad!!
 from crp.taskmgr import *
+from crp.openstack import OpenStack
 from crp.log import Log
 
 from config import APP_ENV, configs
@@ -12,6 +16,7 @@ from config import APP_ENV, configs
 
 mpc_resource_blueprint = Blueprint('mpc_resource_blueprint', __name__)
 
+# TODO: move to global conf
 SYNC_SLEEP_TIME = 10
 SYNC_TIMEOUT = 60 * 60 * 24 * 365 * 100
 MPC_URL = configs[APP_ENV].MPC_URL
@@ -27,7 +32,8 @@ def mpc_resource_callback(vms):
     headers = {
         'Content-Type': 'application/json'
     }
-    Log.logger.debug(
+    #Log.logger.debug(
+    logging.debug(
         "mpc_resource_callback: " + url +
         ' ' + json.dumps(headers) + ' ' + data_str)
     cbk_result = requests.put(
@@ -36,21 +42,21 @@ def mpc_resource_callback(vms):
 
 
 def _instance_status_sync(task_id, result):
-    Log.logger.debug(
+    #Log.logger.debug(
+    logging.debug(
         "SYNC Inst Status Task ID %s" % task_id)
     # print "SYNC Inst Status Task ID %s" % task_id
     nc = OpenStack.nova_client
     vms = nc.servers.list()
     insts = []
     for vm in vms:
-        # Log.logger.debug(str(dir(vm)))
         insts.append({
             'os_inst_id': vm.id,
             'status': 'vm_error'
             if vm.status == 'ERROR'
             else vm.status,
         })
-    Log.logger.debug("OpenStack vm number: "+ str(len(insts)))
+    logging.debug("OpenStack vm number: "+ str(len(insts)))
     err_msg = None
     cbk_result = None
     try:
@@ -61,11 +67,13 @@ def _instance_status_sync(task_id, result):
     except BaseException as e:
         err_msg = e.message
     finally:
-        Log.logger.debug(
+        #Log.logger.debug(
+        logging.debug(
             "Callback Task ID " + str(task_id) + '\r\n' +
             'mpc_res_callback result ' + str(cbk_result))
         if err_msg:
-            Log.logger.debug(
+            #Log.logger.debug(
+            logging.debug(
                 "Callback Task ID " + str(task_id) + '\r\n' +
                 'mpc_res_callback err_msg ' + str(err_msg))
 
@@ -76,7 +84,8 @@ def instance_status_sync():
             SYNC_SLEEP_TIME, SYNC_TIMEOUT,
             {}, _instance_status_sync)
     except Exception as e:
-        Log.logger.error(
+        #Log.logger.error(
+        logging.error(
             'instance_status_sync err %s'
             % e.message)
 
