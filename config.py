@@ -59,3 +59,6 @@ configs = {
     'testing': TestingConfig,
     'default': DevelopmentConfig
 }
+
+nginx_ip = '172.28.20.98'
+
