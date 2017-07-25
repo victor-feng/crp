@@ -571,6 +571,7 @@ class ResourceProviderTransitions(object):
         ports = str(app.get('port'))
         Log.logger.debug('the receive domain and ip port is %s-%s-%s' % (domain, real_ip, ports))
         do_push_nginx_config({'nip': nginx_ip, 'domain': domain, 'ip': real_ip.strip(), 'port': ports.strip()})
+        self.do_dns_push()
 
     def run_cmd(self, cmd):
         msg = ''
