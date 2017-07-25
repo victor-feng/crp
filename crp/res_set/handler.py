@@ -165,10 +165,6 @@ class ResourceProviderTransitions(object):
     def next_phase(self):
         index = self.phase_list.index(self.phase)
         self.phase = self.phase_list[index + 1]
-        if self.phase == 'query':
-            self.query()
-        elif self.phase == 'status':
-            self.status()
 
     def preload_property_mapper(self, property_mappers_list):
         if len(property_mappers_list) != 0:
@@ -206,9 +202,9 @@ class ResourceProviderTransitions(object):
                 # 从self.property_mapper中获得的cluster_info为引用类型，因此更新self.push_mapper_list中的dict则self.result_mapper_list同步更新
                 pass
         else:
-            self.next_phase()
             if self.phase == 'stop':
                 self.stop()
+            self.next_phase()
 
     @staticmethod
     def _get_ip_from_instance(server):
@@ -530,7 +526,7 @@ class ResourceProviderTransitions(object):
             self.next_phase()
 
     @transition_state_logger
-    def do_app_push(self, kwargs):
+    def do_app_push(self):
         # TODO: do app push
         def do_push_nginx_config(kwargs):
             """
@@ -588,11 +584,11 @@ class ResourceProviderTransitions(object):
         return msg, code
 
     @transition_state_logger
-    def do_dns_push(self, kwargs):
+    def do_dns_push(self):
         pass
 
     @transition_state_logger
-    def do_mysql_push(self, kwargs):
+    def do_mysql_push(self):
         if self.property_mapper.get('mysql', {}).get('quantity') == 5:
             mysql = self.property_mapper.get('mysql', {})
             instance = mysql.get('instance')
@@ -628,7 +624,7 @@ class ResourceProviderTransitions(object):
             Log.logger.debug('mysql cluster push result:%s' % strout)
 
     @transition_state_logger
-    def do_mongodb_push(self, kwargs):
+    def do_mongodb_push(self):
         mongodb_ip_list = []
         mongodb = self.property_mapper.get('mongodb', {})
         if mongodb.get('quantity', {}) == 3:
@@ -640,7 +636,7 @@ class ResourceProviderTransitions(object):
         mongodb_cluster.exec_final_script()
 
     @transition_state_logger
-    def do_redis_push(self, kwargs):
+    def do_redis_push(self):
         if self.property_mapper.get('redis', {}).get('quantity') == 2:
             redis = self.property_mapper.get('redis', {})
             instance = redis.get('instance')
