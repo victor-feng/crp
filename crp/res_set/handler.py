@@ -165,6 +165,10 @@ class ResourceProviderTransitions(object):
     def next_phase(self):
         index = self.phase_list.index(self.phase)
         self.phase = self.phase_list[index + 1]
+        if self.phase == 'query':
+            self.query()
+        elif self.phase == 'status':
+            self.status()
 
     def preload_property_mapper(self, property_mappers_list):
         if len(property_mappers_list) != 0:
