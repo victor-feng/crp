@@ -12,6 +12,7 @@ from crp.res_set.errors import resource_set_errors
 from crp.log import Log
 from crp.openstack import OpenStack
 from crp.utils.docker_tools import image_transit
+from config import nginx_ip
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 
@@ -531,7 +532,59 @@ class ResourceProviderTransitions(object):
     @transition_state_logger
     def do_app_push(self, kwargs):
         # TODO: do app push
-        self.dns_push()
+        def do_push_nginx_config(kwargs):
+            """
+            need the nip domain ip
+            nip:这是nginx那台机器的ip
+            need write the update file into vm
+            :param kwargs:
+            :return:
+            """
+            nip = kwargs.get('nip')
+            with open('/etc/ansible/hosts', 'w') as f:
+                f.write('%s\n' % nip)
+            Log.logger.debug('----->start push', kwargs)
+            self.run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip))
+            self.run_cmd(
+                "ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m synchronize -a 'src=/opt/uop-crp/crp/res_set/update.py dest=/shell/'".format(
+                    nip=nip))
+            self.run_cmd(
+                "ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m synchronize -a 'src=/opt/uop-crp/crp/res_set/template dest=/shell/'".format(
+                    nip=nip))
+            Log.logger.debug('------>上传配置文件完成')
+            self.run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a 'chmod 777 /shell/update.py'".format(
+                nip=nip))
+            self.run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a 'chmod 777 /shell/template'".format(
+                nip=nip))
+            self.run_cmd('ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a '
+                    '"/shell/update.py {domain} {ip} {port}"'.format(nip=kwargs.get('nip'), domain=kwargs.get('domain'),
+                                                                     ip=kwargs.get('ip'), port=kwargs.get('port')))
+            Log.logger.debug('------>end push')
+
+        real_ip = ''
+        app = self.property_mapper.get('app', '')
+        domain = self.property_mapper.get('domain', '')
+        app_instance = app.get('instance')
+        for ins in app_instance:
+            ip_str = str(ins.get('ip')) + ' '
+            real_ip += ip_str
+        ports = str(app.get('port'))
+        Log.logger.debug('the receive domain and ip port is %s-%s-%s' % (domain, real_ip, ports))
+        do_push_nginx_config({'nip': nginx_ip, 'domain': domain, 'ip': real_ip.strip(), 'port': ports.strip()})
+
+    def run_cmd(self, cmd):
+        msg = ''
+        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True)
+        while True:
+            line = p.stdout.readline()
+            Log.logger.debug('The nginx config push result is %s' % line)
+            if not line and p.poll() is not None:
+                break
+            else:
+                msg += line
+                Log.logger.debug('The nginx config push msg is %s' % msg)
+        code = p.wait()
+        return msg, code
 
     @transition_state_logger
     def do_dns_push(self, kwargs):
@@ -575,7 +628,15 @@ class ResourceProviderTransitions(object):
 
     @transition_state_logger
     def do_mongodb_push(self, kwargs):
-        pass
+        mongodb_ip_list = []
+        mongodb = self.property_mapper.get('mongodb', {})
+        if mongodb.get('quantity', {}) == 3:
+            instance = mongodb.get('instance', '')
+            for ins in instance:
+                mongodb_ip_list.append(ins.get('ip', ''))
+            mongodb_ip_list.append(mongodb_ip_list[-1])
+        mongodb_cluster = MongodbCluster(mongodb_ip_list)
+        mongodb_cluster.exec_final_script()
 
     @transition_state_logger
     def do_redis_push(self, kwargs):
@@ -1017,3 +1078,100 @@ def create_vip_port(instance_name):
     Log.debug('Port id: ' + response.get('port').get('id') +
                      'Port ip: ' + ip)
     return None, ip
+
+
+class MongodbCluster(object):
+
+    def __init__(self, ip_list):
+        """
+        172.28.36.230
+        172.28.36.23
+        172.28.36.231
+        :param cmd_list:
+        """
+        self.ip_slave1 = ip_list[0]
+        self.ip_slave2 = ip_list[1]
+        self.ip_master1 = ip_list[2]
+        self.ip_master2 = ip_list[3]
+        self.d = {
+            self.ip_slave1: 'mongoslave1.sh',
+            self.ip_slave2: 'mongoslave2.sh',
+            self.ip_master1: 'mongomaster1.sh',
+            }
+        self.cmd = ['ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/'
+                    'mongoclu_install/mongomaster2.sh sys95"'.format(vip=self.ip_master2)]
+        self.ip = [self.ip_slave1, self.ip_slave2, self.ip_master1]
+        self.new_host = '[new_host]'
+        self.write_ip_to_server()
+        self.flag = False
+        self.telnet_ack()
+
+    def write_ip_to_server(self):
+        for ip in self.ip:
+            with open('/etc/ansible/hosts', 'a') as f:
+                f.write('%s\n' % ip)
+
+    def telnet_ack(self):
+        while not self.flag:
+            for ip in self.ip:
+                p = subprocess.Popen('nmap %s -p 22' % ip, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                try:
+                    a = p.stdout.readlines()[5]
+                    Log.logger.debug('nmap ack result:%s' % a)
+                except IndexError as e:
+                    print e
+                    a = 'false'
+                    Log.logger.debug('%s' % e)
+                    break
+                if 'open' in a:
+                    self.mongodb_cluster_push(ip)
+                    self.ip.remove(ip)
+            if len(self.ip) == 0:
+                self.flag = True
+
+    def mongodb_cluster_push(self, ip):
+        # vip_list = list(set(self.ip))
+        # vip_list = [ip_master1, ip_slave1, ip_slave2]
+        cmd_before = "ansible {vip} --private-key=/home/mongo/old_id_rsa -m synchronize -a 'src=/opt/uop-crp/crp/res_set/write_mongo_ip.py dest=/tmp/'".format(vip=ip)
+        authority_cmd = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m shell -a "chmod 777 /tmp/write_mongo_ip.py"'.format(vip=ip)
+        cmd1 = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m shell -a "python /tmp/write_mongo_ip.py {m_ip} {s1_ip} {s2_ip}"'.\
+            format(vip=ip, m_ip=self.ip_master1, s1_ip=self.ip_slave1, s2_ip=self.ip_slave2)
+        Log.logger.debug('开始上传脚本%s' % ip)
+        p = subprocess.Popen(cmd_before, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for line in p.stdout.readlines():
+            print line
+            Log.logger.debug('mongodb cluster cmd before:%s' % line)
+        Log.logger.debug('开始修改权限%s' % ip)
+        p = subprocess.Popen(authority_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for line in p.stdout.readlines():
+            print line
+            Log.logger.debug('mongodb cluster authority:%s' % line)
+        Log.logger.debug('脚本上传完成,开始执行脚本%s' % ip)
+        p = subprocess.Popen(cmd1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for line in p.stdout.readlines():
+            print line
+            Log.logger.debug('mongodb cluster exec write script:%s' % line)
+        Log.logger.debug('脚本执行完毕 接下来会部署%s' % ip)
+        # for ip in self.ip:
+        with open('/home/mongo/hosts', 'w') as f:
+            f.write('%s\n' % ip)
+        print '-----', ip,type(ip)
+        script = self.d.get(ip)
+        if str(ip) != '172.28.36.105':
+            cmd_s = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/{s} sys95"'.\
+                format(vip=ip, s=script)
+        else:
+            cmd_s = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/{s}"'.\
+                format(vip=ip, s=script)
+        p = subprocess.Popen(cmd_s, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for line in p.stdout.readlines():
+            print line,
+            Log.logger.debug('mongodb cluster push result:%s, -----%s' % (line, ip))
+
+    def exec_final_script(self):
+        for i in self.cmd:
+            p = subprocess.Popen(i, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            for line in p.stdout.readlines():
+                print line,
+                Log.logger.debug('mongodb cluster push result:%s' % line)
+
