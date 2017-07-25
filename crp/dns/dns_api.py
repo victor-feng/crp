@@ -54,13 +54,19 @@ class DnsShellCmd(object):
         return cmd
 
     @staticmethod
+    def zone_add_cmd(domain_name):
+        zone = domain_name_to_zone(domain_name)
+        cmd1 = "sed 's/syswin.com/%s/g' /var/named/zone.exa >>/etc/named.rfc1912.zones && echo '' || echo 'fail'" % zone['zone']
+        cmd2 = "sed 's/syswin.com/%s/g' /var/named/examples.zone >>%s && echo '' || echo 'fail'" % (zone['zone'], zone['path'])
+        return [cmd1,cmd2]
+
+    @staticmethod
     def zone_query_cmd(domain_name):
         zone = domain_name_to_zone(domain_name)
         zone_file = "%s.zone" % zone['zone']
         cmd1 = "grep -q \"%s\" /etc/named.rfc1912.zones && echo '' || echo 'fail'" % zone_file
         cmd2 = "[ -f /var/named/%s ] && echo '' || echo 'fail'" % zone_file
         return [cmd1,cmd2]
-
 
 class DnsConfig(object):
 
@@ -78,9 +84,11 @@ class DnsConfig(object):
     @classmethod
     def singleton(cls):
         if cls.__instance:
+            print "cls exist"
             return cls.__instance
         else:
             cls.__instance = cls()
+            print "no cls"
             return cls.__instance
 
     def connect(self):
@@ -101,7 +109,7 @@ class DnsConfig(object):
             self.close()
             if len(result) == 0:
                 response['success'] = True
-                response['error'] = 'Add [ %s ] success!' % domain_name
+                response['error'] = 'Add [ %s ] success' % domain_name
             else:
                 raise ServerError('Add dns error: %s' % result)
         except Exception as e:
@@ -172,22 +180,91 @@ class DnsConfig(object):
             self.close()
             if (len(result1) == 1) and (len(result2) == 1):
                 response['success'] = True
-                response['error'] = "zone is exist!"
+                response['error'] = "zone is exist"
             else:
-                raise ServerError('Zone is not exist')
+                raise ServerError('zone is not exist')
         except Exception as e:
             raise ServerError('Zone Query Error: %s' % e.message)
+        return response
+
+    def zone_add(self,domain_name):
+        try:
+            self.connect()
+            cmd = DnsShellCmd.zone_add_cmd(domain_name)
+            print cmd[0],cmd[1]
+            stdin1, stdout1, stderr1 = self.ssh.exec_command(cmd[0])
+            stdin2, stdout2, stderr2 = self.ssh.exec_command(cmd[1])
+            result1 = stdout1.read()
+            result2 = stdout2.read()
+            self.close()
+            if (len(result1) == 1) and (len(result2) == 1):
+                response['success'] = True
+                response['error'] = "zone add success"
+            else:
+                raise ServerError('zone add error')
+        except Exception as e:
+            raise ServerError(e.message)
         return response
 
     def close(self):
         self.trans.close()
 
+class DnsApi(DnsConfig):
+    def __init__(self):
+        super(DnsConfig, self).__init__()
+        self.dns_connect = DnsConfig.singleton()
+
+    def dns_add(self, domain_name, ip):
+        try:
+            self.dns_connect.zone_query(domain_name=domain_name)
+            query_res = self.dns_connect.query(domain_name=domain_name)
+
+            if query_res['success']:
+                raise ServerError(query_res.get('error'))
+
+            res = self.dns_connect.add(domain_name=domain_name, ip=ip)
+            self.dns_connect.reload()
+        except ServerError as e:
+            res = e.message
+        return res
+
+    def dns_delete(self, domain_name):
+        try:
+            self.dns_connect.zone_query(domain_name=domain_name)
+            query_res = self.dns_connect.query(domain_name=domain_name)
+
+            if not query_res['success']:
+                raise ServerError(query_res.get('error'))
+
+            res = self.dns_connect.delete(domain_name=domain_name)
+            self.dns_connect.reload()
+        except ServerError as e:
+            res = e.message
+        return res
+
+    def dns_query(self, domain_name):
+        try:
+            self.dns_connect.zone_query(domain_name=domain_name)
+            res = self.dns_connect.query(domain_name=domain_name)
+        except ServerError as e:
+            res = e.message
+        return res
 
 if __name__ == '__main__':
     print time.time()
-    dns_connect = DnsConfig.singleton()
+    dns_api = DnsApi()
+    dns_api1 = DnsApi()
+    dns_api2 = DnsApi()
     name = raw_input('please input:').strip()
-    print dns_connect.zone_query(domain_name=name)
+    print dns_api.dns_query(domain_name=name)
+    print dns_api1.dns_query(domain_name=name)
+    print dns_api2.dns_query(domain_name=name)
+    print dns_api.dns_query(domain_name=name)
+    print dns_api1.dns_query(domain_name=name)
+    print dns_api2.dns_query(domain_name=name)
+    #print dns_api.dns_add(domain_name=name, ip='192.168.70.130')
+    #print dns_api.dns_delete(domain_name=name)
+    #print dns_api.dns_query(domain_name=name)
     #print dns_connect.add(domain_name=name, ip='192.168.70.130')
     #print dns_connect.query(domain_name=name)
     #print dns_connect.delete(domain_name=name)
