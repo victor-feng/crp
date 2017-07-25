@@ -204,6 +204,9 @@ class ResourceProviderTransitions(object):
         else:
             if self.phase == 'stop':
                 self.stop()
+            elif self.phase == 'callback':
+                if self.is_need_rollback is not True:
+                    self.success()
             self.next_phase()
 
     @staticmethod
