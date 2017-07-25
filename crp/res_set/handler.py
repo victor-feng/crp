@@ -461,12 +461,14 @@ class ResourceProviderTransitions(object):
         return is_finish, is_rollback
 
     def start(self):
-        self.is_running = True
-        self.run()
+        if self.is_running is not True:
+            self.is_running = True
+            self.run()
 
     def run(self):
         while self.phase != 'query' and self.phase != 'status' and self.phase != 'stop':
             self.tick_announce()
+        self.is_running = False
 
     @transition_state_logger
     def do_init(self):
