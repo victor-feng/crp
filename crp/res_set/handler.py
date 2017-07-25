@@ -96,7 +96,7 @@ property_json_mapper_config = {
         'quantity': 'quantity'
     }
 }
-
+SCRIPTPATH = r'crp/res_set/playbook-0830/'
 
 # Transition state Log debug decorator
 def transition_state_logger(func):
@@ -539,7 +539,39 @@ class ResourceProviderTransitions(object):
 
     @transition_state_logger
     def do_mysql_push(self, kwargs):
-        pass
+        if self.property_mapper.get('mysql', {}).get('quantity') == 5:
+            mysql = self.property_mapper.get('mysql', {})
+            instance = mysql.get('instance')
+            mysql_ip_info = []
+            mycat_ip_info = []
+            master_slave = ['slave2', 'slave1', 'master']
+            lvs = ['lvs2','lvs1']
+            for _instance in instance:
+                tup = (_instance['instance_name'], instance['ip'])
+                if _instance['instance_type'] == 'mysql':
+                    mysql_ip_info.append(tup)
+                    _instance['dbtype'] = master_slave.pop()
+                else:
+                    mycat_ip_info.append(tup)
+                    _instance['dbtype'] = lvs.pop()
+
+            _, vip1 = create_vip_port(mysql_ip_info[0][0])
+            _, vip2 = create_vip_port(mysql_ip_info[0][0])
+            ip_info = mysql_ip_info + mycat_ip_info
+            ip_info.append(('vip1', vip1))
+            ip_info.append(('vip2', vip2))
+            with open(os.path.join(SCRIPTPATH, 'mysqlmha', 'mysql.txt'), 'wb') as f:
+                for host_name, ip in ip_info:
+                    f.write(host_name + os.linesep)
+                    f.write(ip + os.linesep)
+
+            path = SCRIPTPATH + 'mysqlmha'
+            cmd = '/bin/sh {0}/mlm.sh {0}'.format(path)
+            strout = ''
+            p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            for line in p.stdout.readlines():
+                strout += line + os.linesep
+            Log.logger.debug('mysql cluster push result:%s' % strout)
 
     @transition_state_logger
     def do_mongodb_push(self, kwargs):
@@ -547,7 +579,37 @@ class ResourceProviderTransitions(object):
 
     @transition_state_logger
     def do_redis_push(self, kwargs):
-        pass
+        if self.property_mapper.get('redis', {}).get('quantity') == 2:
+            redis = self.property_mapper.get('redis', {})
+            instance = redis.get('instance')
+            ip1 = instance[0]['ip']
+            ip2 = instance[1]['ip']
+            _, vip = create_vip_port(instance[0]['instance_name'])
+            instance[0]['dbtype'] = 'master'
+            instance[1]['dbtype'] = 'slave'
+            cmd = 'python {0}script/redis_cluster.py {1} {2} {3}'.format(SCRIPTPATH, ip1, ip2, vip)
+            error_time = 0
+            def _redis_push():
+                out = ''
+                p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                for line in p.stdout.readlines():
+                    out += line + os.linesep
+
+                Log.logger.debug('redis cluster push result:%s' % out)
+                return out
+
+            strout = ''
+            # 执行命令 如果失败 连续重复尝试3次
+            while ( not strout or  'FAILED!' in strout or 'UNREACHABLE!' in strout) and error_time < 3:
+                strout = _redis_push()
+                error_time += 1
+
+            instance[0]['dbtype'] = 'master'
+            instance[1]['dbtype'] = 'slave'
+            if error_time == 3:
+                self.rollback()
+
+
 
 
 # Transit request_data from the JSON nest structure to the chain structure with items_sequence and porerty_json_mapper
@@ -934,3 +996,24 @@ def tick_announce(task_id, res_provider_list):
 
 
 resource_set_api.add_resource(ResourceSet, '/sets')
+
+
+def create_vip_port(instance_name):
+    neutron_client = OpenStack.neutron_client
+    network_id = DEV_NETWORK_ID
+
+    body_value = {
+                     "port": {
+                             "admin_state_up": True,
+                             "name": instance_name + '_port',
+                             "network_id": network_id
+                      }
+                 }
+    Log.debug('Create port for cluster/instance ' + instance_name)
+    #Log.logger.debug('Create port for cluster/instance ' + instance_name)
+    response = neutron_client.create_port(body=body_value)
+    ip = response.get('port').get('fixed_ips').pop().get('ip_address')
+    #Log.logger.debug('Port id: ' + response.get('port').get('id') +
+    Log.debug('Port id: ' + response.get('port').get('id') +
+                     'Port ip: ' + ip)
+    return None, ip
