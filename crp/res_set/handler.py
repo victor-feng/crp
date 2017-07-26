@@ -1078,12 +1078,12 @@ def create_vip_port(instance_name):
                              "network_id": network_id
                       }
                  }
-    Log.debug('Create port for cluster/instance ' + instance_name)
+    Log.logger.debug('Create port for cluster/instance ' + instance_name)
     #Log.logger.debug('Create port for cluster/instance ' + instance_name)
     response = neutron_client.create_port(body=body_value)
     ip = response.get('port').get('fixed_ips').pop().get('ip_address')
     #Log.logger.debug('Port id: ' + response.get('port').get('id') +
-    Log.debug('Port id: ' + response.get('port').get('id') +
+    Log.logger.debug('Port id: ' + response.get('port').get('id') +
                      'Port ip: ' + ip)
     return None, ip
 
