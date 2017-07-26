@@ -608,7 +608,7 @@ class ResourceProviderTransitions(object):
             master_slave = ['slave2', 'slave1', 'master']
             lvs = ['lvs2','lvs1']
             for _instance in instance:
-                tup = (_instance['instance_name'], instance['ip'])
+                tup = (_instance['instance_name'], _instance['ip'])
                 if _instance['instance_type'] == 'mysql':
                     mysql_ip_info.append(tup)
                     _instance['dbtype'] = master_slave.pop()
