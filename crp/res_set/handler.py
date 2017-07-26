@@ -1122,7 +1122,7 @@ class MongodbCluster(object):
     def telnet_ack(self):
         while not self.flag:
             for ip in self.ip:
-                p = subprocess.Popen('nmap %s -p 22' % ip, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                p = subprocess.Popen('nmap %s -p 22' % str(ip), shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 try:
                     a = p.stdout.readlines()[5]
                     Log.logger.debug('nmap ack result:%s' % a)
