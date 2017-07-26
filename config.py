@@ -61,4 +61,5 @@ configs = {
 }
 
 nginx_ip = '172.28.20.98'
+MONGODB_SCRIPT_PATH = 'uop-crp/crp/res_set/mongo_script/'
 
