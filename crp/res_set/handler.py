@@ -12,7 +12,7 @@ from crp.res_set.errors import resource_set_errors
 from crp.log import Log
 from crp.openstack import OpenStack
 from crp.utils.docker_tools import image_transit
-from config import nginx_ip
+from config import nginx_ip, MONGODB_SCRIPT_PATH
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 
@@ -1097,6 +1097,7 @@ class MongodbCluster(object):
         172.28.36.231
         :param cmd_list:
         """
+        self.dir = os.path.dirname(os.path.abspath(__file__)) + '/' + 'mongo_script'
         self.ip_slave1 = ip_list[0]
         self.ip_slave2 = ip_list[1]
         self.ip_master1 = ip_list[2]
@@ -1106,8 +1107,8 @@ class MongodbCluster(object):
             self.ip_slave2: 'mongoslave2.sh',
             self.ip_master1: 'mongomaster1.sh',
             }
-        self.cmd = ['ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/'
-                    'mongoclu_install/mongomaster2.sh sys95"'.format(vip=self.ip_master2)]
+        self.cmd = ['ansible {vip} -u root --private-key={rsa_dir}/old_id_rsa -m script -a '
+                    '"{dir}/mongomaster2.sh sys95"'.format(vip=self.ip_master2, rsa_dir=self.dir, dir=self.dir)]
         self.ip = [self.ip_slave1, self.ip_slave2, self.ip_master1]
         self.new_host = '[new_host]'
         self.write_ip_to_server()
@@ -1140,10 +1141,12 @@ class MongodbCluster(object):
     def mongodb_cluster_push(self, ip):
         # vip_list = list(set(self.ip))
         # vip_list = [ip_master1, ip_slave1, ip_slave2]
-        cmd_before = "ansible {vip} --private-key=/home/mongo/old_id_rsa -m synchronize -a 'src=/opt/uop-crp/crp/res_set/write_mongo_ip.py dest=/tmp/'".format(vip=ip)
-        authority_cmd = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m shell -a "chmod 777 /tmp/write_mongo_ip.py"'.format(vip=ip)
-        cmd1 = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m shell -a "python /tmp/write_mongo_ip.py {m_ip} {s1_ip} {s2_ip}"'.\
-            format(vip=ip, m_ip=self.ip_master1, s1_ip=self.ip_slave1, s2_ip=self.ip_slave2)
+        cmd_before = "ansible {vip} --private-key={dir}/old_id_rsa -m synchronize -a 'src=/opt/uop-crp/crp/res_set/" \
+                     "write_mongo_ip.py dest=/tmp/'".format(vip=ip, dir=self.dir)
+        authority_cmd = 'ansible {vip} -u root --private-key={dir}/old_id_rsa -m shell -a ' \
+                        '"chmod 777 /tmp/write_mongo_ip.py"'.format(vip=ip, dir=self.dir)
+        cmd1 = 'ansible {vip} -u root --private-key={dir}/old_id_rsa -m shell -a "python /tmp/write_mongo_ip.py' \
+               ' {m_ip} {s1_ip} {s2_ip}"'.format(vip=ip, dir=self.dir, m_ip=self.ip_master1, s1_ip=self.ip_slave1, s2_ip=self.ip_slave2)
         Log.logger.debug('开始上传脚本%s' % ip)
         p = subprocess.Popen(cmd_before, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
@@ -1161,16 +1164,16 @@ class MongodbCluster(object):
             Log.logger.debug('mongodb cluster exec write script:%s' % line)
         Log.logger.debug('脚本执行完毕 接下来会部署%s' % ip)
         # for ip in self.ip:
-        with open('/home/mongo/hosts', 'w') as f:
+        with open('/tmp/hosts', 'w') as f:
             f.write('%s\n' % ip)
         print '-----', ip,type(ip)
         script = self.d.get(ip)
-        if str(ip) != '172.28.36.105':
-            cmd_s = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/{s} sys95"'.\
-                format(vip=ip, s=script)
-        else:
-            cmd_s = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/mongoclu_install/{s}"'.\
-                format(vip=ip, s=script)
+        # if str(ip) != '172.28.36.105':
+        cmd_s = 'ansible {vip} -u root --private-key={rsa_dir}/old_id_rsa -m script -a "{dir}/{s} sys95"'.\
+                format(vip=ip, rsa_dir=self.dir, dir=self.dir, s=script)
+        # else:
+        #     cmd_s = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/
+        # mongoclu_install/{s}"'.format(vip=ip, s=script)
         p = subprocess.Popen(cmd_s, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
             print line,
