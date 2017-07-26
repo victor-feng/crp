@@ -1141,6 +1141,9 @@ class MongodbCluster(object):
     def mongodb_cluster_push(self, ip):
         # vip_list = list(set(self.ip))
         # vip_list = [ip_master1, ip_slave1, ip_slave2]
+        script_name = ['mongoslave1.sh', 'mongoslave2.sh', 'mongomaster1.sh', 'mongomaster2.sh', 'old_id_rsa']
+        for i in script_name:
+            os.system('chmod 600 {dir}'.format(dir=self.dir + '/' + i))
         cmd_before = "ansible {vip} --private-key={dir}/old_id_rsa -m synchronize -a 'src=/opt/uop-crp/crp/res_set/" \
                      "write_mongo_ip.py dest=/tmp/'".format(vip=ip, dir=self.dir)
         authority_cmd = 'ansible {vip} -u root --private-key={dir}/old_id_rsa -m shell -a ' \
