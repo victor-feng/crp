@@ -643,8 +643,8 @@ class ResourceProviderTransitions(object):
             for ins in instance:
                 mongodb_ip_list.append(ins.get('ip', ''))
             mongodb_ip_list.append(mongodb_ip_list[-1])
-        mongodb_cluster = MongodbCluster(mongodb_ip_list)
-        mongodb_cluster.exec_final_script()
+            mongodb_cluster = MongodbCluster(mongodb_ip_list)
+            mongodb_cluster.exec_final_script()
 
     @transition_state_logger
     def do_redis_push(self):
