@@ -441,12 +441,14 @@ class ResourceProviderTransitions(object):
                 physical_server = getattr(inst, OS_EXT_PHYSICAL_SERVER_ATTR)
                 for mapper in result_mappers_list:
                     value = mapper.values()[0]
-                    for instance in value.get('instance'):
-                        if instance.get('os_inst_id') == uop_os_inst_id['os_inst_id']:
-                            instance['ip'] = _ip
-                            instance['physical_server'] = physical_server
-                            Log.logger.debug("Query Task ID " + self.task_id.__str__() +
-                                             " Instance Info: " + mapper.__str__())
+                    instances = value.get('instance')
+                    if instances is not None:
+                        for instance in value.get('instance'):
+                            if instance.get('os_inst_id') == uop_os_inst_id['os_inst_id']:
+                                instance['ip'] = _ip
+                                instance['physical_server'] = physical_server
+                                Log.logger.debug("Query Task ID " + self.task_id.__str__() +
+                                                 " Instance Info: " + mapper.__str__())
                 result_inst_id_list.append(uop_os_inst_id)
             if inst.status == 'ERROR':
                 # 置回滚标志位
@@ -1053,9 +1055,9 @@ def tick_announce(task_id, res_provider_list):
         if res_provider.task_id is None:
             res_provider.set_task_id(task_id)
         Log.logger.debug(res_provider.state)
-        if res_provider.state == 'query':
+        if res_provider.phase == 'query' and res_provider.state == 'query':
             res_provider.query()
-        elif res_provider.state == 'status':
+        elif res_provider.phase == 'status' and res_provider.state == 'status':
             res_provider.status()
         else:
             if res_provider.is_running is not True:
