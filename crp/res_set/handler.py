@@ -659,9 +659,24 @@ class ResourceProviderTransitions(object):
             instance = mongodb.get('instance', '')
             for ins in instance:
                 mongodb_ip_list.append(ins.get('ip', ''))
+            try:
+                mongodb['vip1'] = mongodb_ip_list[0]
+                mongodb['vip2'] = mongodb_ip_list[1]
+                mongodb['vip3'] = mongodb_ip_list[2]
+
+                instance[0]['dbtype'] = 'slave1'
+                instance[1]['dbtype'] = 'slave2'
+                instance[2]['dbtype'] = 'master'
+            except IndexError as e:
+                Log.logger.debug('mongodb ips error {e}'.format(e=e))
             mongodb_ip_list.append(mongodb_ip_list[-1])
             mongodb_cluster = MongodbCluster(mongodb_ip_list)
             mongodb_cluster.exec_final_script()
+        else:
+            Log.logger.debug('mongodb single instance start')
+            instance = mongodb.get('instance', '')
+            mongodb['ip'] = instance[0].get('ip')
+            Log.logger.debug('mongodb single instance end {ip}'.format(ip=mongodb['ip']))
 
     @transition_state_logger
     def do_redis_push(self):
