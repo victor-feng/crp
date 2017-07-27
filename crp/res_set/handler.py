@@ -571,9 +571,9 @@ class ResourceProviderTransitions(object):
         """
         real_ip = ''
         app = self.property_mapper.get('app', '')
-        domain = self.property_mapper.get('domain', '')
         app_instance = app.get('instance')
         for ins in app_instance:
+            domain = ins.get('domain', '')
             ip_str = str(ins.get('ip')) + ' '
             real_ip += ip_str
         ports = str(app.get('port'))
