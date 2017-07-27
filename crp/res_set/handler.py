@@ -568,7 +568,7 @@ class ResourceProviderTransitions(object):
                     '"/shell/update.py {domain} {ip} {port}"'.format(nip=kwargs.get('nip'), domain=kwargs.get('domain'),
                                                                      ip=kwargs.get('ip'), port=kwargs.get('port')))
             Log.logger.debug('------>end push')
-
+        """
         real_ip = ''
         app = self.property_mapper.get('app', '')
         domain = self.property_mapper.get('domain', '')
@@ -579,11 +579,14 @@ class ResourceProviderTransitions(object):
         ports = str(app.get('port'))
         Log.logger.debug('the receive domain and ip port is %s-%s-%s' % (domain, real_ip, ports))
         do_push_nginx_config({'nip': nginx_ip, 'domain': domain, 'ip': real_ip.strip(), 'port': ports.strip()})
-
+        """
+        #添加dns操作#
         ip = DNS_ENV.get(self.req_dict["env"])
-        domain_name = self.req_dict["domain"]
-        Log.logger.debug('dns add -->ip:%s,domain:%s' %(ip, domain_name))
-        self.do_dns_push(domain_name=domain_name, ip=ip)
+        Log.logger.debug("self.push_mappers_list: %s" % self.push_mappers_list)
+        for my_instance in self.push_mappers_list:
+            domain_name = my_instance.get('app',{}).get('domain',{})
+            Log.logger.debug('dns add -->ip:%s,domain:%s' %(ip, domain_name))
+            self.do_dns_push(domain_name=domain_name, ip=ip)
 
     def run_cmd(self, cmd):
         msg = ''
@@ -981,6 +984,7 @@ class ResourceSet(Resource):
             request_data = json.loads(request.data)
             property_mappers_list = do_transit_repo_items(items_sequence_list_config, property_json_mapper_config,
                                                           request_data)
+            Log.logger.debug("property_mappers_list: %s"  % property_mappers_list)
             parser = reqparse.RequestParser()
             parser.add_argument('unit_name', type=str)
             parser.add_argument('unit_id', type=str)
