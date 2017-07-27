@@ -144,7 +144,6 @@ class ResourceProviderTransitions(object):
         self.result_inst_id_list = []
         self.uop_os_inst_id_list = []
         self.property_mappers_list = copy.deepcopy(property_mappers_list)
-        self.dns_mappers_list = copy.deepcopy(property_mappers_list)
         self.property_mappers_list.reverse()
         self.push_mappers_list = []
         # 结果集
@@ -569,6 +568,7 @@ class ResourceProviderTransitions(object):
                     '"/shell/update.py {domain} {ip} {port}"'.format(nip=kwargs.get('nip'), domain=kwargs.get('domain'),
                                                                      ip=kwargs.get('ip'), port=kwargs.get('port')))
             Log.logger.debug('------>end push')
+
         real_ip = ''
         app = self.property_mapper.get('app', '')
         app_instance = app.get('instance')
@@ -582,8 +582,8 @@ class ResourceProviderTransitions(object):
 
         #添加dns操作#
         ip = DNS_ENV.get(self.req_dict["env"])
-        Log.logger.debug("self.dns_mappers_list: %s" % self.dns_mappers_list)
-        for my_instance in self.dns_mappers_list:
+        Log.logger.debug("self.push_mappers_list: %s" % self.push_mappers_list)
+        for my_instance in self.push_mappers_list:
             domain_name = my_instance.get('app',{}).get('domain',{})
             Log.logger.debug('dns add -->ip:%s,domain:%s' %(ip, domain_name))
             self.do_dns_push(domain_name=domain_name, ip=ip)
