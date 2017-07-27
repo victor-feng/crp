@@ -610,9 +610,9 @@ class ResourceProviderTransitions(object):
 
     @transition_state_logger
     def do_mysql_push(self):
-        if self.property_mapper.get('mysql', {}).get('quantity') == 5:
-            mysql = self.property_mapper.get('mysql', {})
-            instance = mysql.get('instance')
+        mysql = self.property_mapper.get('mysql', {})
+        instance = mysql.get('instance')
+        if mysql.get('quantity') == 5:
             mysql_ip_info = []
             mycat_ip_info = []
             master_slave = ['slave2', 'slave1', 'master']
@@ -645,6 +645,11 @@ class ResourceProviderTransitions(object):
             for line in p.stdout.readlines():
                 strout += line + os.linesep
             Log.logger.debug('mysql cluster push result:%s' % strout)
+        else:
+            # 当MYSQL为单例时  将实IP当虚IP使用
+            mysql['wvip'] = instance[0]['ip']
+            instance[0]['dbtype'] = 'master'
+
 
     @transition_state_logger
     def do_mongodb_push(self):
@@ -660,13 +665,15 @@ class ResourceProviderTransitions(object):
 
     @transition_state_logger
     def do_redis_push(self):
-        if self.property_mapper.get('redis', {}).get('quantity') == 2:
-            redis = self.property_mapper.get('redis', {})
-            instance = redis.get('instance')
-            ip1 = instance[0]['ip']
-            ip2 = instance[1]['ip']
+        redis = self.property_mapper.get('redis', {})
+        instance = redis.get('instance')
+        ip1 = instance[0]['ip']
+        instance[0]['dbtype'] = 'master'
+        # 当redis为单例时  将实IP当虚IP使用
+        redis['vip'] = ip1
+        if redis.get('quantity') == 2:
             _, vip = create_vip_port(instance[0]['instance_name'])
-            instance[0]['dbtype'] = 'master'
+            ip2 = instance[1]['ip']
             instance[1]['dbtype'] = 'slave'
             redis['vip'] = vip
             cmd = 'python {0}script/redis_cluster.py {1} {2} {3}'.format(SCRIPTPATH, ip1, ip2, vip)
