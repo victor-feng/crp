@@ -621,6 +621,8 @@ class ResourceProviderTransitions(object):
             ip_info = mysql_ip_info + mycat_ip_info
             ip_info.append(('vip1', vip1))
             ip_info.append(('vip2', vip2))
+            mysql['wvip'] = vip2
+            mysql['rvip'] = vip1
             with open(os.path.join(SCRIPTPATH, 'mysqlmha', 'mysql.txt'), 'wb') as f:
                 for host_name, ip in ip_info:
                     f.write(host_name + os.linesep)
@@ -656,6 +658,7 @@ class ResourceProviderTransitions(object):
             _, vip = create_vip_port(instance[0]['instance_name'])
             instance[0]['dbtype'] = 'master'
             instance[1]['dbtype'] = 'slave'
+            redis['vip'] = vip
             cmd = 'python {0}script/redis_cluster.py {1} {2} {3}'.format(SCRIPTPATH, ip1, ip2, vip)
             error_time = 0
             def _redis_push():
