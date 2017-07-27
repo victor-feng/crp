@@ -568,7 +568,7 @@ class ResourceProviderTransitions(object):
                     '"/shell/update.py {domain} {ip} {port}"'.format(nip=kwargs.get('nip'), domain=kwargs.get('domain'),
                                                                      ip=kwargs.get('ip'), port=kwargs.get('port')))
             Log.logger.debug('------>end push')
-        """
+
         real_ip = ''
         app = self.property_mapper.get('app', '')
         app_instance = app.get('instance')
@@ -579,7 +579,7 @@ class ResourceProviderTransitions(object):
         ports = str(app.get('port'))
         Log.logger.debug('the receive domain and ip port is %s-%s-%s' % (domain, real_ip, ports))
         do_push_nginx_config({'nip': nginx_ip, 'domain': domain, 'ip': real_ip.strip(), 'port': ports.strip()})
-        """
+
         #添加dns操作#
         ip = DNS_ENV.get(self.req_dict["env"])
         Log.logger.debug("self.push_mappers_list: %s" % self.push_mappers_list)
