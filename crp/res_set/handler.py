@@ -7,6 +7,7 @@ from transitions import Machine
 from flask_restful import reqparse, Api, Resource
 from flask import request
 from crp.taskmgr import *
+from crp.dns.dns_api import DnsApi
 from crp.res_set import resource_set_blueprint
 from crp.res_set.errors import resource_set_errors
 from crp.log import Log
@@ -98,7 +99,7 @@ property_json_mapper_config = {
     }
 }
 SCRIPTPATH = r'crp/res_set/playbook-0830/'
-
+DNS_ENV = {'develop': '172.28.5.21', 'test': '172.28.18.212'}
 # Transition state Log debug decorator
 def transition_state_logger(func):
     def wrapper(self, *args, **kwargs):
@@ -578,7 +579,11 @@ class ResourceProviderTransitions(object):
         ports = str(app.get('port'))
         Log.logger.debug('the receive domain and ip port is %s-%s-%s' % (domain, real_ip, ports))
         do_push_nginx_config({'nip': nginx_ip, 'domain': domain, 'ip': real_ip.strip(), 'port': ports.strip()})
-        self.do_dns_push()
+
+        ip = DNS_ENV.get(self.req_dict["env"])
+        domain_name = self.req_dict["domain"]
+        Log.logger.debug('dns add -->ip:%s,domain:%s' %(ip, domain_name))
+        self.do_dns_push(domain_name=domain_name, ip=ip)
 
     def run_cmd(self, cmd):
         msg = ''
@@ -595,8 +600,10 @@ class ResourceProviderTransitions(object):
         return msg, code
 
     @transition_state_logger
-    def do_dns_push(self):
-        pass
+    def do_dns_push(self, ip, domain_name):
+        dns_api = DnsApi()
+        msg = dns_api.dns_add(domain_name=domain_name, ip=ip)
+        Log.logger.debug('The dns add result: %s' % msg)
 
     @transition_state_logger
     def do_mysql_push(self):
