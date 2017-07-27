@@ -552,19 +552,19 @@ class ResourceProviderTransitions(object):
             with open('/etc/ansible/hosts', 'w') as f:
                 f.write('%s\n' % nip)
             Log.logger.debug('----->start push', kwargs)
-            self.run_cmd("ansible {nip} --private-key=/home/mongo/old_id_rsa -a 'yum install rsync -y'".format(nip=nip))
+            self.run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip))
             self.run_cmd(
-                "ansible {nip} --private-key=/home/mongo/old_id_rsa -m synchronize -a 'src=/opt/uop-crp/crp/res_set/update.py dest=/shell/'".format(
+                "ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m synchronize -a 'src=/opt/uop-crp/crp/res_set/update.py dest=/shell/'".format(
                     nip=nip))
             self.run_cmd(
-                "ansible {nip} --private-key=/home/mongo/old_id_rsa -m synchronize -a 'src=/opt/uop-crp/crp/res_set/template dest=/shell/'".format(
+                "ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m synchronize -a 'src=/opt/uop-crp/crp/res_set/template dest=/shell/'".format(
                     nip=nip))
             Log.logger.debug('------>上传配置文件完成')
-            self.run_cmd("ansible {nip} --private-key=/home/mongo/old_id_rsa -m shell -a 'chmod 777 /shell/update.py'".format(
+            self.run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a 'chmod 777 /shell/update.py'".format(
                 nip=nip))
-            self.run_cmd("ansible {nip} --private-key=/home/mongo/old_id_rsa -m shell -a 'chmod 777 /shell/template'".format(
+            self.run_cmd("ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a 'chmod 777 /shell/template'".format(
                 nip=nip))
-            self.run_cmd('ansible {nip} --private-key=/home/mongo/old_id_rsa -m shell -a '
+            self.run_cmd('ansible {nip} --private-key=/root/.ssh/id_rsa_98 -m shell -a '
                     '"/shell/update.py {domain} {ip} {port}"'.format(nip=kwargs.get('nip'), domain=kwargs.get('domain'),
                                                                      ip=kwargs.get('ip'), port=kwargs.get('port')))
             Log.logger.debug('------>end push')
