@@ -649,6 +649,7 @@ class ResourceProviderTransitions(object):
         else:
             # 当MYSQL为单例时  将实IP当虚IP使用
             mysql['wvip'] = instance[0]['ip']
+            mysql['rvip'] = instance[0]['ip']
             instance[0]['dbtype'] = 'master'
 
 
