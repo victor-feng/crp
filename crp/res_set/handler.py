@@ -118,7 +118,7 @@ class ResourceProviderTransitions(object):
 
     # Define transitions.
     transitions = [
-        {'trigger': 'success', 'source': ['query', 'app_push', 'mysql_push', 'mongodb_push', 'redis_push', 'dns_push'], 'dest': 'success', 'after': 'do_success'},
+        {'trigger': 'success', 'source': ['status', 'app_push', 'mysql_push', 'mongodb_push', 'redis_push', 'dns_push'], 'dest': 'success', 'after': 'do_success'},
         {'trigger': 'fail', 'source': 'rollback', 'dest': 'fail', 'after': 'do_fail'},
         {'trigger': 'rollback', 'source': '*', 'dest': 'rollback', 'after': 'do_rollback'},
         {'trigger': 'stop', 'source': ['success', 'fail'], 'dest': 'stop', 'after': 'do_stop'},
