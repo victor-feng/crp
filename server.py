@@ -12,6 +12,8 @@ define('port', type=int, default=8001)
 
 # deploy or debug
 define('mode', default='debug')
+# dev, test, prod
+define('deploy', default='dev')
 
 from crp import create_app
 from config import APP_ENV
@@ -22,6 +24,13 @@ def main():
     if options.mode.lower() == "debug":
         from tornado import autoreload
         autoreload.start()
+
+    APP_ENV = 'development'
+    if options.deploy.lower() == 'test':
+        APP_ENV = 'testing'
+    elif options.deploy.lower() == 'prod':
+        # TODO:
+        pass
 
     app = create_app(APP_ENV)
     # app.run(host='0.0.0.0', debug=True)
