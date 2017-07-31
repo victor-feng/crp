@@ -15,6 +15,7 @@ from crp.openstack import OpenStack
 from crp.utils.docker_tools import image_transit
 from config import TestingConfig, DevelopmentConfig
 
+# TODO: refactor it later.
 nginx_ip = DevelopmentConfig.nginx_ip
 MONGODB_SCRIPT_PATH = DevelopmentConfig.MONGODB_SCRIPT_PATH
 

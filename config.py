@@ -92,16 +92,22 @@ class TestingConfig(BaseConfig):
             }
     ]
 
+    #NOTE: noused in mpc
     UOP_URL = "http://uop-test.syswin.com/"
     #UOP_URL = "http://172.28.20.124:5000/"
     MPC_URL = "http://mpc-test.syswin.com/"
     OPENRC_PATH = "/root/openrc"
+    
+    #NOTE: noused in mpc
     DK_SOCK_URL = 'unix://var/run/docker.sock'
     DK_CLI_VERSION = '1.22'
-    # TODO: what does it mean? 
+
+    #NOTE: noused in mpc
     DK_TAR_PATH = '/home/dk/'
     GLANCE_RESERVATION_QUANTITY = 3
     UPLOAD_FOLDER = '/tmp/'
+    #NOTE: noused in uop
+    #NOTE: config it !!!! TODO:
     #TODO:? hard code?
     AP_NETWORK_CONF = {
         'AZ_UOP': '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'
@@ -115,5 +121,4 @@ configs = {
     'testing': TestingConfig,
     'default': DevelopmentConfig
 }
-
 
