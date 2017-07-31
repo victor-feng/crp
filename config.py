@@ -54,6 +54,8 @@ class DevelopmentConfig(BaseConfig):
     AP_NETWORK_CONF = {
         'AZ_UOP': '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'
     }
+    nginx_ip = '172.28.20.98'
+    MONGODB_SCRIPT_PATH = 'uop-crp/crp/res_set/mongo_script/'
 
 class TestingConfig(BaseConfig):
     TESTING = True
@@ -104,6 +106,8 @@ class TestingConfig(BaseConfig):
     AP_NETWORK_CONF = {
         'AZ_UOP': '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'
     }
+    nginx_ip = '172.28.20.98'
+    MONGODB_SCRIPT_PATH = 'uop-crp/crp/res_set/mongo_script/'
 
 
 configs = {
@@ -112,7 +116,4 @@ configs = {
     'default': DevelopmentConfig
 }
 
-#TODO: ???
-nginx_ip = '172.28.20.98'
-MONGODB_SCRIPT_PATH = 'uop-crp/crp/res_set/mongo_script/'
 

@@ -13,7 +13,10 @@ from crp.res_set.errors import resource_set_errors
 from crp.log import Log
 from crp.openstack import OpenStack
 from crp.utils.docker_tools import image_transit
-from config import nginx_ip, MONGODB_SCRIPT_PATH
+from config import TestingConfig, DevelopmentConfig
+
+nginx_ip = DevelopmentConfig.nginx_ip
+MONGODB_SCRIPT_PATH = DevelopmentConfig.MONGODB_SCRIPT_PATH
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 
