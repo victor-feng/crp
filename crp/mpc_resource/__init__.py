@@ -79,15 +79,18 @@ def _instance_status_sync(task_id, result):
 
 
 def instance_status_sync():
-    try:
-        TaskManager.task_start(
-            SYNC_SLEEP_TIME, SYNC_TIMEOUT,
-            {}, _instance_status_sync)
-    except Exception as e:
-        #Log.logger.error(
-        logging.error(
-            'instance_status_sync err %s'
-            % e.message)
+    if MPC_URL == '' or MPC_URL is None:
+        logging.info('mpc instance_status_sync not support.')
+    else:
+        try:
+            TaskManager.task_start(
+                SYNC_SLEEP_TIME, SYNC_TIMEOUT,
+                {}, _instance_status_sync)
+        except Exception as e:
+            #Log.logger.error(
+            logging.error(
+                'instance_status_sync err %s'
+                % e.message)
 
 
 from . import handler, forms, errors
