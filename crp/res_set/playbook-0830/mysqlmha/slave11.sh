@@ -81,6 +81,7 @@ sed -i "/skip_slave_start/a\read_only                 = on " /data/3316/conf/my.
 sed -i "56,57d" /data/3316/conf/my.cnf
 sed -i "/skip_slave_start/a\relay_log_info_repository = TABLE" /data/3316/conf/my.cnf
 sed -i "/skip_slave_start/a\master_info_repository    = TABLE" /data/3316/conf/my.cnf
+rm -rf /data/3316/data/auto.cnf
 ###################启动mysql
 /etc/init.d/m3316 start
 #修改lvs_real的vip

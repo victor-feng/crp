@@ -79,6 +79,7 @@ num2=`cat /tmp/mysql.txt |sed -n '2p'|awk -F "." '{print $4}'`
 serverid="$num2"3316
 sed -i 's/server_id        = 2043316/server_id        = '$serverid'/g' /data/3316/conf/my.cnf
 #sed -i "/#enforce_gtid_consistency = ON/a relay_log_purge=0" /data/3316/conf/my3316.cnf
+rm -rf /data/3316/data/auto.cnf
 ###################启动mysql
 /etc/init.d/m3316 start
 #定义登陆命令

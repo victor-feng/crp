@@ -78,6 +78,7 @@ sed -i "56,57d" /data/3316/conf/my.cnf
 sed -i "/skip_slave_start/a\relay_log_info_repository = TABLE" /data/3316/conf/my.cnf
 sed -i "/skip_slave_start/a\master_info_repository    = TABLE" /data/3316/conf/my.cnf
 
+rm -rf /data/3316/data/auto.cnf
 ###################启动mysql
 #sed -i '$s/^/#/' /data/3316/script/start_3316.sh
 #/bin/sh /data/3316/script/start_3316.sh > /dev/null 2>&1
