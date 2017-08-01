@@ -3,7 +3,7 @@ import logging
 
 from flask_restful import reqparse, Api, Resource
 
-# tODO: too bad!
+# TODO: import * is too bad!
 from crp.taskmgr import *
 from crp.models import User
 from crp.user import user_blueprint

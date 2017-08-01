@@ -6,6 +6,7 @@ import commands
 import os
 import time
 import uuid
+from urlparse import urljoin
 
 from flask_restful import reqparse, Api, Resource
 from flask import request
@@ -29,7 +30,7 @@ app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 #TODO: move to global conf
 #url = "http://172.28.11.111:8001/cmdb/api/"
 #url = "http://uop-test.syswin.com/api/dep_result/"
-url = "http://uop-test.syswin.com/api/dep_result/"
+#url = "http://uop-test.syswin.com/api/dep_result/"
 #UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 
 def _dep_callback(deploy_id, success):
@@ -43,7 +44,8 @@ def _dep_callback(deploy_id, success):
     headers = {'Content-Type': 'application/json'}
     logging.debug("data string:" + str(data))
     #Log.logger.debug("data string:" + str(data))
-    res = requests.put(url + deploy_id + "/", data=data_str, headers=headers)
+    CALLBACK_URL = urljoin(current_app.config['UOP_URL'], 'api/dep_result/')
+    res = requests.put(CALLBACK_URL + deploy_id + "/", data=data_str, headers=headers)
     logging.debug("call dep_result callback,res: " + str(res))
     #Log.logger.debug("call dep_result callback,res: " + str(res))
     return res
