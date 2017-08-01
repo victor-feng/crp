@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import logging
 import json
 import commands
@@ -8,6 +9,7 @@ import uuid
 
 from flask_restful import reqparse, Api, Resource
 from flask import request
+from flask import current_app
 import requests
 import werkzeug
 
@@ -21,14 +23,14 @@ from crp.log import Log
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
-from config import APP_ENV, configs
+#from config import APP_ENV, configs
 
 app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 #TODO: move to global conf
 #url = "http://172.28.11.111:8001/cmdb/api/"
 #url = "http://uop-test.syswin.com/api/dep_result/"
 url = "http://uop-test.syswin.com/api/dep_result/"
-UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
+#UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 
 def _dep_callback(deploy_id, success):
     data = dict()
@@ -247,6 +249,8 @@ class AppDeploy(Resource):
 class Upload(Resource):
     def post(self):
         try:
+
+            UPLOAD_FOLDER = current_app.config['UPLOAD_FOLDER']
             file_dic = {}
             for _type, file in request.files.items():
                 type = _type.split('_')[0]

@@ -5,6 +5,7 @@ import json
 import requests
 
 from flask_restful import reqparse, Api, Resource
+from flask import current_app
 
 # TODO: import* is bad!
 from crp.taskmgr import *
@@ -16,7 +17,7 @@ from crp.openstack import OpenStack
 
 from config import APP_ENV, configs
 
-AP_NETWORK_CONF = configs[APP_ENV].AP_NETWORK_CONF
+#AP_NETWORK_CONF = configs[APP_ENV].AP_NETWORK_CONF
 
 mpc_resource_api = Api(mpc_resource_blueprint, errors=mpc_resource_errors)
 
@@ -55,6 +56,8 @@ def _create_instance_by_az(task_id, result, resource):
     image = resource.get('image', '')
     flavor = resource.get('flavor', '')
     # volume = resource.get('volume', 0)
+
+    AP_NETWORK_CONF = current_app.config['AP_NETWORK_CONF']
     network_id = AP_NETWORK_CONF.get(az, None)
 
     result['vm'] = {

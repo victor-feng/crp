@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+
+from flask import current_app
+
 from novaclient.v1_1 import client as nova_client
 from cinderclient.v1 import client as cinder_client
 from neutronclient.neutron import client as neutron_client
@@ -6,13 +9,15 @@ from neutronclient.neutron import client as neutron_client
 from keystoneclient.auth.identity import v2 as v2_auth
 from keystoneclient import session
 from glanceclient.v1 import client as glance_client
-from config import APP_ENV, configs
+#from config import APP_ENV, configs
 
 
-OPENRC_PATH = configs[APP_ENV].OPENRC_PATH
+#OPENRC_PATH = configs[APP_ENV].OPENRC_PATH
 
 
 def openstack_client_setting():
+
+    OPENRC_PATH = current_app.config['OPENRC_PATH']
     info = AuthInfo(OPENRC_PATH)
     info.get_env(info.rc)
     OpenStack.auth_info = info
