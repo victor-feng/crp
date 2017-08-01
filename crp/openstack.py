@@ -15,9 +15,9 @@ from glanceclient.v1 import client as glance_client
 #OPENRC_PATH = configs[APP_ENV].OPENRC_PATH
 
 
-def openstack_client_setting():
+def openstack_client_setting(OPENRC_PATH=''):
 
-    OPENRC_PATH = current_app.config['OPENRC_PATH']
+    #OPENRC_PATH = current_app.config['OPENRC_PATH']
     info = AuthInfo(OPENRC_PATH)
     info.get_env(info.rc)
     OpenStack.auth_info = info

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import logging
 
 from flask import Flask, redirect
@@ -26,8 +27,8 @@ def create_app(config_name):
     db.init_app(app)
 
     logger_setting(app)
-    openstack_client_setting()
-    instance_status_sync()
+    #openstack_client_setting()
+    #instance_status_sync()
 
     # swagger docs
     @app.route('/docs')
@@ -44,4 +45,5 @@ def create_app(config_name):
     app.register_blueprint(flavor_blueprint, url_prefix='/api/flavor')
     app.register_blueprint(vm_operation_blueprint, url_prefix='/api/vm_operation')
     app.register_blueprint(dns_set_blueprint, url_prefix='/api/dns')
+
     return app

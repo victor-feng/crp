@@ -15,10 +15,10 @@ from crp.log import Log
 # from keystoneclient import session
 #from config import APP_ENV, configs
 
-DK_SOCK_URL = configs[APP_ENV].DK_SOCK_URL
-DK_CLI_VERSION = configs[APP_ENV].DK_CLI_VERSION
-DK_TAR_PATH = configs[APP_ENV].DK_TAR_PATH
-GLANCE_RESERVATION_QUANTITY = configs[APP_ENV].GLANCE_RESERVATION_QUANTITY
+#DK_SOCK_URL = configs[APP_ENV].DK_SOCK_URL
+#DK_CLI_VERSION = configs[APP_ENV].DK_CLI_VERSION
+#DK_TAR_PATH = configs[APP_ENV].DK_TAR_PATH
+#GLANCE_RESERVATION_QUANTITY = configs[APP_ENV].GLANCE_RESERVATION_QUANTITY
 
 # TODO: move it to global conf
 DK_CREATED_FROM = 'created_from'
