@@ -160,8 +160,6 @@ class AppDeploy(Resource):
         return res, code
 
     def _deploy_mysql(self,args):
-        workdir = os.getcwd()
-        remotedir = "/root/"
         host_password = args.mysql.get("host_password")
         host_user = args.mysql.get("host_user")
         mysql_password = args.mysql.get("mysql_password")
@@ -170,27 +168,21 @@ class AppDeploy(Resource):
         port = args.mysql.get("port")
         database = args.mysql.get("database")
 
-        sql = args.mysql.get("sql_script").replace('\xc2\xa0', ' ')
-        filenames = args.mysql.get("filenames")
-        if not (sql or filenames):
+        # sql = args.mysql.get("sql_script").replace('\xc2\xa0', ' ')
+        path_filename = args.mysql.get("path_filename")
+        if not path_filename:
             return True
+        # if sql:
+        #     sql_srcipt_file_name = self._make_sql_script_file(workdir,sql)
 
-        if sql:
-            sql_srcipt_file_name = self._make_sql_script_file(workdir,sql)
+        local_path = path_filename[0]
+        remote_path = '/root/' + path_filename[1]
+        sh_path = self._make_command_file(mysql_password, mysql_user, port, database, remote_path)
 
-            self._make_command_file(workdir, mysql_password, mysql_user, port,
-                                    database, remotedir + sql_srcipt_file_name)
-        if filenames:
-            [self._make_command_file(workdir, mysql_password, mysql_user, port,
-                                    database, remotedir + filename) for filename in filenames]
-        self._make_hosts_file(workdir, ip, host_user, host_password)
-
-        ansible_cmd = 'ansible -i ' + workdir + '/myhosts ' + ip + \
-                      ' --private-key=/root/id_rsa_new_root -u root -m'
-        ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + workdir + '/' + \
-                          sql_srcipt_file_name + ' dest=' + remotedir + \
-                          sql_srcipt_file_name + '"'
-        ansible_sh_cmd =  ansible_cmd + ' script -a ' + workdir + '/sql.sh'
+        host_path = self._make_hosts_file(ip)
+        ansible_cmd = 'ansible -i ' + host_path + ip +  ' --private-key=crp/res_set/playbook-0830/old_id_rsa -u root -m'
+        ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + local_path + ' dest=' + remote_path + '"'
+        ansible_sh_cmd =  ansible_cmd + ' script -a ' + sh_path
         if self._exec_ansible_cmd(ansible_sql_cmd):
             return self._exec_ansible_cmd(ansible_sh_cmd)
         else:
@@ -206,17 +198,19 @@ class AppDeploy(Resource):
         #Log.logger.debug("ansible exec failed,command: " + str(cmd) + " output: " + output)
         return False
 
-    def _make_command_file(self,workdir,password,user,port,database,sqlfile):
-        with open(workdir + '/sql.sh', "wb+") as file_object:
+    def _make_command_file(self, password, user, port, database, path):
+        sh_path = os.path.join(UPLOAD_FOLDER, 'mysql', 'sql.sh')
+        with open(sh_path, "wb+") as file_object:
             file_object.write("#!/bin/bash\n")
             file_object.write("TMP_PWD=$MYSQL_PWD\n")
             file_object.write("export MYSQL_PWD=" + password + "\n")
             file_object.write("mysql -u" + user + " -P" + port + " -e \"\n")
             #file_object.write("use " + database + ";\n")
-            file_object.write("source " + sqlfile + "\n")
+            file_object.write("source " + path + "\n")
             file_object.write("quit \"\n")
             file_object.write("export MYSQL_PWD=$TMP_PWD\n")
             file_object.write("exit;")
+        return sh_path
 
     def _make_sql_script_file(self,workdir,sql):
         file_name = "mysql_crp_" + str(uuid.uuid1()) + ".sql"
@@ -224,9 +218,11 @@ class AppDeploy(Resource):
             file_object.write(sql + "\n")
         return file_name
 
-    def _make_hosts_file(self,workdir,ip,user,password):
-        with open(workdir + '/myhosts', "wb+") as file_object:
+    def _make_hosts_file(self, ip):
+        myhosts_path = os.path.join(UPLOAD_FOLDER, 'mysql', 'myhosts')
+        with open(myhosts_path, "wb+") as file_object:
             file_object.write(ip)
+        return myhosts_path
 
     def _deploy_docker(self, ip, deploy_id, image_uuid):
         server = OpenStack.find_vm_from_ipv4(ip = ip)
@@ -248,18 +244,16 @@ class AppDeploy(Resource):
 
 class Upload(Resource):
     def post(self):
+        uid = str(uuid.uuid1())
         try:
 
             UPLOAD_FOLDER = current_app.config['UPLOAD_FOLDER']
             file_dic = {}
             for _type, file in request.files.items():
-                type = _type.split('_')[0]
-                file_path = os.path.join(UPLOAD_FOLDER, type, file.filename)
+                filename = file.filename + '_' + uid
+                file_path = os.path.join(UPLOAD_FOLDER, _type, filename)
                 file.save(file_path)
-                if type in file_dic:
-                    file_dic[type].append(file_path)
-                else:
-                    file_dic[type] = [file_path]
+                file_dic[_type] = (file_path, filename)
 
         except Exception as e:
             return {
