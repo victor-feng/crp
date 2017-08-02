@@ -174,14 +174,14 @@ class AppDeploy(Resource):
         vip3 = args.get('vip3')
         port = args.get('port')
         database = args.get('database')
-        path_filename = args.mysql.get("path_filename")
+        path_filename = args.get("path_filename")
         if not path_filename:
             return True
         ips = [vip1, vip2, vip3]
 
         local_path = path_filename[0]
-        remote_path = '/root/' + path_filename[1]
-        sh_path = self.mongodb_command_file(mongodb_password, mongodb_username, port, database, remote_path)
+        remote_path = '/tmp/' + path_filename[1]
+        sh_path = self.mongodb_command_file(mongodb_password, mongodb_username, port, database, local_path)
 
         for ip in ips:
             host_path = self.mongodb_hosts_file(ip)
@@ -193,13 +193,14 @@ class AppDeploy(Resource):
             else:
                 return False
 
-    def mongodb_command_file(self, workdir, username, password, port, db, script_file):
-        with open(workdir + '/mongodb.sh', 'w') as f:
+    def mongodb_command_file(self, username, password, port, db, script_file):
+        sh_path = os.path.join(UPLOAD_FOLDER, 'mongodb.sh')
+        with open(sh_path, 'wb+') as f:
             f.write("#!/bin/bash\n")
             f.write("mongo WordPress --eval /opt/mongodb/bin/mongo 127.0.0.1:28010;use admin;db.auth('admin','123456')")
-            f.write("mongo WordPress --eval " % script_file)
+            f.write("mongo " % script_file)
             f.write("exit;")
-        return True
+        return sh_path
 
     def mongodb_hosts_file(self, ip):
         myhosts_path = os.path.join(UPLOAD_FOLDER, 'mongodb')
