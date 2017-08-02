@@ -257,6 +257,7 @@ def _instance_attach_volume(task_id, result):
 # request MPC res_callback
 def request_res_callback(task_id, result):
     vm = result.get('vm', {})
+    vol = result.get('volume', {})
     vms = [
         {
             'mpc_inst_id': vm.get('mpc_inst_id', ''),
@@ -265,6 +266,7 @@ def request_res_callback(task_id, result):
             'host_name': vm.get('physical_server', ''),
             'status': vm.get('status', ''),
             'err_msg': vm.get('err_msg', ''),
+            'vol_id': vol.get('id', ''),
         }
     ]
     err_msg = None
