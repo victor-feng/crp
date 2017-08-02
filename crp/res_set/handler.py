@@ -407,14 +407,14 @@ class ResourceProviderTransitions(object):
             quantity = cluster_info.get('quantity')
             if quantity is not None:
                 temp_result_property_mapper[cluster_type_key] = cluster_info
-                if quantity > 1:
+                if quantity > 0:
                     temp_push_property_mapper[cluster_type_key] = cluster_info
         else:
             cluster_info = self.property_mapper.get('app_cluster')
             quantity = cluster_info.get('quantity')
             if quantity is not None:
                 temp_result_property_mapper['app'] = cluster_info
-                if quantity > 1:
+                if quantity > 0:
                     temp_push_property_mapper['app'] = cluster_info
         if len(temp_push_property_mapper) > 0:
             self.push_mappers_list.insert(0, temp_push_property_mapper)
