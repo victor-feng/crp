@@ -206,10 +206,13 @@ class AppDeploy(Resource):
         return sh_path
 
     def mongodb_hosts_file(self, ip):
-        myhosts_path = os.path.join(UPLOAD_FOLDER, 'mongodb')
-        with open(myhosts_path, "wb+") as file_object:
+        # myhosts_path = os.path.join(UPLOAD_FOLDER, 'mongodb')
+        # with open(myhosts_path, "wb+") as file_object:
+        #     file_object.write(ip)
+        path = '/etc/ansible/hosts'
+        with open(path, "wb+") as file_object:
             file_object.write(ip)
-        return myhosts_path
+        return path
 
     def exec_final_script(self, cmd):
         for i in cmd:
