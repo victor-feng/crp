@@ -132,12 +132,15 @@ class AppDeploy(Resource):
             parser.add_argument('mysql', type=dict)
             parser.add_argument('docker', type=dict)
             parser.add_argument('deploy_id', type=str)
+            parser.add_argument('mongodb', type=str)
             #parser.add_argument('file', type=werkzeug.datastructures.FileStorage, location='files')
             args = parser.parse_args()
             logging.debug("AppDeploy receive post request. args is " + str(args))
             #Log.logger.debug("AppDeploy receive post request. args is " + str(args))
             deploy_id = args.deploy_id
             docker = args.docker
+            mongodb = args.mongodb
+            mongodb_res = self._deploy_mongodb(mongodb)
             sql_ret = self._deploy_mysql(args)
             if sql_ret:
                 self._image_transit(deploy_id, docker.get("ip"), docker.get("image_url"))
@@ -160,6 +163,53 @@ class AppDeploy(Resource):
             }
         }
         return res, code
+
+    def _deploy_mongodb(self, args):
+        host_username = args.get('host_username')
+        host_password = args.get('host_passwork')
+        mongodb_username = args.get('host_username')
+        mongodb_password = args.get('host_password')
+        vip1 = args.get('vip1')
+        vip2 = args.get('vip2')
+        vip3 = args.get('vip3')
+        port = args.get('ip')
+        database = args.get('database')
+        path_filename = args.mysql.get("path_filename")
+        if not path_filename:
+            return True
+        ips = [vip1, vip2, vip3]
+
+        local_path = path_filename[0]
+        remote_path = '/root/' + path_filename[1]
+        sh_path = self.mongodb_command_file(mongodb_password, mongodb_username, port, database, remote_path)
+
+        for ip in ips:
+            host_path = self.mongodb_hosts_file(ip)
+            ansible_cmd = 'ansible -i ' + host_path + ip + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -u root -m'
+            ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + local_path + ' dest=' + remote_path + '"'
+            ansible_sh_cmd = ansible_cmd + ' script -a ' + sh_path
+            if self._exec_ansible_cmd(ansible_sql_cmd):
+                return self._exec_ansible_cmd(ansible_sh_cmd)
+            else:
+                return False
+
+    def mongodb_command_file(self, workdir, username, password, port, db, script_file):
+        with open(workdir + '/mongodb.sh', 'w') as f:
+            f.write("#!/bin/bash\n")
+            f.write("mongo WordPress --eval /opt/mongodb/bin/mongo 127.0.0.1:28010;use admin;db.auth('admin','123456')")
+            f.write("mongo WordPress --eval " % script_file)
+            f.write("exit;")
+        return True
+
+    def mongodb_hosts_file(self, ip):
+        myhosts_path = os.path.join(UPLOAD_FOLDER, 'mongodb', 'myhosts')
+        with open(myhosts_path, "wb+") as file_object:
+            file_object.write(ip)
+        return myhosts_path
+
+    def clear_hosts_file(self, work_dir):
+        with open(work_dir + '/hosts', 'w') as f:
+            f.write(' ')
 
     def _deploy_mysql(self,args):
         host_password = args.mysql.get("host_password")
@@ -214,8 +264,8 @@ class AppDeploy(Resource):
             file_object.write("exit;")
         return sh_path
 
-    def _make_sql_script_file(self,workdir,sql):
-        file_name = "mysql_crp_" + str(uuid.uuid1()) + ".sql"
+    def _make_sql_script_file(self,workdir,sql,db_type):
+        file_name = db_type + "_crp_" + str(uuid.uuid1()) + ".sql"
         with open(workdir + '/' + file_name, "wb+") as file_object:
             file_object.write(sql + "\n")
         return file_name

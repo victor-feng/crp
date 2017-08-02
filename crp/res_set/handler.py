@@ -1120,9 +1120,6 @@ def tick_announce(task_id, res_provider_list):
                 res_provider.start()
 
 
-resource_set_api.add_resource(ResourceSet, '/sets')
-
-
 def create_vip_port(instance_name):
     neutron_client = OpenStack.neutron_client
     network_id = DEV_NETWORK_ID
@@ -1245,3 +1242,5 @@ class MongodbCluster(object):
                 print line,
                 Log.logger.debug('mongodb cluster push result:%s' % line)
 
+
+resource_set_api.add_resource(ResourceSet, '/sets')
