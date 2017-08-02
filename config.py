@@ -50,7 +50,7 @@ class DevelopmentConfig(BaseConfig):
     DK_CLI_VERSION = '1.22'
     DK_TAR_PATH = '/home/dk/'
     GLANCE_RESERVATION_QUANTITY = 3
-    UPLOAD_FOLDER = '/tmp/'
+    UPLOAD_FOLDER = '/data/'
     AP_NETWORK_CONF = {
         'AZ_UOP': '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'
     }
@@ -105,7 +105,7 @@ class TestingConfig(BaseConfig):
     #NOTE: noused in mpc
     DK_TAR_PATH = '/home/dk/'
     GLANCE_RESERVATION_QUANTITY = 3
-    UPLOAD_FOLDER = '/tmp/'
+    UPLOAD_FOLDER = '/data/'
     #NOTE: noused in uop
     #NOTE: config it !!!! TODO:
     #TODO:? hard code?
