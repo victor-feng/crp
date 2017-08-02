@@ -7,6 +7,7 @@ import os
 import time
 import uuid
 from urlparse import urljoin
+import subprocess
 
 from flask_restful import reqparse, Api, Resource
 from flask import request
@@ -197,9 +198,11 @@ class AppDeploy(Resource):
         sh_path = os.path.join(UPLOAD_FOLDER, 'mongodb.sh')
         with open(sh_path, 'wb+') as f:
             f.write("#!/bin/bash\n")
-            f.write("mongo WordPress --eval /opt/mongodb/bin/mongo 127.0.0.1:28010;use admin;db.auth('admin','123456')")
-            f.write("mongo " % script_file)
-            f.write("exit;")
+            f.write("'/opt/mongodb/bin/mongo 127.0.0.1:28010;use admin;db.auth('admin','123456')'")
+            f.write("\"db.auth('admin','123456')\"\n")
+            f.write("'rs.slaveOK()'\n")
+            f.write('%s' % script_file)
+            f.write("'exit'")
         return sh_path
 
     def mongodb_hosts_file(self, ip):
@@ -207,6 +210,12 @@ class AppDeploy(Resource):
         with open(myhosts_path, "wb+") as file_object:
             file_object.write(ip)
         return myhosts_path
+
+    def exec_final_script(self, cmd):
+        for i in cmd:
+            p = subprocess.Popen(i, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            for line in p.stdout.readlines():
+                print line,
 
     def clear_hosts_file(self, work_dir):
         with open(work_dir + '/hosts', 'w') as f:
