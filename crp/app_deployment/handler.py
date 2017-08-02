@@ -209,7 +209,7 @@ class AppDeploy(Resource):
         # myhosts_path = os.path.join(UPLOAD_FOLDER, 'mongodb')
         # with open(myhosts_path, "wb+") as file_object:
         #     file_object.write(ip)
-        path = '/etc/ansible/hosts'
+        path = os.path.join('/etc', 'ansible', 'hosts')
         with open(path, "wb+") as file_object:
             file_object.write(ip)
         return path
