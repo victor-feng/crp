@@ -13,12 +13,12 @@ from crp.log import Log
 # from glanceclient import Client as GlanceClient
 # from keystoneclient.auth.identity import v2 as v2_auth
 # from keystoneclient import session
-#from config import APP_ENV, configs
+from config import APP_ENV, configs
 
-#DK_SOCK_URL = configs[APP_ENV].DK_SOCK_URL
-#DK_CLI_VERSION = configs[APP_ENV].DK_CLI_VERSION
-#DK_TAR_PATH = configs[APP_ENV].DK_TAR_PATH
-#GLANCE_RESERVATION_QUANTITY = configs[APP_ENV].GLANCE_RESERVATION_QUANTITY
+DK_SOCK_URL = configs[APP_ENV].DK_SOCK_URL
+DK_CLI_VERSION = configs[APP_ENV].DK_CLI_VERSION
+DK_TAR_PATH = configs[APP_ENV].DK_TAR_PATH
+GLANCE_RESERVATION_QUANTITY = configs[APP_ENV].GLANCE_RESERVATION_QUANTITY
 
 # TODO: move it to global conf
 DK_CREATED_FROM = 'created_from'
@@ -27,8 +27,8 @@ DK_UOP_CRP = 'uop-crp'
 
 def _dk_py_cli():
 
-    DK_SOCK_URL = current_app.config['DK_SOCK_URL']
-    DK_CLI_VERSION = current_app.config['DK_CLI_VERSION']
+    #DK_SOCK_URL = current_app.config['DK_SOCK_URL']
+    #DK_CLI_VERSION = current_app.config['DK_CLI_VERSION']
 
     client = docker.DockerClient(
         base_url=DK_SOCK_URL,
@@ -67,7 +67,7 @@ def _dk_img_save(dk_cli, _image_url):
     #     return None, tar_file
 
 
-    DK_TAR_PATH = current_app.config['DK_TAR_PATH']
+    #DK_TAR_PATH = current_app.config['DK_TAR_PATH']
     tar_name = str(uuid.uuid1()) + '.tar'
     tar_file = DK_TAR_PATH + tar_name
     cmd = 'docker save --output '+tar_file+' '+_image_url
@@ -243,7 +243,7 @@ def image_transit(_image_url):
             if err_msg:
                 return err_msg, None
             else:
-                GLANCE_RESERVATION_QUANTITY = current_app.config['GLANCE_RESERVATION_QUANTITY']
+                #GLANCE_RESERVATION_QUANTITY = current_app.config['GLANCE_RESERVATION_QUANTITY']
                 _glance_img_reservation(glance_cli, image.id, GLANCE_RESERVATION_QUANTITY)
                 return None, image.id
 

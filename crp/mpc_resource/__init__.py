@@ -20,13 +20,14 @@ mpc_resource_blueprint = Blueprint('mpc_resource_blueprint', __name__)
 # TODO: move to global conf
 SYNC_SLEEP_TIME = 10
 SYNC_TIMEOUT = 60 * 60 * 24 * 365 * 100
-#MPC_URL = configs[APP_ENV].MPC_URL
-#MPC_RES_CALLBACK_URL = MPC_URL+'api/mpc_resource/mpc_resources_callback'
+MPC_URL = configs[APP_ENV].MPC_URL
+MPC_RES_CALLBACK_URL = MPC_URL+'api/mpc_resource/mpc_resources_callback'
 
 
 def mpc_resource_callback(vms):
 
-    MPC_RES_CALLBACK_URL = current_app.config['MPC_URL'] + 'api/mpc_resource/mpc_resources_callback'
+    MPC_RES_CALLBACK_URL = MPC_URL + 'api/mpc_resource/mpc_resources_callback'
+    #MPC_RES_CALLBACK_URL = current_app.config['MPC_URL'] + 'api/mpc_resource/mpc_resources_callback'
     
     data_dict = {
         'vms': vms
@@ -82,9 +83,9 @@ def _instance_status_sync(task_id, result):
                 'mpc_res_callback err_msg ' + str(err_msg))
 
 
-def instance_status_sync(MPC_URL=''):
+def instance_status_sync():
     if MPC_URL == '' or MPC_URL is None:
-        logging.info('mpc instance_status_sync not support.')
+        logging.info('[CRP] mpc instance_status_sync not support.')
     else:
         try:
             TaskManager.task_start(

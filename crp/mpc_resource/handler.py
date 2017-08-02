@@ -17,7 +17,7 @@ from crp.openstack import OpenStack
 
 from config import APP_ENV, configs
 
-#AP_NETWORK_CONF = configs[APP_ENV].AP_NETWORK_CONF
+AP_NETWORK_CONF = configs[APP_ENV].AP_NETWORK_CONF
 
 mpc_resource_api = Api(mpc_resource_blueprint, errors=mpc_resource_errors)
 
@@ -57,7 +57,7 @@ def _create_instance_by_az(task_id, result, resource):
     flavor = resource.get('flavor', '')
     # volume = resource.get('volume', 0)
 
-    AP_NETWORK_CONF = current_app.config['AP_NETWORK_CONF']
+    #AP_NETWORK_CONF = current_app.config['AP_NETWORK_CONF']
     network_id = AP_NETWORK_CONF.get(az, None)
 
     result['vm'] = {
@@ -320,7 +320,7 @@ def _create_resource_set_and_query(task_id, result, resource):
             _query_volume_status(task_id, result, for_create=False)
     except Exception as e:
         err_msg = e.message
-        logging.error(err_msg)
+        logging.exception("[CRP] _create_resource_set_and_query failed, Exception:%s", e.args)
         #Log.logger.error(err_msg)
         if not result.get('vm', {}):
             result['vm'] = {}

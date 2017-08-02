@@ -42,10 +42,12 @@ def main():
     from crp.mpc_resource import instance_status_sync
 
     OPENRC_PATH = app.config['OPENRC_PATH']
-    openstack_client_setting(OPENRC_PATH)
+    openstack_client_setting()
+    #openstack_client_setting(OPENRC_PATH)
     logging.warn("[CRP] Openstack client setting is sync...")
     MPC_URL = app.config['MPC_URL']
-    instance_status_sync(MPC_URL)
+    instance_status_sync()
+    #instance_status_sync(MPC_URL)
     logging.warn("[CRP] Instance status is sync...")
 
     IOLoop.instance().start()
