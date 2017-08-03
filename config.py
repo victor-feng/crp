@@ -55,6 +55,7 @@ class DevelopmentConfig(BaseConfig):
         'AZ_UOP': '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'
     }
     nginx_ip = '172.28.20.98'
+    nginx_ip_slave = '172.28.11.111'
     MONGODB_SCRIPT_PATH = 'uop-crp/crp/res_set/mongo_script/'
 
 class TestingConfig(BaseConfig):
@@ -113,6 +114,7 @@ class TestingConfig(BaseConfig):
         'AZ_UOP': '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'
     }
     nginx_ip = '172.28.20.98'
+    nginx_ip_slave = '172.28.11.111'
     MONGODB_SCRIPT_PATH = 'uop-crp/crp/res_set/mongo_script/'
 
 

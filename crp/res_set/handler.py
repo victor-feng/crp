@@ -17,6 +17,7 @@ from config import TestingConfig, DevelopmentConfig
 
 # TODO: refactor it later.
 nginx_ip = DevelopmentConfig.nginx_ip
+nginx_ip_slave = DevelopmentConfig.nginx_ip_slave
 MONGODB_SCRIPT_PATH = DevelopmentConfig.MONGODB_SCRIPT_PATH
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
@@ -583,7 +584,8 @@ class ResourceProviderTransitions(object):
         ports = str(app.get('port'))
         Log.logger.debug('the receive domain and ip port is %s-%s-%s' % (domain, real_ip, ports))
         do_push_nginx_config({'nip': nginx_ip, 'domain': domain, 'ip': real_ip.strip(), 'port': ports.strip()})
-
+        do_push_nginx_config({'nip': nginx_ip_slave, 'domain': domain, 'ip': real_ip.strip(), 'port': ports.strip()})
+        
         #添加dns操作#
         ip = DNS_ENV.get(self.req_dict["env"])
         Log.logger.debug("self.property_mapper: %s" % self.property_mapper)
