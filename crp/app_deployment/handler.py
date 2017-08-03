@@ -309,16 +309,13 @@ class AppDeploy(Resource):
 
 class Upload(Resource):
     def post(self):
-        uid = str(uuid.uuid1())
         try:
-
             UPLOAD_FOLDER = current_app.config['UPLOAD_FOLDER']
             file_dic = {}
             for _type, file in request.files.items():
-                filename = file.filename + '_' + uid
-                file_path = os.path.join(UPLOAD_FOLDER, _type, filename)
+                file_path = os.path.join(UPLOAD_FOLDER, _type, file.filename)
                 file.save(file_path)
-                file_dic[_type] = (file_path, filename)
+                file_dic[_type] = (file_path, file.filename)
 
         except Exception as e:
             return {
