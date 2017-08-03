@@ -14,6 +14,8 @@ define('port', type=int, default=8001)
 define('mode', default='debug')
 # dev, test, prod
 define('deploy', default='dev')
+# True, False
+define('mpc_sync', type=bool, default=False)
 
 from crp import create_app
 #from config import APP_ENV
@@ -44,11 +46,11 @@ def main():
     OPENRC_PATH = app.config['OPENRC_PATH']
     openstack_client_setting()
     #openstack_client_setting(OPENRC_PATH)
-    logging.warn("[CRP] Openstack client setting is sync...")
+    logging.warn("[CRP] Openstack client is inited")
     MPC_URL = app.config['MPC_URL']
-    instance_status_sync()
+
+    instance_status_sync(mpc_sync=options.mpc_sync)
     #instance_status_sync(MPC_URL)
-    logging.warn("[CRP] Instance status is sync...")
 
     IOLoop.instance().start()
 

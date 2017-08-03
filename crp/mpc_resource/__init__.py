@@ -83,10 +83,12 @@ def _instance_status_sync(task_id, result):
                 'mpc_res_callback err_msg ' + str(err_msg))
 
 
-def instance_status_sync():
-    if MPC_URL == '' or MPC_URL is None:
-        logging.info('[CRP] mpc instance_status_sync not support.')
+def instance_status_sync(mpc_sync=False):
+    if not mpc_sync:
+    #if MPC_URL == '' or MPC_URL is None:
+        logging.info('[CRP] MPC instance_status_sync not support, mpc_sync: %s', mpc_sync)
     else:
+        logging.info('[CRP] MPC instance_status_sync started')
         try:
             TaskManager.task_start(
                 SYNC_SLEEP_TIME, SYNC_TIMEOUT,
