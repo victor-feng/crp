@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
+
 import logging
 import json
 import commands
 import os
 import time
 import uuid
+from urlparse import urljoin
+import subprocess
 
 from flask_restful import reqparse, Api, Resource
 from flask import request
+from flask import current_app
 import requests
 import werkzeug
 
@@ -21,14 +25,14 @@ from crp.log import Log
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
-from config import APP_ENV, configs
+#from config import APP_ENV, configs
 
 app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 #TODO: move to global conf
 #url = "http://172.28.11.111:8001/cmdb/api/"
 #url = "http://uop-test.syswin.com/api/dep_result/"
-url = "http://uop-test.syswin.com/api/dep_result/"
-UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
+#url = "http://uop-test.syswin.com/api/dep_result/"
+#UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 
 def _dep_callback(deploy_id, success):
     data = dict()
@@ -41,7 +45,8 @@ def _dep_callback(deploy_id, success):
     headers = {'Content-Type': 'application/json'}
     logging.debug("data string:" + str(data))
     #Log.logger.debug("data string:" + str(data))
-    res = requests.put(url + deploy_id + "/", data=data_str, headers=headers)
+    CALLBACK_URL = urljoin(current_app.config['UOP_URL'], 'api/dep_result/')
+    res = requests.put(CALLBACK_URL + deploy_id + "/", data=data_str, headers=headers)
     logging.debug("call dep_result callback,res: " + str(res))
     #Log.logger.debug("call dep_result callback,res: " + str(res))
     return res
@@ -128,12 +133,15 @@ class AppDeploy(Resource):
             parser.add_argument('mysql', type=dict)
             parser.add_argument('docker', type=dict)
             parser.add_argument('deploy_id', type=str)
+            parser.add_argument('mongodb', type=str)
             #parser.add_argument('file', type=werkzeug.datastructures.FileStorage, location='files')
             args = parser.parse_args()
             logging.debug("AppDeploy receive post request. args is " + str(args))
             #Log.logger.debug("AppDeploy receive post request. args is " + str(args))
             deploy_id = args.deploy_id
             docker = args.docker
+            mongodb = args.mongodb
+            mongodb_res = self._deploy_mongodb(mongodb)
             sql_ret = self._deploy_mysql(args)
             if sql_ret:
                 self._image_transit(deploy_id, docker.get("ip"), docker.get("image_url"))
@@ -157,9 +165,66 @@ class AppDeploy(Resource):
         }
         return res, code
 
+    def _deploy_mongodb(self, args):
+        host_username = args.get('host_username')
+        host_password = args.get('host_passwork')
+        mongodb_username = args.get('mongodb_username')
+        mongodb_password = args.get('mongodb_password')
+        vip1 = args.get('vip1')
+        vip2 = args.get('vip2')
+        vip3 = args.get('vip3')
+        port = args.get('port')
+        database = args.get('database')
+        path_filename = args.get("path_filename")
+        if not path_filename:
+            return True
+        ips = [vip1, vip2, vip3]
+
+        local_path = path_filename[0]
+        remote_path = '/tmp/' + path_filename[1]
+        sh_path = self.mongodb_command_file(mongodb_password, mongodb_username, port, database, local_path)
+
+        for ip in ips:
+            host_path = self.mongodb_hosts_file(ip)
+            ansible_cmd = 'ansible -i ' + host_path + ip + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -u root -m'
+            ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + local_path + ' dest=' + remote_path + '"'
+            ansible_sh_cmd = ansible_cmd + ' script -a ' + sh_path
+            if self._exec_ansible_cmd(ansible_sql_cmd):
+                return self._exec_ansible_cmd(ansible_sh_cmd)
+            else:
+                return False
+
+    def mongodb_command_file(self, username, password, port, db, script_file):
+        sh_path = os.path.join(UPLOAD_FOLDER, 'mongodb.sh')
+        with open(sh_path, 'wb+') as f:
+            f.write("#!/bin/bash\n")
+            f.write("'/opt/mongodb/bin/mongo 127.0.0.1:28010;use admin;db.auth('admin','123456')'")
+            f.write("\"db.auth('admin','123456')\"\n")
+            f.write("'rs.slaveOK()'\n")
+            f.write('%s' % script_file)
+            f.write("'exit'")
+        return sh_path
+
+    def mongodb_hosts_file(self, ip):
+        # myhosts_path = os.path.join(UPLOAD_FOLDER, 'mongodb')
+        # with open(myhosts_path, "wb+") as file_object:
+        #     file_object.write(ip)
+        path = os.path.join('/etc', 'ansible', 'hosts')
+        with open(path, "wb+") as file_object:
+            file_object.write(ip)
+        return path
+
+    def exec_final_script(self, cmd):
+        for i in cmd:
+            p = subprocess.Popen(i, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            for line in p.stdout.readlines():
+                print line,
+
+    def clear_hosts_file(self, work_dir):
+        with open(work_dir + '/hosts', 'w') as f:
+            f.write(' ')
+
     def _deploy_mysql(self,args):
-        workdir = os.getcwd()
-        remotedir = "/root/"
         host_password = args.mysql.get("host_password")
         host_user = args.mysql.get("host_user")
         mysql_password = args.mysql.get("mysql_password")
@@ -168,27 +233,21 @@ class AppDeploy(Resource):
         port = args.mysql.get("port")
         database = args.mysql.get("database")
 
-        sql = args.mysql.get("sql_script").replace('\xc2\xa0', ' ')
-        filenames = args.mysql.get("filenames")
-        if not (sql or filenames):
+        # sql = args.mysql.get("sql_script").replace('\xc2\xa0', ' ')
+        path_filename = args.mysql.get("path_filename")
+        if not path_filename:
             return True
+        # if sql:
+        #     sql_srcipt_file_name = self._make_sql_script_file(workdir,sql)
 
-        if sql:
-            sql_srcipt_file_name = self._make_sql_script_file(workdir,sql)
+        local_path = path_filename[0]
+        remote_path = '/root/' + path_filename[1]
+        sh_path = self._make_command_file(mysql_password, mysql_user, port, database, remote_path)
 
-            self._make_command_file(workdir, mysql_password, mysql_user, port,
-                                    database, remotedir + sql_srcipt_file_name)
-        if filenames:
-            [self._make_command_file(workdir, mysql_password, mysql_user, port,
-                                    database, remotedir + filename) for filename in filenames]
-        self._make_hosts_file(workdir, ip, host_user, host_password)
-
-        ansible_cmd = 'ansible -i ' + workdir + '/myhosts ' + ip + \
-                      ' --private-key=/root/id_rsa_new_root -u root -m'
-        ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + workdir + '/' + \
-                          sql_srcipt_file_name + ' dest=' + remotedir + \
-                          sql_srcipt_file_name + '"'
-        ansible_sh_cmd =  ansible_cmd + ' script -a ' + workdir + '/sql.sh'
+        host_path = self._make_hosts_file(ip)
+        ansible_cmd = 'ansible -i ' + host_path + ip +  ' --private-key=crp/res_set/playbook-0830/old_id_rsa -u root -m'
+        ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + local_path + ' dest=' + remote_path + '"'
+        ansible_sh_cmd =  ansible_cmd + ' script -a ' + sh_path
         if self._exec_ansible_cmd(ansible_sql_cmd):
             return self._exec_ansible_cmd(ansible_sh_cmd)
         else:
@@ -204,27 +263,31 @@ class AppDeploy(Resource):
         #Log.logger.debug("ansible exec failed,command: " + str(cmd) + " output: " + output)
         return False
 
-    def _make_command_file(self,workdir,password,user,port,database,sqlfile):
-        with open(workdir + '/sql.sh', "wb+") as file_object:
+    def _make_command_file(self, password, user, port, database, path):
+        sh_path = os.path.join(UPLOAD_FOLDER, 'mysql', 'sql.sh')
+        with open(sh_path, "wb+") as file_object:
             file_object.write("#!/bin/bash\n")
             file_object.write("TMP_PWD=$MYSQL_PWD\n")
             file_object.write("export MYSQL_PWD=" + password + "\n")
             file_object.write("mysql -u" + user + " -P" + port + " -e \"\n")
             #file_object.write("use " + database + ";\n")
-            file_object.write("source " + sqlfile + "\n")
+            file_object.write("source " + path + "\n")
             file_object.write("quit \"\n")
             file_object.write("export MYSQL_PWD=$TMP_PWD\n")
             file_object.write("exit;")
+        return sh_path
 
-    def _make_sql_script_file(self,workdir,sql):
-        file_name = "mysql_crp_" + str(uuid.uuid1()) + ".sql"
+    def _make_sql_script_file(self,workdir,sql,db_type):
+        file_name = db_type + "_crp_" + str(uuid.uuid1()) + ".sql"
         with open(workdir + '/' + file_name, "wb+") as file_object:
             file_object.write(sql + "\n")
         return file_name
 
-    def _make_hosts_file(self,workdir,ip,user,password):
-        with open(workdir + '/myhosts', "wb+") as file_object:
+    def _make_hosts_file(self, ip):
+        myhosts_path = os.path.join(UPLOAD_FOLDER, 'mysql', 'myhosts')
+        with open(myhosts_path, "wb+") as file_object:
             file_object.write(ip)
+        return myhosts_path
 
     def _deploy_docker(self, ip, deploy_id, image_uuid):
         server = OpenStack.find_vm_from_ipv4(ip = ip)
@@ -247,15 +310,12 @@ class AppDeploy(Resource):
 class Upload(Resource):
     def post(self):
         try:
+            UPLOAD_FOLDER = current_app.config['UPLOAD_FOLDER']
             file_dic = {}
             for _type, file in request.files.items():
-                type = _type.split('_')[0]
-                file_path = os.path.join(UPLOAD_FOLDER, type, file.filename)
+                file_path = os.path.join(UPLOAD_FOLDER, _type, file.filename)
                 file.save(file_path)
-                if type in file_dic:
-                    file_dic[type].append(file_path)
-                else:
-                    file_dic[type] = [file_path]
+                file_dic[_type] = (file_path, file.filename)
 
         except Exception as e:
             return {

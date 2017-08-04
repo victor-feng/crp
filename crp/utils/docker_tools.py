@@ -5,6 +5,7 @@ import os
 import uuid
 import hashlib
 
+from flask import current_app
 import commands
 import docker
 
@@ -25,6 +26,10 @@ DK_UOP_CRP = 'uop-crp'
 
 
 def _dk_py_cli():
+
+    #DK_SOCK_URL = current_app.config['DK_SOCK_URL']
+    #DK_CLI_VERSION = current_app.config['DK_CLI_VERSION']
+
     client = docker.DockerClient(
         base_url=DK_SOCK_URL,
         version=DK_CLI_VERSION)
@@ -61,6 +66,8 @@ def _dk_img_save(dk_cli, _image_url):
     # else:
     #     return None, tar_file
 
+
+    #DK_TAR_PATH = current_app.config['DK_TAR_PATH']
     tar_name = str(uuid.uuid1()) + '.tar'
     tar_file = DK_TAR_PATH + tar_name
     cmd = 'docker save --output '+tar_file+' '+_image_url
@@ -236,6 +243,7 @@ def image_transit(_image_url):
             if err_msg:
                 return err_msg, None
             else:
+                #GLANCE_RESERVATION_QUANTITY = current_app.config['GLANCE_RESERVATION_QUANTITY']
                 _glance_img_reservation(glance_cli, image.id, GLANCE_RESERVATION_QUANTITY)
                 return None, image.id
 

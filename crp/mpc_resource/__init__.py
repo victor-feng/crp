@@ -5,6 +5,7 @@ import requests
 import json
 
 from flask import Blueprint
+from flask import current_app
 
 # TODO: import * is bad!!
 from crp.taskmgr import *
@@ -24,6 +25,10 @@ MPC_RES_CALLBACK_URL = MPC_URL+'api/mpc_resource/mpc_resources_callback'
 
 
 def mpc_resource_callback(vms):
+
+    MPC_RES_CALLBACK_URL = MPC_URL + 'api/mpc_resource/mpc_resources_callback'
+    #MPC_RES_CALLBACK_URL = current_app.config['MPC_URL'] + 'api/mpc_resource/mpc_resources_callback'
+    
     data_dict = {
         'vms': vms
     }
@@ -78,16 +83,21 @@ def _instance_status_sync(task_id, result):
                 'mpc_res_callback err_msg ' + str(err_msg))
 
 
-def instance_status_sync():
-    try:
-        TaskManager.task_start(
-            SYNC_SLEEP_TIME, SYNC_TIMEOUT,
-            {}, _instance_status_sync)
-    except Exception as e:
-        #Log.logger.error(
-        logging.error(
-            'instance_status_sync err %s'
-            % e.message)
+def instance_status_sync(mpc_sync=False):
+    if not mpc_sync:
+    #if MPC_URL == '' or MPC_URL is None:
+        logging.info('[CRP] MPC instance_status_sync not support, mpc_sync: %s', mpc_sync)
+    else:
+        logging.info('[CRP] MPC instance_status_sync started')
+        try:
+            TaskManager.task_start(
+                SYNC_SLEEP_TIME, SYNC_TIMEOUT,
+                {}, _instance_status_sync)
+        except Exception as e:
+            #Log.logger.error(
+            logging.error(
+                'instance_status_sync err %s'
+                % e.message)
 
 
 from . import handler, forms, errors

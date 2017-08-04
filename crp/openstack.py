@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+
+from flask import current_app
+
 from novaclient.v1_1 import client as nova_client
 from cinderclient.v1 import client as cinder_client
 from neutronclient.neutron import client as neutron_client
@@ -13,6 +16,8 @@ OPENRC_PATH = configs[APP_ENV].OPENRC_PATH
 
 
 def openstack_client_setting():
+
+    #OPENRC_PATH = current_app.config['OPENRC_PATH']
     info = AuthInfo(OPENRC_PATH)
     info.get_env(info.rc)
     OpenStack.auth_info = info

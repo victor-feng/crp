@@ -5,6 +5,7 @@ import json
 import requests
 
 from flask_restful import reqparse, Api, Resource
+from flask import current_app
 
 # TODO: import* is bad!
 from crp.taskmgr import *
@@ -55,6 +56,8 @@ def _create_instance_by_az(task_id, result, resource):
     image = resource.get('image', '')
     flavor = resource.get('flavor', '')
     # volume = resource.get('volume', 0)
+
+    #AP_NETWORK_CONF = current_app.config['AP_NETWORK_CONF']
     network_id = AP_NETWORK_CONF.get(az, None)
 
     result['vm'] = {
@@ -254,6 +257,7 @@ def _instance_attach_volume(task_id, result):
 # request MPC res_callback
 def request_res_callback(task_id, result):
     vm = result.get('vm', {})
+    vol = result.get('volume', {})
     vms = [
         {
             'mpc_inst_id': vm.get('mpc_inst_id', ''),
@@ -262,6 +266,7 @@ def request_res_callback(task_id, result):
             'host_name': vm.get('physical_server', ''),
             'status': vm.get('status', ''),
             'err_msg': vm.get('err_msg', ''),
+            'vol_id': vol.get('id', ''),
         }
     ]
     err_msg = None
@@ -317,7 +322,7 @@ def _create_resource_set_and_query(task_id, result, resource):
             _query_volume_status(task_id, result, for_create=False)
     except Exception as e:
         err_msg = e.message
-        logging.error(err_msg)
+        logging.exception("[CRP] _create_resource_set_and_query failed, Exception:%s", e.args)
         #Log.logger.error(err_msg)
         if not result.get('vm', {}):
             result['vm'] = {}
