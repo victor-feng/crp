@@ -142,7 +142,8 @@ class AppDeploy(Resource):
             deploy_id = args.deploy_id
             docker = args.docker
             mongodb = args.mongodb
-            mongodb_res = self._deploy_mongodb(mongodb)
+            if mongodb:
+                mongodb_res = self._deploy_mongodb(mongodb)
             sql_ret = self._deploy_mysql(args)
 
             if sql_ret:
