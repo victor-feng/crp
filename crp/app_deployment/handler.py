@@ -131,10 +131,11 @@ class AppDeploy(Resource):
         try:
             parser = reqparse.RequestParser()
             parser.add_argument('mysql', type=dict)
-            parser.add_argument('docker', type=dict)
+            parser.add_argument('docker', type=list)
             parser.add_argument('deploy_id', type=str)
             parser.add_argument('mongodb', type=str)
-            #parser.add_argument('file', type=werkzeug.datastructures.FileStorage, location='files')
+            #parser.add_argument('file', type=werkz
+            # eug.datastructures.FileStorage, location='files')
             args = parser.parse_args()
             logging.debug("AppDeploy receive post request. args is " + str(args))
             #Log.logger.debug("AppDeploy receive post request. args is " + str(args))
@@ -143,8 +144,17 @@ class AppDeploy(Resource):
             mongodb = args.mongodb
             mongodb_res = self._deploy_mongodb(mongodb)
             sql_ret = self._deploy_mysql(args)
+
+            app_images = []
+            for image in docker:
+                app_images.append(image.get("url"))
+
             if sql_ret:
-                self._image_transit(deploy_id, docker.get("ip"), docker.get("image_url"))
+                for i in docker:
+                    if len(i.get('ip')) > 0:
+                        ip = i.get('ip')[0]
+                    # self._image_transit(deploy_id, docker.get("ip"), docker.get("image_url"))
+                        self._image_transit(deploy_id, ip, i.get('url'))
             else:
                 res = _dep_callback(deploy_id, False)
                 if res.status_code == 500:
