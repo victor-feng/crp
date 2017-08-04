@@ -145,10 +145,6 @@ class AppDeploy(Resource):
             mongodb_res = self._deploy_mongodb(mongodb)
             sql_ret = self._deploy_mysql(args)
 
-            app_images = []
-            for image in docker:
-                app_images.append(image.get("url"))
-
             if sql_ret:
                 for i in docker:
                     if len(i.get('ip')) > 0:
