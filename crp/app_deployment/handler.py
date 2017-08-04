@@ -172,16 +172,16 @@ class AppDeploy(Resource):
         return res, code
 
     def _deploy_mongodb(self, args):
-        host_username = args.get('host_username')
-        host_password = args.get('host_passwork')
-        mongodb_username = args.get('mongodb_username')
-        mongodb_password = args.get('mongodb_password')
-        vip1 = args.get('vip1')
-        vip2 = args.get('vip2')
-        vip3 = args.get('vip3')
-        port = args.get('port')
-        database = args.get('database')
-        path_filename = args.get("path_filename")
+        host_username = args.get('host_username', '')
+        host_password = args.get('host_passwork', '')
+        mongodb_username = args.get('mongodb_username', '')
+        mongodb_password = args.get('mongodb_password', '')
+        vip1 = args.get('vip1', '')
+        vip2 = args.get('vip2', '')
+        vip3 = args.get('vip3', '')
+        port = args.get('port', '')
+        database = args.get('database', '')
+        path_filename = args.get("path_filename", '')
         if not path_filename:
             return True
         ips = [vip1, vip2, vip3]
