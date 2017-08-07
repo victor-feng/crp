@@ -140,6 +140,7 @@ class AppDeploy(Resource):
             logging.debug("AppDeploy receive post request. args is " + str(args))
             #Log.logger.debug("AppDeploy receive post request. args is " + str(args))
             deploy_id = args.deploy_id
+            logging.debug("deploy_id is " + str(deploy_id))
             docker = args.docker
             mongodb = args.mongodb
             mongodb_res = True
