@@ -377,6 +377,7 @@ class VolumenAPI(Resource):
         try:
             logging.info('DELETE volume, vol_id is %s.', vol_id)
             cinder_client = OpenStack.cinder_client
+            cinder_client.volumes.detach(vol_id)
             cinder_client.volumes.delete(vol_id)
         except Exception as e:
             err_msg = e.message
