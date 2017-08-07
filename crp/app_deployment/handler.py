@@ -148,7 +148,7 @@ class AppDeploy(Resource):
                 mongodb_res = self._deploy_mongodb(mongodb)
             if args.mysql:
                 sql_ret = self._deploy_mysql(args)
-
+            logging.debug("Docker is " + docker)
             for i in docker:
                 if len(i.get('ip')) > 0:
                     ip = i.get('ip')[0]
