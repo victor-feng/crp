@@ -25,7 +25,7 @@ from crp.log import Log
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
-#from config import APP_ENV, configs
+from config import APP_ENV, configs
 
 app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 #TODO: move to global conf
@@ -45,7 +45,9 @@ def _dep_callback(deploy_id, success):
     headers = {'Content-Type': 'application/json'}
     logging.debug("data string:" + str(data))
     #Log.logger.debug("data string:" + str(data))
-    CALLBACK_URL = urljoin(current_app.config['UOP_URL'], 'api/dep_result/')
+    CALLBACK_URL = configs[APP_ENV].UOP_URL + 'api/dep_result/'
+    logging.debug("[CRP] _dep_callback callback_url: %s ", CALLBACK_URL)
+    # CALLBACK_URL = urljoin(current_app.config['UOP_URL'], 'api/dep_result/')
     res = requests.put(CALLBACK_URL + deploy_id + "/", data=data_str, headers=headers)
     logging.debug("call dep_result callback,res: " + str(res))
     #Log.logger.debug("call dep_result callback,res: " + str(res))
