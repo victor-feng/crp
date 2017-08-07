@@ -159,7 +159,7 @@ class AppDeploy(Resource):
                         ip = i.get('ip')[0]
                         # self._image_transit(deploy_id, docker.get("ip"), docker.get("image_url"))
                         self._image_transit(deploy_id, ip, i.get('url'))
-                        ip.pop(0)
+                        i.get('ip').pop(0)
                     else:
                         break
 
@@ -169,8 +169,8 @@ class AppDeploy(Resource):
                     code = 500
                     msg = "uop server error"
         except Exception as e:
-            logging.error("AppDeploy exception: " + e.message)
-            #Log.logger.error("AppDeploy exception: " + e.message)
+            logging.exception("AppDeploy exception: ")
+            # Log.logger.error("AppDeploy exception: " + e.message)
             code = 500
             msg = "internal server error: " + e.message
 
