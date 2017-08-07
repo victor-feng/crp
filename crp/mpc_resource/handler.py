@@ -370,4 +370,36 @@ class ResourceAPI(Resource):
             return res, 200
 
 
+# volume REST API Controller
+class VolumenAPI(Resource):
+
+    def delete(self, vol_id):
+        try:
+            logging.info('DELETE volume, vol_id is %s.', vol_id)
+            cinder_client = OpenStack.cinder_client
+            cinder_client.volumes.delete(vol_id)
+        except Exception as e:
+            err_msg = e.message
+            logging.exception(
+                "[CRP] VolumenAPI delete failed, Exception:%s",
+                e.args)
+            res = {
+                "code": 400,
+                "result": {
+                    "res": "failed",
+                    "msg": err_msg
+                }
+            }
+            return res, 400
+        else:
+            res = {
+                "code": 200,
+                "result": {
+                    "msg": "删除成功"
+                }
+            }
+            return res, 200
+
+
 mpc_resource_api.add_resource(ResourceAPI, '/resource')
+mpc_resource_api.add_resource(VolumenAPI, '/volume/<vol_id>')
