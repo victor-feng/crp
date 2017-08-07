@@ -131,7 +131,7 @@ class AppDeploy(Resource):
         try:
             parser = reqparse.RequestParser()
             parser.add_argument('mysql', type=dict)
-            parser.add_argument('docker', type=list)
+            parser.add_argument('docker', type=list, location='json')
             parser.add_argument('deploy_id', type=str)
             parser.add_argument('mongodb', type=str)
             #parser.add_argument('file', type=werkz
@@ -151,10 +151,15 @@ class AppDeploy(Resource):
                 sql_ret = self._deploy_mysql(args)
             logging.debug("Docker is " + str(docker))
             for i in docker:
-                if len(i.get('ip')) > 0:
-                    ip = i.get('ip')[0]
-                # self._image_transit(deploy_id, docker.get("ip"), docker.get("image_url"))
-                    self._image_transit(deploy_id, ip, i.get('url'))
+                length_ip = len(i.get('ip'))
+                while True:
+                    if length_ip > 0:
+                        ip = i.get('ip')[0]
+                        # self._image_transit(deploy_id, docker.get("ip"), docker.get("image_url"))
+                        self._image_transit(deploy_id, ip, i.get('url'))
+                        ip.pop(0)
+                    else:
+                        break
 
             if not(sql_ret and mongodb_res):
                 res = _dep_callback(deploy_id, False)
