@@ -157,7 +157,7 @@ class AppDeploy(Resource):
                     ips = i.get('ip')
                     length_ip = len(ips)
                     if length_ip > 0:
-                        logging.debug('ip: ' + str(ips))
+                        logging.debug('ip and url: ' + str(ips) + str(i.get('url')))
                         ip = ips[0]
                         # self._image_transit(deploy_id, docker.get("ip"), docker.get("image_url"))
                         self._image_transit(deploy_id, ip, i.get('url'))
