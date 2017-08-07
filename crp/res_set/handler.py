@@ -523,11 +523,14 @@ class ResourceProviderTransitions(object):
         do_push_nginx_config({'nip': nginx_ip_slave, 'domain': domain, 'ip': real_ip.strip(), 'port': ports.strip()})
         
         #添加dns操作#
-        ip = DNS_ENV.get(self.req_dict["env"])
-        Log.logger.debug("self.property_mapper: %s" % self.property_mapper)
-        domain_name = self.property_mapper.get('app',{}).get('domain',{})
-        Log.logger.debug('dns add -->ip:%s,domain:%s' %(ip, domain_name))
-        self.do_dns_push(domain_name=domain_name, ip=ip)
+        try:
+            ip = DNS_ENV.get(self.req_dict["env"])
+            Log.logger.debug("self.property_mapper: %s" % self.property_mapper)
+            domain_name = self.property_mapper.get('app',{}).get('domain',{})
+            Log.logger.debug('dns add -->ip:%s,domain:%s' %(ip, domain_name))
+            self.do_dns_push(domain_name=domain_name, ip=ip)
+        except Exception as e:
+            Log.logger.debug("dns error: %s" % e.message)
 
     def run_cmd(self, cmd):
         msg = ''
