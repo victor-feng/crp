@@ -42,6 +42,8 @@ SCRIPTPATH = DevelopmentConfig.SCRIPTPATH
 DNS_ENV = DevelopmentConfig.DNS_ENV
 
 # Transition state Log debug decorator
+
+
 def transition_state_logger(func):
     def wrapper(self, *args, **kwargs):
         Log.logger.debug("Transition state is turned in " + self.state)
@@ -53,9 +55,21 @@ def transition_state_logger(func):
 
 class ResourceProviderTransitions(object):
     # Define some states.
-    states = ['init', 'success', 'fail', 'rollback', 'stop',
-              'app_cluster', 'resource_cluster', 'query', 'status',
-              'app_push', 'mysql_push', 'mongodb_push', 'redis_push', 'dns_push']
+    states = [
+        'init',
+        'success',
+        'fail',
+        'rollback',
+        'stop',
+        'app_cluster',
+        'resource_cluster',
+        'query',
+        'status',
+        'app_push',
+        'mysql_push',
+        'mongodb_push',
+        'redis_push',
+        'dns_push']
 
     # Define transitions.
     transitions = [
@@ -78,7 +92,13 @@ class ResourceProviderTransitions(object):
         # Initialize the variable
         self.is_running = False
         self.is_need_rollback = False
-        self.phase_list = ['create', 'query', 'status', 'push', 'callback', 'stop']
+        self.phase_list = [
+            'create',
+            'query',
+            'status',
+            'push',
+            'callback',
+            'stop']
         self.phase = 'create'
         self.task_id = None
         self.resource_id = resource_id
@@ -96,10 +116,11 @@ class ResourceProviderTransitions(object):
         self.req_dict = req_dict
 
         # Initialize the state machine
-        self.machine = Machine(model=self,
-                               states=ResourceProviderTransitions.states,
-                               transitions=ResourceProviderTransitions.transitions,
-                               initial='init')
+        self.machine = Machine(
+            model=self,
+            states=ResourceProviderTransitions.states,
+            transitions=ResourceProviderTransitions.transitions,
+            initial='init')
 
     def set_task_id(self, task_id):
         self.task_id = task_id
@@ -116,8 +137,8 @@ class ResourceProviderTransitions(object):
         if len(property_mappers_list) != 0:
             if len(self.pre_property_mapper) == 0:
                 self.pre_property_mapper = self.property_mapper
-            if len(self.pre_property_mapper) != 0 and len(self.property_mapper) != 0 \
-                    and (self.pre_property_mapper.keys()[0] != self.property_mapper.keys()[0]):
+            if len(self.pre_property_mapper) != 0 and len(self.property_mapper) != 0 and (
+                    self.pre_property_mapper.keys()[0] != self.property_mapper.keys()[0]):
                 self.pre_property_mapper = self.property_mapper
             self.property_mapper = property_mappers_list.pop()
         else:
@@ -161,7 +182,7 @@ class ResourceProviderTransitions(object):
         for _, ips in server.addresses.items():
             for ip in ips:
                 if isinstance(ip, dict):
-                    if ip.has_key('addr'):
+                    if 'addr' in ip:
                         ip_address = ip['addr']
                         ips_address.append(ip_address)
         return ips_address
@@ -177,22 +198,43 @@ class ResourceProviderTransitions(object):
         return uop_os_inst_id_wait_query
 
     # 回滚删除全部资源和容器
-    def _rollback_all(self, resource_id, uop_os_inst_id_list, result_uop_os_inst_id_list):
+    def _rollback_all(
+            self,
+            resource_id,
+            uop_os_inst_id_list,
+            result_uop_os_inst_id_list):
         nova_client = OpenStack.nova_client
         # fail_list = list(set(uop_os_inst_id_list) - set(result_uop_os_inst_id_list))
-        fail_list = self._uop_os_list_sub(uop_os_inst_id_list, result_uop_os_inst_id_list)
-        Log.logger.debug("Task ID " + self.task_id.__str__() +
-                         " Resource ID " + resource_id.__str__() + " have one or more instance create failed." +
-                         " Successful instance id set is " + result_uop_os_inst_id_list[:].__str__() +
-                         " Failed instance id set is " + fail_list[:].__str__())
+        fail_list = self._uop_os_list_sub(
+            uop_os_inst_id_list, result_uop_os_inst_id_list)
+        Log.logger.debug(
+            "Task ID " +
+            self.task_id.__str__() +
+            " Resource ID " +
+            resource_id.__str__() +
+            " have one or more instance create failed." +
+            " Successful instance id set is " +
+            result_uop_os_inst_id_list[:].__str__() +
+            " Failed instance id set is " +
+            fail_list[:].__str__())
         # 删除全部，完成rollback
         for uop_os_inst_id in uop_os_inst_id_list:
             nova_client.servers.delete(uop_os_inst_id['os_inst_id'])
         Log.logger.debug(
-            "Task ID " + self.task_id.__str__() + " Resource ID " + resource_id.__str__() + " rollback done.")
+            "Task ID " +
+            self.task_id.__str__() +
+            " Resource ID " +
+            resource_id.__str__() +
+            " rollback done.")
 
     # 向OpenStack申请资源
-    def _create_instance(self, name, image, flavor, availability_zone, network_id):
+    def _create_instance(
+            self,
+            name,
+            image,
+            flavor,
+            availability_zone,
+            network_id):
         nova_client = OpenStack.nova_client
         """
         ints = nova_client.servers.list()
@@ -211,7 +253,10 @@ class ResourceProviderTransitions(object):
         int = nova_client.servers.create(name, image, flavor,
                                          availability_zone=availability_zone,
                                          nics=nics_list)
-        Log.logger.debug("Task ID " + self.task_id.__str__() + " create instance:")
+        Log.logger.debug(
+            "Task ID " +
+            self.task_id.__str__() +
+            " create instance:")
         Log.logger.debug(int)
         Log.logger.debug(int.id)
 
@@ -221,10 +266,13 @@ class ResourceProviderTransitions(object):
     def _create_docker_by_url(self, name, image_url):
         err_msg, image_uuid = image_transit(image_url)
         if err_msg is None:
-            Log.logger.debug("Task ID " + self.task_id.__str__() +
-                             " Transit harbor docker image success. The result glance image UUID is " + image_uuid)
-            return None, self._create_instance(name, image_uuid, DOCKER_FLAVOR_2C4G, AVAILABILITY_ZONE_AZ_UOP,
-                                               DEV_NETWORK_ID)
+            Log.logger.debug(
+                "Task ID " +
+                self.task_id.__str__() +
+                " Transit harbor docker image success. The result glance image UUID is " +
+                image_uuid)
+            return None, self._create_instance(
+                name, image_uuid, DOCKER_FLAVOR_2C4G, AVAILABILITY_ZONE_AZ_UOP, DEV_NETWORK_ID)
         else:
             return err_msg, None
 
@@ -232,9 +280,19 @@ class ResourceProviderTransitions(object):
     def _create_instance_by_type(self, ins_type, name):
         image = cluster_type_image_port_mappers.get(ins_type)
         image_uuid = image.get('uuid')
-        Log.logger.debug("Task ID " + self.task_id.__str__() +
-                         " Select Image UUID: " + image_uuid + " by Instance Type " + ins_type)
-        return self._create_instance(name, image_uuid, FLAVOR_1C2G, AVAILABILITY_ZONE_AZ_UOP, DEV_NETWORK_ID)
+        Log.logger.debug(
+            "Task ID " +
+            self.task_id.__str__() +
+            " Select Image UUID: " +
+            image_uuid +
+            " by Instance Type " +
+            ins_type)
+        return self._create_instance(
+            name,
+            image_uuid,
+            FLAVOR_1C2G,
+            AVAILABILITY_ZONE_AZ_UOP,
+            DEV_NETWORK_ID)
 
     # 申请应用集群docker资源
     def _create_app_cluster(self, property_mapper):
@@ -262,22 +320,28 @@ class ResourceProviderTransitions(object):
 
             for i in range(0, quantity, 1):
                 instance_name = '%s_%s' % (cluster_name, i.__str__())
-                err_msg, osint_id = self._create_docker_by_url(instance_name, image_url)
+                err_msg, osint_id = self._create_docker_by_url(
+                    instance_name, image_url)
                 if err_msg is None:
                     uopinst_info = {
                         'uop_inst_id': cluster_id,
                         'os_inst_id': osint_id
                     }
                     uop_os_inst_id_list.append(uopinst_info)
-                    propertys['instance'].append({'instance_type': cluster_type,
-                                                  'instance_name': instance_name,
-                                                  'username': DEFAULT_USERNAME,
-                                                  'password': DEFAULT_PASSWORD,
-                                                  'domain': domain,
-                                                  'port': port,
-                                                  'os_inst_id': osint_id})
+                    propertys['instance'].append(
+                        {
+                            'instance_type': cluster_type,
+                            'instance_name': instance_name,
+                            'username': DEFAULT_USERNAME,
+                            'password': DEFAULT_PASSWORD,
+                            'domain': domain,
+                            'port': port,
+                            'os_inst_id': osint_id})
                 else:
-                    Log.logger.error("Task ID " + self.task_id.__str__() + " ERROR. Error Message is:")
+                    Log.logger.error(
+                        "Task ID " +
+                        self.task_id.__str__() +
+                        " ERROR. Error Message is:")
                     Log.logger.error(err_msg)
                     # 删除全部
                     is_rollback = True
@@ -301,7 +365,8 @@ class ResourceProviderTransitions(object):
         quantity = propertys.get('quantity')
 
         if quantity >= 1:
-            cluster_type_image_port_mapper = cluster_type_image_port_mappers.get(cluster_type)
+            cluster_type_image_port_mapper = cluster_type_image_port_mappers.get(
+                cluster_type)
             if cluster_type_image_port_mapper is not None:
                 port = cluster_type_image_port_mapper.get('port')
             propertys['ins_id'] = cluster_id
@@ -316,7 +381,8 @@ class ResourceProviderTransitions(object):
                 if cluster_type == 'mysql' and i == 3:
                     cluster_type = 'mycat'
                 instance_name = '%s_%s' % (cluster_name, i.__str__())
-                osint_id = self._create_instance_by_type(cluster_type, instance_name)
+                osint_id = self._create_instance_by_type(
+                    cluster_type, instance_name)
                 uopinst_info = {
                     'uop_inst_id': cluster_id,
                     'os_inst_id': osint_id
@@ -338,7 +404,8 @@ class ResourceProviderTransitions(object):
         temp_result_property_mapper = {}
         key = self.property_mapper.keys()[0]
         if key == 'resource_cluster':
-            cluster_type = self.property_mapper.get('resource_cluster').get('cluster_type')
+            cluster_type = self.property_mapper.get(
+                'resource_cluster').get('cluster_type')
             cluster_type_key = '%s' % cluster_type
             cluster_info = self.property_mapper.get('resource_cluster')
             quantity = cluster_info.get('quantity')
@@ -359,24 +426,39 @@ class ResourceProviderTransitions(object):
             self.result_mappers_list.insert(0, temp_result_property_mapper)
 
     # 向OpenStack查询已申请资源的定时任务
-    def _query_resource_set_status(self, uop_os_inst_id_list=None, result_inst_id_list=None,
-                                   result_mappers_list=None):
+    def _query_resource_set_status(
+            self,
+            uop_os_inst_id_list=None,
+            result_inst_id_list=None,
+            result_mappers_list=None):
         is_finish = False
         is_rollback = False
         # uop_os_inst_id_wait_query = list(set(uop_os_inst_id_list) - set(result_inst_id_list))
-        uop_os_inst_id_wait_query = self._uop_os_list_sub(uop_os_inst_id_list, result_inst_id_list)
+        uop_os_inst_id_wait_query = self._uop_os_list_sub(
+            uop_os_inst_id_list, result_inst_id_list)
 
         Log.logger.debug(
-            "Query Task ID " + self.task_id.__str__() + ", remain " + uop_os_inst_id_wait_query[:].__str__())
-        Log.logger.debug("Query Task ID " + self.task_id.__str__() +
-                         " Test Task Scheduler Class result_inst_id_list object id is " +
-                         id(result_inst_id_list).__str__() +
-                         ", Content is " + result_inst_id_list[:].__str__())
+            "Query Task ID " +
+            self.task_id.__str__() +
+            ", remain " +
+            uop_os_inst_id_wait_query[:].__str__())
+        Log.logger.debug(
+            "Query Task ID " +
+            self.task_id.__str__() +
+            " Test Task Scheduler Class result_inst_id_list object id is " +
+            id(result_inst_id_list).__str__() +
+            ", Content is " +
+            result_inst_id_list[:].__str__())
         nova_client = OpenStack.nova_client
         for uop_os_inst_id in uop_os_inst_id_wait_query:
             inst = nova_client.servers.get(uop_os_inst_id['os_inst_id'])
-            Log.logger.debug("Query Task ID " + self.task_id.__str__() + " query Instance ID " +
-                             uop_os_inst_id['os_inst_id'] + " Status is " + inst.status)
+            Log.logger.debug(
+                "Query Task ID " +
+                self.task_id.__str__() +
+                " query Instance ID " +
+                uop_os_inst_id['os_inst_id'] +
+                " Status is " +
+                inst.status)
             if inst.status == 'ACTIVE':
                 _ips = self._get_ip_from_instance(inst)
                 _ip = _ips.pop() if _ips.__len__() >= 1 else ''
@@ -386,16 +468,23 @@ class ResourceProviderTransitions(object):
                     instances = value.get('instance')
                     if instances is not None:
                         for instance in value.get('instance'):
-                            if instance.get('os_inst_id') == uop_os_inst_id['os_inst_id']:
+                            if instance.get(
+                                    'os_inst_id') == uop_os_inst_id['os_inst_id']:
                                 instance['ip'] = _ip
                                 instance['physical_server'] = physical_server
-                                Log.logger.debug("Query Task ID " + self.task_id.__str__() +
-                                                 " Instance Info: " + mapper.__str__())
+                                Log.logger.debug(
+                                    "Query Task ID " +
+                                    self.task_id.__str__() +
+                                    " Instance Info: " +
+                                    mapper.__str__())
                 result_inst_id_list.append(uop_os_inst_id)
             if inst.status == 'ERROR':
                 # 置回滚标志位
                 Log.logger.debug(
-                    "Query Task ID " + self.task_id.__str__() + " ERROR Instance Info: " + inst.to_dict().__str__())
+                    "Query Task ID " +
+                    self.task_id.__str__() +
+                    " ERROR Instance Info: " +
+                    inst.to_dict().__str__())
                 is_rollback = True
 
         if result_inst_id_list.__len__() == uop_os_inst_id_list.__len__():
@@ -422,25 +511,47 @@ class ResourceProviderTransitions(object):
     @transition_state_logger
     def do_success(self):
         # 执行成功调用UOP CallBack，提交成功
-        Log.logger.debug("Query Task ID " + self.task_id.__str__() + " all instance create success." +
-                         " instance id set is " + self.result_inst_id_list[:].__str__() +
-                         " instance info set is " + self.result_mappers_list[:].__str__())
-        request_res_callback(self.task_id, RES_STATUS_OK, self.req_dict, self.result_mappers_list)
-        Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Success Info.")
+        Log.logger.debug(
+            "Query Task ID " +
+            self.task_id.__str__() +
+            " all instance create success." +
+            " instance id set is " +
+            self.result_inst_id_list[:].__str__() +
+            " instance info set is " +
+            self.result_mappers_list[:].__str__())
+        request_res_callback(
+            self.task_id,
+            RES_STATUS_OK,
+            self.req_dict,
+            self.result_mappers_list)
+        Log.logger.debug(
+            "Query Task ID " +
+            self.task_id.__str__() +
+            " Call UOP CallBack Post Success Info.")
         # 停止定时任务并退出
         self.stop()
 
     @transition_state_logger
     def do_fail(self):
         # 执行失败调用UOP CallBack，提交失败
-        request_res_callback(self.task_id, RES_STATUS_FAIL, self.req_dict, self.result_mappers_list)
-        Log.logger.debug("Query Task ID " + self.task_id.__str__() + " Call UOP CallBack Post Fail Info.")
+        request_res_callback(
+            self.task_id,
+            RES_STATUS_FAIL,
+            self.req_dict,
+            self.result_mappers_list)
+        Log.logger.debug(
+            "Query Task ID " +
+            self.task_id.__str__() +
+            " Call UOP CallBack Post Fail Info.")
         # 停止定时任务并退出
         self.stop()
 
     @transition_state_logger
     def do_rollback(self):
-        self._rollback_all(self.resource_id, self.uop_os_inst_id_list, self.result_inst_id_list)
+        self._rollback_all(
+            self.resource_id,
+            self.uop_os_inst_id_list,
+            self.result_inst_id_list)
         self.fail()
 
     @transition_state_logger
@@ -453,19 +564,20 @@ class ResourceProviderTransitions(object):
 
     @transition_state_logger
     def do_app_cluster(self):
-        self.is_need_rollback, uop_os_inst_id_list = self._create_app_cluster(self.property_mapper)
+        self.is_need_rollback, uop_os_inst_id_list = self._create_app_cluster(
+            self.property_mapper)
         self._add_to_phase4(uop_os_inst_id_list)
 
     @transition_state_logger
     def do_resource_cluster(self):
-        self.is_need_rollback, uop_os_inst_id_list = self._create_resource_cluster(self.property_mapper)
+        self.is_need_rollback, uop_os_inst_id_list = self._create_resource_cluster(
+            self.property_mapper)
         self._add_to_phase4(uop_os_inst_id_list)
 
     @transition_state_logger
     def do_query(self):
-        is_finished, self.is_need_rollback = self._query_resource_set_status(self.uop_os_inst_id_list,
-                                                                             self.result_inst_id_list,
-                                                                             self.result_mappers_list)
+        is_finished, self.is_need_rollback = self._query_resource_set_status(
+            self.uop_os_inst_id_list, self.result_inst_id_list, self.result_mappers_list)
         if self.is_need_rollback:
             self.rollback()
         if is_finished is True:
@@ -493,7 +605,8 @@ class ResourceProviderTransitions(object):
             with open('/etc/ansible/hosts', 'w') as f:
                 f.write('%s\n' % nip)
             Log.logger.debug('----->start push', kwargs)
-            self.run_cmd("ansible {nip} --private-key=crp/res_set/playbook-0830/old_id_rsa -a 'yum install rsync -y'".format(nip=nip))
+            self.run_cmd(
+                "ansible {nip} --private-key=crp/res_set/playbook-0830/old_id_rsa -a 'yum install rsync -y'".format(nip=nip))
             self.run_cmd(
                 "ansible {nip} --private-key=crp/res_set/playbook-0830/old_id_rsa -m synchronize -a 'src=/opt/uop-crp/crp/res_set/update.py dest=/shell/'".format(
                     nip=nip))
@@ -505,9 +618,13 @@ class ResourceProviderTransitions(object):
                 nip=nip))
             self.run_cmd("ansible {nip} --private-key=crp/res_set/playbook-0830/old_id_rsa -m shell -a 'chmod 777 /shell/template'".format(
                 nip=nip))
-            self.run_cmd('ansible {nip} --private-key=crp/res_set/playbook-0830/old_id_rsa -m shell -a '
-                    '"/shell/update.py {domain} {ip} {port}"'.format(nip=kwargs.get('nip'), domain=kwargs.get('domain'),
-                                                                     ip=kwargs.get('ip'), port=kwargs.get('port')))
+            self.run_cmd(
+                'ansible {nip} --private-key=crp/res_set/playbook-0830/old_id_rsa -m shell -a '
+                '"/shell/update.py {domain} {ip} {port}"'.format(
+                    nip=kwargs.get('nip'),
+                    domain=kwargs.get('domain'),
+                    ip=kwargs.get('ip'),
+                    port=kwargs.get('port')))
             Log.logger.debug('------>end push')
 
         real_ip = ''
@@ -518,10 +635,18 @@ class ResourceProviderTransitions(object):
             ip_str = str(ins.get('ip')) + ' '
             real_ip += ip_str
         ports = str(app.get('port'))
-        Log.logger.debug('the receive domain and ip port is %s-%s-%s' % (domain, real_ip, ports))
-        do_push_nginx_config({'nip': nginx_ip, 'domain': domain, 'ip': real_ip.strip(), 'port': ports.strip()})
-        do_push_nginx_config({'nip': nginx_ip_slave, 'domain': domain, 'ip': real_ip.strip(), 'port': ports.strip()})
-        
+        Log.logger.debug(
+            'the receive domain and ip port is %s-%s-%s' %
+            (domain, real_ip, ports))
+        do_push_nginx_config({'nip': nginx_ip,
+                              'domain': domain,
+                              'ip': real_ip.strip(),
+                              'port': ports.strip()})
+        do_push_nginx_config({'nip': nginx_ip_slave,
+                              'domain': domain,
+                              'ip': real_ip.strip(),
+                              'port': ports.strip()})
+
         #添加dns操作#
         try:
             ip = DNS_ENV.get(self.req_dict["env"])
@@ -534,7 +659,12 @@ class ResourceProviderTransitions(object):
 
     def run_cmd(self, cmd):
         msg = ''
-        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True)
+        p = subprocess.Popen(
+            cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            close_fds=True)
         while True:
             line = p.stdout.readline()
             Log.logger.debug('The nginx config push result is %s' % line)
@@ -560,7 +690,7 @@ class ResourceProviderTransitions(object):
             mysql_ip_info = []
             mycat_ip_info = []
             master_slave = ['slave2', 'slave1', 'master']
-            lvs = ['lvs2','lvs1']
+            lvs = ['lvs2', 'lvs1']
             for _instance in instance:
                 tup = (_instance['instance_name'], _instance['ip'])
                 if _instance['instance_type'] == 'mysql':
@@ -585,7 +715,11 @@ class ResourceProviderTransitions(object):
             path = SCRIPTPATH + 'mysqlmha'
             cmd = '/bin/sh {0}/mlm.sh {0}'.format(path)
             strout = ''
-            p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            p = subprocess.Popen(
+                cmd,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT)
             for line in p.stdout.readlines():
                 strout += line + os.linesep
             Log.logger.debug('mysql cluster push result:%s' % strout)
@@ -594,7 +728,6 @@ class ResourceProviderTransitions(object):
             mysql['wvip'] = instance[0]['ip']
             mysql['rvip'] = instance[0]['ip']
             instance[0]['dbtype'] = 'master'
-
 
     @transition_state_logger
     def do_mongodb_push(self):
@@ -621,7 +754,9 @@ class ResourceProviderTransitions(object):
             Log.logger.debug('mongodb single instance start')
             instance = mongodb.get('instance', '')
             mongodb['ip'] = instance[0].get('ip')
-            Log.logger.debug('mongodb single instance end {ip}'.format(ip=mongodb['ip']))
+            Log.logger.debug(
+                'mongodb single instance end {ip}'.format(
+                    ip=mongodb['ip']))
 
     @transition_state_logger
     def do_redis_push(self):
@@ -636,11 +771,17 @@ class ResourceProviderTransitions(object):
             ip2 = instance[1]['ip']
             instance[1]['dbtype'] = 'slave'
             redis['vip'] = vip
-            cmd = 'python {0}script/redis_cluster.py {1} {2} {3}'.format(SCRIPTPATH, ip1, ip2, vip)
+            cmd = 'python {0}script/redis_cluster.py {1} {2} {3}'.format(
+                SCRIPTPATH, ip1, ip2, vip)
             error_time = 0
+
             def _redis_push():
                 out = ''
-                p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                p = subprocess.Popen(
+                    cmd,
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT)
                 for line in p.stdout.readlines():
                     out += line + os.linesep
 
@@ -649,7 +790,8 @@ class ResourceProviderTransitions(object):
 
             strout = ''
             # 执行命令 如果失败 连续重复尝试3次
-            while ( not strout or  'FAILED!' in strout or 'UNREACHABLE!' in strout) and error_time < 3:
+            while (
+                    not strout or 'FAILED!' in strout or 'UNREACHABLE!' in strout) and error_time < 3:
                 strout = _redis_push()
                 error_time += 1
 
@@ -659,16 +801,28 @@ class ResourceProviderTransitions(object):
                 self.rollback()
 
 
-
-
-# Transit request_data from the JSON nest structure to the chain structure with items_sequence and porerty_json_mapper
+# Transit request_data from the JSON nest structure to the chain structure
+# with items_sequence and porerty_json_mapper
 def transit_request_data(items_sequence, porerty_json_mapper, request_data):
     if request_data is None:
         return
-    if not (isinstance(items_sequence, list) or isinstance(items_sequence, dict) or isinstance(items_sequence, set)) \
-            or not (isinstance(request_data, list) or isinstance(request_data, dict)) \
-            or not isinstance(porerty_json_mapper, dict):
-        raise Exception("Need input dict for porerty_json_mapper and request_data in transit_request_data.")
+    if not (
+            isinstance(
+                items_sequence,
+                list) or isinstance(
+                items_sequence,
+                dict) or isinstance(
+                    items_sequence,
+                    set)) or not (
+                        isinstance(
+                            request_data,
+                            list) or isinstance(
+                                request_data,
+                                dict)) or not isinstance(
+                                    porerty_json_mapper,
+            dict):
+        raise Exception(
+            "Need input dict for porerty_json_mapper and request_data in transit_request_data.")
     request_items = []
     if isinstance(items_sequence, list) or isinstance(items_sequence, set):
         for one_item_sequence in items_sequence:
@@ -685,14 +839,19 @@ def transit_request_data(items_sequence, porerty_json_mapper, request_data):
                     context = one_item_sequence.get(item_mapper_key)
                 item_mapper_body = porerty_json_mapper.get(item_mapper_key)
                 if item_mapper_body is not None:
-                    if isinstance(request_data, list) or isinstance(request_data, set):
+                    if isinstance(
+                            request_data,
+                            list) or isinstance(
+                            request_data,
+                            set):
                         for one_req in request_data:
                             item = {}
                             sub_item = copy.deepcopy(one_req)
                             item[item_mapper_key] = sub_item
                             request_items.append(item)
                             if context is not None and sub_item is not None:
-                                request_items.extend(transit_request_data(context, porerty_json_mapper, sub_item))
+                                request_items.extend(transit_request_data(
+                                    context, porerty_json_mapper, sub_item))
                     else:
                         item = {}
                         current_item = copy.deepcopy(request_data)
@@ -702,16 +861,19 @@ def transit_request_data(items_sequence, porerty_json_mapper, request_data):
                             if hasattr(current_item, item_mapper_key):
                                 sub_item = current_item.get(item_mapper_key)
                                 if sub_item is not None:
-                                    request_items.extend(transit_request_data(context, porerty_json_mapper, sub_item))
+                                    request_items.extend(transit_request_data(
+                                        context, porerty_json_mapper, sub_item))
                             else:
                                 sub_item = current_item
                                 if sub_item is not None:
-                                    request_items.extend(transit_request_data(context, porerty_json_mapper, sub_item))
+                                    request_items.extend(transit_request_data(
+                                        context, porerty_json_mapper, sub_item))
                 else:
                     if request_data is not None:
                         sub_item = request_data.get(item_mapper_key)
                         if context is not None and sub_item is not None:
-                            request_items.extend(transit_request_data(context, porerty_json_mapper, sub_item))
+                            request_items.extend(transit_request_data(
+                                context, porerty_json_mapper, sub_item))
     elif isinstance(items_sequence, dict):
         items_sequence_keys = items_sequence.keys()
         for items_sequence_key in items_sequence_keys:
@@ -723,37 +885,50 @@ def transit_request_data(items_sequence, porerty_json_mapper, request_data):
                     current_items_keys = current_items.keys()
                     for current_item_key in current_items_keys:
                         if current_item_key == items_sequence_key:
-                            current_item_body = current_items.get(current_item_key)
-                            if current_item_body is not None and len(current_item_body) > 0:
+                            current_item_body = current_items.get(
+                                current_item_key)
+                            if current_item_body is not None and len(
+                                    current_item_body) > 0:
                                 item = current_items
                                 request_items.append(item)
                 else:
                     current_item_body = current_items
-                    if current_item_body is not None and len(current_item_body) > 0:
+                    if current_item_body is not None and len(
+                            current_item_body) > 0:
                         item = {}
                         item[items_sequence_key] = current_item_body
                         request_items.append(item)
                     if context is not None:
-                            if hasattr(current_items, items_sequence_key):
-                                sub_item = current_items.get(items_sequence_key)
-                                if sub_item is not None:
-                                    request_items.extend(transit_request_data(context, porerty_json_mapper, sub_item))
-                            else:
-                                sub_item = current_items
-                                if sub_item is not None:
-                                    request_items.extend(transit_request_data(context, porerty_json_mapper, sub_item))
+                        if hasattr(current_items, items_sequence_key):
+                            sub_item = current_items.get(items_sequence_key)
+                            if sub_item is not None:
+                                request_items.extend(transit_request_data(
+                                    context, porerty_json_mapper, sub_item))
+                        else:
+                            sub_item = current_items
+                            if sub_item is not None:
+                                request_items.extend(transit_request_data(
+                                    context, porerty_json_mapper, sub_item))
             if context is not None and request_data is not None:
                 sub_item = request_data.get(items_sequence_key)
                 if sub_item is not None:
-                    request_items.extend(transit_request_data(context, porerty_json_mapper, sub_item))
+                    request_items.extend(
+                        transit_request_data(
+                            context, porerty_json_mapper, sub_item))
 
     return request_items
 
 
-# Transit request_items from JSON property to item property with property_json_mapper
+# Transit request_items from JSON property to item property with
+# property_json_mapper
 def transit_repo_items(property_json_mapper, request_items):
-    if not isinstance(property_json_mapper, dict) and not isinstance(request_items, list):
-        raise Exception("Need input dict for property_json_mapper and list for request_items in transit_repo_items.")
+    if not isinstance(
+            property_json_mapper,
+            dict) and not isinstance(
+            request_items,
+            list):
+        raise Exception(
+            "Need input dict for property_json_mapper and list for request_items in transit_repo_items.")
     property_mappers_list = []
     for request_item in request_items:
         item_id = request_item.keys()[0]
@@ -763,7 +938,8 @@ def transit_repo_items(property_json_mapper, request_items):
         for item_property_key in item_property_keys:
             value = request_item.get(item_id)
             if value is not None:
-                repo_json_property = value.get(item_property_mapper.get(item_property_key))
+                repo_json_property = value.get(
+                    item_property_mapper.get(item_property_key))
                 if repo_json_property is not None:
                     repo_property[item_property_key] = repo_json_property
         if len(repo_property) >= 1:
@@ -773,9 +949,14 @@ def transit_repo_items(property_json_mapper, request_items):
     return property_mappers_list
 
 
-def do_transit_repo_items(items_sequence_list, property_json_mapper, request_data):
-    request_items = transit_request_data(items_sequence_list, property_json_mapper, request_data)
-    property_mappers_list = transit_repo_items(property_json_mapper, request_items)
+def do_transit_repo_items(
+        items_sequence_list,
+        property_json_mapper,
+        request_data):
+    request_items = transit_request_data(
+        items_sequence_list, property_json_mapper, request_data)
+    property_mappers_list = transit_repo_items(
+        property_json_mapper, request_items)
     return property_mappers_list
 
 
@@ -890,7 +1071,11 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list):
     data["db_info"] = db_info
 
     data_str = json.dumps(data)
-    Log.logger.debug("Task ID " + task_id.__str__() + " UOP res_callback Request Body is: " + data_str)
+    Log.logger.debug(
+        "Task ID " +
+        task_id.__str__() +
+        " UOP res_callback Request Body is: " +
+        data_str)
     res = requests.post(RES_CALLBACK, data=data_str)
     Log.logger.debug(res.status_code)
     Log.logger.debug(res.content)
@@ -965,9 +1150,11 @@ class ResourceSet(Resource):
         msg = 'Create Resource Set Accepted.'
         try:
             request_data = json.loads(request.data)
-            property_mappers_list = do_transit_repo_items(items_sequence_list_config, property_json_mapper_config,
-                                                          request_data)
-            Log.logger.debug("property_mappers_list: %s"  % property_mappers_list)
+            property_mappers_list = do_transit_repo_items(
+                items_sequence_list_config, property_json_mapper_config, request_data)
+            Log.logger.debug(
+                "property_mappers_list: %s" %
+                property_mappers_list)
             parser = reqparse.RequestParser()
             parser.add_argument('unit_name', type=str)
             parser.add_argument('unit_id', type=str)
@@ -1025,9 +1212,14 @@ class ResourceSet(Resource):
             Log.logger.debug('req_dict\'s object id is :')
             Log.logger.debug(id(req_dict))
             # 创建资源集合定时任务，成功或失败后调用UOP资源预留CallBack（目前仅允许全部成功或全部失败，不允许部分成功）
-            res_provider = ResourceProviderTransitions(resource_id, property_mappers_list, req_dict)
+            res_provider = ResourceProviderTransitions(
+                resource_id, property_mappers_list, req_dict)
             res_provider_list = [res_provider]
-            TaskManager.task_start(SLEEP_TIME, TIMEOUT, res_provider_list, tick_announce)
+            TaskManager.task_start(
+                SLEEP_TIME,
+                TIMEOUT,
+                res_provider_list,
+                tick_announce)
         except Exception as e:
             # exception return http code 500 (Internal Server Error)
             code = 500
@@ -1066,17 +1258,17 @@ def create_vip_port(instance_name):
     network_id = DEV_NETWORK_ID
 
     body_value = {
-                     "port": {
-                             "admin_state_up": True,
-                             "name": instance_name + '_port',
-                             "network_id": network_id
-                      }
-                 }
+        "port": {
+            "admin_state_up": True,
+            "name": instance_name + '_port',
+            "network_id": network_id
+        }
+    }
     Log.logger.debug('Create port for cluster/instance ' + instance_name)
     #Log.logger.debug('Create port for cluster/instance ' + instance_name)
     response = neutron_client.create_port(body=body_value)
     ip = response.get('port').get('fixed_ips').pop().get('ip_address')
-    #Log.logger.debug('Port id: ' + response.get('port').get('id') +
+    # Log.logger.debug('Port id: ' + response.get('port').get('id') +
     Log.logger.debug('Port id: ' + response.get('port').get('id') +
                      'Port ip: ' + ip)
     return None, ip
@@ -1091,7 +1283,8 @@ class MongodbCluster(object):
         172.28.36.231
         :param cmd_list:
         """
-        self.dir = os.path.dirname(os.path.abspath(__file__)) + '/' + 'mongo_script'
+        self.dir = os.path.dirname(
+            os.path.abspath(__file__)) + '/' + 'mongo_script'
         self.ip_slave1 = ip_list[0]
         self.ip_slave2 = ip_list[1]
         self.ip_master1 = ip_list[2]
@@ -1100,9 +1293,13 @@ class MongodbCluster(object):
             self.ip_slave1: 'mongoslave1.sh',
             self.ip_slave2: 'mongoslave2.sh',
             self.ip_master1: 'mongomaster1.sh',
-            }
-        self.cmd = ['ansible {vip} -u root --private-key={rsa_dir}/old_id_rsa -m script -a '
-                    '"{dir}/mongomaster2.sh sys95"'.format(vip=self.ip_master2, rsa_dir=self.dir, dir=self.dir)]
+        }
+        self.cmd = [
+            'ansible {vip} -u root --private-key={rsa_dir}/old_id_rsa -m script -a '
+            '"{dir}/mongomaster2.sh sys95"'.format(
+                vip=self.ip_master2,
+                rsa_dir=self.dir,
+                dir=self.dir)]
         self.ip = [self.ip_slave1, self.ip_slave2, self.ip_master1]
         self.new_host = '[new_host]'
         self.write_ip_to_server()
@@ -1117,7 +1314,12 @@ class MongodbCluster(object):
     def telnet_ack(self):
         while not self.flag:
             for ip in self.ip:
-                p = subprocess.Popen('nmap %s -p 22' % str(ip), shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                p = subprocess.Popen(
+                    'nmap %s -p 22' %
+                    str(ip),
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT)
                 try:
                     a = p.stdout.readlines()[5]
                     Log.logger.debug('nmap ack result:%s' % a)
@@ -1135,7 +1337,12 @@ class MongodbCluster(object):
     def mongodb_cluster_push(self, ip):
         # vip_list = list(set(self.ip))
         # vip_list = [ip_master1, ip_slave1, ip_slave2]
-        script_name = ['mongoslave1.sh', 'mongoslave2.sh', 'mongomaster1.sh', 'mongomaster2.sh', 'old_id_rsa']
+        script_name = [
+            'mongoslave1.sh',
+            'mongoslave2.sh',
+            'mongomaster1.sh',
+            'mongomaster2.sh',
+            'old_id_rsa']
         for i in script_name:
             os.system('chmod 600 {dir}'.format(dir=self.dir + '/' + i))
         cmd_before = "ansible {vip} --private-key={dir}/old_id_rsa -m synchronize -a 'src=/opt/uop-crp/crp/res_set/" \
@@ -1145,17 +1352,29 @@ class MongodbCluster(object):
         cmd1 = 'ansible {vip} -u root --private-key={dir}/old_id_rsa -m shell -a "python /tmp/write_mongo_ip.py' \
                ' {m_ip} {s1_ip} {s2_ip}"'.format(vip=ip, dir=self.dir, m_ip=self.ip_master1, s1_ip=self.ip_slave1, s2_ip=self.ip_slave2)
         Log.logger.debug('开始上传脚本%s' % ip)
-        p = subprocess.Popen(cmd_before, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        p = subprocess.Popen(
+            cmd_before,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
             print line
             Log.logger.debug('mongodb cluster cmd before:%s' % line)
         Log.logger.debug('开始修改权限%s' % ip)
-        p = subprocess.Popen(authority_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        p = subprocess.Popen(
+            authority_cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
             print line
             Log.logger.debug('mongodb cluster authority:%s' % line)
         Log.logger.debug('脚本上传完成,开始执行脚本%s' % ip)
-        p = subprocess.Popen(cmd1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        p = subprocess.Popen(
+            cmd1,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
             print line
             Log.logger.debug('mongodb cluster exec write script:%s' % line)
@@ -1163,7 +1382,7 @@ class MongodbCluster(object):
         # for ip in self.ip:
         with open('/tmp/hosts', 'w') as f:
             f.write('%s\n' % ip)
-        print '-----', ip,type(ip)
+        print '-----', ip, type(ip)
         script = self.d.get(ip)
         # if str(ip) != '172.28.36.105':
         cmd_s = 'ansible {vip} -u root --private-key={rsa_dir}/old_id_rsa -m script -a "{dir}/{s} sys95"'.\
@@ -1171,14 +1390,24 @@ class MongodbCluster(object):
         # else:
         #     cmd_s = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/
         # mongoclu_install/{s}"'.format(vip=ip, s=script)
-        p = subprocess.Popen(cmd_s, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        p = subprocess.Popen(
+            cmd_s,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
             print line,
-            Log.logger.debug('mongodb cluster push result:%s, -----%s' % (line, ip))
+            Log.logger.debug(
+                'mongodb cluster push result:%s, -----%s' %
+                (line, ip))
 
     def exec_final_script(self):
         for i in self.cmd:
-            p = subprocess.Popen(i, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            p = subprocess.Popen(
+                i,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT)
             for line in p.stdout.readlines():
                 print line,
                 Log.logger.debug('mongodb cluster push result:%s' % line)

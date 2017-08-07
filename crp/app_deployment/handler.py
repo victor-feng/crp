@@ -25,7 +25,7 @@ from crp.log import Log
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
-#from config import APP_ENV, configs
+from config import APP_ENV, configs
 
 app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 #TODO: move to global conf
@@ -45,7 +45,9 @@ def _dep_callback(deploy_id, success):
     headers = {'Content-Type': 'application/json'}
     logging.debug("data string:" + str(data))
     #Log.logger.debug("data string:" + str(data))
-    CALLBACK_URL = urljoin(current_app.config['UOP_URL'], 'api/dep_result/')
+    CALLBACK_URL = configs[APP_ENV].UOP_URL + 'api/dep_result/'
+    logging.debug("[CRP] _dep_callback callback_url: %s ", CALLBACK_URL)
+    # CALLBACK_URL = urljoin(current_app.config['UOP_URL'], 'api/dep_result/')
     res = requests.put(CALLBACK_URL + deploy_id + "/", data=data_str, headers=headers)
     logging.debug("call dep_result callback,res: " + str(res))
     #Log.logger.debug("call dep_result callback,res: " + str(res))
@@ -131,28 +133,46 @@ class AppDeploy(Resource):
         try:
             parser = reqparse.RequestParser()
             parser.add_argument('mysql', type=dict)
-            parser.add_argument('docker', type=dict)
+            parser.add_argument('docker', type=list, location='json')
             parser.add_argument('deploy_id', type=str)
             parser.add_argument('mongodb', type=str)
-            #parser.add_argument('file', type=werkzeug.datastructures.FileStorage, location='files')
+            #parser.add_argument('file', type=werkz
+            # eug.datastructures.FileStorage, location='files')
             args = parser.parse_args()
             logging.debug("AppDeploy receive post request. args is " + str(args))
             #Log.logger.debug("AppDeploy receive post request. args is " + str(args))
             deploy_id = args.deploy_id
+            logging.debug("deploy_id is " + str(deploy_id))
             docker = args.docker
             mongodb = args.mongodb
-            mongodb_res = self._deploy_mongodb(mongodb)
-            sql_ret = self._deploy_mysql(args)
-            if sql_ret:
-                self._image_transit(deploy_id, docker.get("ip"), docker.get("image_url"))
-            else:
+            mongodb_res = True
+            sql_ret = True
+            if mongodb:
+                mongodb_res = self._deploy_mongodb(mongodb)
+            if args.mysql:
+                sql_ret = self._deploy_mysql(args)
+            logging.debug("Docker is " + str(docker))
+            for i in docker:
+                while True:
+                    ips = i.get('ip')
+                    length_ip = len(ips)
+                    if length_ip > 0:
+                        logging.debug('ip and url: ' + str(ips) + str(i.get('url')))
+                        ip = ips[0]
+                        # self._image_transit(deploy_id, docker.get("ip"), docker.get("image_url"))
+                        self._image_transit(deploy_id, ip, i.get('url'))
+                        ips.pop(0)
+                    else:
+                        break
+
+            if not(sql_ret and mongodb_res):
                 res = _dep_callback(deploy_id, False)
                 if res.status_code == 500:
                     code = 500
                     msg = "uop server error"
         except Exception as e:
-            logging.error("AppDeploy exception: " + e.message)
-            #Log.logger.error("AppDeploy exception: " + e.message)
+            logging.exception("AppDeploy exception: ")
+            # Log.logger.error("AppDeploy exception: " + e.message)
             code = 500
             msg = "internal server error: " + e.message
 
@@ -166,16 +186,16 @@ class AppDeploy(Resource):
         return res, code
 
     def _deploy_mongodb(self, args):
-        host_username = args.get('host_username')
-        host_password = args.get('host_passwork')
-        mongodb_username = args.get('mongodb_username')
-        mongodb_password = args.get('mongodb_password')
-        vip1 = args.get('vip1')
-        vip2 = args.get('vip2')
-        vip3 = args.get('vip3')
-        port = args.get('port')
-        database = args.get('database')
-        path_filename = args.get("path_filename")
+        host_username = args.get('host_username', '')
+        host_password = args.get('host_passwork', '')
+        mongodb_username = args.get('mongodb_username', '')
+        mongodb_password = args.get('mongodb_password', '')
+        vip1 = args.get('vip1', '')
+        vip2 = args.get('vip2', '')
+        vip3 = args.get('vip3', '')
+        port = args.get('port', '')
+        database = args.get('database', '')
+        path_filename = args.get("path_filename", '')
         if not path_filename:
             return True
         ips = [vip1, vip2, vip3]
@@ -295,7 +315,7 @@ class AppDeploy(Resource):
         # newserver = OpenStack.nova_client.servers.rebuild(server=server, image='3027f868-8f87-45cd-b85b-8b0da3ecaa84')
         vm_id_list = []
         # Log.logger.debug("Add the id type is" + type(newserver.id))
-        logging.debug("Add the id type is" + type(newserver.id))
+        logging.debug("Add the id type is" + str(newserver.id))
         vm_id_list.append(newserver.id)
         result_list = []
         timeout = 10
