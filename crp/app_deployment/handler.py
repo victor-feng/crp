@@ -144,15 +144,16 @@ class AppDeploy(Resource):
             mongodb = args.mongodb
             if mongodb:
                 mongodb_res = self._deploy_mongodb(mongodb)
-            sql_ret = self._deploy_mysql(args)
+            if args.mysql:
+                sql_ret = self._deploy_mysql(args)
 
-            if sql_ret:
-                for i in docker:
-                    if len(i.get('ip')) > 0:
-                        ip = i.get('ip')[0]
-                    # self._image_transit(deploy_id, docker.get("ip"), docker.get("image_url"))
-                        self._image_transit(deploy_id, ip, i.get('url'))
-            else:
+            for i in docker:
+                if len(i.get('ip')) > 0:
+                    ip = i.get('ip')[0]
+                # self._image_transit(deploy_id, docker.get("ip"), docker.get("image_url"))
+                    self._image_transit(deploy_id, ip, i.get('url'))
+
+            if not(sql_ret and mongodb_res):
                 res = _dep_callback(deploy_id, False)
                 if res.status_code == 500:
                     code = 500
