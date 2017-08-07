@@ -153,8 +153,8 @@ class AppDeploy(Resource):
                 sql_ret = self._deploy_mysql(args)
             logging.debug("Docker is " + str(docker))
             for i in docker:
-                length_ip = len(i.get('ip'))
                 while True:
+                    length_ip = len(i.get('ip'))
                     if length_ip > 0:
                         logging.debug('ip: ' + str(i.get('ip')))
                         ip = i.get('ip')[0]
