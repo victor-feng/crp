@@ -311,7 +311,7 @@ class AppDeploy(Resource):
         # newserver = OpenStack.nova_client.servers.rebuild(server=server, image='3027f868-8f87-45cd-b85b-8b0da3ecaa84')
         vm_id_list = []
         # Log.logger.debug("Add the id type is" + type(newserver.id))
-        logging.debug("Add the id type is" + type(newserver.id))
+        logging.debug("Add the id type is" + str(newserver.id))
         vm_id_list.append(newserver.id)
         result_list = []
         timeout = 10
