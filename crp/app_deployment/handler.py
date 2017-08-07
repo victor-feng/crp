@@ -154,13 +154,14 @@ class AppDeploy(Resource):
             logging.debug("Docker is " + str(docker))
             for i in docker:
                 while True:
-                    length_ip = len(i.get('ip'))
+                    ips = i.get('ip')
+                    length_ip = len(ips)
                     if length_ip > 0:
-                        logging.debug('ip: ' + str(i.get('ip')))
-                        ip = i.get('ip')[0]
+                        logging.debug('ip: ' + str(ips))
+                        ip = ips[0]
                         # self._image_transit(deploy_id, docker.get("ip"), docker.get("image_url"))
                         self._image_transit(deploy_id, ip, i.get('url'))
-                        i.get('ip').pop(0)
+                        ips.pop(0)
                     else:
                         break
 
