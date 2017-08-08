@@ -332,8 +332,8 @@ def _create_resource_set_and_query(task_id, result, resource):
         TaskManager.task_exit(task_id)
 
 
-# res_set REST API Controller
-class ResourceAPI(Resource):
+# resource_list REST API Controller
+class ResourceListAPI(Resource):
 
     def post(self):
         parser = reqparse.RequestParser()
@@ -370,19 +370,118 @@ class ResourceAPI(Resource):
             return res, 200
 
 
-# volume REST API Controller
-class VolumenAPI(Resource):
+DETACH_VOLUME = 0
+QUERY_DETACH = 1
+DETACH_VOLUME_SUCCESSFUL = 2
 
-    def delete(self, vol_id):
+
+def _detach_volume(task_id, result, resource):
+    vm_id = resource.get('vm_id', '')
+    vol_id = resource.get('vol_id', '')
+
+    logging.info(
+        'Task ID %s, _detach_volume, vm_id is %s, vol_id is %s.',
+        task_id, vm_id, vol_id)
+
+    try:
+        nova_client = OpenStack.nova_client
+        nova_client.volumes.delete_server_volume(
+            vm_id, vol_id)
+    except Exception as e:
+        raise e
+    else:
+        result['current_status'] = QUERY_DETACH
+
+
+def _query_detach_status(task_id, result, resource):
+    vol_id = resource.get('vol_id', '')
+    cinder_client = OpenStack.cinder_client
+    vol = cinder_client.volumes.get(vol_id)
+    logging.debug(
+        "Task ID %s, _query_detach_status, Volume status: %s, info: %s",
+        task_id, vol.status, vol)
+    if vol.status == 'available':
+        result['current_status'] = DETACH_VOLUME_SUCCESSFUL
+        logging.info(
+            "Task ID %s, detach volume(%s) successful.",
+            task_id, vol_id)
+    elif vol.status == 'error'\
+            or 'error' in vol.status:
+        logging.error(
+            "Task ID %s, detach volume error, vol_id is %s",
+            vol_id)
+        _delete_vm(task_id, resource)
+        TaskManager.task_exit(task_id)
+
+
+def _detach_volume_successful(task_id, resource):
+    _delete_vm(task_id, resource)
+    _delete_volume(task_id, resource)
+    TaskManager.task_exit(task_id)
+
+
+def _delete_vm(task_id, resource):
+    vm_id = resource.get('vm_id', '')
+    try:
+        nova_client = OpenStack.nova_client
+        nova_client.servers.delete(vm_id)
+    except Exception as e:
+        logging.exception(
+            "[CRP] _delete_vm failed, Exception:%s",
+            e.args)
+
+
+def _delete_volume(task_id, resource):
+    vol_id = resource.get('vol_id', '')
+    try:
+        cinder_client = OpenStack.cinder_client
+        cinder_client.volumes.delete(vol_id)
+    except Exception as e:
+        logging.exception(
+            "[CRP] _delete_volume failed, Exception:%s",
+            e.args)
+
+
+# 删除资源
+# 1. 从虚机卸载volume
+# 2. 删除虚机，删除volume
+def _delete_resource(task_id, result, resource):
+    current_status = result.get('current_status', None)
+    logging.debug(
+        "Task ID %s, _delete_resource, current_status %s, result %s, resource %s",
+        task_id, current_status, result, resource)
+    try:
+        if current_status == DETACH_VOLUME:
+            _detach_volume(task_id, result, resource)
+        elif current_status == QUERY_DETACH:
+            _query_detach_status(task_id, result, resource)
+        elif current_status == DETACH_VOLUME_SUCCESSFUL:
+            _detach_volume_successful(task_id, resource)
+    except Exception as e:
+        logging.exception(
+            "[CRP] _delete_resource failed, Exception:%s",
+            e.args)
+        _delete_vm(task_id, resource)
+        TaskManager.task_exit(task_id)
+
+
+# resource REST API Controller
+class ResourceAPI(Resource):
+
+    def delete(self, vm_id, vol_id):
         try:
-            logging.info('DELETE volume, vol_id is %s.', vol_id)
-            cinder_client = OpenStack.cinder_client
-            cinder_client.volumes.detach(vol_id)
-            cinder_client.volumes.delete(vol_id)
+            resource = {
+                'vm_id': vm_id,
+                'vol_id': vol_id
+            }
+            TaskManager.task_start(
+                SLEEP_TIME, TIMEOUT,
+                {'current_status': DETACH_VOLUME},
+                _delete_resource, resource)
         except Exception as e:
             err_msg = e.message
             logging.exception(
-                "[CRP] VolumenAPI delete failed, Exception:%s",
+                "[CRP] Resource delete failed, Exception:%s",
                 e.args)
             res = {
                 "code": 400,
@@ -396,11 +495,11 @@ class VolumenAPI(Resource):
             res = {
                 "code": 200,
                 "result": {
-                    "msg": "删除成功"
+                    "msg": "提交成功"
                 }
             }
             return res, 200
 
 
-mpc_resource_api.add_resource(ResourceAPI, '/resource')
-mpc_resource_api.add_resource(VolumenAPI, '/volume/<vol_id>')
+mpc_resource_api.add_resource(ResourceListAPI, '/resource')
+mpc_resource_api.add_resource(ResourceAPI, '/resource/<vm_id>/<vol_id>')
