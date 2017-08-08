@@ -7,9 +7,7 @@ DNS_CONDIG = {
         'host': '172.28.50.141',
         'port': 22,
         'username': 'root',
-        'password': '123456',
-        'domain_path': '/var/named/syswin.com.zone',
-        'rndc_path': '/usr/sbin/rndc'
+        'password': '123456'
         }
 response = {'success': False, 'error': ''}
 
@@ -68,16 +66,22 @@ class DnsShellCmd(object):
         cmd2 = "[ -f /var/named/%s ] && echo '' || echo 'fail'" % zone_file
         return [cmd1,cmd2]
 
+    @staticmethod
+    def modify_serial_cmd(domain_name):
+        zone = domain_name_to_zone(domain_name)
+        cmd = "sed -i '3c\                                        '$(date +%s)'	     ; serial\' {path}".format(path=zone['path'])
+        return cmd
+
+
 class DnsConfig(object):
 
     __instance = None
 
-    def __init__(self, host=DNS_CONDIG['host'], port=DNS_CONDIG['port'], username=DNS_CONDIG['username'], password=DNS_CONDIG['password'], path=DNS_CONDIG['domain_path']):
+    def __init__(self, host=DNS_CONDIG['host'], port=DNS_CONDIG['port'], username=DNS_CONDIG['username'], password=DNS_CONDIG['password']):
         self.host = host
         self.port = port
         self.username = username
         self.password = password
-        self.path = path
         self.ssh = None
         self.trans = None
 
@@ -104,7 +108,9 @@ class DnsConfig(object):
         try:
             self.connect()
             cmd = DnsShellCmd.add_cmd(domain_name, ip)
+            serial_cmd = DnsShellCmd.modify_serial_cmd(domain_name)
             stdin, stdout, stderr = self.ssh.exec_command(cmd)
+            stdin1, stdout1, stderr1 = self.ssh.exec_command(serial_cmd)
             result = stderr.read()
             self.close()
             if len(result) == 0:
@@ -253,16 +259,9 @@ class DnsApi(DnsConfig):
 if __name__ == '__main__':
     print time.time()
     dns_api = DnsApi()
-    dns_api1 = DnsApi()
-    dns_api2 = DnsApi()
     name = raw_input('please input:').strip()
-    print dns_api.dns_query(domain_name=name)
-    print dns_api1.dns_query(domain_name=name)
-    print dns_api2.dns_query(domain_name=name)
-    print dns_api.dns_query(domain_name=name)
-    print dns_api1.dns_query(domain_name=name)
-    print dns_api2.dns_query(domain_name=name)
-    #print dns_api.dns_add(domain_name=name, ip='192.168.70.130')
+    #print dns_api.dns_query(domain_name=name)
+    print dns_api.dns_add(domain_name=name, ip='192.168.70.130')
     #print dns_api.dns_delete(domain_name=name)
     #print dns_api.dns_query(domain_name=name)
     #print dns_connect.add(domain_name=name, ip='192.168.70.130')
