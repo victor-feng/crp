@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import json
+import time
 import subprocess
 import requests
 from transitions import Machine
@@ -715,6 +716,7 @@ class ResourceProviderTransitions(object):
             path = SCRIPTPATH + 'mysqlmha'
             cmd = '/bin/sh {0}/mlm.sh {0}'.format(path)
             strout = ''
+            time.sleep(10)
             p = subprocess.Popen(
                 cmd,
                 shell=True,
@@ -790,15 +792,15 @@ class ResourceProviderTransitions(object):
 
             strout = ''
             # 执行命令 如果失败 连续重复尝试3次
-            while (
-                    not strout or 'FAILED!' in strout or 'UNREACHABLE!' in strout) and error_time < 3:
+            while (not strout or 'FAILED!' in strout or 'UNREACHABLE!' in strout) and error_time < 3:
                 strout = _redis_push()
                 error_time += 1
+                time.sleep(5)
 
             instance[0]['dbtype'] = 'master'
             instance[1]['dbtype'] = 'slave'
             if error_time == 3:
-                self.rollback()
+                Log.logger.debug('redis cluster 重试3次失败')
 
 
 # Transit request_data from the JSON nest structure to the chain structure
