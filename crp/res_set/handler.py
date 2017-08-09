@@ -607,20 +607,20 @@ class ResourceProviderTransitions(object):
                 f.write('%s\n' % nip)
             Log.logger.debug('----->start push', kwargs)
             self.run_cmd(
-                "ansible {nip} --private-key=crp/res_set/playbook-0830/old_id_rsa -a 'yum install rsync -y'".format(nip=nip))
+                "ansible {nip} --private-key=crp/res_set/playbook-0830/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip))
             self.run_cmd(
-                "ansible {nip} --private-key=crp/res_set/playbook-0830/old_id_rsa -m synchronize -a 'src=/opt/uop-crp/crp/res_set/update.py dest=/shell/'".format(
+                "ansible {nip} --private-key=crp/res_set/playbook-0830/id_rsa_98 -m synchronize -a 'src=/opt/uop-crp/crp/res_set/update.py dest=/shell/'".format(
                     nip=nip))
             self.run_cmd(
-                "ansible {nip} --private-key=crp/res_set/playbook-0830/old_id_rsa -m synchronize -a 'src=/opt/uop-crp/crp/res_set/template dest=/shell/'".format(
+                "ansible {nip} --private-key=crp/res_set/playbook-0830/id_rsa_98 -m synchronize -a 'src=/opt/uop-crp/crp/res_set/template dest=/shell/'".format(
                     nip=nip))
             Log.logger.debug('------>上传配置文件完成')
-            self.run_cmd("ansible {nip} --private-key=crp/res_set/playbook-0830/old_id_rsa -m shell -a 'chmod 777 /shell/update.py'".format(
+            self.run_cmd("ansible {nip} --private-key=crp/res_set/playbook-0830/id_rsa_98 -m shell -a 'chmod 777 /shell/update.py'".format(
                 nip=nip))
-            self.run_cmd("ansible {nip} --private-key=crp/res_set/playbook-0830/old_id_rsa -m shell -a 'chmod 777 /shell/template'".format(
+            self.run_cmd("ansible {nip} --private-key=crp/res_set/playbook-0830/id_rsa_98 -m shell -a 'chmod 777 /shell/template'".format(
                 nip=nip))
             self.run_cmd(
-                'ansible {nip} --private-key=crp/res_set/playbook-0830/old_id_rsa -m shell -a '
+                'ansible {nip} --private-key=crp/res_set/playbook-0830/id_rsa_98 -m shell -a '
                 '"/shell/update.py {domain} {ip} {port}"'.format(
                     nip=kwargs.get('nip'),
                     domain=kwargs.get('domain'),
