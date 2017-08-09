@@ -650,7 +650,7 @@ class ResourceProviderTransitions(object):
 
         #添加dns操作#
         try:
-            ip = DNS_ENV.get(self.req_dict["env"])
+            ip = DNS_ENV.get(self.req_dict["env"],'172.28.5.21')
             Log.logger.debug("self.property_mapper: %s" % self.property_mapper)
             domain_name = self.property_mapper.get('app',{}).get('domain',{})
             Log.logger.debug('dns add -->ip:%s,domain:%s' %(ip, domain_name))
