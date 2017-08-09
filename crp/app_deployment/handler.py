@@ -32,7 +32,7 @@ app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 #url = "http://172.28.11.111:8001/cmdb/api/"
 #url = "http://uop-test.syswin.com/api/dep_result/"
 #url = "http://uop-test.syswin.com/api/dep_result/"
-#UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
+UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 
 def _dep_callback(deploy_id, success):
     data = dict()
