@@ -716,7 +716,7 @@ class ResourceProviderTransitions(object):
             path = SCRIPTPATH + 'mysqlmha'
             cmd = '/bin/sh {0}/mlm.sh {0}'.format(path)
             strout = ''
-            time.sleep(10)
+            time.sleep(30)
             p = subprocess.Popen(
                 cmd,
                 shell=True,
