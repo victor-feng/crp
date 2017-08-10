@@ -149,7 +149,7 @@ class TestingConfig(BaseConfig):
     #    'username': 'crp',
     #    'password': 'crp',
     #}
-    # TODO: test.mongodb.db??
+    # TODO: mongo_settings is noused. 
     MONGODB_SETTINGS = [
              {
             'db': 'crp',
