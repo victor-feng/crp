@@ -265,7 +265,7 @@ class AppDeploy(Resource):
         sh_path = self._make_command_file(mysql_password, mysql_user, port, database, remote_path)
 
         host_path = self._make_hosts_file(ip)
-        ansible_cmd = 'ansible -i ' + host_path + ip +  ' --private-key=crp/res_set/playbook-0830/old_id_rsa -u root -m'
+        ansible_cmd = 'ansible -i ' + host_path + ' ip ' +  ' --private-key=crp/res_set/playbook-0830/old_id_rsa -u root -m'
         ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + local_path + ' dest=' + remote_path + '"'
         ansible_sh_cmd =  ansible_cmd + ' script -a ' + sh_path
         if self._exec_ansible_cmd(ansible_sql_cmd):
@@ -306,6 +306,7 @@ class AppDeploy(Resource):
     def _make_hosts_file(self, ip):
         myhosts_path = os.path.join(UPLOAD_FOLDER, 'mysql', 'myhosts')
         with open(myhosts_path, "wb+") as file_object:
+            file_object.write('[ip]' + os.linesep)
             file_object.write(ip)
         return myhosts_path
 

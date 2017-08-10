@@ -81,7 +81,7 @@ sed -i 's/server_id        = 2043316/server_id        = '$serverid'/g' /data/331
 #sed -i "/#enforce_gtid_consistency = ON/a relay_log_purge=0" /data/3316/conf/my3316.cnf
 rm -rf /data/3316/data/auto.cnf
 ###################启动mysql
-/etc/init.d/m3316 start
+/etc/init.d/m3316 restart
 #定义登陆命令
 MYSQL_CMD="mysql -ukvm -pKvmanger@2wg -P3316 -h127.0.0.1"
 #授权给slave权限
