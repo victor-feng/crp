@@ -8,6 +8,7 @@ import time
 import uuid
 from urlparse import urljoin
 import subprocess
+import threading
 
 from flask_restful import reqparse, Api, Resource
 from flask import request
@@ -126,6 +127,7 @@ def _check_image_status(image_uuid):
             return True
     return False
 
+
 class AppDeploy(Resource):
     def post(self):
         code = 200
@@ -145,6 +147,33 @@ class AppDeploy(Resource):
             logging.debug("deploy_id is " + str(deploy_id))
             docker = args.docker
             mongodb = args.mongodb
+
+            logging.debug("Thread exec start")
+            t = threading.Thread(target=self.deploy_anything, args=(mongodb, args, docker, deploy_id))
+            t.start()
+            logging.debug("Thread exec done")
+
+        except Exception as e:
+            logging.exception("AppDeploy exception: ")
+            # Log.logger.error("AppDeploy exception: " + e.message)
+            code = 500
+            msg = "internal server error: " + e.message
+
+        res = {
+            "code": code,
+            "result": {
+                "res": "",
+                "msg": msg
+            }
+        }
+        return res, code
+
+    def deploy_anything(self, mongodb, args, docker, deploy_id):
+        try:
+            lock = threading.RLock()
+            lock.acquire()
+            code = 200
+            msg = "ok"
             mongodb_res = True
             sql_ret = True
             if mongodb:
@@ -165,25 +194,16 @@ class AppDeploy(Resource):
                     else:
                         break
 
-            if not(sql_ret and mongodb_res):
+            if not (sql_ret and mongodb_res):
                 res = _dep_callback(deploy_id, False)
                 if res.status_code == 500:
                     code = 500
                     msg = "uop server error"
+            lock.release()
         except Exception as e:
-            logging.exception("AppDeploy exception: ")
-            # Log.logger.error("AppDeploy exception: " + e.message)
             code = 500
             msg = "internal server error: " + e.message
-
-        res = {
-            "code": code,
-            "result": {
-                "res": "",
-                "msg": msg
-            }
-        }
-        return res, code
+        return code, msg
 
     def _deploy_mongodb(self, args):
         host_username = args.get('host_username', '')
