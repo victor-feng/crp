@@ -83,7 +83,7 @@ sed -i "/skip_slave_start/a\relay_log_info_repository = TABLE" /data/3316/conf/m
 sed -i "/skip_slave_start/a\master_info_repository    = TABLE" /data/3316/conf/my.cnf
 rm -rf /data/3316/data/auto.cnf
 ###################启动mysql
-/etc/init.d/m3316 start
+/etc/init.d/m3316 restart
 #修改lvs_real的vip
 LVIP=$(cat /tmp/mysql.txt |sed -n '12p')
 sed -i 's/LVIP/'$LVIP'/g' /usr/local/bin/lvs_real

@@ -8,6 +8,7 @@ import time
 import uuid
 from urlparse import urljoin
 import subprocess
+import threading
 
 from flask_restful import reqparse, Api, Resource
 from flask import request
@@ -25,7 +26,7 @@ from crp.log import Log
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
-from config import APP_ENV, configs
+from config import APP_ENV, configs, MONGODB_PATH
 
 app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 #TODO: move to global conf
@@ -126,6 +127,7 @@ def _check_image_status(image_uuid):
             return True
     return False
 
+
 class AppDeploy(Resource):
     def post(self):
         code = 200
@@ -145,6 +147,33 @@ class AppDeploy(Resource):
             logging.debug("deploy_id is " + str(deploy_id))
             docker = args.docker
             mongodb = args.mongodb
+
+            logging.debug("Thread exec start")
+            t = threading.Thread(target=self.deploy_anything, args=(mongodb, args, docker, deploy_id))
+            t.start()
+            logging.debug("Thread exec done")
+
+        except Exception as e:
+            logging.exception("AppDeploy exception: ")
+            # Log.logger.error("AppDeploy exception: " + e.message)
+            code = 500
+            msg = "internal server error: " + e.message
+
+        res = {
+            "code": code,
+            "result": {
+                "res": "",
+                "msg": msg
+            }
+        }
+        return res, code
+
+    def deploy_anything(self, mongodb, args, docker, deploy_id):
+        try:
+            lock = threading.RLock()
+            lock.acquire()
+            code = 200
+            msg = "ok"
             mongodb_res = True
             sql_ret = True
             if mongodb:
@@ -165,25 +194,16 @@ class AppDeploy(Resource):
                     else:
                         break
 
-            if not(sql_ret and mongodb_res):
+            if not (sql_ret and mongodb_res):
                 res = _dep_callback(deploy_id, False)
                 if res.status_code == 500:
                     code = 500
                     msg = "uop server error"
+            lock.release()
         except Exception as e:
-            logging.exception("AppDeploy exception: ")
-            # Log.logger.error("AppDeploy exception: " + e.message)
             code = 500
-            msg = "internal server error: " + e.message
-
-        res = {
-            "code": code,
-            "result": {
-                "res": "",
-                "msg": msg
-            }
-        }
-        return res, code
+            msg = "internal server error: " + str(e.message)
+        return code, msg
 
     def _deploy_mongodb(self, args):
         host_username = args.get('host_username', '')
@@ -208,21 +228,21 @@ class AppDeploy(Resource):
             host_path = self.mongodb_hosts_file(ip)
             ansible_cmd = 'ansible -i ' + host_path + ip + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -u root -m'
             ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + local_path + ' dest=' + remote_path + '"'
-            ansible_sh_cmd = ansible_cmd + ' script -a ' + sh_path
+            ansible_sh_cmd = ansible_cmd + ' -m shell -a "%s <%s"' % (MONGODB_PATH, sh_path)
             if self._exec_ansible_cmd(ansible_sql_cmd):
                 return self._exec_ansible_cmd(ansible_sh_cmd)
             else:
                 return False
 
     def mongodb_command_file(self, username, password, port, db, script_file):
-        sh_path = os.path.join(UPLOAD_FOLDER, 'mongodb.sh')
+        sh_path = os.path.join(UPLOAD_FOLDER, 'mongodb.js')
         with open(sh_path, 'wb+') as f:
-            f.write("#!/bin/bash\n")
-            f.write("'/opt/mongodb/bin/mongo 127.0.0.1:28010;use admin;db.auth('admin','123456')'")
-            f.write("\"db.auth('admin','123456')\"\n")
-            f.write("'rs.slaveOK()'\n")
+            f.write("use admin\n")
+            f.write("db.auth('admin','123456')")
+            f.write("rs.slaveOk()")
+            f.write("show collections'\n")
+            # TODO this have problem
             f.write('%s' % script_file)
-            f.write("'exit'")
         return sh_path
 
     def mongodb_hosts_file(self, ip):
@@ -265,7 +285,7 @@ class AppDeploy(Resource):
         sh_path = self._make_command_file(mysql_password, mysql_user, port, database, remote_path)
 
         host_path = self._make_hosts_file(ip)
-        ansible_cmd = 'ansible -i ' + host_path + ip +  ' --private-key=crp/res_set/playbook-0830/old_id_rsa -u root -m'
+        ansible_cmd = 'ansible -i ' + host_path + ' ip ' +  ' --private-key=crp/res_set/playbook-0830/old_id_rsa -u root -m'
         ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + local_path + ' dest=' + remote_path + '"'
         ansible_sh_cmd =  ansible_cmd + ' script -a ' + sh_path
         if self._exec_ansible_cmd(ansible_sql_cmd):
@@ -306,6 +326,7 @@ class AppDeploy(Resource):
     def _make_hosts_file(self, ip):
         myhosts_path = os.path.join(UPLOAD_FOLDER, 'mysql', 'myhosts')
         with open(myhosts_path, "wb+") as file_object:
+            file_object.write('[ip]' + os.linesep)
             file_object.write(ip)
         return myhosts_path
 

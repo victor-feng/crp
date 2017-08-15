@@ -82,7 +82,7 @@ rm -rf /data/3316/data/auto.cnf
 ###################启动mysql
 #sed -i '$s/^/#/' /data/3316/script/start_3316.sh
 #/bin/sh /data/3316/script/start_3316.sh > /dev/null 2>&1
-/etc/init.d/m3316 start
+/etc/init.d/m3316 restart
 #$bin $id 需要在master.txt中取
 masterip=$(cat /tmp/mysql.txt |sed -n '2p')
 slaveip1=$(cat /tmp/mysql.txt |sed -n '4p'|awk -F "." '{print $1}')
