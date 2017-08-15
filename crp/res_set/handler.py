@@ -679,8 +679,9 @@ class ResourceProviderTransitions(object):
 
     @transition_state_logger
     def do_dns_push(self, domain_name, ip):
-        dns_api = NamedManagerApi()
-        msg = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=ip)
+        #dns_api = NamedManagerApi()
+        #msg = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=ip)
+        msg = 'now is a test'
         Log.logger.debug('The dns add result: %s' % msg)
 
     @transition_state_logger
