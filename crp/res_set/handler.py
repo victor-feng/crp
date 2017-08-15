@@ -8,7 +8,7 @@ from transitions import Machine
 from flask_restful import reqparse, Api, Resource
 from flask import request
 from crp.taskmgr import *
-from crp.dns.dns_api import DnsApi
+from crp.dns.dns_api import DnsApi,NamedManagerApi
 from crp.res_set import resource_set_blueprint
 from crp.res_set.errors import resource_set_errors
 from crp.log import Log
@@ -678,9 +678,9 @@ class ResourceProviderTransitions(object):
         return msg, code
 
     @transition_state_logger
-    def do_dns_push(self, ip, domain_name):
-        dns_api = DnsApi()
-        msg = dns_api.dns_add(domain_name=domain_name, ip=ip)
+    def do_dns_push(self, domain_name, ip):
+        dns_api = NamedManagerApi()
+        msg = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=ip)
         Log.logger.debug('The dns add result: %s' % msg)
 
     @transition_state_logger

@@ -2,6 +2,8 @@
 import paramiko
 import subprocess
 import time
+import requests
+import json
 
 DNS_CONDIG = {
         'host': '172.28.50.141',
@@ -11,13 +13,18 @@ DNS_CONDIG = {
         }
 response = {'success': False, 'error': ''}
 
+NAMEDMANAGER_URL = 'http://itop.syswin.com/dnsapi.php'
+NAMEDMANAGER_HEADERS = {'content-type': 'application/json'}
 
 def domain_name_to_zone(domain_name):
     zone = '.'.join(domain_name.split('.')[-2:])
     path = '/var/named/%s.zone' % zone
     return {'zone':zone,'path':path}
 
-
+def exchange_domain_to_zone_and_name(domain_name):
+    zone = '.'.join(domain_name.split('.')[-2:])
+    record_name = '.'.join(domain_name.split('.')[:-2])
+    return {'zone':zone,'record_name':record_name}
 
 class ServerError(Exception):
     pass
@@ -256,21 +263,121 @@ class DnsApi(DnsConfig):
             res = e.message
         return res
 
+
+class NamedManagerApi(object):
+    def __init(self):
+        pass
+
+    def named_zone_query(self,zone_name):
+        """
+        data格式：
+        {"method":"getdomains"}
+        :param zone_name:
+        :return:
+        """
+        try:
+            data = {"method":"getdomains"}
+            rep = requests.post(NAMEDMANAGER_URL, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS)
+            ret_json = json.loads(rep.text)
+            result = ret_json.get('zone')
+            if (result is not None) and (len(result) != 0):
+                if zone_name in result:
+                    res = zone_name
+                else:
+                    res = ''
+            else:
+                raise ServerError('zone list is null')
+        except Exception as e:
+            raise ServerError(e.message)
+        return res
+
+    def named_domain_query(self,domain_name):
+        """
+        data 格式：
+        {"method":"getDns","domain":"syswin.com","recordname":"shulitest"}
+        :param domain_name:
+        :return:
+        """
+        try:
+            exchange_result = exchange_domain_to_zone_and_name(domain_name)
+            domain = exchange_result.get('zone')
+            record_name = exchange_result.get('record_name')
+            data = {"method":"getDns","domain":domain,"recordname":record_name}
+            rep = requests.post(NAMEDMANAGER_URL, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS)
+            print rep.text
+            ret_json = json.loads(rep.text)
+            if ret_json.get('result') == 'success':
+                res = ret_json.get('domainip')
+            else:
+                raise ServerError('domain query error')
+        except Exception as e:
+            raise ServerError(e.message)
+        return res
+
+    def named_domain_add(self,domain_name,domain_ip):
+        """
+        data格式：
+        {"method":"adddns","domain":"syswin.com","recordname":"testgg","hostip":"172.28.31.33"}
+        :param domain_name:
+        :param domain_ip:
+        :return:
+        """
+        try:
+            exchange_result = exchange_domain_to_zone_and_name(domain_name)
+            domain = exchange_result.get('zone')
+            record_name = exchange_result.get('record_name')
+            data = {"method":"adddns","domain":domain,"recordname":record_name,"hostip":domain_ip}
+            rep = requests.post(NAMEDMANAGER_URL, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS)
+            ret_json = json.loads(rep.text)
+            if ret_json.get('result') == 'success':
+                res = ret_json.get('content')
+            else:
+                raise ServerError('add domain error:{message}'.format(message=ret_json.get('message')))
+        except Exception as e:
+            raise ServerError(e.message)
+        return res
+
+    def named_zone_add(self,zone_name):
+        pass
+
+    def named_zone_delete(self,zone_name):
+        pass
+
+    def named_domain_delete(self,domain_name):
+        pass
+
+    def named_dns_domain_add(self, domain_name, domain_ip):
+        """
+        添加的时候做了域是否存在的判断；
+        :param domain_name:
+        :param domain_ip:
+        :return:
+        """
+        try:
+            exchange_result = exchange_domain_to_zone_and_name(domain_name)
+            domain = exchange_result.get('zone')
+            zone_result = self.named_zone_query(zone_name=domain)
+            if len(zone_result) != 0:
+                self.named_domain_add(domain_name=domain_name,domain_ip=domain_ip)
+                res = 'name: {domain_name}, ip: {domain_ip}'.format(domain_name=domain_name,domain_ip=domain_ip)
+            else:
+                raise ServerError('The zone [{zone_name}] does not exist'.format(zone_name=domain))
+        except Exception as e:
+            res = e.message
+        return res
+
+
 if __name__ == '__main__':
     print time.time()
-    dns_api = DnsApi()
-    name = raw_input('please input:').strip()
-    #print dns_api.dns_query(domain_name=name)
-    print dns_api.dns_add(domain_name=name, ip='192.168.70.130')
-    #print dns_api.dns_delete(domain_name=name)
-    #print dns_api.dns_query(domain_name=name)
-    #print dns_connect.add(domain_name=name, ip='192.168.70.130')
-    #print dns_connect.query(domain_name=name)
-    #print dns_connect.delete(domain_name=name)
-    #print dns_connect.reload()
+    named_connect = NamedManagerApi()
+    #print named_connect.named_zone_query(zone_name='baidu.com')
+    print named_connect.named_domain_query(domain_name='test1111.syswin.com')
+    #print named_connect.named_domain_add(domain_name='test2.baidu.com',domain_ip='10.0.0.2')
+    #print named_connect.named_dns_domain_add(domain_name='test2.baidu.com',domain_ip='10.0.0.3')
+    #print named_connect.named_domain_query(domain_name='test1.syswin.com')
+    #dns_api = DnsApi()
     #time.sleep(50)
     #dns_connect.close()
-    print time.time()
 
 
 

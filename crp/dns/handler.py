@@ -6,8 +6,9 @@ from crp.dns.errors import dns_set_errors
 from crp.log import Log
 import json
 import subprocess
+from config import TestingConfig, DevelopmentConfig
 
-dns_env = {'develop': '172.28.5.21', 'test': '172.28.18.212'}
+DNS_ENV = DevelopmentConfig.DNS_ENV
 
 res = {
     "code": "",
@@ -34,12 +35,12 @@ class DnServerSet(Resource):
         env = args.env
         domain = args.domain
         try:
-            dns_server = DnsConfig.singleton()
-            query_response = dns_server.query(domain_name=domain)
+            dns_api = NamedManagerApi()
+            message = dns_api.named_domain_query(domain_name=domain)
             code = 200
             res['code'] = code
             res['result']['res'] = "success"
-            res['result']['msg'] = query_response['error']
+            res['result']['msg'] = message
         except Exception as e:
             code = 400
             res['code'] = code
@@ -54,17 +55,16 @@ class DnServerSet(Resource):
 
         args = parser.parse_args()
         env = args.env
-        ip = dns_env.get(env)
+        ip = DNS_ENV.get(env)
         domain = args.domain
 
         try:
-            dns_server = DnsConfig.singleton()
-            add_response = dns_server.add(domain_name=domain, ip=ip)
-            reload_response = dns_server.reload()
+            dns_api = NamedManagerApi()
+            message = dns_api.named_dns_domain_add(domain_name=domain, domain_ip=ip)
             code = 200
             res['code'] = code
             res['result']['res'] = "success"
-            res['result']['msg'] = add_response['error']
+            res['result']['msg'] = message
         except Exception as e:
             code = 400
             res['code'] = code
