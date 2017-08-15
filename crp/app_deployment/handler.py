@@ -26,7 +26,9 @@ from crp.log import Log
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
-from config import APP_ENV, configs, MONGODB_PATH
+from config import APP_ENV, configs
+
+MONGODB_PATH = current_app.config['MONGODB_PATH']
 
 app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 #TODO: move to global conf
