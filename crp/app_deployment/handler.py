@@ -26,7 +26,7 @@ from crp.log import Log
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
-from config import APP_ENV, configs
+from config import APP_ENV, configs, MONGODB_PATH
 
 app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 #TODO: move to global conf
@@ -228,21 +228,21 @@ class AppDeploy(Resource):
             host_path = self.mongodb_hosts_file(ip)
             ansible_cmd = 'ansible -i ' + host_path + ip + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -u root -m'
             ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + local_path + ' dest=' + remote_path + '"'
-            ansible_sh_cmd = ansible_cmd + ' script -a ' + sh_path
+            ansible_sh_cmd = ansible_cmd + ' -m shell -a "%s <%s"' % (MONGODB_PATH, sh_path)
             if self._exec_ansible_cmd(ansible_sql_cmd):
                 return self._exec_ansible_cmd(ansible_sh_cmd)
             else:
                 return False
 
     def mongodb_command_file(self, username, password, port, db, script_file):
-        sh_path = os.path.join(UPLOAD_FOLDER, 'mongodb.sh')
+        sh_path = os.path.join(UPLOAD_FOLDER, 'mongodb.js')
         with open(sh_path, 'wb+') as f:
-            f.write("#!/bin/bash\n")
-            f.write("'/opt/mongodb/bin/mongo 127.0.0.1:28010;use admin;db.auth('admin','123456')'")
-            f.write("\"db.auth('admin','123456')\"\n")
-            f.write("'rs.slaveOK()'\n")
+            f.write("use admin\n")
+            f.write("db.auth('admin','123456')")
+            f.write("rs.slaveOk()")
+            f.write("show collections'\n")
+            # TODO this have problem
             f.write('%s' % script_file)
-            f.write("'exit'")
         return sh_path
 
     def mongodb_hosts_file(self, ip):
