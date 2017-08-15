@@ -28,7 +28,6 @@ reload(sys)
 sys.setdefaultencoding('utf-8')
 from config import APP_ENV, configs
 
-MONGODB_PATH = current_app.config['MONGODB_PATH']
 
 app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 #TODO: move to global conf
@@ -230,7 +229,7 @@ class AppDeploy(Resource):
             host_path = self.mongodb_hosts_file(ip)
             ansible_cmd = 'ansible -i ' + host_path + ip + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -u root -m'
             ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + local_path + ' dest=' + remote_path + '"'
-            ansible_sh_cmd = ansible_cmd + ' -m shell -a "%s <%s"' % (MONGODB_PATH, sh_path)
+            ansible_sh_cmd = ansible_cmd + ' -m shell -a "%s <%s"' % (current_app.config['MONGODB_PATH'], sh_path)
             if self._exec_ansible_cmd(ansible_sql_cmd):
                 return self._exec_ansible_cmd(ansible_sh_cmd)
             else:
