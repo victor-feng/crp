@@ -139,6 +139,14 @@ class DevelopmentConfig(BaseConfig):
     }
     SCRIPTPATH = r'crp/res_set/playbook-0830/'
     DNS_ENV = {'develop': '172.28.5.21', 'test': '172.28.18.212'}
+    #DNS配置
+    DNS_CONDIG = {
+        'host': '172.28.50.141',
+        'port': 22,
+        'username': 'root',
+        'password': '123456'
+        }
+    NAMEDMANAGER_URL = 'http://itop.syswin.com/dnsapi.php'
 
 class TestingConfig(BaseConfig):
     TESTING = True
@@ -200,6 +208,14 @@ class TestingConfig(BaseConfig):
     MONGODB_SCRIPT_PATH = 'uop-crp/crp/res_set/mongo_script/'
     MONGODB_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010'
 
+    #DNS配置
+    DNS_CONDIG = {
+        'host': '172.28.50.141',
+        'port': 22,
+        'username': 'root',
+        'password': '123456'
+        }
+    NAMEDMANAGER_URL = 'http://itop.syswin.com/dnsapi.php'
 
 configs = {
     'development': DevelopmentConfig,

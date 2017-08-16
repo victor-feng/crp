@@ -4,16 +4,12 @@ import subprocess
 import time
 import requests
 import json
+from config import APP_ENV, configs
 
-DNS_CONDIG = {
-        'host': '172.28.50.141',
-        'port': 22,
-        'username': 'root',
-        'password': '123456'
-        }
+
 response = {'success': False, 'error': ''}
-
-NAMEDMANAGER_URL = 'http://itop.syswin.com/dnsapi.php'
+DNS_CONDIG = configs[APP_ENV].DNS_CONDIG
+NAMEDMANAGER_URL = configs[APP_ENV].NAMEDMANAGER_URL
 NAMEDMANAGER_HEADERS = {'content-type': 'application/json'}
 
 def domain_name_to_zone(domain_name):
@@ -375,9 +371,6 @@ if __name__ == '__main__':
     #print named_connect.named_domain_add(domain_name='test2.baidu.com',domain_ip='10.0.0.2')
     #print named_connect.named_dns_domain_add(domain_name='test2.baidu.com',domain_ip='10.0.0.3')
     #print named_connect.named_domain_query(domain_name='test1.syswin.com')
-    #dns_api = DnsApi()
-    #time.sleep(50)
-    #dns_connect.close()
 
 
 
