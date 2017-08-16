@@ -8,6 +8,8 @@ import json
 import logging
 import subprocess
 
+from tornado.options import define, options
+
 class MongodbCluster(object):
 
     def __init__(self, ip_list):
@@ -49,7 +51,7 @@ class MongodbCluster(object):
                 try:
                     a = p.stdout.readlines()[5]
                 except IndexError as e:
-                    logging.execption("[MISC] telnet_ack faild, Exception: %s", e.args)
+                    logging.exception("[MISC] telnet_ack faild, Exception: %s", e.args)
                     a = 'false'
                     break
                 if 'open' in a:
@@ -64,7 +66,8 @@ class MongodbCluster(object):
         script_name = ['mongoslave1.sh', 'mongoslave2.sh', 'mongomaster1.sh', 'mongomaster2.sh', 'old_id_rsa']
         for i in script_name:
             os.system('chmod 600 {dir}'.format(dir=self.dir + '/' + i))
-        cmd_before = "ansible {vip} --private-key={dir}/old_id_rsa -m synchronize -a 'src=/opt/uop-crp/crp/res_set/" \
+        #cmd_before = "ansible {vip} --private-key={dir}/old_id_rsa -m synchronize -a 'src=/opt/uop-crp/crp/res_set/" \
+        cmd_before = "ansible {vip} --private-key={dir}/old_id_rsa -m synchronize -a 'src=" \
                      "write_mongo_ip.py dest=/tmp/'".format(vip=ip, dir=self.dir)
         logging.info("[MISC] cmd_before: %s", cmd_before)
         authority_cmd = 'ansible {vip} -u root --private-key={dir}/old_id_rsa -m shell -a ' \
@@ -108,12 +111,14 @@ class MongodbCluster(object):
 
 
 if __name__ == '__main__': 
+    options.parse_command_line()
+
     logging.info('create mongo cluster')
-    lst = [ '172.28.32.59',
-           '172.28.32.60',
-           '172.28.32.58',
-           '172.28.32.58',
+    lst = [ '172.28.36.157',
+           '172.28.36.156',
+           '172.28.36.155',
+           '172.28.36.155',
            ]
-    #mc = MongodbCluster(lst)
-    #mc.exec_final_script()
+    mc = MongodbCluster(lst)
+    mc.exec_final_script()
 
