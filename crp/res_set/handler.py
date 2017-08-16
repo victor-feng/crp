@@ -14,33 +14,33 @@ from crp.res_set.errors import resource_set_errors
 from crp.log import Log
 from crp.openstack import OpenStack
 from crp.utils.docker_tools import image_transit
-from config import TestingConfig, DevelopmentConfig
+from config import TestingConfig, DevelopmentConfig, configs, APP_ENV
 
 # TODO: refactor it later.
-nginx_ip = DevelopmentConfig.nginx_ip
-nginx_ip_slave = DevelopmentConfig.nginx_ip_slave
-MONGODB_SCRIPT_PATH = DevelopmentConfig.MONGODB_SCRIPT_PATH
+nginx_ip = configs[APP_ENV].nginx_ip
+nginx_ip_slave = configs[APP_ENV].nginx_ip_slave
+MONGODB_SCRIPT_PATH = configs[APP_ENV].MONGODB_SCRIPT_PATH
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 
 TIMEOUT = 500
 SLEEP_TIME = 3
-cluster_type_image_port_mappers = DevelopmentConfig.cluster_type_image_port_mappers
-FLAVOR_1C2G = DevelopmentConfig.FLAVOR_1C2G
-DOCKER_FLAVOR_2C4G = DevelopmentConfig.DOCKER_FLAVOR_2C4G
-AVAILABILITY_ZONE_AZ_UOP = DevelopmentConfig.AVAILABILITY_ZONE_AZ_UOP
-DEV_NETWORK_ID = DevelopmentConfig.DEV_NETWORK_ID
-OS_EXT_PHYSICAL_SERVER_ATTR = DevelopmentConfig.OS_EXT_PHYSICAL_SERVER_ATTR
-RES_CALLBACK = DevelopmentConfig.RES_CALLBACK
-RES_STATUS_OK = DevelopmentConfig.RES_STATUS_OK
-RES_STATUS_FAIL = DevelopmentConfig.RES_STATUS_FAIL
-RES_STATUS_DEFAULT = DevelopmentConfig.RES_STATUS_DEFAULT
-DEFAULT_USERNAME = DevelopmentConfig.DEFAULT_USERNAME
-DEFAULT_PASSWORD = DevelopmentConfig.DEFAULT_PASSWORD
-items_sequence_list_config = DevelopmentConfig.items_sequence_list_config
-property_json_mapper_config = DevelopmentConfig.property_json_mapper_config
-SCRIPTPATH = DevelopmentConfig.SCRIPTPATH
-DNS_ENV = DevelopmentConfig.DNS_ENV
+cluster_type_image_port_mappers = configs[APP_ENV].cluster_type_image_port_mappers
+FLAVOR_1C2G = configs[APP_ENV].FLAVOR_1C2G
+DOCKER_FLAVOR_2C4G = configs[APP_ENV].DOCKER_FLAVOR_2C4G
+AVAILABILITY_ZONE_AZ_UOP = configs[APP_ENV].AVAILABILITY_ZONE_AZ_UOP
+DEV_NETWORK_ID = configs[APP_ENV].DEV_NETWORK_ID
+OS_EXT_PHYSICAL_SERVER_ATTR = configs[APP_ENV].OS_EXT_PHYSICAL_SERVER_ATTR
+RES_CALLBACK = configs[APP_ENV].RES_CALLBACK
+RES_STATUS_OK = configs[APP_ENV].RES_STATUS_OK
+RES_STATUS_FAIL = configs[APP_ENV].RES_STATUS_FAIL
+RES_STATUS_DEFAULT = configs[APP_ENV].RES_STATUS_DEFAULT
+DEFAULT_USERNAME = configs[APP_ENV].DEFAULT_USERNAME
+DEFAULT_PASSWORD = configs[APP_ENV].DEFAULT_PASSWORD
+items_sequence_list_config = configs[APP_ENV].items_sequence_list_config
+property_json_mapper_config = configs[APP_ENV].property_json_mapper_config
+SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
+DNS_ENV = configs[APP_ENV].DNS_ENV
 
 # Transition state Log debug decorator
 
