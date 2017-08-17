@@ -8,6 +8,7 @@ from transitions import Machine
 from flask_restful import reqparse, Api, Resource
 from flask import request
 from crp.taskmgr import *
+from mysql_volume import create_volume
 from crp.dns.dns_api import DnsApi,NamedManagerApi
 from crp.res_set import resource_set_blueprint
 from crp.res_set.errors import resource_set_errors
@@ -122,6 +123,9 @@ class ResourceProviderTransitions(object):
             states=ResourceProviderTransitions.states,
             transitions=ResourceProviderTransitions.transitions,
             initial='init')
+
+        self.dir = os.path.dirname(
+            os.path.abspath(__file__))
 
     def set_task_id(self, task_id):
         self.task_id = task_id
@@ -396,6 +400,15 @@ class ResourceProviderTransitions(object):
                                               'port': port,
                                               'os_inst_id': osint_id})
 
+                if cluster_type == 'mysql':
+                    pass
+                    # TODO mysql volume
+                    vm = {
+                        'vm_name': instance_name,
+                        'os_inst_id': osint_id,
+                    }
+                    create_volume(vm)
+
         return is_rollback, uop_os_inst_id_list
 
     # 将第一阶段输出结果新增至第四阶段
@@ -607,22 +620,23 @@ class ResourceProviderTransitions(object):
                 f.write('%s\n' % nip)
             Log.logger.debug('----->start push', kwargs)
             self.run_cmd(
-                "ansible {nip} --private-key=crp/res_set/playbook-0830/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip))
+                "ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip,dir=self.dir))
             self.run_cmd(
-                "ansible {nip} --private-key=crp/res_set/playbook-0830/id_rsa_98 -m synchronize -a 'src=/opt/uop-crp/crp/res_set/update.py dest=/shell/'".format(
-                    nip=nip))
+                "ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m synchronize -a 'src={dir}/update.py dest=/shell/'".format(
+                    nip=nip, dir=self.dir))
             self.run_cmd(
-                "ansible {nip} --private-key=crp/res_set/playbook-0830/id_rsa_98 -m synchronize -a 'src=/opt/uop-crp/crp/res_set/template dest=/shell/'".format(
-                    nip=nip))
+                "ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m synchronize -a 'src={dir}/template dest=/shell/'".format(
+                    nip=nip, dir=self.dir))
             Log.logger.debug('------>上传配置文件完成')
-            self.run_cmd("ansible {nip} --private-key=crp/res_set/playbook-0830/id_rsa_98 -m shell -a 'chmod 777 /shell/update.py'".format(
-                nip=nip))
-            self.run_cmd("ansible {nip} --private-key=crp/res_set/playbook-0830/id_rsa_98 -m shell -a 'chmod 777 /shell/template'".format(
-                nip=nip))
+            self.run_cmd("ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m shell -a 'chmod 777 /shell/update.py'".format(
+                nip=nip, dir=self.dir))
+            self.run_cmd("ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m shell -a 'chmod 777 /shell/template'".format(
+                nip=nip, dir=self.dir))
             self.run_cmd(
-                'ansible {nip} --private-key=crp/res_set/playbook-0830/id_rsa_98 -m shell -a '
+                'ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m shell -a '
                 '"/shell/update.py {domain} {ip} {port}"'.format(
                     nip=kwargs.get('nip'),
+                    dir=self.dir,
                     domain=kwargs.get('domain'),
                     ip=kwargs.get('ip'),
                     port=kwargs.get('port')))
