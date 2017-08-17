@@ -335,12 +335,6 @@ class NamedManagerApi(object):
             raise ServerError(e.message)
         return res
 
-    def named_zone_add(self,zone_name):
-        pass
-
-    def named_zone_delete(self,zone_name):
-        pass
-
     def named_domain_delete(self,domain_name):
         pass
 
