@@ -148,9 +148,10 @@ class AppDeploy(Resource):
             logging.debug("deploy_id is " + str(deploy_id))
             docker = args.docker
             mongodb = args.mongodb
+            mysql = args.mysql
 
             logging.debug("Thread exec start")
-            t = threading.Thread(target=self.deploy_anything, args=(mongodb, args, docker, deploy_id))
+            t = threading.Thread(target=self.deploy_anything, args=(mongodb, mysql, docker, deploy_id))
             t.start()
             logging.debug("Thread exec done")
 
@@ -169,7 +170,7 @@ class AppDeploy(Resource):
         }
         return res, code
 
-    def deploy_anything(self, mongodb, args, docker, deploy_id):
+    def deploy_anything(self, mongodb, mysql, docker, deploy_id):
         try:
             lock = threading.RLock()
             lock.acquire()
@@ -179,8 +180,8 @@ class AppDeploy(Resource):
             sql_ret = True
             if mongodb:
                 mongodb_res = self._deploy_mongodb(mongodb)
-            if args.mysql:
-                sql_ret = self._deploy_mysql(args)
+            if mysql:
+                sql_ret = self._deploy_mysql(mysql, docker)
             logging.debug("Docker is " + str(docker))
             for i in docker:
                 while True:
@@ -265,17 +266,20 @@ class AppDeploy(Resource):
         with open(work_dir + '/hosts', 'w') as f:
             f.write(' ')
 
-    def _deploy_mysql(self,args):
-        host_password = args.mysql.get("host_password")
-        host_user = args.mysql.get("host_user")
-        mysql_password = args.mysql.get("mysql_password")
-        mysql_user = args.mysql.get("mysql_user")
-        ip = args.mysql.get("ip")
-        port = args.mysql.get("port")
-        database = args.mysql.get("database")
+    def _deploy_mysql(self,mysql, docker):
+        database_user = mysql.get("database_user")
+        database_password = mysql.get("database_password")
+        mysql_password = mysql.get("mysql_password")
+        mysql_user = mysql.get("mysql_user")
+        ip = mysql.get("ip")
+        port = mysql.get("port")
+        app_ips = [ _docker.get('ip') for _docker in docker ]
+        ips = []
+        for _ips in app_ips:
+            ips.extend(_ips)
 
         # sql = args.mysql.get("sql_script").replace('\xc2\xa0', ' ')
-        path_filename = args.mysql.get("path_filename")
+        path_filename = mysql.get("path_filename")
         if not path_filename:
             return True
         # if sql:
@@ -283,16 +287,39 @@ class AppDeploy(Resource):
 
         local_path = path_filename[0]
         remote_path = '/root/' + path_filename[1]
-        sh_path = self._make_command_file(mysql_password, mysql_user, port, database, remote_path)
-
+        content = "source " + remote_path + "\nquit "
+        sh_path = self._excute_mysql_cmd(mysql_password, mysql_user, port, content)
         host_path = self._make_hosts_file(ip)
         ansible_cmd = 'ansible -i ' + host_path + ' ip ' +  ' --private-key=crp/res_set/playbook-0830/old_id_rsa -u root -m'
         ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + local_path + ' dest=' + remote_path + '"'
         ansible_sh_cmd =  ansible_cmd + ' script -a ' + sh_path
         if self._exec_ansible_cmd(ansible_sql_cmd):
-            return self._exec_ansible_cmd(ansible_sh_cmd)
-        else:
+            if self._exec_ansible_cmd(ansible_sh_cmd):
+                show_path = self._excute_mysql_cmd(mysql_password, mysql_user, port, 'show databases;')
+                ansible_show_databases_cmd = ansible_cmd + " script -a " + show_path\
+                                             + " |grep 'stdout' |awk -F: '{print $NF}' |head -1 |awk -F, '{print $1}'"
+                (status, output) = commands.getstatusoutput(ansible_show_databases_cmd)
+                ##########  去掉影响查询新增数据库的干扰字符 ##########
+                output = output.replace('-', '').replace('+', '').replace('|','')
+                databases = output.split('\\r\\n')[3:-2][3:]
+                #####################################################
+                if databases:
+                    for data_name in databases:
+                        data_name = data_name.strip(' ')
+                        cmd = ''
+                        for app_ip in ips:
+                            cmd1 = "create user \'" + database_user + "\'@\'" + app_ip + "\' identified by  \'" + database_password + "\' ;\n"
+                            cmd2 = "grant select, update, insert, delete, execute on " + data_name + ".* to \'" + database_user +\
+                                   "\'@\'" + app_ip + "\';\n"
+                            cmd += cmd1 + cmd2
+                        create_path = self._excute_mysql_cmd(mysql_password, mysql_user, port, cmd)
+                        ansible_create_cmd = ansible_cmd + ' script -a ' + create_path
+                        if not self._exec_ansible_cmd(ansible_create_cmd):
+                            return False
+                    return True
             return False
+        else:
+             return False
 
     def _exec_ansible_cmd(self,cmd):
         (status, output) = commands.getstatusoutput(cmd)
@@ -304,16 +331,15 @@ class AppDeploy(Resource):
         #Log.logger.debug("ansible exec failed,command: " + str(cmd) + " output: " + output)
         return False
 
-    def _make_command_file(self, password, user, port, database, path):
-        sh_path = os.path.join(UPLOAD_FOLDER, 'mysql', 'sql.sh')
+    def _excute_mysql_cmd(self, password, user, port, content):
+        sh_path = os.path.join(UPLOAD_FOLDER, 'mysql', 'tmp.sh')
         with open(sh_path, "wb+") as file_object:
             file_object.write("#!/bin/bash\n")
             file_object.write("TMP_PWD=$MYSQL_PWD\n")
             file_object.write("export MYSQL_PWD=" + password + "\n")
             file_object.write("mysql -u" + user + " -P" + port + " -e \"\n")
-            #file_object.write("use " + database + ";\n")
-            file_object.write("source " + path + "\n")
-            file_object.write("quit \"\n")
+            file_object.write(content)
+            file_object.write("\"\n")
             file_object.write("export MYSQL_PWD=$TMP_PWD\n")
             file_object.write("exit;")
         return sh_path
