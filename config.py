@@ -146,7 +146,8 @@ class DevelopmentConfig(BaseConfig):
         'username': 'root',
         'password': '123456'
         }
-    NAMEDMANAGER_URL = 'http://itop.syswin.com/dnsapi.php'
+    #NAMEDMANAGER_URL = 'http://itop.syswin.com/dnsapi.php'
+    NAMEDMANAGER_URL = 'http://172.28.50.141/namedmanager/dnsapi.php'
 
 class TestingConfig(BaseConfig):
     TESTING = True
@@ -295,7 +296,8 @@ class TestingConfig(BaseConfig):
         'username': 'root',
         'password': '123456'
         }
-    NAMEDMANAGER_URL = 'http://itop.syswin.com/dnsapi.php'
+    #NAMEDMANAGER_URL = 'http://itop.syswin.com/dnsapi.php'
+    NAMEDMANAGER_URL = 'http://172.28.50.141/namedmanager/dnsapi.php'
 
 configs = {
     'development': DevelopmentConfig,

@@ -12,6 +12,7 @@ DNS_CONDIG = configs[APP_ENV].DNS_CONDIG
 NAMEDMANAGER_URL = configs[APP_ENV].NAMEDMANAGER_URL
 NAMEDMANAGER_HEADERS = {'content-type': 'application/json'}
 
+
 def domain_name_to_zone(domain_name):
     zone = '.'.join(domain_name.split('.')[-2:])
     path = '/var/named/%s.zone' % zone
@@ -299,6 +300,7 @@ class NamedManagerApi(object):
             domain = exchange_result.get('zone')
             record_name = exchange_result.get('record_name')
             data = {"method":"getDns","domain":domain,"recordname":record_name}
+            print data
             rep = requests.post(NAMEDMANAGER_URL, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS)
             print rep.text
             ret_json = json.loads(rep.text)
@@ -366,10 +368,10 @@ class NamedManagerApi(object):
 if __name__ == '__main__':
     print time.time()
     named_connect = NamedManagerApi()
-    #print named_connect.named_zone_query(zone_name='baidu.com')
-    print named_connect.named_domain_query(domain_name='test1111.syswin.com')
-    #print named_connect.named_domain_add(domain_name='test2.baidu.com',domain_ip='10.0.0.2')
-    #print named_connect.named_dns_domain_add(domain_name='test2.baidu.com',domain_ip='10.0.0.3')
+    #print named_connect.named_zone_query(zone_name='syswin.com')
+    #print named_connect.named_domain_query(domain_name='test8.beijing1.com')
+    #print named_connect.named_domain_add(domain_name='test8.beijing.com',domain_ip='10.0.0.2')
+    print named_connect.named_dns_domain_add(domain_name='yyyyy.sina.com',domain_ip='10.0.0.3')
     #print named_connect.named_domain_query(domain_name='test1.syswin.com')
 
 
