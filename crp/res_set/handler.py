@@ -403,11 +403,11 @@ class ResourceProviderTransitions(object):
                 if cluster_type == 'mysql':
                     pass
                     # TODO mysql volume
-                    vm = {
-                        'vm_name': instance_name,
-                        'os_inst_id': osint_id,
-                    }
-                    create_volume(vm)
+                    # vm = {
+                    #     'vm_name': instance_name,
+                    #     'os_inst_id': osint_id,
+                    # }
+                    # create_volume(vm)
 
         return is_rollback, uop_os_inst_id_list
 
