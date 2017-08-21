@@ -15,7 +15,7 @@ from crp.res_set.errors import resource_set_errors
 from crp.log import Log
 from crp.openstack import OpenStack
 from crp.utils.docker_tools import image_transit
-from config import TestingConfig, DevelopmentConfig, configs, APP_ENV
+from config import configs, APP_ENV
 
 # TODO: refactor it later.
 nginx_ip = configs[APP_ENV].nginx_ip

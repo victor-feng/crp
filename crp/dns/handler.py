@@ -6,9 +6,9 @@ from crp.dns.errors import dns_set_errors
 from crp.log import Log
 import json
 import subprocess
-from config import TestingConfig, DevelopmentConfig
+from config import configs, APP_ENV
 
-DNS_ENV = DevelopmentConfig.DNS_ENV
+DNS_ENV =  configs[APP_ENV].DNS_ENV
 
 res = {
     "code": "",
