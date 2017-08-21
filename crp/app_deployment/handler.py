@@ -288,6 +288,8 @@ class AppDeploy(Resource):
         local_path = path_filename[0]
         remote_path = '/root/' + path_filename[1]
         content = "source " + remote_path + "\nquit "
+        if not os.path.exists(os.path.join(UPLOAD_FOLDER, 'mysql')):
+            os.makedirs(os.path.join(UPLOAD_FOLDER, 'mysql'))
         sh_path = self._excute_mysql_cmd(mysql_password, mysql_user, port, content)
         host_path = self._make_hosts_file(ip)
         ansible_cmd = 'ansible -i ' + host_path + ' ip ' +  ' --private-key=crp/res_set/playbook-0830/old_id_rsa -u root -m'
@@ -381,6 +383,8 @@ class Upload(Resource):
             UPLOAD_FOLDER = current_app.config['UPLOAD_FOLDER']
             file_dic = {}
             for _type, file in request.files.items():
+                if not os.path.exists(os.path.join(UPLOAD_FOLDER, _type)):
+                    os.makedirs(os.path.join(UPLOAD_FOLDER, _type))
                 file_path = os.path.join(UPLOAD_FOLDER, _type, file.filename)
                 file.save(file_path)
                 file_dic[_type] = (file_path, file.filename)
