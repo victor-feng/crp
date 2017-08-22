@@ -227,7 +227,7 @@ class AppDeploy(Resource):
 
         local_path = path_filename[0]
         remote_path = '/tmp/' + path_filename[1]
-        logging.debug("remote_path and local_path is %s-%s" % (local_path, remote_path))
+        logging.debug("local_path and remote_path is %s-%s" % (local_path, remote_path))
         sh_path = self.mongodb_command_file(mongodb_password, mongodb_username, port, database, local_path)
         logging.debug("start deploy mongodb cluster", sh_path)
 
@@ -235,7 +235,7 @@ class AppDeploy(Resource):
             host_path = self.mongodb_hosts_file(ip)
             ansible_cmd = 'ansible -i ' + host_path + ip + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -u root -m'
             ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + local_path + ' dest=' + remote_path + '"'
-            ansible_sh_cmd = ansible_cmd + ' -m shell -a "%s <%s"' % (current_app.config['MONGODB_PATH'], sh_path)
+            ansible_sh_cmd = ansible_cmd + ' -m shell -a "%s <%s"' % (configs['APP_ENV'].MONGODB_PATH, sh_path)
             if self._exec_ansible_cmd(ansible_sql_cmd):
                 return self._exec_ansible_cmd(ansible_sh_cmd)
             else:
