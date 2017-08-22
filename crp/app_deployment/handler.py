@@ -210,6 +210,7 @@ class AppDeploy(Resource):
 
     def _deploy_mongodb(self, mongodb):
         logging.debug("args is %s" % mongodb)
+        mongodb = eval(mongodb)
         host_username = mongodb.get('host_username', '')
         host_password = mongodb.get('host_passwork', '')
         mongodb_username = mongodb.get('mongodb_username', '')
