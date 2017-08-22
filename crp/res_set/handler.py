@@ -1328,6 +1328,7 @@ class MongodbCluster(object):
                 f.write('%s\n' % ip)
 
     def telnet_ack(self):
+        start_time = time.time()
         while not self.flag:
             for ip in self.ip:
                 p = subprocess.Popen(
@@ -1347,6 +1348,9 @@ class MongodbCluster(object):
                 if 'open' in a:
                     self.mongodb_cluster_push(ip)
                     self.ip.remove(ip)
+            end_time = time.time()
+            if start_time - end_time > 180:
+                break
             if len(self.ip) == 0:
                 self.flag = True
 

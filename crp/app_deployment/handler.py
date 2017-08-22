@@ -241,10 +241,11 @@ class AppDeploy(Resource):
         with open(sh_path, 'wb+') as f:
             f.write("use admin\n")
             f.write("db.auth('admin','123456')")
-            f.write("rs.slaveOk()")
             f.write("show collections'\n")
-            # TODO this have problem
-            f.write('%s' % script_file)
+            # f.write('%s' % script_file)
+            f.write("use uop_test\n")
+            f.write("db.test.insert({'data':'test'})\n")
+            f.write("db.test.find()")
         return sh_path
 
     def mongodb_hosts_file(self, ip):
