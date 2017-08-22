@@ -225,7 +225,7 @@ class AppDeploy(Resource):
         local_path = path_filename[0]
         remote_path = '/tmp/' + path_filename[1]
         sh_path = self.mongodb_command_file(mongodb_password, mongodb_username, port, database, local_path)
-
+        logging.debug("start deploy mongodb cluster", sh_path)
         for ip in ips:
             host_path = self.mongodb_hosts_file(ip)
             ansible_cmd = 'ansible -i ' + host_path + ip + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -u root -m'
@@ -235,6 +235,7 @@ class AppDeploy(Resource):
                 return self._exec_ansible_cmd(ansible_sh_cmd)
             else:
                 return False
+        logging.debug("end deploy mongodb cluster")
 
     def mongodb_command_file(self, username, password, port, db, script_file):
         sh_path = os.path.join(UPLOAD_FOLDER, 'mongodb.js')
