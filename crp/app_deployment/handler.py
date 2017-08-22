@@ -226,6 +226,7 @@ class AppDeploy(Resource):
 
         local_path = path_filename[0]
         remote_path = '/tmp/' + path_filename[1]
+        logging.debug("remote_path and local_path is %s-%s" % (local_path, remote_path))
         sh_path = self.mongodb_command_file(mongodb_password, mongodb_username, port, database, local_path)
         logging.debug("start deploy mongodb cluster", sh_path)
         for ip in ips:
@@ -241,6 +242,7 @@ class AppDeploy(Resource):
 
     def mongodb_command_file(self, username, password, port, db, script_file):
         sh_path = os.path.join(UPLOAD_FOLDER, 'mongodb.js')
+        logging.debug("sh_path is %s" % sh_path)
         with open(sh_path, 'wb+') as f:
             f.write("use admin\n")
             f.write("db.auth('admin','123456')")
@@ -249,6 +251,7 @@ class AppDeploy(Resource):
             f.write("use uop_test\n")
             f.write("db.test.insert({'data':'test'})\n")
             f.write("db.test.find()")
+        logging.debug("end write sh_path****")
         return sh_path
 
     def mongodb_hosts_file(self, ip):
