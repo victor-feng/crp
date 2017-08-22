@@ -209,6 +209,7 @@ class AppDeploy(Resource):
         return code, msg
 
     def _deploy_mongodb(self, mongodb):
+        res = None
         logging.debug("args is %s" % mongodb)
         mongodb = eval(mongodb)
         host_username = mongodb.get('host_username', '')
@@ -231,16 +232,26 @@ class AppDeploy(Resource):
         sh_path = self.mongodb_command_file(mongodb_password, mongodb_username, port, database, local_path)
         logging.debug("start deploy mongodb cluster", sh_path)
 
-        for ip in ips:
-            host_path = self.mongodb_hosts_file(ip)
-            ansible_cmd = 'ansible -i ' + host_path + ' ' + ip + ' ' + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -m'
-            ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + local_path + ' dest=' + remote_path + '"'
-            ansible_sh_cmd = ansible_cmd + ' shell -a "%s < %s"' % (configs[APP_ENV].MONGODB_PATH, remote_path)
-            if self._exec_ansible_cmd(ansible_sql_cmd):
-                return self._exec_ansible_cmd(ansible_sh_cmd)
-            else:
-                return False
-        logging.debug("end deploy mongodb cluster")
+        # for ip in ips:
+        #     host_path = self.mongodb_hosts_file(ip)
+        #     ansible_cmd = 'ansible -i ' + host_path + ' ' + ip + ' ' + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -m'
+        #     ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + local_path + ' dest=' + remote_path + '"'
+        #     ansible_sh_cmd = ansible_cmd + ' shell -a "%s < %s"' % (configs[APP_ENV].MONGODB_PATH, remote_path)
+        #     if self._exec_ansible_cmd(ansible_sql_cmd):
+        #         res = self._exec_ansible_cmd(ansible_sh_cmd)
+        #         logging.debug("end deploy mongodb cluster")
+        #     else:
+        #         res = False
+        # return res
+
+        host_path = self.mongodb_hosts_file(vip3)
+        ansible_cmd = 'ansible -i ' + host_path + ' ' + vip3 + ' ' + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -m'
+        ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + local_path + ' dest=' + remote_path + '"'
+        ansible_sh_cmd = ansible_cmd + ' shell -a "%s < %s"' % (configs[APP_ENV].MONGODB_PATH, remote_path)
+        if self._exec_ansible_cmd(ansible_sql_cmd):
+            return self._exec_ansible_cmd(ansible_sh_cmd)
+        else:
+            return False
 
     def mongodb_command_file(self, username, password, port, db, script_file):
         sh_path = os.path.join(UPLOAD_FOLDER, 'mongodb.js')
