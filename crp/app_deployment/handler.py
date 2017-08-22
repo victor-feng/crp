@@ -208,18 +208,18 @@ class AppDeploy(Resource):
             msg = "internal server error: " + str(e.message)
         return code, msg
 
-    def _deploy_mongodb(self, args):
-        logging.debug("args is %s" % args)
-        host_username = args.get('host_username', '')
-        host_password = args.get('host_passwork', '')
-        mongodb_username = args.get('mongodb_username', '')
-        mongodb_password = args.get('mongodb_password', '')
-        vip1 = args.get('vip1', '')
-        vip2 = args.get('vip2', '')
-        vip3 = args.get('vip3', '')
-        port = args.get('port', '')
-        database = args.get('database', '')
-        path_filename = args.get("path_filename", '')
+    def _deploy_mongodb(self, mongodb):
+        logging.debug("args is %s" % mongodb)
+        host_username = mongodb.get('host_username', '')
+        host_password = mongodb.get('host_passwork', '')
+        mongodb_username = mongodb.get('mongodb_username', '')
+        mongodb_password = mongodb.get('mongodb_password', '')
+        vip1 = mongodb.get('vip1', '')
+        vip2 = mongodb.get('vip2', '')
+        vip3 = mongodb.get('vip3', '')
+        port = mongodb.get('port', '')
+        database = mongodb.get('database', '')
+        path_filename = mongodb.get("path_filename", '')
         if not path_filename:
             return True
         ips = [vip1, vip2, vip3]
