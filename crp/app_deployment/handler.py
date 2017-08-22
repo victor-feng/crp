@@ -179,6 +179,7 @@ class AppDeploy(Resource):
             mongodb_res = True
             sql_ret = True
             if mongodb:
+                logging.debug("The mongodb data is %s" % mongodb)
                 mongodb_res = self._deploy_mongodb(mongodb)
             if mysql:
                 sql_ret = self._deploy_mysql(mysql, docker)
@@ -208,6 +209,7 @@ class AppDeploy(Resource):
         return code, msg
 
     def _deploy_mongodb(self, args):
+        logging.debug("args is %s" % args)
         host_username = args.get('host_username', '')
         host_password = args.get('host_passwork', '')
         mongodb_username = args.get('mongodb_username', '')
