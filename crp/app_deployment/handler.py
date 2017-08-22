@@ -230,11 +230,17 @@ class AppDeploy(Resource):
         logging.debug("remote_path and local_path is %s-%s" % (local_path, remote_path))
         sh_path = self.mongodb_command_file(mongodb_password, mongodb_username, port, database, local_path)
         logging.debug("start deploy mongodb cluster", sh_path)
+
+        from flask import Flask
+        app = Flask(__name__)
+        with app.app_context():
+            mongodb_path = current_app.config['MONGODB_PATH']
+
         for ip in ips:
             host_path = self.mongodb_hosts_file(ip)
             ansible_cmd = 'ansible -i ' + host_path + ip + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -u root -m'
             ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + local_path + ' dest=' + remote_path + '"'
-            ansible_sh_cmd = ansible_cmd + ' -m shell -a "%s <%s"' % (current_app.config['MONGODB_PATH'], sh_path)
+            ansible_sh_cmd = ansible_cmd + ' -m shell -a "%s <%s"' % (mongodb_path, sh_path)
             if self._exec_ansible_cmd(ansible_sql_cmd):
                 return self._exec_ansible_cmd(ansible_sh_cmd)
             else:
