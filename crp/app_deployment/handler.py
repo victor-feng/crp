@@ -244,11 +244,13 @@ class AppDeploy(Resource):
     def mongodb_command_file(self, username, password, port, db, script_file):
         sh_path = os.path.join(UPLOAD_FOLDER, 'mongodb.js')
         logging.debug("sh_path is %s" % sh_path)
+        with open(script_file, 'r') as f2:
+            file_script = f2.readlines()
         with open(sh_path, 'wb+') as f:
             f.write("use admin\n")
-            f.write("db.auth('admin','123456')")
-            f.write("show collections'\n")
-            f.write(script_file)
+            f.write("db.auth('admin','123456')\n")
+            for i in file_script:
+                f.write(i)
             # f.write("use uop_test\n")
             # f.write("db.test.insert({'data':'test'})\n")
             # f.write("db.test.find()")
