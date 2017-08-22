@@ -233,9 +233,9 @@ class AppDeploy(Resource):
 
         for ip in ips:
             host_path = self.mongodb_hosts_file(ip)
-            ansible_cmd = 'ansible -i ' + host_path + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -u root -m'
-            ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + local_path + ' dest=' + remote_path + '"'
-            ansible_sh_cmd = ansible_cmd + ' -m shell -a "%s <%s"' % (configs[APP_ENV].MONGODB_PATH, sh_path)
+            ansible_cmd = 'ansible -i ' + host_path + ' ' + ip + ' ' + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -m'
+            ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + local_path + ' dest=' + remote_path + '"'
+            ansible_sh_cmd = ansible_cmd + ' shell -a "%s <%s"' % (configs[APP_ENV].MONGODB_PATH, sh_path)
             if self._exec_ansible_cmd(ansible_sql_cmd):
                 return self._exec_ansible_cmd(ansible_sh_cmd)
             else:
