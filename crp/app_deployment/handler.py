@@ -248,10 +248,10 @@ class AppDeploy(Resource):
             f.write("use admin\n")
             f.write("db.auth('admin','123456')")
             f.write("show collections'\n")
-            # f.write('%s' % script_file)
-            f.write("use uop_test\n")
-            f.write("db.test.insert({'data':'test'})\n")
-            f.write("db.test.find()")
+            f.write(script_file)
+            # f.write("use uop_test\n")
+            # f.write("db.test.insert({'data':'test'})\n")
+            # f.write("db.test.find()")
         logging.debug("end write sh_path****")
         return sh_path
 
