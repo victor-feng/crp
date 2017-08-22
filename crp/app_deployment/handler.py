@@ -234,7 +234,8 @@ class AppDeploy(Resource):
 
         # for ip in ips:
         #     host_path = self.mongodb_hosts_file(ip)
-        #     ansible_cmd = 'ansible -i ' + host_path + ' ' + ip + ' ' + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -m'
+        #     ansible_cmd = 'ansible -i ' + host_path + ' ' + ip + ' ' + '
+        # --private-key=crp/res_set/playbook-0830/old_id_rsa -m'
         #     ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + local_path + ' dest=' + remote_path + '"'
         #     ansible_sh_cmd = ansible_cmd + ' shell -a "%s < %s"' % (configs[APP_ENV].MONGODB_PATH, remote_path)
         #     if self._exec_ansible_cmd(ansible_sql_cmd):
@@ -244,6 +245,7 @@ class AppDeploy(Resource):
         #         res = False
         # return res
 
+        # 只需要对主节点进行认证操作
         host_path = self.mongodb_hosts_file(vip3)
         ansible_cmd = 'ansible -i ' + host_path + ' ' + vip3 + ' ' + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -m'
         ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + local_path + ' dest=' + remote_path + '"'
@@ -263,16 +265,10 @@ class AppDeploy(Resource):
             f.write("db.auth('admin','123456')\n")
             for i in file_script:
                 f.write(i)
-            # f.write("use uop_test\n")
-            # f.write("db.test.insert({'data':'test'})\n")
-            # f.write("db.test.find()")
         logging.debug("end write sh_path****")
         return sh_path
 
     def mongodb_hosts_file(self, ip):
-        # myhosts_path = os.path.join(UPLOAD_FOLDER, 'mongodb')
-        # with open(myhosts_path, "wb+") as file_object:
-        #     file_object.write(ip)
         path = os.path.join('/etc', 'ansible', 'hosts')
         with open(path, "wb+") as file_object:
             file_object.write(ip)
