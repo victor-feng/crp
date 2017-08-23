@@ -210,6 +210,7 @@ class AppDeploy(Resource):
 
     def _deploy_mongodb(self, mongodb):
         res = None
+        db_list = []
         logging.debug("args is %s" % mongodb)
         mongodb = eval(mongodb)
         host_username = mongodb.get('host_username', '')
@@ -248,24 +249,87 @@ class AppDeploy(Resource):
         # 只需要对主节点进行认证操作
         host_path = self.mongodb_hosts_file(vip3)
         ansible_cmd = 'ansible -i ' + host_path + ' ' + vip3 + ' ' + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -m'
-        ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + local_path + ' dest=' + remote_path + '"'
+        ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + sh_path + ' dest=' + remote_path + '"'
         ansible_sh_cmd = ansible_cmd + ' shell -a "%s < %s"' % (configs[APP_ENV].MONGODB_PATH, remote_path)
+
         if self._exec_ansible_cmd(ansible_sql_cmd):
-            return self._exec_ansible_cmd(ansible_sh_cmd)
+            if self._exec_ansible_cmd(ansible_sh_cmd):
+
+                sh_path = self.mongodb_command_file(mongodb_password, mongodb_username, port, database, "")
+                ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + sh_path + ' dest=' + remote_path + '"'
+                query_current_db = ansible_cmd + 'script -a "%s < %s"' % (configs[APP_ENV].MONGODB_PATH, remote_path)
+
+                if self._exec_ansible_cmd(ansible_sql_cmd):
+                    logging.debug("upload query file success and then get the db name")
+                    status, output = commands.getstatusoutput(query_current_db)
+                    output_list = output.split('\n')[5:-1]   # ['admin  0.000GB', 'local  0.001GB']
+                    for i in output_list:
+                        db_list.append(i.split(' ')[0])  # ['admin', 'local']
+                    logging.debug("the db list is %s" % db_list)
+                    for db in db_list:  # need get the new created db
+                        if db == 'admin' or 'local':
+                            db_list.remove(db)
+                    logging.debug("the new create db list is %s" % db_list)
+                    if len(db_list):
+                        auth_path = self.mongodb_auth_file(mongodb_username, mongodb_password, db_list)
+                        ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + auth_path + ' dest=' + remote_path + '"'
+                        exec_auth_file = ansible_cmd + 'script -a "%s < %s"' % \
+                                                         (configs[APP_ENV].MONGODB_AUTH_PATH, remote_path)
+                        logging.debug("start upload auth file")
+                        if self._exec_ansible_cmd(ansible_sql_cmd):
+                            logging.debug("end upload and start exec auth file")
+                            status, output = commands.getstatusoutput(exec_auth_file)
+                            logging.debug("end exec auth file status is %s output is %s" % (status, output))
+
+                            self.ansible_exec(host_path, vip3, remote_path)  # del the ansible file had uploaded
+
+                            logging.debug("del the ansible file successful")
+                    return True
+            else:
+                return False
         else:
             return False
 
+    def ansible_exec(self, host_path, vip3, file_path):
+        cmd = 'ansible -i ' + host_path + ' ' + vip3 + ' ' + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -m'
+        exec_del_cmd = cmd + 'shell -a "rm -f %s"' % file_path
+        status, output = commands.getstatusoutput(exec_del_cmd)
+        if not status:
+            res = 'del success'
+            logging.debug("%s" % res)
+        else:
+            logging.debug("%s" % output)
+
+    def mongodb_auth_file(self, username, password, db_list):
+        auth_path = os.path.join(UPLOAD_FOLDER, 'mongodb_auth.js')
+        with open(auth_path, 'wb+') as f:
+            f.write("use %s" % db_list)
+            for db in db_list:
+                f.write('db.createUser({user: "%s",pwd: "%s",roles: [ { role: "readWrite", db: %s } ]})' %
+                        (username, password, db)
+                        )
+        return auth_path
+
     def mongodb_command_file(self, username, password, port, db, script_file):
-        sh_path = os.path.join(UPLOAD_FOLDER, 'mongodb.js')
-        logging.debug("sh_path is %s" % sh_path)
-        with open(script_file, 'r') as f2:
-            file_script = f2.readlines()
-        with open(sh_path, 'wb+') as f:
-            f.write("use admin\n")
-            f.write("db.auth('admin','123456')\n")
-            for i in file_script:
-                f.write(i)
-        logging.debug("end write sh_path****")
+        sh_path = ""
+        logging.debug("sh_path is %s" % script_file)
+        if script_file:
+            sh_path = os.path.join(UPLOAD_FOLDER, 'mongodb.js')
+            with open(script_file, 'r') as f2:
+                file_script = f2.readlines()
+            with open(sh_path, 'wb+') as f:
+                f.write("use admin\n")
+                f.write("db.auth('admin','123456')\n")
+                for i in file_script:
+                    f.write(i)
+            logging.debug("end write sh_path****")
+        else:
+            sh_path = os.path.join(UPLOAD_FOLDER, 'query_mongodb.js')
+            with open(sh_path, 'wb+') as f:
+                f.write("use admin\n")
+                f.write("db.auth('admin','123456')\n")
+                f.write("show dbs\n")
+            logging.debug("end write query_mongodb sh_path+++")
         return sh_path
 
     def mongodb_hosts_file(self, ip):

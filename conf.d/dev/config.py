@@ -33,6 +33,7 @@ class DevelopmentConfig(BaseConfig):
     nginx_ip_slave = '172.28.11.111'
     MONGODB_SCRIPT_PATH = 'uop-crp/crp/res_set/mongo_script/'
     MONGODB_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010'
+    MONGODB_AUTH_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010 --authenticationDatabase admin -u admin -p 123456'
 
     cluster_type_image_port_mappers = {
         'mysql': {
