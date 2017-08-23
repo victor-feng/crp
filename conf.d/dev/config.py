@@ -95,6 +95,7 @@ class DevelopmentConfig(BaseConfig):
             'cluster_name': 'instance_name',
             'cluster_id': 'instance_id',
             'domain': 'domain',
+            'domain_ip': 'domain_ip',
             'image_url': 'image_url',
             'cpu': 'cpu',
             'mem': 'mem',

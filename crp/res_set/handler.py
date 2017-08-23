@@ -665,10 +665,12 @@ class ResourceProviderTransitions(object):
         #添加dns操作#
         try:
             ip = DNS_ENV.get(self.req_dict["env"],'172.28.5.21')
+            #domain_ip = self.property_mapper.get('app',{}).get('domain_ip',{})
             Log.logger.debug("self.property_mapper: %s" % self.property_mapper)
             domain_name = self.property_mapper.get('app',{}).get('domain',{})
             Log.logger.debug('dns add -->ip:%s,domain:%s' %(ip, domain_name))
             self.do_dns_push(domain_name=domain_name, ip=ip)
+            #self.do_dns_push(domain_name=domain_name, ip=domain_ip)
         except Exception as e:
             Log.logger.debug("dns error: %s" % e.message)
 
