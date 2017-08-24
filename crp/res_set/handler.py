@@ -18,8 +18,8 @@ from crp.utils.docker_tools import image_transit
 from config import configs, APP_ENV
 
 # TODO: refactor it later.
-nginx_ip = configs[APP_ENV].nginx_ip
-nginx_ip_slave = configs[APP_ENV].nginx_ip_slave
+# nginx_ip = configs[APP_ENV].nginx_ip
+# nginx_ip_slave = configs[APP_ENV].nginx_ip_slave
 MONGODB_SCRIPT_PATH = configs[APP_ENV].MONGODB_SCRIPT_PATH
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
@@ -645,22 +645,24 @@ class ResourceProviderTransitions(object):
         real_ip = ''
         app = self.property_mapper.get('app', '')
         app_instance = app.get('instance')
+        Log.logger.debug("####current compute instance is:{}".format(self.property_mapper))
+        domain_ip = app.get('domain_ip', "")
         for ins in app_instance:
             domain = ins.get('domain', '')
             ip_str = str(ins.get('ip')) + ' '
             real_ip += ip_str
         ports = str(app.get('port'))
         Log.logger.debug(
-            'the receive domain and ip port is %s-%s-%s' %
-            (domain, real_ip, ports))
-        do_push_nginx_config({'nip': nginx_ip,
+            'the receive (domain, nginx, ip, port) is (%s, %s, %s, %s)' %
+            (domain, domain_ip, real_ip, ports))
+        do_push_nginx_config({'nip': domain_ip,
                               'domain': domain,
                               'ip': real_ip.strip(),
                               'port': ports.strip()})
-        do_push_nginx_config({'nip': nginx_ip_slave,
-                              'domain': domain,
-                              'ip': real_ip.strip(),
-                              'port': ports.strip()})
+        # do_push_nginx_config({'nip': nginx_ip_slave,
+        #                       'domain': domain,
+        #                       'ip': real_ip.strip(),
+        #                       'port': ports.strip()})
 
         #添加dns操作#
         try:
