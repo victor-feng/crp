@@ -666,11 +666,13 @@ class ResourceProviderTransitions(object):
 
         #添加dns操作#
         try:
-            ip = DNS_ENV.get(self.req_dict["env"],'172.28.5.21')
+            domain_ip = self.property_mapper.get('app',{}).get('domain_ip','10.0.0.1')
+            if len(domain_ip.strip()) == 0:
+                domain_ip = '10.0.0.1'
             Log.logger.debug("self.property_mapper: %s" % self.property_mapper)
             domain_name = self.property_mapper.get('app',{}).get('domain',{})
-            Log.logger.debug('dns add -->ip:%s,domain:%s' %(ip, domain_name))
-            self.do_dns_push(domain_name=domain_name, ip=ip)
+            Log.logger.debug('dns add -->ip:%s,domain:%s' %(domain_ip, domain_name))
+            self.do_dns_push(domain_name=domain_name, domain_ip=domain_ip)
         except Exception as e:
             Log.logger.debug("dns error: %s" % e.message)
 
@@ -694,9 +696,9 @@ class ResourceProviderTransitions(object):
         return msg, code
 
     @transition_state_logger
-    def do_dns_push(self, domain_name, ip):
+    def do_dns_push(self, domain_name, domain_ip):
         dns_api = NamedManagerApi()
-        msg = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=ip)
+        msg = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=domain_ip)
         Log.logger.debug('The dns add result: %s' % msg)
 
     @transition_state_logger
