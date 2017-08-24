@@ -101,6 +101,7 @@ class ProdConfig(BaseConfig):
             'domain': 'domain',
             'image_url': 'image_url',
             'cpu': 'cpu',
+            'domain_ip': 'domain_ip',
             'mem': 'mem',
             'port': 'port',
             'quantity': 'quantity'
