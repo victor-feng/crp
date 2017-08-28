@@ -130,6 +130,82 @@ def _check_image_status(image_uuid):
 
 
 class AppDeploy(Resource):
+
+    def run_cmd(self, cmd):
+        msg = ''
+        p = subprocess.Popen(
+            cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            close_fds=True)
+        while True:
+            line = p.stdout.readline()
+            Log.logger.debug('The nginx config push result is %s' % line)
+            if not line and p.poll() is not None:
+                break
+            else:
+                msg += line
+                Log.logger.debug('The nginx config push msg is %s' % msg)
+        code = p.wait()
+        return msg, code
+
+    def do_app_push(self):
+        # TODO: do app push
+        def do_push_nginx_config(kwargs):
+            """
+            need the nip domain ip
+            nip:这是nginx那台机器的ip
+            need write the update file into vm
+            :param kwargs:
+            :return:
+            """
+            nip = kwargs.get('nip')
+            with open('/etc/ansible/hosts', 'w') as f:
+                f.write('%s\n' % nip)
+            Log.logger.debug('----->start push', kwargs)
+            self.run_cmd(
+                "ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip,dir=self.dir))
+            self.run_cmd(
+                "ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m synchronize -a 'src={dir}/update.py dest=/shell/'".format(
+                    nip=nip, dir=self.dir))
+            self.run_cmd(
+                "ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m synchronize -a 'src={dir}/template dest=/shell/'".format(
+                    nip=nip, dir=self.dir))
+            Log.logger.debug('------>上传配置文件完成')
+            self.run_cmd("ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m shell -a 'chmod 777 /shell/update.py'".format(
+                nip=nip, dir=self.dir))
+            self.run_cmd("ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m shell -a 'chmod 777 /shell/template'".format(
+                nip=nip, dir=self.dir))
+            self.run_cmd(
+                'ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m shell -a '
+                '"/shell/update.py {domain} {ip} {port}"'.format(
+                    nip=kwargs.get('nip'),
+                    dir=self.dir,
+                    domain=kwargs.get('domain'),
+                    ip=kwargs.get('ip'),
+                    port=kwargs.get('port')))
+            Log.logger.debug('------>end push')
+
+        resource = R
+        real_ip = ''
+        app = self.property_mapper.get('app', '')
+        app_instance = app.get('instance')
+        Log.logger.debug("####current compute instance is:{}".format(self.property_mapper))
+        domain_ip = app.get('domain_ip', "")
+        for ins in app_instance:
+            domain = ins.get('domain', '')
+            ip_str = str(ins.get('ip')) + ' '
+            real_ip += ip_str
+        ports = str(app.get('port'))
+        Log.logger.debug(
+            'the receive (domain, nginx, ip, port) is (%s, %s, %s, %s)' %
+            (domain, domain_ip, real_ip, ports))
+        do_push_nginx_config({'nip': domain_ip,
+                                'domain': domain,
+                                'ip': real_ip.strip(),
+                                'port': ports.strip()})
+
     def post(self):
         code = 200
         msg = "ok"
@@ -139,6 +215,7 @@ class AppDeploy(Resource):
             parser.add_argument('docker', type=list, location='json')
             parser.add_argument('deploy_id', type=str)
             parser.add_argument('mongodb', type=str)
+            parser.add_argument('appinfo', type=list, location='json')
             #parser.add_argument('file', type=werkz
             # eug.datastructures.FileStorage, location='files')
             args = parser.parse_args()
@@ -149,9 +226,10 @@ class AppDeploy(Resource):
             docker = args.docker
             mongodb = args.mongodb
             mysql = args.mysql
+            appinfo = args.appinfo
 
             logging.debug("Thread exec start")
-            t = threading.Thread(target=self.deploy_anything, args=(mongodb, mysql, docker, deploy_id))
+            t = threading.Thread(target=self.deploy_anything, args=(mongodb, mysql, docker, deploy_id, appinfo))
             t.start()
             logging.debug("Thread exec done")
 
@@ -170,7 +248,7 @@ class AppDeploy(Resource):
         }
         return res, code
 
-    def deploy_anything(self, mongodb, mysql, docker, deploy_id):
+    def deploy_anything(self, mongodb, mysql, docker, deploy_id, res_id):
         try:
             lock = threading.RLock()
             lock.acquire()
@@ -178,6 +256,7 @@ class AppDeploy(Resource):
             msg = "ok"
             mongodb_res = True
             sql_ret = True
+            self.do_app_push(res_id)
             if mongodb:
                 logging.debug("The mongodb data is %s" % mongodb)
                 mongodb_res = self._deploy_mongodb(mongodb)

@@ -6,4 +6,4 @@ from crp.openstack import openstack_client_setting
 if __name__ == '__main__':
     app = create_app(APP_ENV)
     openstack_client_setting()
-    app.run(host='0.0.0.0', port=8001)
+    app.run(host='127.0.0.1', port=8001)
