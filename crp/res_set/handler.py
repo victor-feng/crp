@@ -18,8 +18,8 @@ from crp.utils.docker_tools import image_transit
 from config import configs, APP_ENV
 
 # TODO: refactor it later.
-nginx_ip = configs[APP_ENV].nginx_ip
-nginx_ip_slave = configs[APP_ENV].nginx_ip_slave
+# nginx_ip = configs[APP_ENV].nginx_ip
+# nginx_ip_slave = configs[APP_ENV].nginx_ip_slave
 MONGODB_SCRIPT_PATH = configs[APP_ENV].MONGODB_SCRIPT_PATH
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
@@ -661,30 +661,34 @@ class ResourceProviderTransitions(object):
         real_ip = ''
         app = self.property_mapper.get('app', '')
         app_instance = app.get('instance')
+        Log.logger.debug("####current compute instance is:{}".format(self.property_mapper))
+        domain_ip = app.get('domain_ip', "")
         for ins in app_instance:
             domain = ins.get('domain', '')
             ip_str = str(ins.get('ip')) + ' '
             real_ip += ip_str
         ports = str(app.get('port'))
         Log.logger.debug(
-            'the receive domain and ip port is %s-%s-%s' %
-            (domain, real_ip, ports))
-        do_push_nginx_config({'nip': nginx_ip,
+            'the receive (domain, nginx, ip, port) is (%s, %s, %s, %s)' %
+            (domain, domain_ip, real_ip, ports))
+        do_push_nginx_config({'nip': domain_ip,
                               'domain': domain,
                               'ip': real_ip.strip(),
                               'port': ports.strip()})
-        do_push_nginx_config({'nip': nginx_ip_slave,
-                              'domain': domain,
-                              'ip': real_ip.strip(),
-                              'port': ports.strip()})
+        # do_push_nginx_config({'nip': nginx_ip_slave,
+        #                       'domain': domain,
+        #                       'ip': real_ip.strip(),
+        #                       'port': ports.strip()})
 
         #添加dns操作#
         try:
-            ip = DNS_ENV.get(self.req_dict["env"],'172.28.5.21')
+            domain_ip = self.property_mapper.get('app',{}).get('domain_ip','10.0.0.1')
+            if len(domain_ip.strip()) == 0:
+                domain_ip = '10.0.0.1'
             Log.logger.debug("self.property_mapper: %s" % self.property_mapper)
             domain_name = self.property_mapper.get('app',{}).get('domain',{})
-            Log.logger.debug('dns add -->ip:%s,domain:%s' %(ip, domain_name))
-            self.do_dns_push(domain_name=domain_name, ip=ip)
+            Log.logger.debug('dns add -->ip:%s,domain:%s' %(domain_ip, domain_name))
+            self.do_dns_push(domain_name=domain_name, domain_ip=domain_ip)
         except Exception as e:
             Log.logger.debug("dns error: %s" % e.message)
 
@@ -708,9 +712,9 @@ class ResourceProviderTransitions(object):
         return msg, code
 
     @transition_state_logger
-    def do_dns_push(self, domain_name, ip):
+    def do_dns_push(self, domain_name, domain_ip):
         dns_api = NamedManagerApi()
-        msg = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=ip)
+        msg = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=domain_ip)
         Log.logger.debug('The dns add result: %s' % msg)
 
     @transition_state_logger
