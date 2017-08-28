@@ -227,8 +227,8 @@ class AppDeploy(Resource):
         db_list = []
         logging.debug("args is %s" % mongodb)
         mongodb = eval(mongodb)
-        host_username = mongodb.get('host_username', '')
-        host_password = mongodb.get('host_passwork', '')
+        db_username = mongodb.get('db_username', '')
+        db_password = mongodb.get('db_passwork', '')
         mongodb_username = mongodb.get('mongodb_username', '')
         mongodb_password = mongodb.get('mongodb_password', '')
         vip1 = mongodb.get('vip1', '')
@@ -285,7 +285,7 @@ class AppDeploy(Resource):
                             db_list.remove(db)
                     logging.debug("the new create db list is %s" % db_list)
                     if len(db_list):
-                        auth_path = self.mongodb_auth_file(mongodb_username, mongodb_password, db_list)
+                        auth_path = self.mongodb_auth_file(db_username, db_password, db_list)
                         ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + auth_path + ' dest=' + remote_path + '"'
                         exec_auth_file = ansible_cmd + 'script -a "%s < %s"' % \
                                                          (configs[APP_ENV].MONGODB_AUTH_PATH, remote_path)
@@ -299,6 +299,8 @@ class AppDeploy(Resource):
 
                             logging.debug("del the ansible file successful")
                     return True
+                else:
+                    return False
             else:
                 return False
         else:

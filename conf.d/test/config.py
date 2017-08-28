@@ -133,6 +133,7 @@ class TestingConfig(BaseConfig):
             'image_url': 'image_url',
             'cpu': 'cpu',
             'mem': 'mem',
+            'domain_ip': 'domain_ip',
             'port': 'port',
             'quantity': 'quantity'
         },
