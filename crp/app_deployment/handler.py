@@ -21,6 +21,7 @@ from crp.app_deployment.errors import user_errors
 from crp.utils.docker_tools import image_transit
 from crp.openstack import OpenStack
 from crp.taskmgr import *
+from crp.dns.dns_api import NamedManagerApi
 from crp.log import Log
 
 import sys
@@ -183,6 +184,7 @@ class AppDeploy(Resource):
                 mongodb_res = self._deploy_mongodb(mongodb)
             if mysql:
                 sql_ret = self._deploy_mysql(mysql, docker)
+
             logging.debug("Docker is " + str(docker))
             for i in docker:
                 while True:
@@ -197,11 +199,23 @@ class AppDeploy(Resource):
                     else:
                         break
 
+            #添加dns解析
+            for item in docker:
+                domain_name = item.get('domain_name','')
+                domain_ip = item.get('domain_ip','')
+                if len(domain_name.strip()) != 0 and len(domain_ip.strip()) != 0:
+                    dns_api = NamedManagerApi()
+                    msg = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=domain_ip)
+                    logging.debug('The dns add result: %s' % msg)
+                else:
+                    logging.debug('domain_name:{domain_name},domain_ip:{domain_ip} is null'.format(domain_name=domain_name,domain_ip=domain_ip))
+
             if not (sql_ret and mongodb_res):
                 res = _dep_callback(deploy_id, False)
                 if res.status_code == 500:
                     code = 500
                     msg = "uop server error"
+
             lock.release()
         except Exception as e:
             code = 500
