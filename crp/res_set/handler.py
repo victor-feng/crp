@@ -43,6 +43,10 @@ property_json_mapper_config = configs[APP_ENV].property_json_mapper_config
 SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
 DNS_ENV = configs[APP_ENV].DNS_ENV
 
+AVAILABILITY_ZONE_AZ_UOP = configs[APP_ENV].AVAILABILITY_ZONE_AZ_UOP
+
+
+
 # Transition state Log debug decorator
 
 
@@ -239,7 +243,7 @@ class ResourceProviderTransitions(object):
             image,
             flavor,
             availability_zone,
-            network_id):
+            network_id, server_group=None):
         nova_client = OpenStack.nova_client
         """
         ints = nova_client.servers.list()
@@ -255,17 +259,23 @@ class ResourceProviderTransitions(object):
         nics_list = []
         nic_info = {'net-id': network_id}
         nics_list.append(nic_info)
-        int = nova_client.servers.create(name, image, flavor,
+        if server_group:
+            server_group_dict = {'group': server_group.id}
+            int_ = nova_client.servers.create(name, image, flavor,
+                                         availability_zone=availability_zone,
+                                         nics=nics_list, scheduler_hints=server_group_dict)
+        else:
+            int_ = nova_client.servers.create(name, image, flavor,
                                          availability_zone=availability_zone,
                                          nics=nics_list)
         Log.logger.debug(
             "Task ID " +
             self.task_id.__str__() +
             " create instance:")
-        Log.logger.debug(int)
-        Log.logger.debug(int.id)
+        Log.logger.debug(int_)
+        Log.logger.debug(int_.id)
 
-        return int.id
+        return int_.id
 
     # 依据镜像URL创建NovaDocker容器
     def _create_docker_by_url(self, name, image_url):
@@ -282,7 +292,7 @@ class ResourceProviderTransitions(object):
             return err_msg, None
 
     # 依据资源类型创建资源
-    def _create_instance_by_type(self, ins_type, name):
+    def _create_instance_by_type(self, ins_type, name, server_group=None):
         image = cluster_type_image_port_mappers.get(ins_type)
         image_uuid = image.get('uuid')
         Log.logger.debug(
@@ -297,7 +307,7 @@ class ResourceProviderTransitions(object):
             image_uuid,
             FLAVOR_1C2G,
             AVAILABILITY_ZONE_AZ_UOP,
-            DEV_NETWORK_ID)
+            DEV_NETWORK_ID, server_group)
 
     # 申请应用集群docker资源
     def _create_app_cluster(self, property_mapper):
@@ -380,6 +390,12 @@ class ResourceProviderTransitions(object):
             propertys['password'] = DEFAULT_PASSWORD
             propertys['port'] = port
             propertys['instance'] = []
+            
+            # 针对servers_group 亲和调度操作
+            nova_client = OpenStack.nova_client
+            server_group = None
+            if 1:
+                server_group = nova_client.server_groups.create(**{'name': 'create_resource_cluster', 'policies': ['anti-affinity']})
 
             for i in range(0, quantity, 1):
                 # 为mysql创建2个mycat镜像的LVS
@@ -387,7 +403,7 @@ class ResourceProviderTransitions(object):
                     cluster_type = 'mycat'
                 instance_name = '%s_%s' % (cluster_name, i.__str__())
                 osint_id = self._create_instance_by_type(
-                    cluster_type, instance_name)
+                    cluster_type, instance_name, server_group)
                 uopinst_info = {
                     'uop_inst_id': cluster_id,
                     'os_inst_id': osint_id
@@ -1096,6 +1112,11 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list):
     Log.logger.debug(res.status_code)
     Log.logger.debug(res.content)
     ret = eval(res.content.decode('unicode_escape'))
+    nova_client = OpenStack.nova_client
+    server_groups = nova_client.server_groups.list()
+    server_group = [ sg for sg in server_groups if sg.name == 'create_resource_cluster' ]
+    if server_group:
+        server_group[0].delete()
     return ret
 
 
