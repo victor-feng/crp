@@ -1,0 +1,16 @@
+  upstream  ToonDomain {
+    server  IpPort;
+  }
+  server {
+      listen 80;
+      server_name t100ToonDomain;
+      access_log  logs/ToonDomain.access.log  main;
+
+      location / {
+          proxy_pass http://ToonDomain/;
+          proxy_set_header Host             $host;
+          proxy_set_header X-Real-IP        $remote_addr;
+          proxy_set_header X-Forwarded-For  $proxy_add_x_forwarded_for;
+      }  
+  }
+
