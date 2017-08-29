@@ -312,10 +312,10 @@ class AppDeploy(Resource):
         db_list = []
         logging.debug("args is %s" % mongodb)
         mongodb = eval(mongodb)
-        db_username = mongodb.get('db_username', '')
-        db_password = mongodb.get('db_passwork', '')
-        mongodb_username = mongodb.get('mongodb_username', '')
-        mongodb_password = mongodb.get('mongodb_password', '')
+        db_username = mongodb.get('mongodb_username', '')
+        db_password = mongodb.get('mongodb_passwork', '')
+        mongodb_username = mongodb.get('db_username', '')
+        mongodb_password = mongodb.get('db_password', '')
         vip1 = mongodb.get('vip1', '')
         vip2 = mongodb.get('vip2', '')
         vip3 = mongodb.get('vip3', '')
@@ -356,7 +356,7 @@ class AppDeploy(Resource):
 
                 sh_path = self.mongodb_command_file(mongodb_password, mongodb_username, port, database, "")
                 ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + sh_path + ' dest=' + remote_path + '"'
-                query_current_db = ansible_cmd + 'script -a "%s < %s"' % (configs[APP_ENV].MONGODB_PATH, remote_path)
+                query_current_db = ansible_cmd + 'shell -a "%s < %s"' % (configs[APP_ENV].MONGODB_PATH, remote_path)
 
                 if self._exec_ansible_cmd(ansible_sql_cmd):
                     logging.debug("upload query file success and then get the db name")
