@@ -642,23 +642,23 @@ class ResourceProviderTransitions(object):
                     port=kwargs.get('port')))
             Log.logger.debug('------>end push')
 
-        real_ip = ''
-        app = self.property_mapper.get('app', '')
-        app_instance = app.get('instance')
-        Log.logger.debug("####current compute instance is:{}".format(self.property_mapper))
-        domain_ip = app.get('domain_ip', "")
-        for ins in app_instance:
-            domain = ins.get('domain', '')
-            ip_str = str(ins.get('ip')) + ' '
-            real_ip += ip_str
-        ports = str(app.get('port'))
-        Log.logger.debug(
-            'the receive (domain, nginx, ip, port) is (%s, %s, %s, %s)' %
-            (domain, domain_ip, real_ip, ports))
-        do_push_nginx_config({'nip': domain_ip,
-                              'domain': domain,
-                              'ip': real_ip.strip(),
-                              'port': ports.strip()})
+        # real_ip = ''
+        # app = self.property_mapper.get('app', '')
+        # app_instance = app.get('instance')
+        # Log.logger.debug("####current compute instance is:{}".format(self.property_mapper))
+        # domain_ip = app.get('domain_ip', "")
+        # for ins in app_instance:
+        #     domain = ins.get('domain', '')
+        #     ip_str = str(ins.get('ip')) + ' '
+        #     real_ip += ip_str
+        # ports = str(app.get('port'))
+        # Log.logger.debug(
+        #     'the receive (domain, nginx, ip, port) is (%s, %s, %s, %s)' %
+        #     (domain, domain_ip, real_ip, ports))
+        # do_push_nginx_config({'nip': domain_ip,
+        #                       'domain': domain,
+        #                       'ip': real_ip.strip(),
+        #                       'port': ports.strip()})
         # do_push_nginx_config({'nip': nginx_ip_slave,
         #                       'domain': domain,
         #                       'ip': real_ip.strip(),
