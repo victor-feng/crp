@@ -153,6 +153,8 @@ class AppDeploy(Resource):
 
     def do_app_push(self, app):
         # TODO: do app push
+        self.dir = os.path.dirname(
+            os.path.abspath(__file__))
         def do_push_nginx_config(kwargs):
             """
             need the nip domain ip
