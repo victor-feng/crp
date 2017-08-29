@@ -140,6 +140,7 @@ class AppDeploy(Resource):
             parser.add_argument('docker', type=list, location='json')
             parser.add_argument('deploy_id', type=str)
             parser.add_argument('mongodb', type=str)
+            parser.add_argument('dns', type=list, location='json')
             #parser.add_argument('file', type=werkz
             # eug.datastructures.FileStorage, location='files')
             args = parser.parse_args()
@@ -150,9 +151,10 @@ class AppDeploy(Resource):
             docker = args.docker
             mongodb = args.mongodb
             mysql = args.mysql
+            dns = args.dns
 
             logging.debug("Thread exec start")
-            t = threading.Thread(target=self.deploy_anything, args=(mongodb, mysql, docker, deploy_id))
+            t = threading.Thread(target=self.deploy_anything, args=(mongodb, mysql, docker, dns, deploy_id))
             t.start()
             logging.debug("Thread exec done")
 
@@ -171,7 +173,7 @@ class AppDeploy(Resource):
         }
         return res, code
 
-    def deploy_anything(self, mongodb, mysql, docker, deploy_id):
+    def deploy_anything(self, mongodb, mysql, docker, dns, deploy_id):
         try:
             lock = threading.RLock()
             lock.acquire()
@@ -200,7 +202,7 @@ class AppDeploy(Resource):
                         break
 
             #添加dns解析
-            for item in docker:
+            for item in dns:
                 domain_name = item.get('domain_name','')
                 domain_ip = item.get('domain_ip','')
                 if len(domain_name.strip()) != 0 and len(domain_ip.strip()) != 0:
