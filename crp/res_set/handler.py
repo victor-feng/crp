@@ -665,16 +665,16 @@ class ResourceProviderTransitions(object):
         #                       'port': ports.strip()})
 
         #添加dns操作#
-        try:
-            domain_ip = self.property_mapper.get('app',{}).get('domain_ip','10.0.0.1')
-            if len(domain_ip.strip()) == 0:
-                domain_ip = '10.0.0.1'
-            Log.logger.debug("self.property_mapper: %s" % self.property_mapper)
-            domain_name = self.property_mapper.get('app',{}).get('domain',{})
-            Log.logger.debug('dns add -->ip:%s,domain:%s' %(domain_ip, domain_name))
-            self.do_dns_push(domain_name=domain_name, domain_ip=domain_ip)
-        except Exception as e:
-            Log.logger.debug("dns error: %s" % e.message)
+        # try:
+        #     domain_ip = self.property_mapper.get('app',{}).get('domain_ip','10.0.0.1')
+        #     if len(domain_ip.strip()) == 0:
+        #         domain_ip = '10.0.0.1'
+        #     Log.logger.debug("self.property_mapper: %s" % self.property_mapper)
+        #     domain_name = self.property_mapper.get('app',{}).get('domain',{})
+        #     Log.logger.debug('dns add -->ip:%s,domain:%s' %(domain_ip, domain_name))
+        #     self.do_dns_push(domain_name=domain_name, domain_ip=domain_ip)
+        # except Exception as e:
+        #     Log.logger.debug("dns error: %s" % e.message)
 
     def run_cmd(self, cmd):
         msg = ''
