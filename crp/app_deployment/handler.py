@@ -167,20 +167,20 @@ class AppDeploy(Resource):
                 f.write('%s\n' % nip)
             Log.logger.debug('----->start push:{}dir:{}'.format(kwargs, selfdir))
             self.run_cmd(
-                "ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip,dir=selfdir))
+                "ansible {nip} --private-key={dir}/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip,dir=selfdir))
             self.run_cmd(
-                "ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m synchronize -a 'src={dir}/update.py dest=/shell/'".format(
+                "ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/update.py dest=/shell/'".format(
                     nip=nip, dir=selfdir))
             self.run_cmd(
-                "ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m synchronize -a 'src={dir}/template dest=/shell/'".format(
+                "ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/template dest=/shell/'".format(
                     nip=nip, dir=selfdir))
             Log.logger.debug('------>上传配置文件完成')
-            self.run_cmd("ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m shell -a 'chmod 777 /shell/update.py'".format(
+            self.run_cmd("ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /shell/update.py'".format(
                 nip=nip, dir=selfdir))
-            self.run_cmd("ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m shell -a 'chmod 777 /shell/template'".format(
+            self.run_cmd("ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /shell/template'".format(
                 nip=nip, dir=selfdir))
             self.run_cmd(
-                'ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m shell -a '
+                'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a '
                 '"/shell/update.py {domain} {ip} {port}"'.format(
                     nip=kwargs.get('nip'),
                     dir=selfdir,
