@@ -153,8 +153,6 @@ class AppDeploy(Resource):
 
     def do_app_push(self, app):
         # TODO: do app push
-        self.dir = os.path.dirname(
-            os.path.abspath(__file__))
         def do_push_nginx_config(kwargs):
             """
             need the nip domain ip
@@ -163,28 +161,29 @@ class AppDeploy(Resource):
             :param kwargs:
             :return:
             """
+            selfdir = os.path.dirname(os.path.abspath(__file__))
             nip = kwargs.get('nip')
             with open('/etc/ansible/hosts', 'w') as f:
                 f.write('%s\n' % nip)
-            Log.logger.debug('----->start push,dir:', kwargs, self.dir)
+            Log.logger.debug('----->start push,dir:', kwargs, selfdir)
             self.run_cmd(
-                "ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip,dir=self.dir))
+                "ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip,dir=selfdir))
             self.run_cmd(
                 "ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m synchronize -a 'src={dir}/update.py dest=/shell/'".format(
-                    nip=nip, dir=self.dir))
+                    nip=nip, dir=selfdir))
             self.run_cmd(
                 "ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m synchronize -a 'src={dir}/template dest=/shell/'".format(
-                    nip=nip, dir=self.dir))
+                    nip=nip, dir=selfdir))
             Log.logger.debug('------>上传配置文件完成')
             self.run_cmd("ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m shell -a 'chmod 777 /shell/update.py'".format(
-                nip=nip, dir=self.dir))
+                nip=nip, dir=selfdir))
             self.run_cmd("ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m shell -a 'chmod 777 /shell/template'".format(
-                nip=nip, dir=self.dir))
+                nip=nip, dir=selfdir))
             self.run_cmd(
                 'ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m shell -a '
                 '"/shell/update.py {domain} {ip} {port}"'.format(
                     nip=kwargs.get('nip'),
-                    dir=self.dir,
+                    dir=selfdir,
                     domain=kwargs.get('domain'),
                     ip=kwargs.get('ip'),
                     port=kwargs.get('port')))
@@ -202,10 +201,13 @@ class AppDeploy(Resource):
         Log.logger.debug(
             'the receive (domain, nginx, ip, port) is (%s, %s, %s, %s)' %
             (domain, domain_ip, real_ip, ports))
-        do_push_nginx_config({'nip': domain_ip,
+        try:
+            do_push_nginx_config({'nip': domain_ip,
                                 'domain': domain,
                                 'ip': real_ip.strip(),
                                 'port': ports.strip()})
+        except Exception as e:
+            Log.logger.debug("error:{}".format(e))
 
     def post(self):
         code = 200
