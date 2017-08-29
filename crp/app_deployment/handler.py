@@ -166,7 +166,7 @@ class AppDeploy(Resource):
             nip = kwargs.get('nip')
             with open('/etc/ansible/hosts', 'w') as f:
                 f.write('%s\n' % nip)
-            Log.logger.debug('----->start push', kwargs)
+            Log.logger.debug('----->start push,dir:', kwargs, self.dir)
             self.run_cmd(
                 "ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip,dir=self.dir))
             self.run_cmd(
