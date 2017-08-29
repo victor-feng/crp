@@ -200,10 +200,10 @@ class AppDeploy(Resource):
         Log.logger.debug(
             'the receive (domain, nginx, ip, port) is (%s, %s, %s, %s)' %
             (domain, domain_ip, real_ip, ports))
-        # do_push_nginx_config({'nip': domain_ip,
-        #                         'domain': domain,
-        #                         'ip': real_ip.strip(),
-        #                         'port': ports.strip()})
+        do_push_nginx_config({'nip': domain_ip,
+                                'domain': domain,
+                                'ip': real_ip.strip(),
+                                'port': ports.strip()})
 
     def post(self):
         code = 200
