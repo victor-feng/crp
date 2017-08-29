@@ -150,7 +150,7 @@ class AppDeploy(Resource):
         code = p.wait()
         return msg, code
 
-    def do_app_push(self):
+    def do_app_push(self, app):
         # TODO: do app push
         def do_push_nginx_config(kwargs):
             """
@@ -187,24 +187,22 @@ class AppDeploy(Resource):
                     port=kwargs.get('port')))
             Log.logger.debug('------>end push')
 
-        resource = R
         real_ip = ''
-        app = self.property_mapper.get('app', '')
-        app_instance = app.get('instance')
-        Log.logger.debug("####current compute instance is:{}".format(self.property_mapper))
+        ips = app.get('ips')
+        Log.logger.debug("####current compute instance is:{}".format(app))
         domain_ip = app.get('domain_ip', "")
-        for ins in app_instance:
-            domain = ins.get('domain', '')
-            ip_str = str(ins.get('ip')) + ' '
+        domain = app.get('domain', '')
+        for ip in ips:
+            ip_str = ip + ' '
             real_ip += ip_str
         ports = str(app.get('port'))
         Log.logger.debug(
             'the receive (domain, nginx, ip, port) is (%s, %s, %s, %s)' %
             (domain, domain_ip, real_ip, ports))
-        do_push_nginx_config({'nip': domain_ip,
-                                'domain': domain,
-                                'ip': real_ip.strip(),
-                                'port': ports.strip()})
+        # do_push_nginx_config({'nip': domain_ip,
+        #                         'domain': domain,
+        #                         'ip': real_ip.strip(),
+        #                         'port': ports.strip()})
 
     def post(self):
         code = 200
@@ -227,7 +225,7 @@ class AppDeploy(Resource):
             mongodb = args.mongodb
             mysql = args.mysql
             appinfo = args.appinfo
-
+            print "appinfo", appinfo
             logging.debug("Thread exec start")
             t = threading.Thread(target=self.deploy_anything, args=(mongodb, mysql, docker, deploy_id, appinfo))
             t.start()
@@ -248,7 +246,7 @@ class AppDeploy(Resource):
         }
         return res, code
 
-    def deploy_anything(self, mongodb, mysql, docker, deploy_id, res_id):
+    def deploy_anything(self, mongodb, mysql, docker, deploy_id, appinfo):
         try:
             lock = threading.RLock()
             lock.acquire()
@@ -256,7 +254,8 @@ class AppDeploy(Resource):
             msg = "ok"
             mongodb_res = True
             sql_ret = True
-            self.do_app_push(res_id)
+            for app in appinfo:
+                self.do_app_push(app)
             if mongodb:
                 logging.debug("The mongodb data is %s" % mongodb)
                 mongodb_res = self._deploy_mongodb(mongodb)

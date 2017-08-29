@@ -18,7 +18,7 @@ class DevelopmentConfig(BaseConfig):
         'username': 'crp',
         'password': 'crp',
     }
-    UOP_URL = "http://localhost:8000/"
+    UOP_URL = "http://172.28.20.124:5000/"
     MPC_URL = "http://mpc-dev.syswin.com/"
     OPENRC_PATH = "/root/openrc"
     DK_SOCK_URL = 'unix://var/run/docker.sock'
@@ -68,7 +68,7 @@ class DevelopmentConfig(BaseConfig):
     OS_EXT_PHYSICAL_SERVER_ATTR = 'OS-EXT-SRV-ATTR:host'
 
     # res_callback
-    RES_CALLBACK = 'http://localhost:8000/api/res_callback/res'
+    RES_CALLBACK = 'http://uop-dev.syswin.com/api/res_callback/res'
 
     RES_STATUS_OK = "ok"
     RES_STATUS_FAIL = "fail"
