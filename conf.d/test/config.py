@@ -34,7 +34,6 @@ class TestingConfig(BaseConfig):
         'AZ_UOP': '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'
     }
 
-    MONGODB_SCRIPT_PATH = 'uop-crp/crp/res_set/mongo_script/'
     MONGODB_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010'
 
     cluster_type_image_port_mappers = {
