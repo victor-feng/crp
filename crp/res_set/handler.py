@@ -17,10 +17,6 @@ from crp.openstack import OpenStack
 from crp.utils.docker_tools import image_transit
 from config import configs, APP_ENV
 
-# TODO: refactor it later.
-# nginx_ip = configs[APP_ENV].nginx_ip
-# nginx_ip_slave = configs[APP_ENV].nginx_ip_slave
-MONGODB_SCRIPT_PATH = configs[APP_ENV].MONGODB_SCRIPT_PATH
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 
