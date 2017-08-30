@@ -12,29 +12,6 @@ class BaseConfig:
 class TestingConfig(BaseConfig):
     TESTING = True
     DEBUG = True
-    MONGODB_SETTINGS = [
-             {
-            'db': 'crp',
-            'host': 'mongo-1',
-            'port': 28010,
-            'username': 'crp',
-            'password': 'crp',
-            },
-             {
-            'db': 'crp',
-            'host': 'mongo-2',
-            'port': 28010,
-            'username': 'crp',
-            'password': 'crp',
-            },
-            {
-            'db': 'crp',
-            'host': 'mongo-3',
-            'port': 28010,
-            'username': 'crp',
-            'password': 'crp',
-            }
-    ]
 
     #NOTE: noused in mpc
     UOP_URL = "http://uop-test.syswin.com/"

@@ -13,9 +13,9 @@ class ProdConfig(BaseConfig):
     DEBUG = True
 
     # NOTE: noused in mpc
-    UOP_URL = "http://uop-prod.syswin.com/" #域名自己定义好后想运维申请，我自己先定了prod
+    UOP_URL = "http://uop.syswin.com/" #域名自己定义好后想运维申请，我自己先定了prod
     # UOP_URL = "http://172.28.20.124:5000/"
-    MPC_URL = "http://mpc-prod.syswin.com/"
+    MPC_URL = "http://mpc.syswin.com/"
     OPENRC_PATH = "/root/openrc"
 
     # NOTE: noused in mpc
@@ -71,7 +71,7 @@ class ProdConfig(BaseConfig):
     OS_EXT_PHYSICAL_SERVER_ATTR = 'OS-EXT-SRV-ATTR:host'
 
     # res_callback
-    RES_CALLBACK = 'http://uop-prod.syswin.com/api/res_callback/res'
+    RES_CALLBACK = 'http://uop.syswin.com/api/res_callback/res'
 
     RES_STATUS_OK = "ok"
     RES_STATUS_FAIL = "fail"

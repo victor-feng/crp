@@ -10,13 +10,7 @@ class BaseConfig:
 class DevelopmentConfig(BaseConfig):
     TESTING = True
     DEBUG = True
-    MONGODB_SETTINGS = {
-        'db': 'crp',
-        'host': 'test.mongodb.db',
-        'port': 27017,
-        'username': 'crp',
-        'password': 'crp',
-    }
+
     UOP_URL = "http://172.28.20.124:5000/"
     MPC_URL = "http://mpc-dev.syswin.com/"
     OPENRC_PATH = "/root/openrc"
