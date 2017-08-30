@@ -223,8 +223,8 @@ class AppDeploy(Resource):
             #parser.add_argument('file', type=werkz
             # eug.datastructures.FileStorage, location='files')
             args = parser.parse_args()
-            logging.debug("AppDeploy receive post request. args is " + str(args))
-            #Log.logger.debug("AppDeploy receive post request. args is " + str(args))
+            #logging.debug("AppDeploy receive post request. args is " + str(args))
+            Log.logger.debug("AppDeploy receive post request. args is " + str(args))
             deploy_id = args.deploy_id
             logging.debug("deploy_id is " + str(deploy_id))
             docker = args.docker
@@ -262,6 +262,19 @@ class AppDeploy(Resource):
             msg = "ok"
             mongodb_res = True
             sql_ret = True
+
+            #添加dns解析
+            for item in dns:
+                domain_name = item.get('domain','')
+                domain_ip = item.get('domain_ip','')
+                Log.logger.debug('domain_name:%s,domain_ip:%s' % (domain_name,domain_ip))
+                if len(domain_name.strip()) != 0 and len(domain_ip.strip()) != 0:
+                    dns_api = NamedManagerApi()
+                    msg = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=domain_ip)
+                    Log.logger.debug('The dns add result: %s' % msg)
+                else:
+                    Log.logger.debug('domain_name:{domain_name},domain_ip:{domain_ip} is null'.format(domain_name=domain_name,domain_ip=domain_ip))
+
             for app in appinfo:
                 self.do_app_push(app)
             if mongodb:
@@ -284,16 +297,6 @@ class AppDeploy(Resource):
                     else:
                         break
 
-            #添加dns解析
-            for item in dns:
-                domain_name = item.get('domain_name','')
-                domain_ip = item.get('domain_ip','')
-                if len(domain_name.strip()) != 0 and len(domain_ip.strip()) != 0:
-                    dns_api = NamedManagerApi()
-                    msg = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=domain_ip)
-                    logging.debug('The dns add result: %s' % msg)
-                else:
-                    logging.debug('domain_name:{domain_name},domain_ip:{domain_ip} is null'.format(domain_name=domain_name,domain_ip=domain_ip))
 
             if not (sql_ret and mongodb_res):
                 res = _dep_callback(deploy_id, False)
