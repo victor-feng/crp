@@ -131,6 +131,84 @@ def _check_image_status(image_uuid):
 
 
 class AppDeploy(Resource):
+
+    def run_cmd(self, cmd):
+        msg = ''
+        p = subprocess.Popen(
+            cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            close_fds=True)
+        while True:
+            line = p.stdout.readline()
+            Log.logger.debug('The nginx config push result is %s' % line)
+            if not line and p.poll() is not None:
+                break
+            else:
+                msg += line
+                Log.logger.debug('The nginx config push msg is %s' % msg)
+        code = p.wait()
+        return msg, code
+
+    def do_app_push(self, app):
+        # TODO: do app push
+        def do_push_nginx_config(kwargs):
+            """
+            need the nip domain ip
+            nip:这是nginx那台机器的ip
+            need write the update file into vm
+            :param kwargs:
+            :return:
+            """
+            selfdir = os.path.dirname(os.path.abspath(__file__))
+            nip = kwargs.get('nip')
+            with open('/etc/ansible/hosts', 'w') as f:
+                f.write('%s\n' % nip)
+            Log.logger.debug('----->start push:{}dir:{}'.format(kwargs, selfdir))
+            self.run_cmd(
+                "ansible {nip} --private-key={dir}/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip,dir=selfdir))
+            self.run_cmd(
+                "ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/update.py dest=/shell/'".format(
+                    nip=nip, dir=selfdir))
+            self.run_cmd(
+                "ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/template dest=/shell/'".format(
+                    nip=nip, dir=selfdir))
+            Log.logger.debug('------>上传配置文件完成')
+            self.run_cmd("ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /shell/update.py'".format(
+                nip=nip, dir=selfdir))
+            self.run_cmd("ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /shell/template'".format(
+                nip=nip, dir=selfdir))
+            self.run_cmd(
+                'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a '
+                '"/shell/update.py {domain} {ip} {port}"'.format(
+                    nip=kwargs.get('nip'),
+                    dir=selfdir,
+                    domain=kwargs.get('domain'),
+                    ip=kwargs.get('ip'),
+                    port=kwargs.get('port')))
+            Log.logger.debug('------>end push')
+
+        real_ip = ''
+        ips = app.get('ips')
+        Log.logger.debug("####current compute instance is:{}".format(app))
+        domain_ip = app.get('domain_ip', "")
+        domain = app.get('domain', '')
+        for ip in ips:
+            ip_str = ip + ' '
+            real_ip += ip_str
+        ports = str(app.get('port'))
+        Log.logger.debug(
+            'the receive (domain, nginx, ip, port) is (%s, %s, %s, %s)' %
+            (domain, domain_ip, real_ip, ports))
+        try:
+            do_push_nginx_config({'nip': domain_ip,
+                                'domain': domain,
+                                'ip': real_ip.strip(),
+                                'port': ports.strip()})
+        except Exception as e:
+            Log.logger.debug("error:{}".format(e))
+
     def post(self):
         code = 200
         msg = "ok"
@@ -140,6 +218,8 @@ class AppDeploy(Resource):
             parser.add_argument('docker', type=list, location='json')
             parser.add_argument('deploy_id', type=str)
             parser.add_argument('mongodb', type=str)
+            parser.add_argument('dns', type=list, location='json')
+            parser.add_argument('appinfo', type=list, location='json')
             #parser.add_argument('file', type=werkz
             # eug.datastructures.FileStorage, location='files')
             args = parser.parse_args()
@@ -150,9 +230,12 @@ class AppDeploy(Resource):
             docker = args.docker
             mongodb = args.mongodb
             mysql = args.mysql
+            dns = args.dns
 
+            appinfo = args.appinfo
+            print "appinfo", appinfo
             logging.debug("Thread exec start")
-            t = threading.Thread(target=self.deploy_anything, args=(mongodb, mysql, docker, deploy_id))
+            t = threading.Thread(target=self.deploy_anything, args=(mongodb, mysql, docker, dns, deploy_id, appinfo))
             t.start()
             logging.debug("Thread exec done")
 
@@ -171,7 +254,7 @@ class AppDeploy(Resource):
         }
         return res, code
 
-    def deploy_anything(self, mongodb, mysql, docker, deploy_id):
+    def deploy_anything(self, mongodb, mysql, docker, dns, deploy_id, appinfo):
         try:
             lock = threading.RLock()
             lock.acquire()
@@ -179,6 +262,8 @@ class AppDeploy(Resource):
             msg = "ok"
             mongodb_res = True
             sql_ret = True
+            for app in appinfo:
+                self.do_app_push(app)
             if mongodb:
                 logging.debug("The mongodb data is %s" % mongodb)
                 mongodb_res = self._deploy_mongodb(mongodb)
@@ -200,7 +285,7 @@ class AppDeploy(Resource):
                         break
 
             #添加dns解析
-            for item in docker:
+            for item in dns:
                 domain_name = item.get('domain_name','')
                 domain_ip = item.get('domain_ip','')
                 if len(domain_name.strip()) != 0 and len(domain_ip.strip()) != 0:
@@ -227,10 +312,10 @@ class AppDeploy(Resource):
         db_list = []
         logging.debug("args is %s" % mongodb)
         mongodb = eval(mongodb)
-        db_username = mongodb.get('db_username', '')
-        db_password = mongodb.get('db_passwork', '')
-        mongodb_username = mongodb.get('mongodb_username', '')
-        mongodb_password = mongodb.get('mongodb_password', '')
+        db_username = mongodb.get('mongodb_username', '')
+        db_password = mongodb.get('mongodb_passwork', '')
+        mongodb_username = mongodb.get('db_username', '')
+        mongodb_password = mongodb.get('db_password', '')
         vip1 = mongodb.get('vip1', '')
         vip2 = mongodb.get('vip2', '')
         vip3 = mongodb.get('vip3', '')
@@ -271,7 +356,7 @@ class AppDeploy(Resource):
 
                 sh_path = self.mongodb_command_file(mongodb_password, mongodb_username, port, database, "")
                 ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + sh_path + ' dest=' + remote_path + '"'
-                query_current_db = ansible_cmd + 'script -a "%s < %s"' % (configs[APP_ENV].MONGODB_PATH, remote_path)
+                query_current_db = ansible_cmd + 'shell -a "%s < %s"' % (configs[APP_ENV].MONGODB_PATH, remote_path)
 
                 if self._exec_ansible_cmd(ansible_sql_cmd):
                     logging.debug("upload query file success and then get the db name")

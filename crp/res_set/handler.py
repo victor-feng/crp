@@ -667,39 +667,39 @@ class ResourceProviderTransitions(object):
                     port=kwargs.get('port')))
             Log.logger.debug('------>end push')
 
-        real_ip = ''
-        app = self.property_mapper.get('app', '')
-        app_instance = app.get('instance')
-        Log.logger.debug("####current compute instance is:{}".format(self.property_mapper))
-        domain_ip = app.get('domain_ip', "")
-        for ins in app_instance:
-            domain = ins.get('domain', '')
-            ip_str = str(ins.get('ip')) + ' '
-            real_ip += ip_str
-        ports = str(app.get('port'))
-        Log.logger.debug(
-            'the receive (domain, nginx, ip, port) is (%s, %s, %s, %s)' %
-            (domain, domain_ip, real_ip, ports))
-        do_push_nginx_config({'nip': domain_ip,
-                              'domain': domain,
-                              'ip': real_ip.strip(),
-                              'port': ports.strip()})
+        # real_ip = ''
+        # app = self.property_mapper.get('app', '')
+        # app_instance = app.get('instance')
+        # Log.logger.debug("####current compute instance is:{}".format(self.property_mapper))
+        # domain_ip = app.get('domain_ip', "")
+        # for ins in app_instance:
+        #     domain = ins.get('domain', '')
+        #     ip_str = str(ins.get('ip')) + ' '
+        #     real_ip += ip_str
+        # ports = str(app.get('port'))
+        # Log.logger.debug(
+        #     'the receive (domain, nginx, ip, port) is (%s, %s, %s, %s)' %
+        #     (domain, domain_ip, real_ip, ports))
+        # do_push_nginx_config({'nip': domain_ip,
+        #                       'domain': domain,
+        #                       'ip': real_ip.strip(),
+        #                       'port': ports.strip()})
         # do_push_nginx_config({'nip': nginx_ip_slave,
         #                       'domain': domain,
         #                       'ip': real_ip.strip(),
         #                       'port': ports.strip()})
 
         #添加dns操作#
-        try:
-            domain_ip = self.property_mapper.get('app',{}).get('domain_ip','10.0.0.1')
-            if len(domain_ip.strip()) == 0:
-                domain_ip = '10.0.0.1'
-            Log.logger.debug("self.property_mapper: %s" % self.property_mapper)
-            domain_name = self.property_mapper.get('app',{}).get('domain',{})
-            Log.logger.debug('dns add -->ip:%s,domain:%s' %(domain_ip, domain_name))
-            self.do_dns_push(domain_name=domain_name, domain_ip=domain_ip)
-        except Exception as e:
-            Log.logger.debug("dns error: %s" % e.message)
+        # try:
+        #     domain_ip = self.property_mapper.get('app',{}).get('domain_ip','10.0.0.1')
+        #     if len(domain_ip.strip()) == 0:
+        #         domain_ip = '10.0.0.1'
+        #     Log.logger.debug("self.property_mapper: %s" % self.property_mapper)
+        #     domain_name = self.property_mapper.get('app',{}).get('domain',{})
+        #     Log.logger.debug('dns add -->ip:%s,domain:%s' %(domain_ip, domain_name))
+        #     self.do_dns_push(domain_name=domain_name, domain_ip=domain_ip)
+        # except Exception as e:
+        #     Log.logger.debug("dns error: %s" % e.message)
 
     def run_cmd(self, cmd):
         msg = ''
