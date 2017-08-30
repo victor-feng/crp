@@ -31,9 +31,7 @@ class ProdConfig(BaseConfig):
     AP_NETWORK_CONF = {
         'AZ_UOP': 'AZ-UOP-HYPERUOP-LXC-SAS-76' #待确认
     }	
-    # TODO: 因为生产nginx是多个ip，配置文件中的nginx配置方式需要确认一下
-    nginx_ip = '172.28.20.98' #待确认
-    nginx_ip_slave = '172.28.11.111' #待确认
+
     MONGODB_SCRIPT_PATH = 'uop-crp/crp/res_set/mongo_script/'
     MONGODB_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010'
     #镜像信息找王刚已经确认
