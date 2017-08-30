@@ -124,7 +124,7 @@ class DevelopmentConfig(BaseConfig):
         }
     #NAMEDMANAGER_URL = 'http://itop.syswin.com/dnsapi.php'
     NAMEDMANAGER_URL = 'http://172.28.50.141/namedmanager/dnsapi.php'
-    IS_OPEN_AFFINITY_SCHEDULING = True
+    IS_OPEN_AFFINITY_SCHEDULING = False
 
 configs = {
     'development': DevelopmentConfig,
