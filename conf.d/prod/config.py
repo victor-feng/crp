@@ -120,6 +120,7 @@ class ProdConfig(BaseConfig):
     SCRIPTPATH = r'crp/res_set/playbook-0830/'
     DNS_ENV = {'develop': '172.28.5.21', 'test': '172.28.20.98'，'production':'10.252.30.247'} #已经找吴兆远确认
     NAMEDMANAGER_URL = 'http://itop.syswin.com/dnsapi.php'   #已经找吴兆远确认 namedmanager 信息
+    IS_OPEN_AFFINITY_SCHEDULING = False
 
 
 configs = {

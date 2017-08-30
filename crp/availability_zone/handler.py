@@ -18,7 +18,6 @@ AVAILABILITY_ZONE_AZ_UOP = configs[APP_ENV].AVAILABILITY_ZONE_AZ_UOP
 
 az_api = Api(az_blueprint, errors=az_errors)
 
-
 class AZListAPI(Resource):
 
     def get(self):
@@ -164,13 +163,6 @@ class UOPStatisticAPI(Resource):
             availability_zones = nova_cli.availability_zones.list()
             hypervisors = nova_cli.hypervisors.list()
             logging.info('-------availability_zones-----:%s',(availability_zones))
-            
-            #zones = [] 
-            #for zone in availability_zones:
-            #    zone_name = zone.zoneName
-            #    if AVAILABILITY_ZONE_AZ_UOP==zone_name:
-            #        zones.append(zone)
-            #        break
 	    zones = [ zone for zone in availability_zones if AVAILABILITY_ZONE_AZ_UOP==zone.zoneName ]
             vcpus = 0
             vcpus_used = 0

@@ -44,8 +44,7 @@ SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
 DNS_ENV = configs[APP_ENV].DNS_ENV
 
 AVAILABILITY_ZONE_AZ_UOP = configs[APP_ENV].AVAILABILITY_ZONE_AZ_UOP
-
-
+IS_OPEN_AFFINITY_SCHEDULING = configs[APP_ENV].IS_OPEN_AFFINITY_SCHEDULING
 
 # Transition state Log debug decorator
 
@@ -259,11 +258,14 @@ class ResourceProviderTransitions(object):
         nics_list = []
         nic_info = {'net-id': network_id}
         nics_list.append(nic_info)
+        import logging 
         if server_group:
             server_group_dict = {'group': server_group.id}
+            logging.info(server_group.id)
             int_ = nova_client.servers.create(name, image, flavor,
                                          availability_zone=availability_zone,
                                          nics=nics_list, scheduler_hints=server_group_dict)
+            logging.info('------------finish---create-------------')
         else:
             int_ = nova_client.servers.create(name, image, flavor,
                                          availability_zone=availability_zone,
@@ -278,7 +280,7 @@ class ResourceProviderTransitions(object):
         return int_.id
 
     # 依据镜像URL创建NovaDocker容器
-    def _create_docker_by_url(self, name, image_url):
+    def _create_docker_by_url(self, name, image_url, server_group=None):
         err_msg, image_uuid = image_transit(image_url)
         if err_msg is None:
             Log.logger.debug(
@@ -287,7 +289,7 @@ class ResourceProviderTransitions(object):
                 " Transit harbor docker image success. The result glance image UUID is " +
                 image_uuid)
             return None, self._create_instance(
-                name, image_uuid, DOCKER_FLAVOR_2C4G, AVAILABILITY_ZONE_AZ_UOP, DEV_NETWORK_ID)
+                name, image_uuid, DOCKER_FLAVOR_2C4G, AVAILABILITY_ZONE_AZ_UOP, DEV_NETWORK_ID, server_group)
         else:
             return err_msg, None
 
@@ -332,11 +334,17 @@ class ResourceProviderTransitions(object):
             propertys['password'] = DEFAULT_PASSWORD
             propertys['port'] = port
             propertys['instance'] = []
+            # 针对servers_group 亲和调度操作 , 需要创建亲和调度
+            nova_client = OpenStack.nova_client
+            server_group = None
+
+            if IS_OPEN_AFFINITY_SCHEDULING:
+                server_group = nova_client.server_groups.create(**{'name': 'create_app_cluster_server_group', 'policies': ['anti-affinity']})
 
             for i in range(0, quantity, 1):
                 instance_name = '%s_%s' % (cluster_name, i.__str__())
                 err_msg, osint_id = self._create_docker_by_url(
-                    instance_name, image_url)
+                    instance_name, image_url, server_group)
                 if err_msg is None:
                     uopinst_info = {
                         'uop_inst_id': cluster_id,
@@ -391,12 +399,13 @@ class ResourceProviderTransitions(object):
             propertys['port'] = port
             propertys['instance'] = []
             
-            # 针对servers_group 亲和调度操作
+            # 针对servers_group 亲和调度操作 , 需要创建亲和调度
             nova_client = OpenStack.nova_client
             server_group = None
-            if 1:
-                server_group = nova_client.server_groups.create(**{'name': 'create_resource_cluster', 'policies': ['anti-affinity']})
-
+            if IS_OPEN_AFFINITY_SCHEDULING:
+                server_group = nova_client.server_groups.create(**{'name': 'create_resource_cluster_server_group', 'policies': ['anti-affinity']})
+            import logging
+            logging.info('--------------server_group---------------', server_group)
             for i in range(0, quantity, 1):
                 # 为mysql创建2个mycat镜像的LVS
                 if cluster_type == 'mysql' and i == 3:
@@ -1118,9 +1127,14 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list):
     ret = eval(res.content.decode('unicode_escape'))
     nova_client = OpenStack.nova_client
     server_groups = nova_client.server_groups.list()
-    server_group = [ sg for sg in server_groups if sg.name == 'create_resource_cluster' ]
-    if server_group:
-        server_group[0].delete()
+    server_group_names = ['create_app_cluster_server_group', 'create_resource_cluster_server_group'] 
+    server_group = [ sg for sg in server_groups if sg.name in server_group_names ]
+    import logging
+    logging.info(server_group)
+    for sg in server_group:
+        logging.info('----------------准备删除server_group--------------')
+        sg.manager.delete(sg.id)
+        logging.info('------------删除成功-------------')
     return ret
 
 
