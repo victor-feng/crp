@@ -28,8 +28,8 @@ class DevelopmentConfig(BaseConfig):
     AP_NETWORK_CONF = {
         'AZ_UOP': '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'
     }
-    nginx_ip = '172.28.20.98'
-    nginx_ip_slave = '172.28.11.111'
+    #nginx_ip = '172.28.20.98'
+    #nginx_ip_slave = '172.28.11.111'
     MONGODB_SCRIPT_PATH = 'uop-crp/crp/res_set/mongo_script/'
     MONGODB_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010'
     MONGODB_AUTH_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010 --authenticationDatabase admin -u admin -p 123456'
