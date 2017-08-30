@@ -118,7 +118,6 @@ class TestingConfig(BaseConfig):
         }
     }
     SCRIPTPATH = r'crp/res_set/playbook-0830/'
-    DNS_ENV = {'develop': '172.28.5.21', 'test': '172.28.20.98'}
     #DNS配置
     DNS_CONDIG = {
         'host': '172.28.50.141',
@@ -126,7 +125,6 @@ class TestingConfig(BaseConfig):
         'username': 'root',
         'password': '123456'
         }
-    #NAMEDMANAGER_URL = 'http://itop.syswin.com/dnsapi.php'
     NAMEDMANAGER_URL = 'http://172.28.50.141/namedmanager/dnsapi.php'
     IS_OPEN_AFFINITY_SCHEDULING = False
 
