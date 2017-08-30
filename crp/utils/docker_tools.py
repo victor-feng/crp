@@ -204,22 +204,24 @@ def _glance_img_reservation(glance_cli, current_image_id, reservation_quantity):
 
 def image_transit(_image_url):
     # return None, 'd9645ca0-f771-4d90-8a18-0bd44c26abd7'
-    img_tag = _image_url.split(':', 2)
-    logging.debug("Docker image url split list is:")
-    logging.debug(img_tag)
-    glance_cli = _glance_cli()
-    repository_hash = hashlib.sha224(img_tag[0]).hexdigest()
-    _image_url_hash = repository_hash + ':' + img_tag[1]
+    try:
+        img_tag = _image_url.split(':', 2)
+        logging.debug("Docker image url split list is:")
+        logging.debug(img_tag)
+        glance_cli = _glance_cli()
+        repository_hash = hashlib.sha224(img_tag[0]).hexdigest()
+        _image_url_hash = repository_hash + ':' + img_tag[1]
 
-    # Docker image tag 为 latest 的镜像总是转换并创建glance image，其它均为glance 中存在则不创建
-    if img_tag[1] != 'latest':
-        properties = {'name': _image_url_hash}
-        images = glance_cli.images.list(filters=properties)
-        for image in images:
-            logging.debug("Docker image with tag is already existed in glance images. glance image id is \'" +
-                             image.id + "\'.")
-            return None, image.id
-
+        # Docker image tag 为 latest 的镜像总是转换并创建glance image，其它均为glance 中存在则不创建
+        if img_tag[1] != 'latest':
+            properties = {'name': _image_url_hash}
+            images = glance_cli.images.list(filters=properties)
+            for image in images:
+                logging.debug("Docker image with tag is already existed in glance images. glance image id is \'" +
+                                 image.id + "\'.")
+                return None, image.id
+    except Exception as e:
+        return e.message, None
     dk_cli = _dk_py_cli()
     logging.debug("Docker image pull from harbor url \'" + _image_url + "\' is started.")
     err_msg = _dk_img_pull(dk_cli, _image_url, repository_hash, img_tag[1])

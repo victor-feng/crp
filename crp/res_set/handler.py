@@ -177,7 +177,8 @@ class ResourceProviderTransitions(object):
             elif self.phase == 'callback':
                 if self.is_need_rollback is not True:
                     self.success()
-            self.next_phase()
+            else:
+                self.next_phase()
 
     @staticmethod
     def _get_ip_from_instance(server):
@@ -595,6 +596,7 @@ class ResourceProviderTransitions(object):
         self.is_running = False
         # 停止定时任务并退出
         TaskManager.task_exit(self.task_id)
+        self.phase = 'stop'
 
     @transition_state_logger
     def do_app_cluster(self):
