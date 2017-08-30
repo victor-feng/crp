@@ -41,7 +41,6 @@ DEFAULT_PASSWORD = configs[APP_ENV].DEFAULT_PASSWORD
 items_sequence_list_config = configs[APP_ENV].items_sequence_list_config
 property_json_mapper_config = configs[APP_ENV].property_json_mapper_config
 SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
-DNS_ENV = configs[APP_ENV].DNS_ENV
 
 AVAILABILITY_ZONE_AZ_UOP = configs[APP_ENV].AVAILABILITY_ZONE_AZ_UOP
 IS_OPEN_AFFINITY_SCHEDULING = configs[APP_ENV].IS_OPEN_AFFINITY_SCHEDULING
