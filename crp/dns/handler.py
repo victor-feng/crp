@@ -8,7 +8,7 @@ import json
 import subprocess
 from config import configs, APP_ENV
 
-DNS_ENV =  configs[APP_ENV].DNS_ENV
+DNS_ENV =  {}
 
 res = {
     "code": "",
