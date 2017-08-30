@@ -18,7 +18,7 @@ define('deploy', default='dev')
 define('mpc_sync', type=bool, default=False)
 
 from crp import create_app
-#from config import APP_ENV
+from config import APP_ENV
 
 def main():
     options.parse_command_line()
@@ -27,15 +27,7 @@ def main():
         from tornado import autoreload
         autoreload.start()
 
-    APP_ENV = 'development'
-    if options.deploy.lower() == 'test':
-        APP_ENV = 'testing'
-    elif options.deploy.lower() == 'prod':
-        # TODO:
-        pass
-
     app = create_app(APP_ENV)
-    # app.run(host='0.0.0.0', debug=True)
     http_server = HTTPServer(WSGIContainer(app))
     http_server.listen(options.port)
     logging.warn("[CRP] CRP is running on: localhost:%d", options.port)
@@ -45,12 +37,10 @@ def main():
 
     OPENRC_PATH = app.config['OPENRC_PATH']
     openstack_client_setting()
-    #openstack_client_setting(OPENRC_PATH)
     logging.warn("[CRP] Openstack client is inited")
     MPC_URL = app.config['MPC_URL']
 
     instance_status_sync(mpc_sync=options.mpc_sync)
-    #instance_status_sync(MPC_URL)
 
     IOLoop.instance().start()
 
