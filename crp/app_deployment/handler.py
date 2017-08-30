@@ -263,18 +263,6 @@ class AppDeploy(Resource):
             mongodb_res = True
             sql_ret = True
 
-            #添加dns解析
-            for item in dns:
-                domain_name = item.get('domain','')
-                domain_ip = item.get('domain_ip','')
-                Log.logger.debug('domain_name:%s,domain_ip:%s' % (domain_name,domain_ip))
-                if len(domain_name.strip()) != 0 and len(domain_ip.strip()) != 0:
-                    dns_api = NamedManagerApi()
-                    msg = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=domain_ip)
-                    Log.logger.debug('The dns add result: %s' % msg)
-                else:
-                    Log.logger.debug('domain_name:{domain_name},domain_ip:{domain_ip} is null'.format(domain_name=domain_name,domain_ip=domain_ip))
-
             for app in appinfo:
                 self.do_app_push(app)
             if mongodb:
@@ -297,6 +285,17 @@ class AppDeploy(Resource):
                     else:
                         break
 
+            #添加dns解析
+            for item in dns:
+                domain_name = item.get('domain','')
+                domain_ip = item.get('domain_ip','')
+                Log.logger.debug('domain_name:%s,domain_ip:%s' % (domain_name,domain_ip))
+                if len(domain_name.strip()) != 0 and len(domain_ip.strip()) != 0:
+                    dns_api = NamedManagerApi()
+                    msg = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=domain_ip)
+                    Log.logger.debug('The dns add result: %s' % msg)
+                else:
+                    Log.logger.debug('domain_name:{domain_name},domain_ip:{domain_ip} is null'.format(domain_name=domain_name,domain_ip=domain_ip))
 
             if not (sql_ret and mongodb_res):
                 res = _dep_callback(deploy_id, False)
