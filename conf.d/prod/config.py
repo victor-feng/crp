@@ -58,10 +58,10 @@ class ProdConfig(BaseConfig):
         }
     }
 
-    # scm2-dev--1C2G80G
-    FLAVOR_1C2G = 'scm2-dev--1C2G25G'  
-    # docker-2C4G25G
-    DOCKER_FLAVOR_2C4G = 'e90d8d25-c5c7-46d7-ba4e-2465a5b1d266' # 写死的信息,可能还需要修改
+    FLAVOR = {
+        '2': 'uop-2C4G50G',
+        '4': 'uop-4C8G50G',
+    }
 
     # AVAILABILITY_ZONE
     AVAILABILITY_ZONE_AZ_UOP = 'AZ-UOP-HYPERUOP-KVM-SAS-31/32'
