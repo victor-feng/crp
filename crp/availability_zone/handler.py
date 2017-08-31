@@ -201,7 +201,7 @@ class UOPStatisticAPI(Resource):
             hypervisors_statistics["storage_gb_use"] = local_gb_used
         except Exception as e:
             #Log.logger.error('get hypervisors_statistics err: %s' % e.message)
-            logging.error('get azuop_hypervisors_statistics err: %s' % e.message)
+            logging.error('get azuop_hypervisors_statistics err: %s' % e)
             res = {
                 "code": 400,
                 "result": {
