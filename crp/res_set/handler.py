@@ -318,7 +318,7 @@ class ResourceProviderTransitions(object):
         port = propertys.get('port')
         image_url = propertys.get('image_url')
         cpu = propertys.get('cpu')
-        flavor = FLAVOR[cpu]
+        flavor = FLAVOR[str(cpu)]
         mem = propertys.get('mem')
         quantity = propertys.get('quantity')
 
@@ -379,7 +379,7 @@ class ResourceProviderTransitions(object):
         cluster_type = propertys.get('cluster_type')
         version = propertys.get('version')
         cpu = propertys.get('cpu')
-        flavor = FLAVOR[cpu]
+        flavor = FLAVOR[str(cpu)]
         mem = propertys.get('mem')
         disk = propertys.get('disk')
         quantity = propertys.get('quantity')
