@@ -220,6 +220,7 @@ class AppDeploy(Resource):
             parser.add_argument('mongodb', type=str)
             parser.add_argument('dns', type=list, location='json')
             parser.add_argument('appinfo', type=list, location='json')
+            parser.add_argument('disconf_server_info', type=list, location='json')
             #parser.add_argument('file', type=werkz
             # eug.datastructures.FileStorage, location='files')
             args = parser.parse_args()
@@ -231,11 +232,11 @@ class AppDeploy(Resource):
             mongodb = args.mongodb
             mysql = args.mysql
             dns = args.dns
-
+            disconf_server_info = args.disconf_server_info
             appinfo = args.appinfo
             print "appinfo", appinfo
             logging.debug("Thread exec start")
-            t = threading.Thread(target=self.deploy_anything, args=(mongodb, mysql, docker, dns, deploy_id, appinfo))
+            t = threading.Thread(target=self.deploy_anything, args=(mongodb, mysql, docker, dns, deploy_id, appinfo, disconf_server_info))
             t.start()
             logging.debug("Thread exec done")
 
@@ -254,7 +255,7 @@ class AppDeploy(Resource):
         }
         return res, code
 
-    def deploy_anything(self, mongodb, mysql, docker, dns, deploy_id, appinfo):
+    def deploy_anything(self, mongodb, mysql, docker, dns, deploy_id, appinfo, disconf_server_info):
         try:
             lock = threading.RLock()
             lock.acquire()
@@ -296,6 +297,11 @@ class AppDeploy(Resource):
                     Log.logger.debug('The dns add result: %s' % msg)
                 else:
                     Log.logger.debug('domain_name:{domain_name},domain_ip:{domain_ip} is null'.format(domain_name=domain_name,domain_ip=domain_ip))
+
+
+            #添加disconf配置
+            for server_info in disconf_server_info:
+                Log.logger.debug('The disconf_info: %s' % server_info)
 
             if not (sql_ret and mongodb_res):
                 res = _dep_callback(deploy_id, False)
