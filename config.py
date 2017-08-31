@@ -1,1 +1,1 @@
-conf.d/dev/config.py
+conf/config.py
