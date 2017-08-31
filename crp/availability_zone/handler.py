@@ -162,8 +162,7 @@ class UOPStatisticAPI(Resource):
             nova_cli = OpenStack.nova_client
             availability_zones = nova_cli.availability_zones.list()
             hypervisors = nova_cli.hypervisors.list()
-            logging.info('-------availability_zones-----:%s',(availability_zones))
-	    zones = [ zone for zone in availability_zones if AVAILABILITY_ZONE_AZ_UOP==zone.zoneName ]
+            
             vcpus = 0
             vcpus_used = 0
             memory_mb = 0
@@ -171,10 +170,19 @@ class UOPStatisticAPI(Resource):
             local_gb = 0
             local_gb_used = 0  
             running_vms = 0 
-
-            hosts = zones[0].hosts.keys()
+            
+            logging.info('-------availability_zones-----:%s',(availability_zones))
+            target_zone = None
+            for zone in availability_zones:
+                if AVAILABILITY_ZONE_AZ_UOP==zone.zoneName:
+                    target_zone = zone
+                    break
+            hosts = []
+            if target_zone:
+                hosts = target_zone.hosts.keys()
             logging.info('-------hostname-------------:%s'%(hosts))
-	    for hypervisor in hypervisors:
+            
+            for hypervisor in hypervisors:
                 if hypervisor.hypervisor_hostname in hosts:
                     vcpus = vcpus + hypervisor.vcpus
                     vcpus_used = vcpus_used + hypervisor.vcpus_used
@@ -184,14 +192,13 @@ class UOPStatisticAPI(Resource):
                     local_gb_used = local_gb_used + hypervisor.local_gb_used
                     running_vms = running_vms + hypervisor.running_vms
             
-            if hypervisors:
-                hypervisors_statistics["running_vms"] = running_vms
-                hypervisors_statistics["vcpu_total"] = vcpus
-                hypervisors_statistics["vcpu_use"] = vcpus_used
-                hypervisors_statistics["memory_mb_total"] = memory_mb
-                hypervisors_statistics["memory_mb_use"] = memory_mb_used
-                hypervisors_statistics["storage_gb_total"] = local_gb
-                hypervisors_statistics["storage_gb_use"] = local_gb_used
+            hypervisors_statistics["running_vms"] = running_vms
+            hypervisors_statistics["vcpu_total"] = vcpus
+            hypervisors_statistics["vcpu_use"] = vcpus_used
+            hypervisors_statistics["memory_mb_total"] = memory_mb
+            hypervisors_statistics["memory_mb_use"] = memory_mb_used
+            hypervisors_statistics["storage_gb_total"] = local_gb
+            hypervisors_statistics["storage_gb_use"] = local_gb_used
         except Exception as e:
             #Log.logger.error('get hypervisors_statistics err: %s' % e.message)
             logging.error('get azuop_hypervisors_statistics err: %s' % e.message)
