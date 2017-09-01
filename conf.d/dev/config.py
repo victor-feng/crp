@@ -22,9 +22,6 @@ class DevelopmentConfig(BaseConfig):
     AP_NETWORK_CONF = {
         'AZ_UOP': '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'
     }
-    #nginx_ip = '172.28.20.98'
-    #nginx_ip_slave = '172.28.11.111'
-    MONGODB_SCRIPT_PATH = 'uop-crp/crp/res_set/mongo_script/'
     MONGODB_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010'
     MONGODB_AUTH_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010 --authenticationDatabase admin -u admin -p 123456'
 
@@ -51,10 +48,11 @@ class DevelopmentConfig(BaseConfig):
         }
     }
 
-    # scm2-dev--1C2G80G
-    FLAVOR_1C2G = 'scm2-dev--1C2G80G'
-    # docker-2C4G25G
-    DOCKER_FLAVOR_2C4G = 'e90d8d25-c5c7-46d7-ba4e-2465a5b1d266'
+    FLAVOR = {
+        '2': 'uop-2C4G50G',
+        '4': 'uop-4C8G50G',
+    }
+
     # AVAILABILITY_ZONE
     AVAILABILITY_ZONE_AZ_UOP = 'AZ_UOP'
     DEV_NETWORK_ID = '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'

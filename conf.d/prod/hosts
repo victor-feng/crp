@@ -1,0 +1,18 @@
+# app
+172.28.26.217 app-1
+172.28.26.222 app-2
+
+# lb
+172.28.26.199 lb-1
+172.28.26.200 lb-2
+
+# mongo
+172.28.26.201 mongo-1
+172.28.26.202 mongo-2
+172.28.26.203 mongo-3
+
+# keepalived
+172.28.26.204 cmdb.syswin.com uop.syswin.com crp.syswin.com
+
+# crp
+10.253.68.138 crp-dx.syswin.com

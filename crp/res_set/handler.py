@@ -17,18 +17,13 @@ from crp.openstack import OpenStack
 from crp.utils.docker_tools import image_transit
 from config import configs, APP_ENV
 
-# TODO: refactor it later.
-# nginx_ip = configs[APP_ENV].nginx_ip
-# nginx_ip_slave = configs[APP_ENV].nginx_ip_slave
-MONGODB_SCRIPT_PATH = configs[APP_ENV].MONGODB_SCRIPT_PATH
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 
 TIMEOUT = 500
 SLEEP_TIME = 3
 cluster_type_image_port_mappers = configs[APP_ENV].cluster_type_image_port_mappers
-FLAVOR_1C2G = configs[APP_ENV].FLAVOR_1C2G
-DOCKER_FLAVOR_2C4G = configs[APP_ENV].DOCKER_FLAVOR_2C4G
+FLAVOR = configs[APP_ENV].FLAVOR
 AVAILABILITY_ZONE_AZ_UOP = configs[APP_ENV].AVAILABILITY_ZONE_AZ_UOP
 DEV_NETWORK_ID = configs[APP_ENV].DEV_NETWORK_ID
 OS_EXT_PHYSICAL_SERVER_ATTR = configs[APP_ENV].OS_EXT_PHYSICAL_SERVER_ATTR
@@ -181,7 +176,8 @@ class ResourceProviderTransitions(object):
             elif self.phase == 'callback':
                 if self.is_need_rollback is not True:
                     self.success()
-            self.next_phase()
+            else:
+                self.next_phase()
 
     @staticmethod
     def _get_ip_from_instance(server):
@@ -279,7 +275,7 @@ class ResourceProviderTransitions(object):
         return int_.id
 
     # 依据镜像URL创建NovaDocker容器
-    def _create_docker_by_url(self, name, image_url, server_group=None):
+    def _create_docker_by_url(self, name, image_url, flavor, server_group=None):
         err_msg, image_uuid = image_transit(image_url)
         if err_msg is None:
             Log.logger.debug(
@@ -288,12 +284,12 @@ class ResourceProviderTransitions(object):
                 " Transit harbor docker image success. The result glance image UUID is " +
                 image_uuid)
             return None, self._create_instance(
-                name, image_uuid, DOCKER_FLAVOR_2C4G, AVAILABILITY_ZONE_AZ_UOP, DEV_NETWORK_ID, server_group)
+                name, image_uuid, flavor, AVAILABILITY_ZONE_AZ_UOP, DEV_NETWORK_ID, server_group)
         else:
             return err_msg, None
 
     # 依据资源类型创建资源
-    def _create_instance_by_type(self, ins_type, name, server_group=None):
+    def _create_instance_by_type(self, ins_type, name, flavor, server_group=None):
         image = cluster_type_image_port_mappers.get(ins_type)
         image_uuid = image.get('uuid')
         Log.logger.debug(
@@ -306,7 +302,7 @@ class ResourceProviderTransitions(object):
         return self._create_instance(
             name,
             image_uuid,
-            FLAVOR_1C2G,
+            flavor,
             AVAILABILITY_ZONE_AZ_UOP,
             DEV_NETWORK_ID, server_group)
 
@@ -322,6 +318,7 @@ class ResourceProviderTransitions(object):
         port = propertys.get('port')
         image_url = propertys.get('image_url')
         cpu = propertys.get('cpu')
+        flavor = FLAVOR.get(str(cpu), 'uop-2C4G50G')
         mem = propertys.get('mem')
         quantity = propertys.get('quantity')
 
@@ -343,7 +340,7 @@ class ResourceProviderTransitions(object):
             for i in range(0, quantity, 1):
                 instance_name = '%s_%s' % (cluster_name, i.__str__())
                 err_msg, osint_id = self._create_docker_by_url(
-                    instance_name, image_url, server_group)
+                    instance_name, image_url, flavor, server_group)
                 if err_msg is None:
                     uopinst_info = {
                         'uop_inst_id': cluster_id,
@@ -382,6 +379,7 @@ class ResourceProviderTransitions(object):
         cluster_type = propertys.get('cluster_type')
         version = propertys.get('version')
         cpu = propertys.get('cpu')
+        flavor = FLAVOR.get(str(cpu), 'uop-2C4G50G')
         mem = propertys.get('mem')
         disk = propertys.get('disk')
         quantity = propertys.get('quantity')
@@ -411,7 +409,7 @@ class ResourceProviderTransitions(object):
                     cluster_type = 'mycat'
                 instance_name = '%s_%s' % (cluster_name, i.__str__())
                 osint_id = self._create_instance_by_type(
-                    cluster_type, instance_name, server_group)
+                    cluster_type, instance_name, flavor ,server_group)
                 uopinst_info = {
                     'uop_inst_id': cluster_id,
                     'os_inst_id': osint_id
@@ -599,6 +597,7 @@ class ResourceProviderTransitions(object):
         self.is_running = False
         # 停止定时任务并退出
         TaskManager.task_exit(self.task_id)
+        self.phase = 'stop'
 
     @transition_state_logger
     def do_app_cluster(self):

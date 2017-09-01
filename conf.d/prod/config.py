@@ -29,12 +29,12 @@ class ProdConfig(BaseConfig):
 
     # TODO:
     AP_NETWORK_CONF = {
-        'AZ_UOP': 'AZ-UOP-HYPERUOP-LXC-SAS-76' #待确认
+        'AZ_UOP': 'AZ-UOP-HYPERUOP-LXC-SAS-76' 
     }	
 
-    MONGODB_SCRIPT_PATH = 'uop-crp/crp/res_set/mongo_script/'
     MONGODB_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010'
-    #镜像信息找王刚已经确认
+    MONGODB_AUTH_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010 --authenticationDatabase admin -u admin -p 123456'
+
     cluster_type_image_port_mappers = {
         'mysql': {
             'uuid': '4b6abfae-edd9-486f-8552-694504e9cd58',
@@ -58,10 +58,10 @@ class ProdConfig(BaseConfig):
         }
     }
 
-    # scm2-dev--1C2G80G
-    FLAVOR_1C2G = 'scm2-dev--1C2G80G'   #写死的信息,可能还需要修改
-    # docker-2C4G25G
-    DOCKER_FLAVOR_2C4G = 'e90d8d25-c5c7-46d7-ba4e-2465a5b1d266' # 写死的信息,可能还需要修改
+    FLAVOR = {
+        '2': 'uop-2C4G50G',
+        '4': 'uop-4C8G50G',
+    }
 
     # AVAILABILITY_ZONE
     AVAILABILITY_ZONE_AZ_UOP = 'AZ-UOP-HYPERUOP-KVM-SAS-31/32'
