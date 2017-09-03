@@ -414,8 +414,8 @@ class AppDeploy(Resource):
     def mongodb_auth_file(self, username, password, db_list):
         auth_path = os.path.join(UPLOAD_FOLDER, 'mongodb_auth.js')
         with open(auth_path, 'wb+') as f:
-            f.write("use %s" % db_list)
             for db in db_list:
+                f.write("use %s\n" % db)
                 f.write('db.createUser({user: "%s",pwd: "%s",roles: [ { role: "readWrite", db: %s } ]})' %
                         (username, password, db)
                         )
