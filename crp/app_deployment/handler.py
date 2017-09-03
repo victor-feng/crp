@@ -380,7 +380,7 @@ class AppDeploy(Resource):
                             new_db_list.append(db)
                     logging.debug("the new create db list is %s" % new_db_list)
                     if len(new_db_list):
-                        auth_path = self.mongodb_auth_file(db_username, db_password, new_db_list)
+                        auth_path = self.mongodb_auth_file(mongodb_username, mongodb_password, new_db_list)
                         ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + auth_path + ' dest=' + remote_path + '"'
                         exec_auth_file = ansible_cmd + ' shell -a "%s < %s"' % \
                                                          (configs[APP_ENV].MONGODB_AUTH_PATH, remote_path)
