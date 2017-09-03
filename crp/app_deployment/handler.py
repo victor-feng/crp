@@ -382,7 +382,7 @@ class AppDeploy(Resource):
                     if len(new_db_list):
                         auth_path = self.mongodb_auth_file(db_username, db_password, new_db_list)
                         ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + auth_path + ' dest=' + remote_path + '"'
-                        exec_auth_file = ansible_cmd + 'script -a "%s < %s"' % \
+                        exec_auth_file = ansible_cmd + ' shell -a "%s < %s"' % \
                                                          (configs[APP_ENV].MONGODB_AUTH_PATH, remote_path)
                         logging.debug("start upload auth file")
                         if self._exec_ansible_cmd(ansible_sql_cmd):
@@ -417,7 +417,7 @@ class AppDeploy(Resource):
             for db in db_list:
                 f.write("use %s\n" % db)
                 f.write('db.createUser({user: "%s",pwd: "%s",roles: [ { role: "readWrite", db: %s } ]})' %
-                        (username, password, db)
+                        (username, password, str(db))
                         )
         return auth_path
 
