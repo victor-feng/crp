@@ -322,7 +322,7 @@ class AppDeploy(Resource):
         logging.debug("args is %s" % mongodb)
         mongodb = eval(mongodb)
         db_username = mongodb.get('mongodb_username', '')
-        db_password = mongodb.get('mongodb_passwork', '')
+        db_password = mongodb.get('mongodb_password', '')
         mongodb_username = mongodb.get('db_username', '')
         mongodb_password = mongodb.get('db_password', '')
         vip1 = mongodb.get('vip1', '')
@@ -416,8 +416,8 @@ class AppDeploy(Resource):
         with open(auth_path, 'wb+') as f:
             for db in db_list:
                 f.write("use %s\n" % db)
-                f.write('db.createUser({user: "%s",pwd: "%s",roles: [ { role: "readWrite", db: %s } ]})' %
-                        (username, password, str(db))
+                f.write('db.createUser({user: "%s",pwd: "%s",roles: [ { role: "readWrite", db: "%s" } ]})' %
+                        (username, password, db)
                         )
         return auth_path
 
