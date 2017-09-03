@@ -317,7 +317,8 @@ class AppDeploy(Resource):
 
     def _deploy_mongodb(self, mongodb):
         res = None
-        db_list = []
+        old_db_list = []
+        new_db_list = []
         logging.debug("args is %s" % mongodb)
         mongodb = eval(mongodb)
         db_username = mongodb.get('mongodb_username', '')
@@ -371,14 +372,15 @@ class AppDeploy(Resource):
                     status, output = commands.getstatusoutput(query_current_db)
                     output_list = output.split('\n')[5:-1]   # ['admin  0.000GB', 'local  0.001GB']
                     for i in output_list:
-                        db_list.append(i.split(' ')[0])  # ['admin', 'local']
-                    logging.debug("the db list is %s" % db_list)
-                    for db in db_list:  # need get the new created db
-                        if db == 'admin' or 'local':
-                            db_list.remove(db)
-                    logging.debug("the new create db list is %s" % db_list)
-                    if len(db_list):
-                        auth_path = self.mongodb_auth_file(db_username, db_password, db_list)
+                        old_db_list.append(i.split(' ')[0])  # ['admin', 'local']
+                    logging.debug("the db list is %s" % old_db_list)
+                    for db in old_db_list:  # need get the new created db
+                        # if db == 'admin' or 'local':
+                        if db not in ['admin', 'local']:
+                            new_db_list.append(db)
+                    logging.debug("the new create db list is %s" % new_db_list)
+                    if len(new_db_list):
+                        auth_path = self.mongodb_auth_file(db_username, db_password, new_db_list)
                         ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + auth_path + ' dest=' + remote_path + '"'
                         exec_auth_file = ansible_cmd + 'script -a "%s < %s"' % \
                                                          (configs[APP_ENV].MONGODB_AUTH_PATH, remote_path)
