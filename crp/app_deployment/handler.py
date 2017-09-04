@@ -317,11 +317,12 @@ class AppDeploy(Resource):
 
     def _deploy_mongodb(self, mongodb):
         res = None
-        db_list = []
+        old_db_list = []
+        new_db_list = []
         logging.debug("args is %s" % mongodb)
         mongodb = eval(mongodb)
         db_username = mongodb.get('mongodb_username', '')
-        db_password = mongodb.get('mongodb_passwork', '')
+        db_password = mongodb.get('mongodb_password', '')
         mongodb_username = mongodb.get('db_username', '')
         mongodb_password = mongodb.get('db_password', '')
         vip1 = mongodb.get('vip1', '')
@@ -371,16 +372,17 @@ class AppDeploy(Resource):
                     status, output = commands.getstatusoutput(query_current_db)
                     output_list = output.split('\n')[5:-1]   # ['admin  0.000GB', 'local  0.001GB']
                     for i in output_list:
-                        db_list.append(i.split(' ')[0])  # ['admin', 'local']
-                    logging.debug("the db list is %s" % db_list)
-                    for db in db_list:  # need get the new created db
-                        if db == 'admin' or 'local':
-                            db_list.remove(db)
-                    logging.debug("the new create db list is %s" % db_list)
-                    if len(db_list):
-                        auth_path = self.mongodb_auth_file(db_username, db_password, db_list)
+                        old_db_list.append(i.split(' ')[0])  # ['admin', 'local']
+                    logging.debug("the db list is %s" % old_db_list)
+                    for db in old_db_list:  # need get the new created db
+                        # if db == 'admin' or 'local':
+                        if db not in ['admin', 'local']:
+                            new_db_list.append(db)
+                    logging.debug("the new create db list is %s" % new_db_list)
+                    if len(new_db_list):
+                        auth_path = self.mongodb_auth_file(mongodb_username, mongodb_password, new_db_list)
                         ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + auth_path + ' dest=' + remote_path + '"'
-                        exec_auth_file = ansible_cmd + 'script -a "%s < %s"' % \
+                        exec_auth_file = ansible_cmd + ' shell -a "%s < %s"' % \
                                                          (configs[APP_ENV].MONGODB_AUTH_PATH, remote_path)
                         logging.debug("start upload auth file")
                         if self._exec_ansible_cmd(ansible_sql_cmd):
@@ -412,9 +414,9 @@ class AppDeploy(Resource):
     def mongodb_auth_file(self, username, password, db_list):
         auth_path = os.path.join(UPLOAD_FOLDER, 'mongodb_auth.js')
         with open(auth_path, 'wb+') as f:
-            f.write("use %s" % db_list)
             for db in db_list:
-                f.write('db.createUser({user: "%s",pwd: "%s",roles: [ { role: "readWrite", db: %s } ]})' %
+                f.write("use %s\n" % db)
+                f.write('db.createUser({user: "%s",pwd: "%s",roles: [ { role: "readWrite", db: "%s" } ]})' %
                         (username, password, db)
                         )
         return auth_path
