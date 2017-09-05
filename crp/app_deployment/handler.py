@@ -572,14 +572,26 @@ class Upload(Resource):
     def post(self):
         try:
             UPLOAD_FOLDER = current_app.config['UPLOAD_FOLDER']
-            file_dic = {}
-            for _type, file in request.files.items():
-                if not os.path.exists(os.path.join(UPLOAD_FOLDER, _type)):
-                    os.makedirs(os.path.join(UPLOAD_FOLDER, _type))
-                file_path = os.path.join(UPLOAD_FOLDER, _type, file.filename)
-                file.save(file_path)
-                file_dic[_type] = (file_path, file.filename)
+            type = request.form.get('type','')
 
+            if type == 'disconf':
+                file = request.files['file']
+                disconf_file_name = file.filename
+                disconf_file_path = request.form.get('disconf_file_path')
+                disconf_abspath = os.path.dirname(disconf_file_path)
+                if not os.path.exists(disconf_abspath):
+                    os.makedirs(disconf_abspath)
+                file.save(disconf_file_path)
+                result = "{disconf_file_name} upload success".format(disconf_file_name=disconf_file_name)
+            else:
+                file_dic = {}
+                for _type, file in request.files.items():
+                    if not os.path.exists(os.path.join(UPLOAD_FOLDER, _type)):
+                        os.makedirs(os.path.join(UPLOAD_FOLDER, _type))
+                    file_path = os.path.join(UPLOAD_FOLDER, _type, file.filename)
+                    file.save(file_path)
+                    file_dic[_type] = (file_path, file.filename)
+                    result = file_dic
         except Exception as e:
             return {
                 'code': 500,
@@ -588,7 +600,7 @@ class Upload(Resource):
         return {
             'code': 200,
             'msg': '上传成功！',
-            'file_info': file_dic,
+            'file_info': result,
         }
 
 
