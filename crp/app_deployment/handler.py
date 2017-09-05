@@ -304,20 +304,20 @@ class AppDeploy(Resource):
             for disconf_info in disconf_server_info:
                 Log.logger.debug('The disconf_info: %s' % disconf_info)
                 disconf_api_connect = DisconfServerApi(disconf_info)
-                if disconf_info.disconf_env.isdigit():
-                    env_id = disconf_info.disconf_env
+                if disconf_info.get('disconf_env','').isdigit():
+                    env_id = disconf_info.get('disconf_env')
                 else:
-                    env_id = disconf_api_connect.disconf_env_id(env_name=disconf_info.disconf_env)
+                    env_id = disconf_api_connect.disconf_env_id(env_name=disconf_info.get('disconf_env'))
 
-                if len(disconf_info.disconf_admin_content.strip()) == 0:
-                    disconf_admin_name = exchange_disconf_name(disconf_info.disconf_content)
+                if len(disconf_info.get('disconf_admin_content','').strip()) == 0:
+                    disconf_admin_name = exchange_disconf_name(disconf_info.get('disconf_content'))
                 else:
-                    disconf_admin_name = exchange_disconf_name(disconf_info.disconf_admin_content)
+                    disconf_admin_name = exchange_disconf_name(disconf_info.get('disconf_admin_content'))
 
                 result,message = disconf_api_connect.disconf_add_app_config_api_file(
-                                                app_name=disconf_info.ins_name,
+                                                app_name=disconf_info.get('ins_name'),
                                                 myfilerar=disconf_admin_name,
-                                                version=disconf_info.disconf_version,
+                                                version=disconf_info.get('disconf_version'),
                                                 env_id=env_id
                                                 )
                 Log.logger.debug("disconf result:",result,message)
