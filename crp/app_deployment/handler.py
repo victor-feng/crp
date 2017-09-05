@@ -320,7 +320,7 @@ class AppDeploy(Resource):
                                                 version=disconf_info.get('disconf_version'),
                                                 env_id=env_id
                                                 )
-                Log.logger.debug("disconf result:",result,message)
+                Log.logger.debug("disconf result:{result},{message}".format(result=result,message=message))
 
             if not (sql_ret and mongodb_res):
                 res = _dep_callback(deploy_id, False)
