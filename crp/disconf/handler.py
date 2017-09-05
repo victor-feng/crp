@@ -10,10 +10,10 @@ import werkzeug
 from flask import request
 from flask_restful import reqparse, Api, Resource
 from config import APP_ENV, configs
-from uop import models
-from uop.disconf import disconf_blueprint
-from uop.disconf.errors import disconf_errors
-from uop.disconf.disconf_api import *
+from crp import models
+from crp.disconf import disconf_blueprint
+from crp.disconf.errors import disconf_errors
+from crp.disconf.disconf_api import *
 
 
 disconf_api = Api(disconf_blueprint, errors=disconf_errors)

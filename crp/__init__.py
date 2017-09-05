@@ -19,6 +19,7 @@ from crp.mpc_resource import instance_status_sync
 from crp.flavor import flavor_blueprint
 from crp.vm_operation import vm_operation_blueprint
 from crp.dns import dns_set_blueprint
+from crp.disconf import disconf_blueprint
 
 def create_app(config_name):
     app = Flask(__name__)
