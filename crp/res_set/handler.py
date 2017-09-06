@@ -237,7 +237,7 @@ class ResourceProviderTransitions(object):
             image,
             flavor,
             availability_zone,
-            network_id, server_group=None):
+            network_id, meta=None, server_group=None):
         nova_client = OpenStack.nova_client
         """
         ints = nova_client.servers.list()
@@ -257,7 +257,7 @@ class ResourceProviderTransitions(object):
         if server_group:
             server_group_dict = {'group': server_group.id}
             logging.info(server_group.id)
-            int_ = nova_client.servers.create(name, image, flavor,
+            int_ = nova_client.servers.create(name, image, flavor,meta=meta,
                                          availability_zone=availability_zone,
                                          nics=nics_list, scheduler_hints=server_group_dict)
             logging.info('------------finish---create-------------')
@@ -275,7 +275,7 @@ class ResourceProviderTransitions(object):
         return int_.id
 
     # 依据镜像URL创建NovaDocker容器
-    def _create_docker_by_url(self, name, image_url, flavor, server_group=None):
+    def _create_docker_by_url(self, name, image_url, flavor, meta, server_group=None):
         err_msg, image_uuid = image_transit(image_url)
         if err_msg is None:
             Log.logger.debug(
@@ -284,7 +284,7 @@ class ResourceProviderTransitions(object):
                 " Transit harbor docker image success. The result glance image UUID is " +
                 image_uuid)
             return None, self._create_instance(
-                name, image_uuid, flavor, AVAILABILITY_ZONE_AZ_UOP, DEV_NETWORK_ID, server_group)
+                name, image_uuid, flavor, AVAILABILITY_ZONE_AZ_UOP, DEV_NETWORK_ID, meta, server_group)
         else:
             return err_msg, None
 
@@ -321,6 +321,7 @@ class ResourceProviderTransitions(object):
         flavor = FLAVOR.get(str(cpu), 'uop-2C4G50G')
         mem = propertys.get('mem')
         quantity = propertys.get('quantity')
+        meta = propertys.get('meta')
 
         if quantity >= 1:
             propertys['ins_id'] = cluster_id
@@ -340,7 +341,7 @@ class ResourceProviderTransitions(object):
             for i in range(0, quantity, 1):
                 instance_name = '%s_%s' % (cluster_name, i.__str__())
                 err_msg, osint_id = self._create_docker_by_url(
-                    instance_name, image_url, flavor, server_group)
+                    instance_name, image_url, flavor, meta, server_group)
                 if err_msg is None:
                     uopinst_info = {
                         'uop_inst_id': cluster_id,
