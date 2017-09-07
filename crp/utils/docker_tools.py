@@ -122,7 +122,7 @@ def _glance_img_create(glance_cli, image_name, tar_file):
     '''
     fields = {
         "name": image_name,
-        "is_public": True,
+        # "is_public": True,
         "container_format": 'docker',
         "disk_format": 'raw',
         "properties": {DK_CREATED_FROM: DK_UOP_CRP},
