@@ -123,7 +123,7 @@ class ProdConfig(BaseConfig):
     'username': 'root',
     'password': '123456'
     }
-    NAMEDMANAGER_URL = 'http://itop.syswin.com/dnsapi.php'   #已经找吴兆远确认 namedmanager 信息
+    NAMEDMANAGER_URL = 'http://10.253.68.85/api/dnsapi.php'   #已经找吴兆远确认 namedmanager 信息
     IS_OPEN_AFFINITY_SCHEDULING = False
 
 
