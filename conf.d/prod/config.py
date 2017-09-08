@@ -59,13 +59,13 @@ class ProdConfig(BaseConfig):
     }
 
     FLAVOR = {
-        '2': 'uop-2C4G50G',
-        '4': 'uop-4C8G50G',
+        '2': 'uop-2C4G80G',
+        '4': 'uop-4C8G80G',
     }
 
     # AVAILABILITY_ZONE
-    AVAILABILITY_ZONE_AZ_UOP = 'AZ-UOP-HYPERUOP-KVM-SAS-31/32'
-    DEV_NETWORK_ID = 'AZ-UOP-HYPERUOP-KVM-SAS-31/32'
+    AVAILABILITY_ZONE_AZ_UOP = 'AZ-UOP'
+    DEV_NETWORK_ID = '04f4f74e-a727-48fc-9871-a55c8ae01ea5'
     OS_EXT_PHYSICAL_SERVER_ATTR = 'OS-EXT-SRV-ATTR:host'
 
     # res_callback
