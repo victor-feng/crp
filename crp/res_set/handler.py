@@ -113,6 +113,7 @@ class ResourceProviderTransitions(object):
         # 待处理的节点
         self.property_mapper = {}
         self.req_dict = req_dict
+        self.error_type = RES_STATUS_FAIL
 
         # Initialize the state machine
         self.machine = Machine(
@@ -366,6 +367,8 @@ class ResourceProviderTransitions(object):
                     # 删除全部
                     is_rollback = True
                     uop_os_inst_id_list = []
+                    if err_msg == -1:
+                        self.error_type = 'notfound'
 
         return is_rollback, uop_os_inst_id_list
 
@@ -573,7 +576,7 @@ class ResourceProviderTransitions(object):
         # 执行失败调用UOP CallBack，提交失败
         request_res_callback(
             self.task_id,
-            RES_STATUS_FAIL,
+            self.error_type,
             self.req_dict,
             self.result_mappers_list)
         Log.logger.debug(
