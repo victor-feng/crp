@@ -22,7 +22,7 @@ AP_NETWORK_CONF = configs[APP_ENV].AP_NETWORK_CONF
 mpc_resource_api = Api(mpc_resource_blueprint, errors=mpc_resource_errors)
 
 # TODO: move to global conf
-TIMEOUT = 600
+TIMEOUT = 1800
 SLEEP_TIME = 3
 
 CREATE_VM = 0
