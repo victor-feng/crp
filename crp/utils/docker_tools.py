@@ -43,7 +43,7 @@ def _dk_img_pull(dk_cli, _image_url, repository_hash, tag):
         image.tag(repository_hash, tag=tag)
     except docker.errors.ImageNotFound as img_err:
         logging.error(img_err.message)
-        return img_err.message
+        return -1
     except Exception as e:
         logging.error(e.message)
         return e.message
@@ -122,7 +122,7 @@ def _glance_img_create(glance_cli, image_name, tar_file):
     '''
     fields = {
         "name": image_name,
-        "is_public": True,
+        # "is_public": True,
         "container_format": 'docker',
         "disk_format": 'raw',
         "properties": {DK_CREATED_FROM: DK_UOP_CRP},
