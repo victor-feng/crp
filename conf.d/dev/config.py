@@ -20,7 +20,8 @@ class DevelopmentConfig(BaseConfig):
     GLANCE_RESERVATION_QUANTITY = 3
     UPLOAD_FOLDER = '/data/'
     AP_NETWORK_CONF = {
-        'AZ_UOP': '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'
+        'AZ_UOP': '7aca50a9-cf4b-4cc7-b078-be055dd7c6af',
+        'hyperv_test': 'c12740e6-33c8-49e9-b17d-6255bb10cd0c'
     }
     MONGODB_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010'
     MONGODB_AUTH_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010 --authenticationDatabase admin -u admin -p 123456'
