@@ -1342,6 +1342,7 @@ class MongodbCluster(object):
         """
         self.dir = os.path.dirname(
             os.path.abspath(__file__)) + '/' + 'mongo_script'
+        self.current_dir = os.path.dirname(os.path.abspath(__file__))
         self.ip_slave1 = ip_list[0]
         self.ip_slave2 = ip_list[1]
         self.ip_master1 = ip_list[2]
@@ -1406,8 +1407,8 @@ class MongodbCluster(object):
             'old_id_rsa']
         for i in script_name:
             os.system('chmod 600 {dir}'.format(dir=self.dir + '/' + i))
-        cmd_before = "ansible {vip} --private-key={dir}/old_id_rsa -m synchronize -a 'src=/opt/uop-crp/crp/res_set/" \
-                     "write_mongo_ip.py dest=/tmp/'".format(vip=ip, dir=self.dir)
+        cmd_before = "ansible {vip} --private-key={dir}/old_id_rsa -m synchronize -a 'src={current_dir}/" \
+                     "write_mongo_ip.py dest=/tmp/'".format(vip=ip, dir=self.dir, current_dir=self.current_dir)
         authority_cmd = 'ansible {vip} -u root --private-key={dir}/old_id_rsa -m shell -a ' \
                         '"chmod 777 /tmp/write_mongo_ip.py"'.format(vip=ip, dir=self.dir)
         cmd1 = 'ansible {vip} -u root --private-key={dir}/old_id_rsa -m shell -a "python /tmp/write_mongo_ip.py' \
