@@ -23,7 +23,8 @@ resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 TIMEOUT = 500
 SLEEP_TIME = 3
 cluster_type_image_port_mappers = configs[APP_ENV].cluster_type_image_port_mappers
-FLAVOR = configs[APP_ENV].FLAVOR
+KVM_FLAVOR = configs[APP_ENV].KVM_FLAVOR
+DOCKER_FLAVOR = configs[APP_ENV].DOCKER_FLAVOR
 AVAILABILITY_ZONE_AZ_UOP = configs[APP_ENV].AVAILABILITY_ZONE_AZ_UOP
 DEV_NETWORK_ID = configs[APP_ENV].DEV_NETWORK_ID
 OS_EXT_PHYSICAL_SERVER_ATTR = configs[APP_ENV].OS_EXT_PHYSICAL_SERVER_ATTR
@@ -319,7 +320,7 @@ class ResourceProviderTransitions(object):
         port = propertys.get('port')
         image_url = propertys.get('image_url')
         cpu = propertys.get('cpu')
-        flavor = FLAVOR.get(str(cpu), 'uop-2C4G50G')
+        flavor = DOCKER_FLAVOR.get(str(cpu), '771d1a7b-8a34-44b9-bbfb-c62982c40583')
         mem = propertys.get('mem')
         quantity = propertys.get('quantity')
         meta = propertys.get('meta')
@@ -383,7 +384,7 @@ class ResourceProviderTransitions(object):
         cluster_type = propertys.get('cluster_type')
         version = propertys.get('version')
         cpu = propertys.get('cpu')
-        flavor = FLAVOR.get(str(cpu), 'uop-2C4G50G')
+        flavor = KVM_FLAVOR.get(str(cpu), 'uop-2C4G50G')
         mem = propertys.get('mem')
         disk = propertys.get('disk')
         quantity = propertys.get('quantity')

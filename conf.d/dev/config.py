@@ -49,11 +49,14 @@ class DevelopmentConfig(BaseConfig):
         }
     }
 
-    FLAVOR = {
+    KVM_FLAVOR = {
         '2': 'uop-2C4G80G',
         '4': 'uop-4C8G80G',
     }
-
+    DOCKER_FLAVOR = {
+        "2": "771d1a7b-8a34-44b9-bbfb-c62982c40583",
+        "4": "771d1a7b-8a34-44b9-bbfb-c62982c40583"
+    }
     # AVAILABILITY_ZONE
     AVAILABILITY_ZONE_AZ_UOP = 'AZ_UOP'
     DEV_NETWORK_ID = '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'

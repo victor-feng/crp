@@ -58,9 +58,13 @@ class ProdConfig(BaseConfig):
         }
     }
 
-    FLAVOR = {
+    KVM_FLAVOR = {
         '2': 'uop-2C4G80G',
         '4': 'uop-4C8G80G',
+    }
+    DOCKER_FLAVOR = {
+        "2": "771d1a7b-8a34-44b9-bbfb-c62982c40583",
+        "4": "771d1a7b-8a34-44b9-bbfb-c62982c40583"
     }
 
     # AVAILABILITY_ZONE
