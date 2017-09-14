@@ -61,8 +61,8 @@ class TestingConfig(BaseConfig):
     }
 
     FLAVOR = {
-        '2': 'uop-2C4G50G',
-        '4': 'uop-4C8G50G',
+        '2': 'uop-2C4G80G',
+        '4': 'uop-4C8G80G',
     }
 
     # AVAILABILITY_ZONE
