@@ -838,7 +838,7 @@ class ResourceProviderTransitions(object):
 
             strout = ''
             # 执行命令 如果失败 连续重复尝试3次
-            while (not strout or 'FAILED!' in strout or 'UNREACHABLE!' in strout) and error_time < 3:
+            while error_time < 3:
                 strout = _redis_push()
                 error_time += 1
                 time.sleep(5)
