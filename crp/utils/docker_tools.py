@@ -125,7 +125,7 @@ def _glance_img_create(glance_cli, image_name, tar_file):
         # "is_public": True,
         "container_format": 'docker',
         "disk_format": 'raw',
-        "properties": {DK_CREATED_FROM: DK_UOP_CRP},
+        "properties": {DK_CREATED_FROM: DK_UOP_CRP, 'log_volume':'/home/logs/'},
     }
     try:
         fields['data'] = open(tar_file, 'rb')
