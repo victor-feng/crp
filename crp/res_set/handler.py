@@ -320,7 +320,7 @@ class ResourceProviderTransitions(object):
         port = propertys.get('port')
         image_url = propertys.get('image_url')
         cpu = propertys.get('cpu')
-        flavor = DOCKER_FLAVOR.get(str(cpu), '771d1a7b-8a34-44b9-bbfb-c62982c40583')
+        flavor = DOCKER_FLAVOR.get(str(cpu), 'uop-docker-2C4G50G')
         mem = propertys.get('mem')
         quantity = propertys.get('quantity')
         meta = propertys.get('meta')
