@@ -255,7 +255,8 @@ class ResourceProviderTransitions(object):
         nics_list = []
         nic_info = {'net-id': network_id}
         nics_list.append(nic_info)
-        import logging 
+        import logging
+        meta = json.loads(meta)
         if server_group:
             server_group_dict = {'group': server_group.id}
             logging.info(server_group.id)
@@ -264,7 +265,7 @@ class ResourceProviderTransitions(object):
                                          nics=nics_list, scheduler_hints=server_group_dict)
             logging.info('------------finish---create-------------')
         else:
-            int_ = nova_client.servers.create(name, image, flavor,
+            int_ = nova_client.servers.create(name, image, flavor, meta=meta,
                                          availability_zone=availability_zone,
                                          nics=nics_list)
         Log.logger.debug(
@@ -836,17 +837,25 @@ class ResourceProviderTransitions(object):
                 Log.logger.debug('redis cluster push result:%s' % out)
                 return out
 
-            # strout = ''
-            # redis_status_cmd = "redis-cli -h {0} -p 7389 info Replication|grep connected_slaves|awk -F: '{print $NF}'"
-            # slave_num = subprocess.Popen(
-            #     redis_status_cmd.format(ip1),
-            #     shell=True,
-            #     stdout=subprocess.PIPE,
-            #     stderr=subprocess.STDOUT)
+            def _check_redis_server_ready(ip):
+                redis_status_cmd = "redis-cli -h {0} -p 7389 info Replication|grep connected_slaves|awk -F: '{print $NF}'"
+                redis_cmd_rst = subprocess.Popen(
+                    redis_status_cmd.format(ip),
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT)
+
+                slave_num = redis_cmd_rst.stdout.read()
+                if slave_num.startswith('1'):
+                    return True
+                else:
+                    return False
 
             # 执行命令 如果失败 连续重复尝试3次
-            while error_time < 3:
-                strout = _redis_push()
+            _redis_push()
+
+            while not _check_redis_server_ready(ip1) and error_time < 3:
+                _redis_push()
                 error_time += 1
                 time.sleep(5)
 
