@@ -256,8 +256,10 @@ class ResourceProviderTransitions(object):
         nic_info = {'net-id': network_id}
         nics_list.append(nic_info)
         import logging
-        meta = json.loads(meta)
-        meta = json.loads(meta)
+        Log.logger.debug(meta)
+        if meta:
+            meta = json.loads(meta)
+            meta = json.loads(meta)
         if server_group:
             server_group_dict = {'group': server_group.id}
             logging.info(server_group.id)
@@ -839,9 +841,9 @@ class ResourceProviderTransitions(object):
                 return out
 
             def _check_redis_server_ready(ip):
-                redis_status_cmd = "redis-cli -h {0} -p 7389 info Replication|grep connected_slaves|awk -F: '{print $NF}'"
+                redis_status_cmd = "redis-cli -h %s -p 7389 info Replication|grep connected_slaves|awk -F: '{print $NF}'"
                 redis_cmd_rst = subprocess.Popen(
-                    redis_status_cmd.format(ip),
+                    redis_status_cmd%(ip),
                     shell=True,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT)
