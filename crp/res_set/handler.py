@@ -849,6 +849,7 @@ class ResourceProviderTransitions(object):
                     stderr=subprocess.STDOUT)
 
                 slave_num = redis_cmd_rst.stdout.read()
+                Log.logger.debug('check redis slave num:%s' % slave_num)
                 if slave_num.startswith('1'):
                     return True
                 else:
@@ -857,15 +858,15 @@ class ResourceProviderTransitions(object):
             # 执行命令 如果失败 连续重复尝试3次
             _redis_push()
 
-            while not _check_redis_server_ready(ip1) and error_time < 3:
+            while not _check_redis_server_ready(ip1) and error_time < 2:
                 _redis_push()
                 error_time += 1
-                time.sleep(5)
+                time.sleep(10)
 
             instance[0]['dbtype'] = 'master'
             instance[1]['dbtype'] = 'slave'
             if error_time == 3:
-                Log.logger.debug('redis cluster 重试3次失败')
+                Log.logger.debug('redis cluster 重试2次失败')
 
 
 # Transit request_data from the JSON nest structure to the chain structure
