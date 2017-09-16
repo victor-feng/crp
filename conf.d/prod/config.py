@@ -106,6 +106,7 @@ class ProdConfig(BaseConfig):
             'domain_ip': 'domain_ip',
             'mem': 'mem',
             'port': 'port',
+            'meta': 'meta',
             'quantity': 'quantity'
         },
         'resource_cluster': {

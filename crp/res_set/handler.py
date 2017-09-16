@@ -836,7 +836,14 @@ class ResourceProviderTransitions(object):
                 Log.logger.debug('redis cluster push result:%s' % out)
                 return out
 
-            strout = ''
+            # strout = ''
+            # redis_status_cmd = "redis-cli -h {0} -p 7389 info Replication|grep connected_slaves|awk -F: '{print $NF}'"
+            # slave_num = subprocess.Popen(
+            #     redis_status_cmd.format(ip1),
+            #     shell=True,
+            #     stdout=subprocess.PIPE,
+            #     stderr=subprocess.STDOUT)
+
             # 执行命令 如果失败 连续重复尝试3次
             while error_time < 3:
                 strout = _redis_push()

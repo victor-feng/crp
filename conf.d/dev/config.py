@@ -96,6 +96,7 @@ class DevelopmentConfig(BaseConfig):
             'cpu': 'cpu',
             'mem': 'mem',
             'port': 'port',
+            'meta': 'meta',
             'quantity': 'quantity'
         },
         'resource_cluster': {

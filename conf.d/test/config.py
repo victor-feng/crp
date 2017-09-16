@@ -108,6 +108,7 @@ class TestingConfig(BaseConfig):
             'mem': 'mem',
             'domain_ip': 'domain_ip',
             'port': 'port',
+            'meta': 'meta',
             'quantity': 'quantity'
         },
         'resource_cluster': {
