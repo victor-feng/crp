@@ -31,8 +31,9 @@ class TestingConfig(BaseConfig):
     #NOTE: config it !!!! TODO:
     #TODO:? hard code?
     AP_NETWORK_CONF = {
-        'AZ_UOP': '7aca50a9-cf4b-4cc7-b078-be055dd7c6af',
-        'hyperv_test': 'c12740e6-33c8-49e9-b17d-6255bb10cd0c'
+        'AZ_HLW': '71909901-881e-4161-b1d1-29740ff074c6',
+        'AZ_WW': '50b67552-8939-453f-b6a6-ff9fc686baf1',
+        'AZ_HYPERV':'50b67552-8939-453f-b6a6-ff9fc686baf1'
     }
 
     MONGODB_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010'
