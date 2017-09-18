@@ -1530,7 +1530,7 @@ def deal_del_request_data(resources_id,os_inst_id_list):
 
 class ResourceDelete(Resource):
     
-    def post(self):
+    def delete(self):
         request.data=json.loads(request.data)
         resources_id=request.data.get('resources_id')
         os_inst_id_list=request.data.get('os_inst_id_list')
