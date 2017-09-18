@@ -16,7 +16,7 @@ from crp.log import Log
 from crp.openstack import OpenStack
 from crp.utils.docker_tools import image_transit
 from config import configs, APP_ENV
-
+from del_handler import delete_instance_and_query,QUERY_VM
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 
@@ -1516,5 +1516,55 @@ class MongodbCluster(object):
                 print line,
                 Log.logger.debug('mongodb cluster push result:%s' % line)
 
+def deal_del_request_data(resources_id,os_inst_id_list):
+    req_list=[]
+    resources={}
+    for os_inst_id in os_inst_id_list:
+        req_dic={}
+        req_dic['resources_id'] = resources_id
+        req_dic['os_inst_id'] = os_inst_id
+        req_list.append(req_dic)
+    resources['resources']=req_list
+    return resources
+        
+
+class ResourceDelete(Resource):
+    
+    def delete(self):
+        request.data=json.loads(request.data)
+        resources_id=request.data.get('resources_id')
+        os_inst_id_list=request.data.get('os_inst_id_list')
+        resources=deal_del_request_data(resources_id,os_inst_id_list)
+        resources=resources.get('resources')
+        print '-----------------------11111111111111--------------------------',resources
+        try:
+            for resource in resources:
+                TaskManager.task_start(
+                    SLEEP_TIME, TIMEOUT,
+                    {'current_status': QUERY_VM},
+                    delete_instance_and_query, resource)
+        except Exception as e:
+            err_msg=e.args
+            Log.logger.debug(
+                "[CRP] Resource delete failed, Exception:%s",
+                e.args)
+            res = {
+                "code": 400,
+                "result": {
+                    "res": "failed",
+                    "msg": err_msg
+                }
+            }
+            return res, 400
+        else:
+            res = {
+                "code": 200,
+                "result": {
+                    "msg": "提交成功"
+                }
+            }
+            return res, 200
+
 
 resource_set_api.add_resource(ResourceSet, '/sets')
+resource_set_api.add_resource(ResourceDelete, '/deletes')
