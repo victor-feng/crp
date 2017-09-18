@@ -766,7 +766,28 @@ class ResourceProviderTransitions(object):
             path = SCRIPTPATH + 'mysqlmha'
             cmd = '/bin/sh {0}/mlm.sh {0}'.format(path)
             strout = ''
-            time.sleep(30)
+            def _check_mysql_server_ready(path):
+                test_sh = "/bin/sh {0}/check.sh {0}".format(path)
+                mysql_respones = subprocess.Popen(
+                    test_sh,
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT)
+                content = mysql_respones.stdout.read()
+                Log.logger.debug('mysql cluster check result:%s' % content)
+                if ('FAILED!' in content) or ('UNREACHABLE!' in content):
+                    return False
+                else:
+                    return True
+
+            jsq = 0
+            while not _check_mysql_server_ready(path) and jsq <5:
+                time.sleep(5)
+                jsq += 1
+                Log.logger.debug('check numbers: %s' % str(jsq))
+                if jsq == 5:
+                    Log.logger.debug('检查5次退出')
+
             p = subprocess.Popen(
                 cmd,
                 shell=True,
