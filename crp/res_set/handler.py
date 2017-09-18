@@ -1530,13 +1530,12 @@ def deal_del_request_data(resources_id,os_inst_id_list):
 
 class ResourceDelete(Resource):
     
-    def delete(self):
+    def post(self):
         request.data=json.loads(request.data)
         resources_id=request.data.get('resources_id')
         os_inst_id_list=request.data.get('os_inst_id_list')
         resources=deal_del_request_data(resources_id,os_inst_id_list)
         resources=resources.get('resources')
-        print '-----------------------11111111111111--------------------------',resources
         try:
             for resource in resources:
                 TaskManager.task_start(
