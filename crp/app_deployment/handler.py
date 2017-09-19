@@ -25,6 +25,7 @@ from crp.taskmgr import *
 from crp.dns.dns_api import NamedManagerApi
 from crp.log import Log
 from crp.disconf.disconf_api import *
+from crp.disconf.handler import delete_disconf
 
 import sys
 reload(sys)
@@ -217,7 +218,9 @@ class AppDeploy(Resource):
         nip = kwargs.get("nip")
         domain = kwargs.get("domain")
         disconf_list = kwargs.get("disconf_list")
-        logging.debug("---------start delete nginx profiles-------")
+        Log.logger.debug("---------start delete disconf profiles-------")
+        delete_disconf(disconf_list)
+        Log.logger.debug("---------start delete nginx profiles-------")
         if not nip or not domain:
             logging.info("nginx ip or domain is null, do nothing")
         self.run_cmd(
@@ -235,8 +238,7 @@ class AppDeploy(Resource):
                 dir=selfdir,
                 domain=domain)
         )
-        logging.debug("---------stop delete nginx profiles: success-------")
-        logging.debug("---------start delete disconf profiles-------")
+        Log.logger.debug("---------stop delete nginx profiles: success-------")
 
     def delete(self):
         code = 200
@@ -252,7 +254,7 @@ class AppDeploy(Resource):
             disconf_list = args.disconf_list
             self.run_delete_cmd(nip=nip, domain=domain, disconf_list=disconf_list)
         except Exception as msg:
-            logging.error("delete nginx ip error {}".format(msg))
+            Log.logger.error("delete nginx ip error {}".format(msg))
             code = 500
             msg = msg
         res = {
