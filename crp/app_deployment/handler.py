@@ -19,6 +19,7 @@ import werkzeug
 from crp.app_deployment import app_deploy_blueprint
 from crp.app_deployment.errors import user_errors
 from crp.utils.docker_tools import image_transit
+from crp.utils.aio import async
 from crp.openstack import OpenStack
 from crp.taskmgr import *
 from crp.dns.dns_api import NamedManagerApi
@@ -209,6 +210,50 @@ class AppDeploy(Resource):
                                 'port': ports.strip()})
         except Exception as e:
             Log.logger.debug("error:{}".format(e))
+
+    @async
+    def run_delete_cmd(self, **kwargs):
+        selfdir = os.path.dirname(os.path.abspath(__file__))
+        nip = kwargs.get("nip")
+        domain = kwargs.get("domain")
+        self.run_cmd(
+            "ansible {nip} --private-key={dir}/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip, dir=selfdir))
+        self.run_cmd(
+            "ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/delete.py dest=/shell/'".format(
+                nip=nip, dir=selfdir))
+        Log.logger.debug('------>上传删除脚本完成')
+        self.run_cmd("ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /shell/delete.py'".format(
+            nip=nip, dir=selfdir))
+        self.run_cmd(
+            'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a '
+            '"/shell/delete.py {domain}"'.format(
+                nip=nip,
+                dir=selfdir,
+                domain=domain)
+        )
+
+    def delete(self):
+        code = 200
+        msg = "ok"
+        try:
+            parser = reqparse.RequestParser()
+            parser.add_argument('domain', type=str)
+            parser.add_argument('nip', type=str)
+            args = parser.parse_args()
+            domain = args.domain
+            nip = args.nip
+            self.run_delete_cmd(nip=nip, domain=domain)
+        except Exception as msg:
+            code = 500
+            msg = msg
+        res = {
+            "code": code,
+            "result": {
+                "res": "",
+                "msg": msg
+            }
+        }
+        return res, code
 
     def post(self):
         code = 200
