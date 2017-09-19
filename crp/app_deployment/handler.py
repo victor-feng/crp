@@ -480,7 +480,7 @@ class AppDeploy(Resource):
 
     def _deploy_mysql(self,mysql, docker):
         database_user = mysql.get("database_user")
-        database_password = mysql.get("database_password") + "!"
+        database_password = mysql.get("database_password")
         mysql_password = mysql.get("mysql_password")
         mysql_user = mysql.get("mysql_user")
         ip = mysql.get("ip")
