@@ -1536,9 +1536,9 @@ class ResourceDelete(Resource):
     
     def delete(self):
         try:
-            request.data=json.loads(request.data)
-            resources_id=request.data.get('resources_id')
-            os_inst_id_list=request.data.get('os_inst_id_list')
+            request_data=json.loads(request.data)
+            resources_id=request_data.get('resources_id')
+            os_inst_id_list=request_data.get('os_inst_id_list')
             resources=deal_del_request_data(resources_id,os_inst_id_list)
             resources=resources.get('resources')
             vid_list=request_data.get('vid_list')
