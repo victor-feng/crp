@@ -11,9 +11,11 @@ from flask import request
 from flask_restful import reqparse, Api, Resource
 from config import APP_ENV, configs
 from crp import models
+from crp.log import Log
 from crp.disconf import disconf_blueprint
 from crp.disconf.errors import disconf_errors
 from crp.disconf.disconf_api import *
+
 
 
 disconf_api = Api(disconf_blueprint, errors=disconf_errors)
