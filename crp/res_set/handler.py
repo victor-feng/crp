@@ -16,7 +16,7 @@ from crp.log import Log
 from crp.openstack import OpenStack
 from crp.utils.docker_tools import image_transit
 from config import configs, APP_ENV
-from del_handler import delete_instance_and_query,QUERY_VM
+from del_handler import delete_instance_and_query,QUERY_VM,delete_vip
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 
@@ -751,13 +751,15 @@ class ResourceProviderTransitions(object):
                     mycat_ip_info.append(tup)
                     _instance['dbtype'] = lvs.pop()
 
-            _, vip1 = create_vip_port(mysql_ip_info[0][0])
-            _, vip2 = create_vip_port(mysql_ip_info[0][0])
+            vid1, vip1 = create_vip_port(mysql_ip_info[0][0])
+            vid2, vip2 = create_vip_port(mysql_ip_info[0][0])
             ip_info = mysql_ip_info + mycat_ip_info
             ip_info.append(('vip1', vip1))
             ip_info.append(('vip2', vip2))
             mysql['wvip'] = vip2
             mysql['rvip'] = vip1
+            mysql['wvid'] =vid2
+            mysql['rvid'] =vid1
             with open(os.path.join(SCRIPTPATH, 'mysqlmha', 'mysql.txt'), 'wb') as f:
                 for host_name, ip in ip_info:
                     f.write(host_name + os.linesep)
@@ -840,10 +842,11 @@ class ResourceProviderTransitions(object):
         # 当redis为单例时  将实IP当虚IP使用
         redis['vip'] = ip1
         if redis.get('quantity') == 2:
-            _, vip = create_vip_port(instance[0]['instance_name'])
+            vid, vip = create_vip_port(instance[0]['instance_name'])
             ip2 = instance[1]['ip']
             instance[1]['dbtype'] = 'slave'
             redis['vip'] = vip
+            redis['vid'] = vid
             cmd = 'python {0}script/redis_cluster.py {1} {2} {3}'.format(
                 SCRIPTPATH, ip1, ip2, vip)
             error_time = 0
@@ -1367,10 +1370,11 @@ def create_vip_port(instance_name):
     #Log.logger.debug('Create port for cluster/instance ' + instance_name)
     response = neutron_client.create_port(body=body_value)
     ip = response.get('port').get('fixed_ips').pop().get('ip_address')
+    id = response.get('port').get('id')
     # Log.logger.debug('Port id: ' + response.get('port').get('id') +
     Log.logger.debug('Port id: ' + response.get('port').get('id') +
                      'Port ip: ' + ip)
-    return None, ip
+    return id, ip
 
 
 class MongodbCluster(object):
@@ -1531,17 +1535,23 @@ def deal_del_request_data(resources_id,os_inst_id_list):
 class ResourceDelete(Resource):
     
     def delete(self):
-        request.data=json.loads(request.data)
-        resources_id=request.data.get('resources_id')
-        os_inst_id_list=request.data.get('os_inst_id_list')
-        resources=deal_del_request_data(resources_id,os_inst_id_list)
-        resources=resources.get('resources')
         try:
+            request.data=json.loads(request.data)
+            resources_id=request.data.get('resources_id')
+            os_inst_id_list=request.data.get('os_inst_id_list')
+            resources=deal_del_request_data(resources_id,os_inst_id_list)
+            resources=resources.get('resources')
+            vid_list=request_data.get('vid_list')
+            #delete  kvm
             for resource in resources:
                 TaskManager.task_start(
                     SLEEP_TIME, TIMEOUT,
                     {'current_status': QUERY_VM},
                     delete_instance_and_query, resource)
+            #delete vip
+            for port_id in vid_list:
+                delete_vip(port_id)
+                
         except Exception as e:
             err_msg=e.args
             Log.logger.debug(
