@@ -16,7 +16,7 @@ from crp.log import Log
 from crp.openstack import OpenStack
 from crp.utils.docker_tools import image_transit
 from config import configs, APP_ENV
-
+from del_handler import delete_instance_and_query,QUERY_VM
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 
@@ -255,7 +255,11 @@ class ResourceProviderTransitions(object):
         nics_list = []
         nic_info = {'net-id': network_id}
         nics_list.append(nic_info)
-        import logging 
+        import logging
+        Log.logger.debug(meta)
+        if meta:
+            meta = json.loads(meta)
+            meta = json.loads(meta)
         if server_group:
             server_group_dict = {'group': server_group.id}
             logging.info(server_group.id)
@@ -264,7 +268,7 @@ class ResourceProviderTransitions(object):
                                          nics=nics_list, scheduler_hints=server_group_dict)
             logging.info('------------finish---create-------------')
         else:
-            int_ = nova_client.servers.create(name, image, flavor,
+            int_ = nova_client.servers.create(name, image, flavor, meta=meta,
                                          availability_zone=availability_zone,
                                          nics=nics_list)
         Log.logger.debug(
@@ -762,7 +766,28 @@ class ResourceProviderTransitions(object):
             path = SCRIPTPATH + 'mysqlmha'
             cmd = '/bin/sh {0}/mlm.sh {0}'.format(path)
             strout = ''
-            time.sleep(30)
+            def _check_mysql_server_ready(path):
+                test_sh = "/bin/sh {0}/check.sh {0}".format(path)
+                mysql_respones = subprocess.Popen(
+                    test_sh,
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT)
+                content = mysql_respones.stdout.read()
+                Log.logger.debug('mysql cluster check result:%s' % content)
+                if ('FAILED!' in content) or ('UNREACHABLE!' in content):
+                    return False
+                else:
+                    return True
+
+            jsq = 0
+            while not _check_mysql_server_ready(path) and jsq <5:
+                time.sleep(5)
+                jsq += 1
+                Log.logger.debug('check numbers: %s' % str(jsq))
+                if jsq == 5:
+                    Log.logger.debug('检查5次退出')
+
             p = subprocess.Popen(
                 cmd,
                 shell=True,
@@ -836,24 +861,33 @@ class ResourceProviderTransitions(object):
                 Log.logger.debug('redis cluster push result:%s' % out)
                 return out
 
-            # strout = ''
-            # redis_status_cmd = "redis-cli -h {0} -p 7389 info Replication|grep connected_slaves|awk -F: '{print $NF}'"
-            # slave_num = subprocess.Popen(
-            #     redis_status_cmd.format(ip1),
-            #     shell=True,
-            #     stdout=subprocess.PIPE,
-            #     stderr=subprocess.STDOUT)
+            def _check_redis_server_ready(ip):
+                redis_status_cmd = "redis-cli -h %s -p 7389 info Replication|grep connected_slaves|awk -F: '{print $NF}'"
+                redis_cmd_rst = subprocess.Popen(
+                    redis_status_cmd%(ip),
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT)
+
+                slave_num = redis_cmd_rst.stdout.read()
+                Log.logger.debug('check redis slave num:%s' % slave_num)
+                if slave_num.startswith('1'):
+                    return True
+                else:
+                    return False
 
             # 执行命令 如果失败 连续重复尝试3次
-            while error_time < 3:
-                strout = _redis_push()
+            _redis_push()
+
+            while not _check_redis_server_ready(ip1) and error_time < 2:
+                _redis_push()
                 error_time += 1
-                time.sleep(5)
+                time.sleep(10)
 
             instance[0]['dbtype'] = 'master'
             instance[1]['dbtype'] = 'slave'
             if error_time == 3:
-                Log.logger.debug('redis cluster 重试3次失败')
+                Log.logger.debug('redis cluster 重试2次失败')
 
 
 # Transit request_data from the JSON nest structure to the chain structure
@@ -1482,5 +1516,54 @@ class MongodbCluster(object):
                 print line,
                 Log.logger.debug('mongodb cluster push result:%s' % line)
 
+def deal_del_request_data(resources_id,os_inst_id_list):
+    req_list=[]
+    resources={}
+    for os_inst_id in os_inst_id_list:
+        req_dic={}
+        req_dic['resources_id'] = resources_id
+        req_dic['os_inst_id'] = os_inst_id
+        req_list.append(req_dic)
+    resources['resources']=req_list
+    return resources
+        
+
+class ResourceDelete(Resource):
+    
+    def delete(self):
+        request.data=json.loads(request.data)
+        resources_id=request.data.get('resources_id')
+        os_inst_id_list=request.data.get('os_inst_id_list')
+        resources=deal_del_request_data(resources_id,os_inst_id_list)
+        resources=resources.get('resources')
+        try:
+            for resource in resources:
+                TaskManager.task_start(
+                    SLEEP_TIME, TIMEOUT,
+                    {'current_status': QUERY_VM},
+                    delete_instance_and_query, resource)
+        except Exception as e:
+            err_msg=e.args
+            Log.logger.debug(
+                "[CRP] Resource delete failed, Exception:%s",
+                e.args)
+            res = {
+                "code": 400,
+                "result": {
+                    "res": "failed",
+                    "msg": err_msg
+                }
+            }
+            return res, 400
+        else:
+            res = {
+                "code": 200,
+                "result": {
+                    "msg": "提交成功"
+                }
+            }
+            return res, 200
+
 
 resource_set_api.add_resource(ResourceSet, '/sets')
+resource_set_api.add_resource(ResourceDelete, '/deletes')

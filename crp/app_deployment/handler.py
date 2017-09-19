@@ -541,19 +541,22 @@ class AppDeploy(Resource):
         # if sql:
         #     sql_srcipt_file_name = self._make_sql_script_file(workdir,sql)
 
+        admin_user = 'kvm'
+        admin_password = 'Kvmanger@2wg'
+
         local_path = path_filename[0]
         remote_path = '/root/' + path_filename[1]
         content = "source " + remote_path + "\nquit "
         if not os.path.exists(os.path.join(UPLOAD_FOLDER, 'mysql')):
             os.makedirs(os.path.join(UPLOAD_FOLDER, 'mysql'))
-        sh_path = self._excute_mysql_cmd(mysql_password, mysql_user, port, content)
+        sh_path = self._excute_mysql_cmd(admin_password, admin_user, port, content)
         host_path = self._make_hosts_file(ip)
         ansible_cmd = 'ansible -i ' + host_path + ' ip ' +  ' --private-key=crp/res_set/playbook-0830/old_id_rsa -u root -m'
         ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + local_path + ' dest=' + remote_path + '"'
         ansible_sh_cmd =  ansible_cmd + ' script -a ' + sh_path
         if self._exec_ansible_cmd(ansible_sql_cmd):
             if self._exec_ansible_cmd(ansible_sh_cmd):
-                show_path = self._excute_mysql_cmd(mysql_password, mysql_user, port, 'show databases;')
+                show_path = self._excute_mysql_cmd(admin_password, admin_user, port, 'show databases;')
                 ansible_show_databases_cmd = ansible_cmd + " script -a " + show_path\
                                              + " |grep 'stdout' |awk -F: '{print $NF}' |head -1 |awk -F, '{print $1}'"
                 (status, output) = commands.getstatusoutput(ansible_show_databases_cmd)
@@ -570,7 +573,7 @@ class AppDeploy(Resource):
                             cmd2 = "grant select, update, insert, delete, execute on " + data_name + ".* to \'" + database_user +\
                                    "\'@\'" + app_ip + "\';\n"
                             cmd += cmd1 + cmd2
-                        create_path = self._excute_mysql_cmd(mysql_password, mysql_user, port, cmd)
+                        create_path = self._excute_mysql_cmd(admin_password, admin_user, port, cmd)
                         ansible_create_cmd = ansible_cmd + ' script -a ' + create_path
                         if not self._exec_ansible_cmd(ansible_create_cmd):
                             return False
@@ -595,7 +598,7 @@ class AppDeploy(Resource):
             file_object.write("#!/bin/bash\n")
             file_object.write("TMP_PWD=$MYSQL_PWD\n")
             file_object.write("export MYSQL_PWD=" + password + "\n")
-            file_object.write("mysql -u" + user + " -P" + port + " -e \"\n")
+            file_object.write("mysql -u" + user + " -P" + port + " -h 127.0.0.1 -e \"\n")
             file_object.write(content)
             file_object.write("\"\n")
             file_object.write("export MYSQL_PWD=$TMP_PWD\n")
