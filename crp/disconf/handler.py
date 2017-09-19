@@ -203,6 +203,45 @@ class DisconfEnv(Resource):
         }
         return ret, code
 
+
+
+def delete_disconf(disconf_list):
+    try:
+        for disconf_info in disconf_list:
+            disconf_server_name=disconf_info.get('disconf_server_name')
+            disconf_server_url=disconf_info.get('disconf_server_url')
+            disconf_server_user=disconf_info.get('disconf_server_user')
+            disconf_server_password=disconf_info.get('disconf_server_password')
+            app_name=disconf_info.get('ins_name')
+            env_name=disconf_info.get('disconf_env')
+            version=disconf_info.get('disconf_version')
+            config_name=disconf_info.get('disconf_name')
+            server_info={'disconf_server_name':disconf_server_name,
+                         'disconf_server_url':disconf_server_url,
+                         'disconf_server_user':disconf_server_user,
+                         'disconf_server_password':disconf_server_password,
+                        }
+            if disconf_server_name and disconf_server_url and disconf_server_user and disconf_server_password:
+                disconf_api = DisconfServerApi(server_info)
+                app_id = disconf_api.disconf_app_id(app_name)
+                env_id = disconf_api.disconf_env_id(env_name)
+                config_id = disconf_api.disconf_config_id(app_id, env_id, config_name, version)
+                if config_id:
+                    res=disconf_api.disconf_filetext_delete(config_id)
+                    status=res.get('success')
+                    if status == 'true':
+                        Log.logger.debug('disconf delete success app_name:%s env_name:%s version:%s config_name:%s' % (app_name,env_name,version,config_name) )
+
+                else:
+                    Log.logger.debug('disconf delete failed disconf is not exist')
+            else:
+                 Log.logger.debug('server_info error:disconf_server_name:%s disconf_server_url:%s  disconf_server_user:%s  disconf_server_password:%s' % ( disconf_server_name,disconf_server_url,disconf_server_user,disconf_server_password))
+    except Exception as e:
+        Log.logger.error(" delete disconf  error, Exception:%s" % e)
+
+
+
+
 disconf_api.add_resource(DisconfAPI, '/')
 disconf_api.add_resource(DisconfItem, '/<string:res_id>/')
 disconf_api.add_resource(DisconfEnv, '/env_list/')

@@ -9,9 +9,9 @@ from crp.openstack import OpenStack
 from crp.taskmgr import *
 from config import APP_ENV, configs
 
-
 QUERY_VM=0
 DELETE_VM=1
+DELETE_DISCONF=2
 UOP_URL = configs[APP_ENV].UOP_URL
 
 #向openstack查询虚机状态
@@ -91,6 +91,15 @@ def delete_instance_and_query(task_id, result, resource):
 
 
 
+
+def delete_vip(port_id):
+    try:
+        neutron_client = OpenStack.neutron_client
+        neutron_client.create_port(port_id)
+        Log.logger.debug('vip delete success port_id:%s' % port_id)
+    except Exception as e:
+        Log.logger.error(" delete vip  error, Exception:%s" % e)
+    
 
 
 # request UOP res_callback
