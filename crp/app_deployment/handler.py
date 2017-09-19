@@ -216,6 +216,10 @@ class AppDeploy(Resource):
         selfdir = os.path.dirname(os.path.abspath(__file__))
         nip = kwargs.get("nip")
         domain = kwargs.get("domain")
+        disconf_list = kwargs.get("disconf_list")
+        logging.debug("---------start delete nginx profiles-------")
+        if not nip or not domain:
+            logging.info("nginx ip or domain is null, do nothing")
         self.run_cmd(
             "ansible {nip} --private-key={dir}/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip, dir=selfdir))
         self.run_cmd(
@@ -231,6 +235,8 @@ class AppDeploy(Resource):
                 dir=selfdir,
                 domain=domain)
         )
+        logging.debug("---------stop delete nginx profiles: success-------")
+        logging.debug("---------start delete disconf profiles-------")
 
     def delete(self):
         code = 200
@@ -239,11 +245,14 @@ class AppDeploy(Resource):
             parser = reqparse.RequestParser()
             parser.add_argument('domain', type=str)
             parser.add_argument('nip', type=str)
+            parser.add_argument('disconf_list', type=list)
             args = parser.parse_args()
             domain = args.domain
             nip = args.nip
-            self.run_delete_cmd(nip=nip, domain=domain)
+            disconf_list = args.disconf_list
+            self.run_delete_cmd(nip=nip, domain=domain, disconf_list=disconf_list)
         except Exception as msg:
+            logging.error("delete nginx ip error {}".format(msg))
             code = 500
             msg = msg
         res = {
