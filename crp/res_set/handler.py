@@ -1536,7 +1536,6 @@ class ResourceDelete(Resource):
         os_inst_id_list=request.data.get('os_inst_id_list')
         resources=deal_del_request_data(resources_id,os_inst_id_list)
         resources=resources.get('resources')
-        print '-----------------------11111111111111--------------------------',resources
         try:
             for resource in resources:
                 TaskManager.task_start(

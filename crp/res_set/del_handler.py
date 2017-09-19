@@ -75,8 +75,8 @@ def delete_instance(task_id, result):
 def delete_instance_and_query(task_id, result, resource):
     current_status = result.get('current_status', None)
     Log.logger.debug(
-         "Task ID %s,\r\n result %s,\r\n resource %s ." %
-         (task_id, result, resource))
+         "Task ID %s,\r\n resource %s ." %
+         (task_id, resource))
     try:
         if current_status == QUERY_VM:
             query_instance(task_id, result, resource)
