@@ -33,7 +33,8 @@ class TestingConfig(BaseConfig):
     AP_NETWORK_CONF = {
         'AZ_HLW': '71909901-881e-4161-b1d1-29740ff074c6',
         'AZ_WW': '50b67552-8939-453f-b6a6-ff9fc686baf1',
-        'AZ_HYPERV':'50b67552-8939-453f-b6a6-ff9fc686baf1'
+        'AZ_HYPERV':'50b67552-8939-453f-b6a6-ff9fc686baf1',
+        'AZ_HYPERV_HLW': '71909901-881e-4161-b1d1-29740ff074c6'
     }
 
     MONGODB_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010'
