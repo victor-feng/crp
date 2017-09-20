@@ -11,7 +11,6 @@ from config import APP_ENV, configs
 
 QUERY_VM=0
 DELETE_VM=1
-DELETE_DISCONF=2
 UOP_URL = configs[APP_ENV].UOP_URL
 
 #向openstack查询虚机状态
@@ -29,7 +28,7 @@ def query_instance(task_id, result, resource):
         "Query Task ID " + str(task_id) +
         " query Instance ID " + os_inst_id +
         " Status is " + inst.status + " Instance task state is " + str(task_state)) 
-        if  task_state != 'deleting' or inst.status != 'DELETED':
+        if  task_state != 'deleting' and inst.status != 'DELETED':
             result['current_status'] = DELETE_VM
             result['msg']='instance is exist  begin delete Instance'
     except Exception as e:
@@ -95,7 +94,7 @@ def delete_instance_and_query(task_id, result, resource):
 def delete_vip(port_id):
     try:
         neutron_client = OpenStack.neutron_client
-        neutron_client.create_port(port_id)
+        neutron_client.delete_port(port_id)
         Log.logger.debug('vip delete success port_id:%s' % port_id)
     except Exception as e:
         Log.logger.error(" delete vip  error, Exception:%s" % e)
