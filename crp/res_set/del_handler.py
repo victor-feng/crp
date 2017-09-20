@@ -28,7 +28,7 @@ def query_instance(task_id, result, resource):
         "Query Task ID " + str(task_id) +
         " query Instance ID " + os_inst_id +
         " Status is " + inst.status + " Instance task state is " + str(task_state)) 
-        if  task_state != 'deleting' or inst.status != 'DELETED':
+        if  task_state != 'deleting' and inst.status != 'DELETED':
             result['current_status'] = DELETE_VM
             result['msg']='instance is exist  begin delete Instance'
     except Exception as e:
