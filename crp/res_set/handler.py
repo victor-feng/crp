@@ -20,7 +20,7 @@ from del_handler import delete_instance_and_query,QUERY_VM,delete_vip
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 
-TIMEOUT = 500
+TIMEOUT = 5000
 SLEEP_TIME = 3
 cluster_type_image_port_mappers = configs[APP_ENV].cluster_type_image_port_mappers
 KVM_FLAVOR = configs[APP_ENV].KVM_FLAVOR
