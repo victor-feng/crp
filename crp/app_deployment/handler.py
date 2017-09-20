@@ -215,44 +215,42 @@ class AppDeploy(Resource):
     @async
     def run_delete_cmd(self, **kwargs):
         selfdir = os.path.dirname(os.path.abspath(__file__))
-        nip = kwargs.get("nip")
-        domain = kwargs.get("domain")
+        domain_list = kwargs.get("domain_list")
         disconf_list = kwargs.get("disconf_list")
         Log.logger.debug("---------start delete disconf profiles-------")
         delete_disconf(disconf_list)
         Log.logger.debug("---------start delete nginx profiles-------")
-        if not nip or not domain:
-            logging.info("nginx ip or domain is null, do nothing")
-        self.run_cmd(
-            "ansible {nip} --private-key={dir}/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip, dir=selfdir))
-        self.run_cmd(
-            "ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/delete.py dest=/shell/'".format(
+        for dl in domain_list:
+            nip = dl.get("domain_ip")
+            domain = dl.get('domain')
+            if not nip or not domain:
+                logging.info("nginx ip or domain is null, do nothing")
+                continue
+            self.run_cmd(
+                "ansible {nip} --private-key={dir}/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip, dir=selfdir))
+            self.run_cmd(
+                "ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/delete.py dest=/shell/'".format(
+                    nip=nip, dir=selfdir))
+            Log.logger.debug('------>上传删除脚本完成')
+            self.run_cmd("ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /shell/delete.py'".format(
                 nip=nip, dir=selfdir))
-        Log.logger.debug('------>上传删除脚本完成')
-        self.run_cmd("ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /shell/delete.py'".format(
-            nip=nip, dir=selfdir))
-        self.run_cmd(
-            'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a '
-            '"/shell/delete.py {domain}"'.format(
-                nip=nip,
-                dir=selfdir,
-                domain=domain)
-        )
+            self.run_cmd(
+                'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a '
+                '"/shell/delete.py {domain}"'.format(
+                    nip=nip,
+                    dir=selfdir,
+                    domain=domain)
+            )
         Log.logger.debug("---------stop delete nginx profiles: success-------")
 
     def delete(self):
         code = 200
         msg = "ok"
         try:
-            parser = reqparse.RequestParser()
-            parser.add_argument('domain', type=str)
-            parser.add_argument('nip', type=str)
-            parser.add_argument('disconf_list', type=list)
-            args = parser.parse_args()
-            domain = args.domain
-            nip = args.nip
-            disconf_list = args.disconf_list
-            self.run_delete_cmd(nip=nip, domain=domain, disconf_list=disconf_list)
+            request_data = json.loads(request.data)
+            disconf_list = request_data.get('disconf_list')
+            domain_list = request_data.get('domain_list')
+            self.run_delete_cmd(domain_list=domain_list, disconf_list=disconf_list)
         except Exception as msg:
             Log.logger.error("delete nginx ip error {}".format(msg))
             code = 500
