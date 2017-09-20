@@ -318,7 +318,8 @@ class AppDeploy(Resource):
             msg = "ok"
             mongodb_res = True
             sql_ret = True
-
+            if not appinfo:
+                Log.logger.info("No nginx ip information, no need to push nginx something")
             for app in appinfo:
                 self.do_app_push(app)
             if mongodb:
