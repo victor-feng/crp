@@ -369,7 +369,7 @@ class AppDeploy(Resource):
                     disconf_admin_name = exchange_disconf_name(disconf_info.get('disconf_admin_content'))
 
                 result,message = disconf_api_connect.disconf_add_app_config_api_file(
-                                                app_name=disconf_info.get('ins_name'),
+                                                app_name=disconf_info.get('disconf_app_name'),
                                                 myfilerar=disconf_admin_name,
                                                 version=disconf_info.get('disconf_version'),
                                                 env_id=env_id
