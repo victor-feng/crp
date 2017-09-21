@@ -257,10 +257,10 @@ class ResourceProviderTransitions(object):
         nics_list.append(nic_info)
         import logging
         Log.logger.debug(meta)
-        meta=eval(meta)
+        #meta=eval(meta)
         if meta:
             meta = json.loads(meta)
-            #meta = json.loads(meta)
+            meta = json.loads(meta)
         if server_group:
             server_group_dict = {'group': server_group.id}
             logging.info(server_group.id)
