@@ -257,6 +257,7 @@ class ResourceProviderTransitions(object):
         nics_list.append(nic_info)
         import logging
         Log.logger.debug(meta)
+        #meta=eval(meta)
         if meta:
             meta = json.loads(meta)
             meta = json.loads(meta)
