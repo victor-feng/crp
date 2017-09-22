@@ -256,11 +256,15 @@ class ResourceProviderTransitions(object):
         nic_info = {'net-id': network_id}
         nics_list.append(nic_info)
         import logging
+        meta = eval(meta)
         Log.logger.debug(meta)
-        #meta=eval(meta)
+        Log.logger.debug(type(meta))
         if meta:
-            meta = json.loads(meta)
-            meta = json.loads(meta)
+            meta = eval(meta)
+            for m in meta:
+                meta[m] = str(meta[m])
+            Log.logger.debug(meta)
+            Log.logger.debug(type(meta))
         if server_group:
             server_group_dict = {'group': server_group.id}
             logging.info(server_group.id)
