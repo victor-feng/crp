@@ -18,7 +18,7 @@ import werkzeug
 
 from crp.app_deployment import app_deploy_blueprint
 from crp.app_deployment.errors import user_errors
-from crp.utils.docker_tools import image_transit
+from crp.utils.docker_tools import image_transit, image_update
 from crp.utils.aio import async
 from crp.openstack import OpenStack
 from crp.taskmgr import *
@@ -110,6 +110,7 @@ def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_i
         #Log.logger.debug(
         logging.debug(
             "Transit harbor docker image success. The result glance image UUID is " + image_uuid)
+        image_uuid = image_update(image_uuid)
         if _check_image_status(image_uuid):
             obj._deploy_docker(ip, deploy_id, image_uuid)
     else:

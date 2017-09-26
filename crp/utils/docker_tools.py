@@ -203,6 +203,14 @@ def _glance_img_reservation(glance_cli, current_image_id, reservation_quantity):
             glance_cli.images.delete(img_id)
             logging.debug("Image ID " + img_id + " is deleting.")
 
+def image_update(image_id):
+    glance_cli = _glance_cli()
+    fields = {
+        "properties": {"log_volume":"/home/logs/"},
+    }
+    image = glance_cli.images.update(image.id, **fields)
+    return image.id
+
 
 def image_transit(_image_url):
     # return None, 'd9645ca0-f771-4d90-8a18-0bd44c26abd7'
@@ -221,10 +229,6 @@ def image_transit(_image_url):
             for image in images:
                 logging.debug("Docker image with tag is already existed in glance images. glance image id is \'" +
                                  image.id + "\'.")
-                fields = {
-                    "properties": {"log_volume":"/home/logs/"},
-                }
-                image = glance_cli.images.update(image.id, **fields)
                 return None, image.id
     except Exception as e:
         return e.message, None
@@ -253,10 +257,6 @@ def image_transit(_image_url):
             else:
                 #GLANCE_RESERVATION_QUANTITY = current_app.config['GLANCE_RESERVATION_QUANTITY']
                 _glance_img_reservation(glance_cli, image.id, GLANCE_RESERVATION_QUANTITY)
-                fields = {
-                    "properties": {"log_volume":"/home/logs/"},
-                }
-                image = glance_cli.images.update(image.id, **fields)
                 return None, image.id
 
 
