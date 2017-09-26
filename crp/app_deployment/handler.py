@@ -628,7 +628,7 @@ class AppDeploy(Resource):
 
     def _deploy_docker(self, ip, deploy_id, image_uuid):
         server = OpenStack.find_vm_from_ipv4(ip = ip)
-        newserver = OpenStack.nova_client.servers.rebuild(server=server, image=image_uuid)
+        newserver = OpenStack.nova_client.servers.rebuild(server=server, image=image_uuid, meta={"log_volume":"/home/logs/"})
         # newserver = OpenStack.nova_client.servers.rebuild(server=server, image='3027f868-8f87-45cd-b85b-8b0da3ecaa84')
         vm_id_list = []
         # Log.logger.debug("Add the id type is" + type(newserver.id))
