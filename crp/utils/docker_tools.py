@@ -224,7 +224,7 @@ def image_transit(_image_url):
                 fields = {
                     "properties": {"log_volume":"/home/logs/"},
                 }
-                #image = glance_cli.images.update(image.id, **fields)
+                image = glance_cli.images.update(image.id, **fields)
                 return None, image.id
     except Exception as e:
         return e.message, None
@@ -253,6 +253,10 @@ def image_transit(_image_url):
             else:
                 #GLANCE_RESERVATION_QUANTITY = current_app.config['GLANCE_RESERVATION_QUANTITY']
                 _glance_img_reservation(glance_cli, image.id, GLANCE_RESERVATION_QUANTITY)
+                fields = {
+                    "properties": {"log_volume":"/home/logs/"},
+                }
+                image = glance_cli.images.update(image.id, **fields)
                 return None, image.id
 
 
