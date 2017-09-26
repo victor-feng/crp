@@ -126,6 +126,8 @@ def _glance_img_create(glance_cli, image_name, tar_file):
         "container_format": 'docker',
         "disk_format": 'raw',
         #"properties": {DK_CREATED_FROM: DK_UOP_CRP, "log_volume":"/home/logs/"},
+        "properties": {DK_CREATED_FROM: DK_UOP_CRP},
+
     }
     try:
         fields['data'] = open(tar_file, 'rb')
@@ -220,9 +222,9 @@ def image_transit(_image_url):
                 logging.debug("Docker image with tag is already existed in glance images. glance image id is \'" +
                                  image.id + "\'.")
                 fields = {
-                    "properties": {DK_CREATED_FROM: DK_UOP_CRP, "log_volume":"/home/logs/"},
+                    "properties": {"log_volume":"/home/logs/"},
                 }
-                image = glance_cli.images.update(image.id, **fields)
+                #image = glance_cli.images.update(image.id, **fields)
                 return None, image.id
     except Exception as e:
         return e.message, None
