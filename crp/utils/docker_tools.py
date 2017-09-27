@@ -125,8 +125,8 @@ def _glance_img_create(glance_cli, image_name, tar_file):
         # "is_public": True,
         "container_format": 'docker',
         "disk_format": 'raw',
-        #"properties": {DK_CREATED_FROM: DK_UOP_CRP, "log_volume":"/home/logs/"},
-        "properties": {DK_CREATED_FROM: DK_UOP_CRP},
+        "properties": {DK_CREATED_FROM: DK_UOP_CRP, "log_volume":"/home/logs/"},
+        #"properties": {DK_CREATED_FROM: DK_UOP_CRP},
 
     }
     try:
@@ -203,13 +203,13 @@ def _glance_img_reservation(glance_cli, current_image_id, reservation_quantity):
             glance_cli.images.delete(img_id)
             logging.debug("Image ID " + img_id + " is deleting.")
 
-def image_update(image_id):
-    glance_cli = _glance_cli()
-    fields = {
-        "properties": {"log_volume":"/home/logs/"},
-    }
-    image = glance_cli.images.update(image.id, **fields)
-    return image.id
+#def image_update(image_id):
+#    glance_cli = _glance_cli()
+#    fields = {
+#        "properties": {"log_volume":"/home/logs/"},
+#    }
+#    image = glance_cli.images.update(image.id, **fields)
+#    return image.id
 
 
 def image_transit(_image_url):
