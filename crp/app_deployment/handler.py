@@ -127,6 +127,7 @@ def _check_image_status(image_uuid):
         logging.debug("check image status " + str(i) + " times, status: " + img.status.lower())
         #Log.logger.debug("check image status " + str(i) + " times, status: " + img.status.lower())
         if (img.status.lower() != "active"):
+            time.sleep(check_interval)
         else:
             return True
     return False
