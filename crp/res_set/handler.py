@@ -809,6 +809,11 @@ class ResourceProviderTransitions(object):
             mysql['wvip'] = instance[0]['ip']
             mysql['rvip'] = instance[0]['ip']
             instance[0]['dbtype'] = 'master'
+            ip=instance[0]['ip']
+            cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m shell -a '/etc/init.d/m3316 restart'".format(ip=ip,dir=self.dir)
+            Log.logger.debug(cmd)
+            self.exec_db_service(ip,cmd)
+            
 
     @transition_state_logger
     def do_mongodb_push(self):
@@ -834,7 +839,11 @@ class ResourceProviderTransitions(object):
         else:
             Log.logger.debug('mongodb single instance start')
             instance = mongodb.get('instance', '')
-            mongodb['ip'] = instance[0].get('ip')
+            ip= instance[0].get('ip')
+            mongodb['ip'] = ip
+            cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m shell -a '/opt/mongodb/bin/mongod --config=/data/mongodb/conf/mongodb.conf'".format(ip=ip,dir=self.dir)
+            Log.logger.debug(cmd)
+            self.exec_db_service(ip,cmd)
             Log.logger.debug(
                 'mongodb single instance end {ip}'.format(
                     ip=mongodb['ip']))
@@ -897,6 +906,30 @@ class ResourceProviderTransitions(object):
             instance[1]['dbtype'] = 'slave'
             if error_time == 3:
                 Log.logger.debug('redis cluster 重试2次失败')
+        else:
+            ip=instance[0]['ip']
+            #redis_version="redis-2.8.14"
+            cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m shell -a '/usr/local/redis-2.8.14/src/redis-server /usr/local/redis-2.8.14/redis.conf'".format(ip=ip,dir=self.dir)
+            Log.logger.debug(cmd)
+            self.exec_db_service(ip,cmd)
+            
+
+    def exec_db_service(self,ip,cmd):
+        with open('/etc/ansible/hosts', 'w') as f:
+            f.write('%s\n' % ip)
+        for i in range(10):
+            time.sleep(6)
+            p = subprocess.Popen(
+                    cmd,
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT)
+            stdout=p.stdout.read()
+            if "SUCCESS" in stdout:            
+                Log.logger.debug(stdout)
+                break
+        else:
+            Log.logger.debug('---------restart %s db service 10 times failed---------'% ip)
 
 
 # Transit request_data from the JSON nest structure to the chain structure
