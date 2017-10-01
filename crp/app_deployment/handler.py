@@ -98,7 +98,7 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
         vm_state = getattr(vm, 'OS-EXT-STS:vm_state')
         #Log.logger.debug("Task ID "+task_id.__str__()+" query Instance ID "+int_id.__str__()+" Status is "+ vm_state)
         logging.debug("Task ID "+task_id.__str__()+" query Instance ID "+int_id.__str__()+" Status is "+ vm_state)
-        if vm_state == 'active':
+        if vm_state == 'active' or vm_state == 'stopped':
             result_list.append(int_id)
         if vm_state == 'error':
             rollback_flag = True

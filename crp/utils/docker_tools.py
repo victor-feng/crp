@@ -44,6 +44,12 @@ def _dk_img_pull(dk_cli, _image_url, repository_hash, tag):
     except docker.errors.ImageNotFound as img_err:
         logging.error(img_err.message)
         return -1
+    except docker.errors.APIError as api_err:
+        if api_err.status_code==409:
+            pass
+        else:
+            logging.error(e.message)
+            return e.message
     except Exception as e:
         logging.error(e.message)
         return e.message
