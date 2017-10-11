@@ -1129,7 +1129,7 @@ def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_i
             db_push={
                 "resource_id":resource_id,
                 "cluster_name":cluster_name,
-                "cluster_type":"push_%s" %scluster_type,
+                "cluster_type":"push_%s" %cluster_type,
                 "status":"ok",
                 "from":'resource',
                 }
