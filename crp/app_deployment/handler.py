@@ -75,7 +75,7 @@ def _dep_detail_callback(deploy_id,deploy_type):
     #Log.logger.debug("data string:" + str(data))
     CALLBACK_URL = configs[APP_ENV].UOP_URL + 'api/dep_result/'
     logging.debug("[CRP] _dep_callback callback_url: %s ", CALLBACK_URL)
-    DEP_STATUS_CALLBACK="http://127.0.0.1:5000/"
+    #DEP_STATUS_CALLBACK="http://127.0.0.1:5000/"
     res = requests.post(DEP_STATUS_CALLBACK, data=data_str, headers=headers)
     logging.debug("call dep_result callback,res: " + str(res))
     #Log.logger.debug("call dep_result callback,res: " + str(res))

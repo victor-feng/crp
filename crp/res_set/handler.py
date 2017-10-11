@@ -1143,7 +1143,7 @@ def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_i
         headers = {
         'Content-Type': 'application/json'
         }
-        RES_STATUS_CALLBACK="http://127.0.0.1:5000/api/res_callback/status"
+        #RES_STATUS_CALLBACK="http://127.0.0.1:5000/api/res_callback/status"
         res = requests.post(RES_STATUS_CALLBACK,data=data_str,headers=headers)
     except Exception as e:
         err_msg=e.args
