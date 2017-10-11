@@ -39,6 +39,7 @@ app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 #url = "http://uop-test.syswin.com/api/dep_result/"
 #url = "http://uop-test.syswin.com/api/dep_result/"
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
+DEP_STATUS_CALLBACK = configs[APP_ENV].DEP_STATUS_CALLBACK
 
 def _dep_callback(deploy_id, success):
     data = dict()
@@ -58,6 +59,28 @@ def _dep_callback(deploy_id, success):
     logging.debug("call dep_result callback,res: " + str(res))
     #Log.logger.debug("call dep_result callback,res: " + str(res))
     return res
+
+
+def _dep_detail_callback(deploy_id,deploy_type):
+    data = {
+        "deploy_id":deploy_id,
+        "deploy_type":deploy_type,
+        "status":"ok",
+    }
+    
+    data_str = json.dumps(data)
+
+    headers = {'Content-Type': 'application/json'}
+    logging.debug("data string:" + str(data))
+    #Log.logger.debug("data string:" + str(data))
+    CALLBACK_URL = configs[APP_ENV].UOP_URL + 'api/dep_result/'
+    logging.debug("[CRP] _dep_callback callback_url: %s ", CALLBACK_URL)
+    DEP_STATUS_CALLBACK="http://127.0.0.1:5000/"
+    res = requests.post(DEP_STATUS_CALLBACK, data=data_str, headers=headers)
+    logging.debug("call dep_result callback,res: " + str(res))
+    #Log.logger.debug("call dep_result callback,res: " + str(res))
+    return res
+
 
 
 def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=None, deploy_id=None):
@@ -322,11 +345,14 @@ class AppDeploy(Resource):
                 Log.logger.info("No nginx ip information, no need to push nginx something")
             for app in appinfo:
                 self.do_app_push(app)
+                _dep_detail_callback(deploy_id,"deploy_nginx")
             if mongodb:
                 logging.debug("The mongodb data is %s" % mongodb)
                 mongodb_res = self._deploy_mongodb(mongodb)
+                _dep_detail_callback(deploy_id,"deploy_mongodb")
             if mysql:
                 sql_ret = self._deploy_mysql(mysql, docker)
+                _dep_detail_callback(deploy_id,"deploy_mysql")
 
             #logging.debug("Docker is " + str(docker))
             #for i in docker:
@@ -353,6 +379,7 @@ class AppDeploy(Resource):
                     Log.logger.debug('The dns add result: %s' % msg)
                 else:
                     Log.logger.debug('domain_name:{domain_name},domain_ip:{domain_ip} is null'.format(domain_name=domain_name,domain_ip=domain_ip))
+                _dep_detail_callback(deploy_id,"deploy_dns")
 
 
             #添加disconf配置
@@ -376,6 +403,7 @@ class AppDeploy(Resource):
                                                 env_id=env_id
                                                 )
                 Log.logger.debug("disconf result:{result},{message}".format(result=result,message=message))
+            _dep_detail_callback(deploy_id,"deploy_disconf")
             
             logging.debug("Docker is " + str(docker))
             for i in docker:
@@ -390,7 +418,8 @@ class AppDeploy(Resource):
                         ips.pop(0)
                     else:
                         break
-
+            
+            _dep_detail_callback(deploy_id,"deploy_docker")
             if not (sql_ret and mongodb_res):
                 res = _dep_callback(deploy_id, False)
                 if res.status_code == 500:

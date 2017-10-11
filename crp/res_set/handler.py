@@ -29,6 +29,7 @@ AVAILABILITY_ZONE_AZ_UOP = configs[APP_ENV].AVAILABILITY_ZONE_AZ_UOP
 DEV_NETWORK_ID = configs[APP_ENV].DEV_NETWORK_ID
 OS_EXT_PHYSICAL_SERVER_ATTR = configs[APP_ENV].OS_EXT_PHYSICAL_SERVER_ATTR
 RES_CALLBACK = configs[APP_ENV].RES_CALLBACK
+RES_STATUS_CALLBACK = configs[APP_ENV].RES_STATUS_CALLBACK
 RES_STATUS_OK = configs[APP_ENV].RES_STATUS_OK
 RES_STATUS_FAIL = configs[APP_ENV].RES_STATUS_FAIL
 RES_STATUS_DEFAULT = configs[APP_ENV].RES_STATUS_DEFAULT
@@ -115,7 +116,7 @@ class ResourceProviderTransitions(object):
         self.property_mapper = {}
         self.req_dict = req_dict
         self.error_type = RES_STATUS_FAIL
-
+        self.error_msg = None
         # Initialize the state machine
         self.machine = Machine(
             model=self,
@@ -375,11 +376,13 @@ class ResourceProviderTransitions(object):
                         self.task_id.__str__() +
                         " ERROR. Error Message is:")
                     Log.logger.error(err_msg)
+                    self.error_msg=err_msg.__str__()
                     # 删除全部
                     is_rollback = True
                     uop_os_inst_id_list = []
                     if err_msg == -1:
                         self.error_type = 'notfound'
+                        self.error_msg="the image is not found"
 
         return is_rollback, uop_os_inst_id_list
 
@@ -516,6 +519,7 @@ class ResourceProviderTransitions(object):
                 physical_server = getattr(inst, OS_EXT_PHYSICAL_SERVER_ATTR)
                 for mapper in result_mappers_list:
                     value = mapper.values()[0]
+                    quantity=value.get('quantity',0)
                     instances = value.get('instance')
                     if instances is not None:
                         for instance in value.get('instance'):
@@ -528,6 +532,7 @@ class ResourceProviderTransitions(object):
                                     self.task_id.__str__() +
                                     " Instance Info: " +
                                     mapper.__str__())
+                                res_instance_push_callback(self.task_id,self.req_dict,quantity,instance,{})
                 result_inst_id_list.append(uop_os_inst_id)
             if inst.status == 'ERROR':
                 # 置回滚标志位
@@ -536,6 +541,7 @@ class ResourceProviderTransitions(object):
                     self.task_id.__str__() +
                     " ERROR Instance Info: " +
                     inst.to_dict().__str__())
+                self.error_msg=inst.to_dict().__str__()
                 is_rollback = True
 
         if result_inst_id_list.__len__() == uop_os_inst_id_list.__len__():
@@ -589,7 +595,8 @@ class ResourceProviderTransitions(object):
             self.task_id,
             self.error_type,
             self.req_dict,
-            self.result_mappers_list)
+            self.result_mappers_list,
+            self.error_msg)
         Log.logger.debug(
             "Query Task ID " +
             self.task_id.__str__() +
@@ -813,7 +820,7 @@ class ResourceProviderTransitions(object):
             cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m shell -a '/etc/init.d/m3316 restart'".format(ip=ip,dir=self.dir)
             Log.logger.debug(cmd)
             self.exec_db_service(ip,cmd)
-            
+        res_instance_push_callback(9999,self.req_dict,0,{},mysql)     
 
     @transition_state_logger
     def do_mongodb_push(self):
@@ -847,6 +854,7 @@ class ResourceProviderTransitions(object):
             Log.logger.debug(
                 'mongodb single instance end {ip}'.format(
                     ip=mongodb['ip']))
+        res_instance_push_callback(9999,self.req_dict,0,{},mongodb)
 
     @transition_state_logger
     def do_redis_push(self):
@@ -912,6 +920,7 @@ class ResourceProviderTransitions(object):
             cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m shell -a '/usr/local/redis-2.8.14/src/redis-server /usr/local/redis-2.8.14/redis.conf'".format(ip=ip,dir=self.dir)
             Log.logger.debug(cmd)
             self.exec_db_service(ip,cmd)
+        res_instance_push_callback(9999,self.req_dict,0,{},redis)
             
 
     def exec_db_service(self,ip,cmd):
@@ -1091,8 +1100,61 @@ def do_transit_repo_items(
     return property_mappers_list
 
 
+#crp res_set detail  status callback to uop
+def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_info):
+    try:
+        resource_id = req_dict["resource_id"]
+        if instance_info:
+            ip=instance_info.get('ip')
+            instance_type=instance_info.get('instance_type')
+            instance_name=instance_info.get('instance_name')
+            os_inst_id=instance_info.get('os_inst_id')
+            physical_server=instance_info.get('physical_server')
+            instance={
+                "resource_id":resource_id,
+                "ip": ip,
+                "instance_name": instance_name,
+                "instance_type": instance_type,
+                "os_inst_id": os_inst_id,
+                "physical_server": physical_server,
+                "quantity":quantity,
+                "status":"active",
+                "from":'resource',
+                }
+        else:
+            instance=None
+        if db_push_info:
+            cluster_name=db_push_info.get('cluster_name')
+            cluster_type=db_push_info.get('cluster_type')
+            db_push={
+                "resource_id":resource_id,
+                "cluster_name":cluster_name,
+                "cluster_type":"push_%s" %scluster_type,
+                "status":"ok",
+                "from":'resource',
+                }
+        else:
+            db_push=None
+        data={
+            "instance":instance,
+            "db_push":db_push,
+        }
+        data_str=json.dumps(data)
+        headers = {
+        'Content-Type': 'application/json'
+        }
+        RES_STATUS_CALLBACK="http://127.0.0.1:5000/api/res_callback/status"
+        res = requests.post(RES_STATUS_CALLBACK,data=data_str,headers=headers)
+    except Exception as e:
+        err_msg=e.args
+        Log.logger.error("res_instance_push_callback error %s" % err_msg)
+
+
+
+
+
 # request UOP res_callback
-def request_res_callback(task_id, status, req_dict, result_mappers_list):
+def request_res_callback(task_id, status, req_dict, result_mappers_list,error_msg=None):
     # project_id, resource_name,under_name, resource_id, domain,
     # container_name, image_addr, stardand_ins,cpu, memory, ins_id,
     # mysql_username, mysql_password, mysql_port, mysql_ip,
@@ -1170,13 +1232,15 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list):
     data["domain"] = req_dict["domain"]
     data["cmdb_repo_id"] = req_dict["cmdb_repo_id"]
     data["status"] = status
+    #if error_mag:
+    data["error_msg"] = error_msg
 
     container = []
     db_info = {}
     mysql = {}
     redis = {}
     mongodb = {}
-
+    
     if status == RES_STATUS_OK:
         for result_mapper in result_mappers_list:
             if result_mapper.keys()[0] == 'app':
@@ -1200,7 +1264,6 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list):
         db_info["mongodb"] = mongodb
 
     data["db_info"] = db_info
-
     data_str = json.dumps(data)
     Log.logger.debug(
         "Task ID " +

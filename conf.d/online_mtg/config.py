@@ -79,7 +79,8 @@ class TestingConfig(BaseConfig):
 
     # res_callback
     RES_CALLBACK = 'http://uop-test.syswin.com/api/res_callback/res'
-
+    RES_STATUS_CALLBACK = 'http://uop-test.syswin.com/api/res_callback/status'
+    DEP_STATUS_CALLBACK = 'http://uop-test.syswin.com/api/dep_result/status'
     RES_STATUS_OK = "ok"
     RES_STATUS_FAIL = "fail"
     RES_STATUS_DEFAULT = 'unreserved'
