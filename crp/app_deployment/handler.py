@@ -95,6 +95,7 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
     nova_client = OpenStack.nova_client
 
     for int_id in osint_id_wait_query:
+        time.sleep(5)
         vm = nova_client.servers.get(int_id)
         vm_state = getattr(vm, 'OS-EXT-STS:vm_state')
         #Log.logger.debug("Task ID "+task_id.__str__()+" query Instance ID "+int_id.__str__()+" Status is "+ vm_state)
