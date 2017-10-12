@@ -70,7 +70,7 @@ class TestingConfig(BaseConfig):
 
     # AVAILABILITY_ZONE
     AVAILABILITY_ZONE_AZ_UOP = 'AZ_UOP'
-    DEV_NETWORK_ID = '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'
+    DEV_NETWORK_ID = 'c3d17e45-ea99-4441-a745-275e803dff67'
     OS_EXT_PHYSICAL_SERVER_ATTR = 'OS-EXT-SRV-ATTR:host'
 
     # res_callback
