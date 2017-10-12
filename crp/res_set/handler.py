@@ -1270,6 +1270,7 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list,error_ms
         task_id.__str__() +
         " UOP res_callback Request Body is: " +
         data_str)
+    #RES_CALLBACK="http://127.0.0.1:5000/api/res_callback/res"
     res = requests.post(RES_CALLBACK, data=data_str)
     Log.logger.debug(res.status_code)
     Log.logger.debug(res.content)
