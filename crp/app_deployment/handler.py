@@ -61,10 +61,11 @@ def _dep_callback(deploy_id, success):
     return res
 
 
-def _dep_detail_callback(deploy_id,deploy_type):
+def _dep_detail_callback(deploy_id,deploy_type,ip=None):
     data = {
         "deploy_id":deploy_id,
         "deploy_type":deploy_type,
+        "ip":ip,
         "status":"ok",
     }
     
@@ -417,10 +418,10 @@ class AppDeploy(Resource):
                         # self._image_transit(deploy_id, docker.get("ip"), docker.get("image_url"))
                         self._image_transit(deploy_id, ip, i.get('url'))
                         ips.pop(0)
+                        _dep_detail_callback(deploy_id,"deploy_docker",ip)
                     else:
                         break
             
-            _dep_detail_callback(deploy_id,"deploy_docker")
             if not (sql_ret and mongodb_res):
                 res = _dep_callback(deploy_id, False)
                 if res.status_code == 500:
