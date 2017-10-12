@@ -403,7 +403,8 @@ class AppDeploy(Resource):
                                                 env_id=env_id
                                                 )
                 Log.logger.debug("disconf result:{result},{message}".format(result=result,message=message))
-            _dep_detail_callback(deploy_id,"deploy_disconf")
+            if disconf_server_info:
+                _dep_detail_callback(deploy_id,"deploy_disconf")
             
             logging.debug("Docker is " + str(docker))
             for i in docker:
