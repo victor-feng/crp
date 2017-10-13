@@ -18,7 +18,7 @@ AVAILABILITY_ZONE_AZ_UOP = configs[APP_ENV].AVAILABILITY_ZONE_AZ_UOP
 
 openstack_api = Api(openstack_blueprint, errors=az_errors)
 
-class NetWorkAPI(Resource):
+class PortAPI(Resource):
 
     def get(self):
         parser = reqparse.RequestParser()
@@ -87,3 +87,4 @@ class NovaVMAPI(Resource):
             return res, 200
 
 openstack_api.add_resource(NovaVMAPI, '/nova/state')
+openstack_api.add_resource(PortAPI, '/port/count')
