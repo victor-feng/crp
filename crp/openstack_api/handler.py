@@ -18,6 +18,42 @@ AVAILABILITY_ZONE_AZ_UOP = configs[APP_ENV].AVAILABILITY_ZONE_AZ_UOP
 
 openstack_api = Api(openstack_blueprint, errors=az_errors)
 
+class NetWorkAPI(Resource):
+
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('network_id', type=str, location='args')
+        args = parser.parse_args()
+        network_id = args.network_id
+        os_inst_id2state = {}
+        count = 0
+        try:
+            net_cli = OpenStack.neutron_client
+            if network_id:
+                ports = net_cli.list_ports(**{'network_id':network_id})
+                ports = ports.get('ports')
+                count = len(ports)
+        except Exception as e:
+            #Log.logger.error('get hypervisors_statistics err: %s' % e.message)
+            logging.error('get networks err: %s' % e.message)
+            res = {
+                "code": 400,
+                "result": {
+                    "res": "failed",
+                    "msg": e.message
+                }
+            }
+            return res, 400
+        else:
+            res = {
+                "code": 200,
+                "result": {
+                    "msg": "请求成功",
+                    "res": count
+                }
+            }
+            return res, 200
+
 
 class NovaVMAPI(Resource):
 
