@@ -16,20 +16,23 @@ from config import configs, APP_ENV
 # 配置可用域
 AVAILABILITY_ZONE_AZ_UOP = configs[APP_ENV].AVAILABILITY_ZONE_AZ_UOP
 
-openstack_api = Api(az_blueprint, errors=az_errors)
+openstack_api = Api(openstack_blueprint, errors=az_errors)
 
 
 class NovaVMAPI(Resource):
 
     def get(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('os_inst_ids', type=str, location='args', action='append')
+        parser.add_argument('os_inst_ids', type=list, location='json')
         args = parser.parse_args()
         os_inst_ids = args.os_inst_ids
+        os_inst_id2state = {}
         try:
             nova_cli = OpenStack.nova_client
-            query =  {'vm': ''}
-            statistics = nova_cli.services.list(**query)
+            for os_inst_id in os_inst_ids
+                vm = nova_cli.servers.get(os_inst_id)
+                vm_state = getattr(vm, 'OS-EXT-STS:vm_state')
+                os_inst_id2state[os_inst_id] = vm_state
         except Exception as e:
             #Log.logger.error('get hypervisors_statistics err: %s' % e.message)
             logging.error('get vm status err: %s' % e.message)
@@ -46,9 +49,9 @@ class NovaVMAPI(Resource):
                 "code": 200,
                 "result": {
                     "msg": "请求成功",
-                    "res": hypervisors_statistics
+                    "res": os_inst_id2state
                 }
             }
             return res, 200
 
-az_api.add_resource(NovaVMAPI, '/uopStatistics')
+openstack_api.add_resource(NovaVMAPI, '/state')
