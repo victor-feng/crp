@@ -20,6 +20,7 @@ from crp.flavor import flavor_blueprint
 from crp.vm_operation import vm_operation_blueprint
 from crp.dns import dns_set_blueprint
 from crp.disconf import disconf_blueprint
+from crp.openstack_api import openstack_blueprint
 
 def create_app(config_name):
     app = Flask(__name__)
@@ -46,5 +47,6 @@ def create_app(config_name):
     app.register_blueprint(flavor_blueprint, url_prefix='/api/flavor')
     app.register_blueprint(vm_operation_blueprint, url_prefix='/api/vm_operation')
     app.register_blueprint(dns_set_blueprint, url_prefix='/api/dns')
+    app.register_blueprint(openstack_blueprint, url_prefix='/api/openstack/nova')
 
     return app
