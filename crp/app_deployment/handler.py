@@ -254,14 +254,14 @@ class AppDeploy(Resource):
             self.run_cmd(
                 "ansible {nip} --private-key={dir}/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip, dir=selfdir))
             self.run_cmd(
-                "ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/delete.py dest=/shell/'".format(
+                "ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/delete.py dest=/tmp/'".format(
                     nip=nip, dir=selfdir))
             Log.logger.debug('------>上传删除脚本完成')
-            self.run_cmd("ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /shell/delete.py'".format(
+            self.run_cmd("ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /tmp/delete.py'".format(
                 nip=nip, dir=selfdir))
             self.run_cmd(
                 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a '
-                '"/shell/delete.py {domain}"'.format(
+                '"/tmp/delete.py {domain}"'.format(
                     nip=nip,
                     dir=selfdir,
                     domain=domain)
