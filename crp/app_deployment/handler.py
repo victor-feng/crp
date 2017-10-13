@@ -41,8 +41,9 @@ app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 DEP_STATUS_CALLBACK = configs[APP_ENV].DEP_STATUS_CALLBACK
 
-def _dep_callback(deploy_id, success):
+def _dep_callback(deploy_id,ip,success):
     data = dict()
+    data["ip"]=ip
     if success:
         data["result"] = "success"
     else:
@@ -74,17 +75,17 @@ def _dep_detail_callback(deploy_id,deploy_type,ip=None):
     headers = {'Content-Type': 'application/json'}
     logging.debug("data string:" + str(data))
     #Log.logger.debug("data string:" + str(data))
-    CALLBACK_URL = configs[APP_ENV].UOP_URL + 'api/dep_result/'
-    logging.debug("[CRP] _dep_callback callback_url: %s ", CALLBACK_URL)
+    #CALLBACK_URL = configs[APP_ENV].UOP_URL + 'api/dep_result/'
+    logging.debug("[CRP] _dep_detail_callback callback_url: %s ", DEP_STATUS_CALLBACK)
     #DEP_STATUS_CALLBACK="http://127.0.0.1:5000/"
     res = requests.post(DEP_STATUS_CALLBACK, data=data_str, headers=headers)
-    logging.debug("call dep_result callback,res: " + str(res))
+    logging.debug("call dep_detail_result callback,res: " + str(res))
     #Log.logger.debug("call dep_result callback,res: " + str(res))
     return res
 
 
 
-def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=None, deploy_id=None):
+def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=None, deploy_id=None,ip=None):
     rollback_flag = False
     osint_id_wait_query = list(set(osins_id_list) - set(result_list))
     logging.debug("Query Task ID "+task_id.__str__()+", remain "+osint_id_wait_query[:].__str__())
@@ -107,7 +108,7 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
 
     if result_list.__len__() == osins_id_list.__len__():
         # TODO(thread exit): 执行成功调用UOP CallBack停止定时任务退出任务线程
-        _dep_callback(deploy_id, True)
+        _dep_callback(deploy_id,ip,True)
         logging.debug("Task ID "+task_id.__str__()+" all instance create success." +
         #Log.logger.debug("Task ID "+task_id.__str__()+" all instance create success." +
                          " instance id set is "+result_list[:].__str__())
@@ -124,7 +125,7 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
          #   nova_client.servers.delete(int_id)
 
         # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
-        _dep_callback(deploy_id, False)
+        _dep_callback(deploy_id,ip,False)
         # 停止定时任务并退出
         TaskManager.task_exit(task_id)
 
@@ -197,19 +198,19 @@ class AppDeploy(Resource):
             self.run_cmd(
                 "ansible {nip} --private-key={dir}/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip,dir=selfdir))
             self.run_cmd(
-                "ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/update.py dest=/shell/'".format(
+                "ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/update.py dest=/tmp/'".format(
                     nip=nip, dir=selfdir))
             self.run_cmd(
-                "ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/template dest=/shell/'".format(
+                "ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/template dest=/tmp/'".format(
                     nip=nip, dir=selfdir))
             Log.logger.debug('------>上传配置文件完成')
-            self.run_cmd("ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /shell/update.py'".format(
+            self.run_cmd("ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /tmp/update.py'".format(
                 nip=nip, dir=selfdir))
-            self.run_cmd("ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /shell/template'".format(
+            self.run_cmd("ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /tmp/template'".format(
                 nip=nip, dir=selfdir))
             self.run_cmd(
                 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a '
-                '"/shell/update.py {domain} {ip} {port}"'.format(
+                '"/tmp/update.py {domain} {ip} {port}"'.format(
                     nip=kwargs.get('nip'),
                     dir=selfdir,
                     domain=kwargs.get('domain'),
@@ -254,14 +255,14 @@ class AppDeploy(Resource):
             self.run_cmd(
                 "ansible {nip} --private-key={dir}/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip, dir=selfdir))
             self.run_cmd(
-                "ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/delete.py dest=/shell/'".format(
+                "ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/delete.py dest=/tmp/'".format(
                     nip=nip, dir=selfdir))
             Log.logger.debug('------>上传删除脚本完成')
-            self.run_cmd("ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /shell/delete.py'".format(
+            self.run_cmd("ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /tmp/delete.py'".format(
                 nip=nip, dir=selfdir))
             self.run_cmd(
                 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a '
-                '"/shell/delete.py {domain}"'.format(
+                '"/tmp/delete.py {domain}"'.format(
                     nip=nip,
                     dir=selfdir,
                     domain=domain)
@@ -419,7 +420,7 @@ class AppDeploy(Resource):
                         # self._image_transit(deploy_id, docker.get("ip"), docker.get("image_url"))
                         self._image_transit(deploy_id, ip, i.get('url'))
                         ips.pop(0)
-                        _dep_detail_callback(deploy_id,"deploy_docker",ip)
+                        #_dep_detail_callback(deploy_id,"deploy_docker",ip)
                     else:
                         break
             
@@ -682,7 +683,7 @@ class AppDeploy(Resource):
         vm_id_list.append(newserver.id)
         result_list = []
         timeout = 10
-        TaskManager.task_start(SLEEP_TIME, timeout, result_list, _query_instance_set_status, vm_id_list, deploy_id)
+        TaskManager.task_start(SLEEP_TIME, timeout, result_list, _query_instance_set_status, vm_id_list, deploy_id,ip)
 
     def _image_transit(self,deploy_id, ip, image_url):
         result_list = []
