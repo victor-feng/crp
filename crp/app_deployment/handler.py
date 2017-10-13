@@ -197,19 +197,19 @@ class AppDeploy(Resource):
             self.run_cmd(
                 "ansible {nip} --private-key={dir}/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip,dir=selfdir))
             self.run_cmd(
-                "ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/update.py dest=/shell/'".format(
+                "ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/update.py dest=/tmp/'".format(
                     nip=nip, dir=selfdir))
             self.run_cmd(
-                "ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/template dest=/shell/'".format(
+                "ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/template dest=/tmp/'".format(
                     nip=nip, dir=selfdir))
             Log.logger.debug('------>上传配置文件完成')
-            self.run_cmd("ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /shell/update.py'".format(
+            self.run_cmd("ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /tmp/update.py'".format(
                 nip=nip, dir=selfdir))
-            self.run_cmd("ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /shell/template'".format(
+            self.run_cmd("ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /tmp/template'".format(
                 nip=nip, dir=selfdir))
             self.run_cmd(
                 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a '
-                '"/shell/update.py {domain} {ip} {port}"'.format(
+                '"/tmp/update.py {domain} {ip} {port}"'.format(
                     nip=kwargs.get('nip'),
                     dir=selfdir,
                     domain=kwargs.get('domain'),
