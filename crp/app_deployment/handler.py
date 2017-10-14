@@ -131,7 +131,7 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
 
 
 def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, ip = None, image_url = None):
-    err_msg, image_uuid = image_transit(image_url)
+    err_msg, image_uuid = image_transit(image_url, action='deploy')
     if err_msg is None:
         #Log.logger.debug(
         logging.debug(

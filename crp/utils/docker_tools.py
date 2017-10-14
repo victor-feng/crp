@@ -198,16 +198,10 @@ def _glance_img_reservation(glance_cli, current_image_id, reservation_quantity):
         logging.debug("image quantity is " + img_sum.__str__() +
                          " big than " + reservation_quantity.__str__() + ", img_info_to_be_delete:")
         logging.debug(img_info_to_be_delete)
-        docker_cli =  _dk_py_cli()
         for img in img_info_to_be_delete:
             img_id = img.get('id')
             glance_cli.images.delete(img_id)
             logging.debug(" glance Image ID " + img_id + " is deleting.")
-            delete_imgs = docker_cli.images.list(img_id)
-            for delete_img in delete_imgs:
-                docker_cli.images.remove(delete_img.id, force=True)
-                logging.debug("docker Image ID " + delete_img.id + " is deleting.")
-
 #def image_update(image_id):
 #    glance_cli = _glance_cli()
 #    fields = {
@@ -217,7 +211,7 @@ def _glance_img_reservation(glance_cli, current_image_id, reservation_quantity):
 #    return image.id
 
 
-def image_transit(_image_url):
+def image_transit(_image_url, action='res'):
     # return None, 'd9645ca0-f771-4d90-8a18-0bd44c26abd7'
     try:
         img_tag = _image_url.split(':', 2)
@@ -226,15 +220,31 @@ def image_transit(_image_url):
         glance_cli = _glance_cli()
         repository_hash = hashlib.sha224(img_tag[0]).hexdigest()
         _image_url_hash = repository_hash + ':' + img_tag[1]
+        docker_cli = _dk_py_cli()
+        try:
+            cur_img = docker_cli.images.get(_image_url)
+            # 如果是部署 就不删除镜像
+            if action!='deploy':
+                docker_cli.images.remove(cur_img.id, force=True)
+        except docker.errors.ImageNotFound, e:
+            cur_img = None
+        logging.info('---------------------cur_img---------------------:%s'%(cur_img))
+        if cur_img:
+            img_id = cur_img.attrs.get('ContainerConfig').get('Image')
+            _image_url_hash = img_id + ':' + img_tag[1]
+            repository_hash = img_id
+        logging.info(_image_url_hash)
 
         # Docker image tag 为 latest 的镜像总是转换并创建glance image，其它均为glance 中存在则不创建
-        if img_tag[1] != 'latest':
+        if img_tag[1] != 'latest' cur_img:
             properties = {'name': _image_url_hash}
             images = glance_cli.images.list(filters=properties)
             for image in images:
-                logging.debug("Docker image with tag is already existed in glance images. glance image id is \'" +
-                                 image.id + "\'.")
-                return None, image.id
+                # 如果是  部署就 直接返回镜像
+                if action=='deploy':
+                    return None, image.id
+                glance_cli.images.delete(image.id)
+                logging.debug("glance image id is \'" +image.id + " is delete\'.")
     except Exception as e:
         return e.message, None
     dk_cli = _dk_py_cli()

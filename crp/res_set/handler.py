@@ -288,18 +288,13 @@ class ResourceProviderTransitions(object):
         return int_.id
 
     # 依据镜像URL创建NovaDocker容器
-    def _create_docker_by_url(self, name, image_url, flavor, meta, server_group=None):
-        err_msg, image_uuid = image_transit(image_url)
-        if err_msg is None:
-            Log.logger.debug(
-                "Task ID " +
-                self.task_id.__str__() +
-                " Transit harbor docker image success. The result glance image UUID is " +
-                image_uuid)
+    def _create_docker_by_url(self, name, image_uuid, flavor, meta, server_group=None):
+        #err_msg, image_uuid = image_transit(image_url)
+        if image_uuid:
             return None, self._create_instance(
                 name, image_uuid, flavor, AVAILABILITY_ZONE_AZ_UOP, DEV_NETWORK_ID, meta, server_group)
         else:
-            return err_msg, None
+            return None, None
 
     # 依据资源类型创建资源
     def _create_instance_by_type(self, ins_type, name, flavor, server_group=None):
@@ -350,11 +345,19 @@ class ResourceProviderTransitions(object):
 
             if IS_OPEN_AFFINITY_SCHEDULING:
                 server_group = nova_client.server_groups.create(**{'name': 'create_app_cluster_server_group', 'policies': ['anti-affinity']})
+            
+            err_msg, image_uuid = image_transit(image_url)
+            if err_msg is None:
+                Log.logger.debug(
+                         "Task ID " +
+                          self.task_id.__str__() +
+                          " Transit harbor docker image success. The result glance image UUID is " +
+                          image_uuid)
 
             for i in range(0, quantity, 1):
                 instance_name = '%s_%s' % (cluster_name, i.__str__())
                 err_msg, osint_id = self._create_docker_by_url(
-                    instance_name, image_url, flavor, meta, server_group)
+                    instance_name, image_uuid, flavor, meta, server_group)
                 if err_msg is None:
                     uopinst_info = {
                         'uop_inst_id': cluster_id,
