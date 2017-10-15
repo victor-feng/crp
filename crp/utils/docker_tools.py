@@ -239,7 +239,7 @@ def image_transit(_image_url, action='res'):
         if cur_img:
             img_id = cur_img.attrs.get('ContainerConfig').get('Image')
             _image_url_hash = img_id.replace(':', '') + ':' + img_tag[1]
-            repository_hash = img_id
+            repository_hash = img_id.replace(':', '')
         logging.info(_image_url_hash)
 
         # Docker image tag 为 latest 的镜像总是转换并创建glance image，其它均为glance 中存在则不创建
