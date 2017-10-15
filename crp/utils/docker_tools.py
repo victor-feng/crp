@@ -238,7 +238,7 @@ def image_transit(_image_url, action='res'):
         logging.info('---------------------cur_img---------------------:%s'%(cur_img))
         if cur_img:
             img_id = cur_img.attrs.get('ContainerConfig').get('Image')
-            _image_url_hash = img_id + ':' + img_tag[1]
+            _image_url_hash = img_id.replace(':', '') + ':' + img_tag[1]
             repository_hash = img_id
         logging.info(_image_url_hash)
 
