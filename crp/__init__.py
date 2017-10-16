@@ -47,6 +47,6 @@ def create_app(config_name):
     app.register_blueprint(flavor_blueprint, url_prefix='/api/flavor')
     app.register_blueprint(vm_operation_blueprint, url_prefix='/api/vm_operation')
     app.register_blueprint(dns_set_blueprint, url_prefix='/api/dns')
-    app.register_blueprint(openstack_blueprint, url_prefix='/api/openstack/nova')
+    app.register_blueprint(openstack_blueprint, url_prefix='/api/openstack')
 
     return app

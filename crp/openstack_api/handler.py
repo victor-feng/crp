@@ -23,18 +23,14 @@ class NovaVMAPI(Resource):
 
     def get(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('os_inst_ids', type=list, location='json')
+        parser.add_argument('os_inst_id', type=str, location='json')
         args = parser.parse_args()
-        os_inst_ids = args.os_inst_ids
-        os_inst_id2state = {}
+        os_inst_id = args.os_inst_id
         try:
             nova_cli = OpenStack.nova_client
-            for os_inst_id in os_inst_ids
-                vm = nova_cli.servers.get(os_inst_id)
-                vm_state = getattr(vm, 'OS-EXT-STS:vm_state')
-                os_inst_id2state[os_inst_id] = vm_state
+            vm = nova_cli.servers.get(os_inst_id)
+            vm_state = getattr(vm, 'OS-EXT-STS:vm_state')
         except Exception as e:
-            #Log.logger.error('get hypervisors_statistics err: %s' % e.message)
             logging.error('get vm status err: %s' % e.message)
             res = {
                 "code": 400,
@@ -49,9 +45,9 @@ class NovaVMAPI(Resource):
                 "code": 200,
                 "result": {
                     "msg": "请求成功",
-                    "res": os_inst_id2state
+                    "res": vm_state
                 }
             }
             return res, 200
 
-openstack_api.add_resource(NovaVMAPI, '/state')
+openstack_api.add_resource(NovaVMAPI, '/nova/state')
