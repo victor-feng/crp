@@ -71,7 +71,7 @@ class NovaVMAPI(Resource):
             res = {
                 "code": 400,
                 "result": {
-                    "res": "failed",
+                    "vm_state": "failed",
                     "msg": e.message
                 }
             }
@@ -80,7 +80,7 @@ class NovaVMAPI(Resource):
             res = {
                 "code": 200,
                 "result": {
-                    "msg": "请求成功",
+                    "msg": "success",
                     "vm_state": vm_state
                 }
             }
