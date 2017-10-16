@@ -18,6 +18,42 @@ AVAILABILITY_ZONE_AZ_UOP = configs[APP_ENV].AVAILABILITY_ZONE_AZ_UOP
 
 openstack_api = Api(openstack_blueprint, errors=az_errors)
 
+
+class NetworkAPI(Resource):
+
+    def get(self):
+        name2id = {}
+        try:
+            net_cli = OpenStack.neutron_client
+            networks = net_cli.list_networks()
+            networks = networks.get('networks', '')
+            for network in networks:
+                name = network.get('name')
+                id_ = network.get('id')
+                status = network.get('status')
+                if status=='ACTIVE':
+                    name2id[id_] = name
+        except Exception as e:
+            #Log.logger.error('get hypervisors_statistics err: %s' % e.message)
+            logging.error('get networks err: %s' % e.message)
+            res = {
+                "code": 400,
+                "result": {
+                    "res": "failed",
+                    "msg": e.message
+                }
+            }
+            return res, 400
+        else:
+            res = {
+                "code": 200,
+                "result": {
+                    "msg": "请求成功",
+                    "res": name2id
+                }
+            }
+            return res, 200
+
 class PortAPI(Resource):
 
     def get(self):
@@ -35,7 +71,7 @@ class PortAPI(Resource):
                 count = len(ports)
         except Exception as e:
             #Log.logger.error('get hypervisors_statistics err: %s' % e.message)
-            logging.error('get networks err: %s' % e.message)
+            logging.error('get port err: %s' % e.message)
             res = {
                 "code": 400,
                 "result": {
@@ -125,3 +161,4 @@ class NovaVMAPIs(Resource):
 
 openstack_api.add_resource(NovaVMAPI, '/nova/state')
 openstack_api.add_resource(PortAPI, '/port/count')
+openstack_api.add_resource(NetworkAPI, '/network/list')
