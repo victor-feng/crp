@@ -45,7 +45,7 @@ class NovaVMAPI(Resource):
                 "code": 200,
                 "result": {
                     "msg": "请求成功",
-                    "res": vm_state
+                    "vm_state": vm_state
                 }
             }
             return res, 200
