@@ -22,7 +22,7 @@ class PortAPI(Resource):
 
     def get(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('network_id', type=str, location='args')
+        parser.add_argument('network_id', type=str)
         args = parser.parse_args()
         network_id = args.network_id
         os_inst_id2state = {}
@@ -59,7 +59,7 @@ class NovaVMAPI(Resource):
 
     def get(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('os_inst_id', type=str, location='json')
+        parser.add_argument('os_inst_id', type=str)
         args = parser.parse_args()
         os_inst_id = args.os_inst_id
         try:
