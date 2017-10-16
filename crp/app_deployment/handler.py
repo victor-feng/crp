@@ -41,10 +41,12 @@ app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 DEP_STATUS_CALLBACK = configs[APP_ENV].DEP_STATUS_CALLBACK
 
-def _dep_callback(deploy_id,ip,quantity,success):
+def _dep_callback(deploy_id,ip,quantity,err_msg,vm_state,success):
     data = dict()
     data["ip"]=ip
     data["quantity"]=quantity
+    data["err_msg"] = err_msg
+    data["vm_state"] = vm_state
     if success:
         data["result"] = "success"
     else:
@@ -97,21 +99,25 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
     nova_client = OpenStack.nova_client
 
     for int_id in osint_id_wait_query:
-        time.sleep(1)
+        time.sleep(30)
         vm = nova_client.servers.get(int_id)
         #vm_state = getattr(vm, 'OS-EXT-STS:vm_state')
         vm_state = vm.status.lower()
         #Log.logger.debug("Task ID "+task_id.__str__()+" query Instance ID "+int_id.__str__()+" Status is "+ vm_state)
         logging.debug("Task ID "+task_id.__str__()+" query Instance ID "+int_id.__str__()+" Status is "+ vm_state)
         #if vm_state == 'active' or vm_state == 'stopped':
-        if vm_state == 'active' or vm_state == 'shutoff':
+        if vm_state == 'active':
             result_list.append(int_id)
-        if vm_state == 'error':
+        if vm_state == 'error'or vm_state == 'shutoff':
+            err_msg= vm.to_dict().__str__()
             rollback_flag = True
+            logging.debug(
+                "Task ID " + task_id.__str__() + " query Instance ID " + int_id.__str__() + " Status is " + vm_state
+            + " ERROR msg is:" + vm.to_dict().__str__())
 
     if result_list.__len__() == osins_id_list.__len__():
         # TODO(thread exit): 执行成功调用UOP CallBack停止定时任务退出任务线程
-        _dep_callback(deploy_id,ip,quantity,True)
+        _dep_callback(deploy_id,ip,quantity,"",vm_state,True)
         logging.debug("Task ID "+task_id.__str__()+" all instance create success." +
         #Log.logger.debug("Task ID "+task_id.__str__()+" all instance create success." +
                          " instance id set is "+result_list[:].__str__())
@@ -128,7 +134,7 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
          #   nova_client.servers.delete(int_id)
 
         # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
-        _dep_callback(deploy_id,ip,quantity,False)
+        _dep_callback(deploy_id,ip,quantity,err_msg,vm_state,False)
         # 停止定时任务并退出
         TaskManager.task_exit(task_id)
 
@@ -591,6 +597,8 @@ class AppDeploy(Resource):
         database_password = mysql.get("database_password")
         mysql_password = mysql.get("mysql_password")
         mysql_user = mysql.get("mysql_user")
+        mysql_user="kvm"
+        mysql_password="Kvmanger@2wg"
         ip = mysql.get("ip")
         port = mysql.get("port")
         app_ips = [ _docker.get('ip') for _docker in docker ]
@@ -659,7 +667,8 @@ class AppDeploy(Resource):
             file_object.write("#!/bin/bash\n")
             file_object.write("TMP_PWD=$MYSQL_PWD\n")
             file_object.write("export MYSQL_PWD=" + password + "\n")
-            file_object.write("mysql -u" + user + " -P" + port + " -e \"\n")
+            #file_object.write("mysql -u" + user + " -P" + port + " -e \"\n")
+            file_object.write("mysql -u" + user + " -h" + "127.0.0.1" + " -P" + port + " -e \"\n")
             file_object.write(content)
             file_object.write("\"\n")
             file_object.write("export MYSQL_PWD=$TMP_PWD\n")
@@ -688,12 +697,12 @@ class AppDeploy(Resource):
         logging.debug("Add the id type is" + str(newserver.id))
         vm_id_list.append(newserver.id)
         result_list = []
-        timeout = 10
+        timeout = 1000
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, _query_instance_set_status, vm_id_list, deploy_id,ip,quantity)
 
     def _image_transit(self,deploy_id, ip,quantity ,image_url):
         result_list = []
-        timeout = 10
+        timeout = 1000
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, ip,quantity, image_url)
 
 
