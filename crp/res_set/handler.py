@@ -26,7 +26,7 @@ cluster_type_image_port_mappers = configs[APP_ENV].cluster_type_image_port_mappe
 KVM_FLAVOR = configs[APP_ENV].KVM_FLAVOR
 DOCKER_FLAVOR = configs[APP_ENV].DOCKER_FLAVOR
 AVAILABILITY_ZONE_AZ_UOP = configs[APP_ENV].AVAILABILITY_ZONE_AZ_UOP
-DEV_NETWORK_ID = configs[APP_ENV].DEV_NETWORK_ID
+#DEV_NETWORK_ID = configs[APP_ENV].DEV_NETWORK_ID
 OS_EXT_PHYSICAL_SERVER_ATTR = configs[APP_ENV].OS_EXT_PHYSICAL_SERVER_ATTR
 RES_CALLBACK = configs[APP_ENV].RES_CALLBACK
 RES_STATUS_CALLBACK = configs[APP_ENV].RES_STATUS_CALLBACK
@@ -115,6 +115,7 @@ class ResourceProviderTransitions(object):
         # 待处理的节点
         self.property_mapper = {}
         self.req_dict = req_dict
+        self.NETWORK_ID=req_dict["network_id"]
         self.error_type = RES_STATUS_FAIL
         self.error_msg = None
         # Initialize the state machine
@@ -297,7 +298,7 @@ class ResourceProviderTransitions(object):
                 " Transit harbor docker image success. The result glance image UUID is " +
                 image_uuid)
             return None, self._create_instance(
-                name, image_uuid, flavor, AVAILABILITY_ZONE_AZ_UOP, DEV_NETWORK_ID, meta, server_group)
+                name, image_uuid, flavor, AVAILABILITY_ZONE_AZ_UOP, self.NETWORK_ID, meta, server_group)
         else:
             return err_msg, None
 
@@ -317,7 +318,7 @@ class ResourceProviderTransitions(object):
             image_uuid,
             flavor,
             AVAILABILITY_ZONE_AZ_UOP,
-            DEV_NETWORK_ID, server_group)
+            self.NETWORK_ID, server_group)
 
     # 申请应用集群docker资源
     def _create_app_cluster(self, property_mapper):
@@ -764,8 +765,8 @@ class ResourceProviderTransitions(object):
                     mycat_ip_info.append(tup)
                     _instance['dbtype'] = lvs.pop()
 
-            vid1, vip1 = create_vip_port(mysql_ip_info[0][0])
-            vid2, vip2 = create_vip_port(mysql_ip_info[0][0])
+            vid1, vip1 = self.create_vip_port(mysql_ip_info[0][0])
+            vid2, vip2 = self.create_vip_port(mysql_ip_info[0][0])
             ip_info = mysql_ip_info + mycat_ip_info
             ip_info.append(('vip1', vip1))
             ip_info.append(('vip2', vip2))
@@ -865,7 +866,7 @@ class ResourceProviderTransitions(object):
         # 当redis为单例时  将实IP当虚IP使用
         redis['vip'] = ip1
         if redis.get('quantity') == 2:
-            vid, vip = create_vip_port(instance[0]['instance_name'])
+            vid, vip = self.create_vip_port(instance[0]['instance_name'])
             ip2 = instance[1]['ip']
             instance[1]['dbtype'] = 'slave'
             redis['vip'] = vip
@@ -939,6 +940,27 @@ class ResourceProviderTransitions(object):
                 break
         else:
             Log.logger.debug('---------restart %s db service 10 times failed---------'% ip)
+
+        def create_vip_port(self,instance_name):
+            neutron_client = OpenStack.neutron_client
+            network_id = self.NETWORK_ID
+
+            body_value = {
+                "port": {
+                    "admin_state_up": True,
+                    "name": instance_name + '_port',
+                    "network_id": network_id
+                }
+            }
+            Log.logger.debug('Create port for cluster/instance ' + instance_name)
+            # Log.logger.debug('Create port for cluster/instance ' + instance_name)
+            response = neutron_client.create_port(body=body_value)
+            ip = response.get('port').get('fixed_ips').pop().get('ip_address')
+            id = response.get('port').get('id')
+            # Log.logger.debug('Port id: ' + response.get('port').get('id') +
+            Log.logger.debug('Port id: ' + response.get('port').get('id') +
+                             'Port ip: ' + ip)
+            return id, ip
 
 
 # Transit request_data from the JSON nest structure to the chain structure
@@ -1376,6 +1398,7 @@ class ResourceSet(Resource):
             parser.add_argument('cmdb_repo_id', type=str)
             parser.add_argument('resource_list', type=list, location='json')
             parser.add_argument('compute_list', type=list, location='json')
+            parser.add_argument('network_id', type=str, location='json')
             args = parser.parse_args()
 
             req_dict = {}
@@ -1395,6 +1418,7 @@ class ResourceSet(Resource):
             cmdb_repo_id = args.cmdb_repo_id
             resource_list = args.resource_list
             compute_list = args.compute_list
+            network_id=args.network_id
 
             Log.logger.debug(resource_list)
             Log.logger.debug(compute_list)
@@ -1412,6 +1436,7 @@ class ResourceSet(Resource):
             req_dict["domain"] = domain
             req_dict["cmdb_repo_id"] = cmdb_repo_id
             req_dict["status"] = RES_STATUS_DEFAULT
+            req_dict["network_id"] = network_id
 
             # init default data
             Log.logger.debug('req_dict\'s object id is :')
@@ -1458,26 +1483,7 @@ def tick_announce(task_id, res_provider_list):
                 res_provider.start()
 
 
-def create_vip_port(instance_name):
-    neutron_client = OpenStack.neutron_client
-    network_id = DEV_NETWORK_ID
 
-    body_value = {
-        "port": {
-            "admin_state_up": True,
-            "name": instance_name + '_port',
-            "network_id": network_id
-        }
-    }
-    Log.logger.debug('Create port for cluster/instance ' + instance_name)
-    #Log.logger.debug('Create port for cluster/instance ' + instance_name)
-    response = neutron_client.create_port(body=body_value)
-    ip = response.get('port').get('fixed_ips').pop().get('ip_address')
-    id = response.get('port').get('id')
-    # Log.logger.debug('Port id: ' + response.get('port').get('id') +
-    Log.logger.debug('Port id: ' + response.get('port').get('id') +
-                     'Port ip: ' + ip)
-    return id, ip
 
 
 class MongodbCluster(object):
