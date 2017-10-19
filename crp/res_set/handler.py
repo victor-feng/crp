@@ -941,26 +941,26 @@ class ResourceProviderTransitions(object):
         else:
             Log.logger.debug('---------restart %s db service 10 times failed---------'% ip)
 
-        def create_vip_port(self,instance_name):
-            neutron_client = OpenStack.neutron_client
-            network_id = self.NETWORK_ID
+    def create_vip_port(self,instance_name):
+        neutron_client = OpenStack.neutron_client
+        network_id = self.NETWORK_ID
 
-            body_value = {
-                "port": {
-                    "admin_state_up": True,
-                    "name": instance_name + '_port',
-                    "network_id": network_id
-                }
+        body_value = {
+            "port": {
+                "admin_state_up": True,
+                "name": instance_name + '_port',
+                "network_id": network_id
             }
-            Log.logger.debug('Create port for cluster/instance ' + instance_name)
-            # Log.logger.debug('Create port for cluster/instance ' + instance_name)
-            response = neutron_client.create_port(body=body_value)
-            ip = response.get('port').get('fixed_ips').pop().get('ip_address')
-            id = response.get('port').get('id')
-            # Log.logger.debug('Port id: ' + response.get('port').get('id') +
-            Log.logger.debug('Port id: ' + response.get('port').get('id') +
-                             'Port ip: ' + ip)
-            return id, ip
+        }
+        Log.logger.debug('Create port for cluster/instance ' + instance_name)
+        # Log.logger.debug('Create port for cluster/instance ' + instance_name)
+        response = neutron_client.create_port(body=body_value)
+        ip = response.get('port').get('fixed_ips').pop().get('ip_address')
+        id = response.get('port').get('id')
+        # Log.logger.debug('Port id: ' + response.get('port').get('id') +
+        Log.logger.debug('Port id: ' + response.get('port').get('id') +
+                         'Port ip: ' + ip)
+        return id, ip
 
 
 # Transit request_data from the JSON nest structure to the chain structure
