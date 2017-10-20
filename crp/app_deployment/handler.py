@@ -41,9 +41,10 @@ app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 DEP_STATUS_CALLBACK = configs[APP_ENV].DEP_STATUS_CALLBACK
 
-def _dep_callback(deploy_id,ip,success):
+def _dep_callback(deploy_id,ip,quantity,success):
     data = dict()
     data["ip"]=ip
+    data["quantity"]=quantity
     if success:
         data["result"] = "success"
     else:
@@ -85,7 +86,7 @@ def _dep_detail_callback(deploy_id,deploy_type,ip=None):
 
 
 
-def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=None, deploy_id=None,ip=None):
+def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=None, deploy_id=None,ip=None,quantity=0):
     rollback_flag = False
     osint_id_wait_query = list(set(osins_id_list) - set(result_list))
     logging.debug("Query Task ID "+task_id.__str__()+", remain "+osint_id_wait_query[:].__str__())
@@ -108,7 +109,7 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
 
     if result_list.__len__() == osins_id_list.__len__():
         # TODO(thread exit): 执行成功调用UOP CallBack停止定时任务退出任务线程
-        _dep_callback(deploy_id,ip,True)
+        _dep_callback(deploy_id,ip,quantity,True)
         logging.debug("Task ID "+task_id.__str__()+" all instance create success." +
         #Log.logger.debug("Task ID "+task_id.__str__()+" all instance create success." +
                          " instance id set is "+result_list[:].__str__())
@@ -125,19 +126,19 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
          #   nova_client.servers.delete(int_id)
 
         # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
-        _dep_callback(deploy_id,ip,False)
+        _dep_callback(deploy_id,ip,quantity,False)
         # 停止定时任务并退出
         TaskManager.task_exit(task_id)
 
 
-def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, ip = None, image_url = None):
+def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, ip = None, quantity=0 ,image_url = None):
     err_msg, image_uuid = image_transit(image_url, action='deploy')
     if err_msg is None:
         #Log.logger.debug(
         logging.debug(
             "Transit harbor docker image success. The result glance image UUID is " + image_uuid)
         if _check_image_status(image_uuid):
-            obj._deploy_docker(ip, deploy_id, image_uuid)
+            obj._deploy_docker(ip,quantity,deploy_id, image_uuid)
     else:
         #Log.logger.error(
         logging.error(
@@ -408,7 +409,10 @@ class AppDeploy(Resource):
                 Log.logger.debug("disconf result:{result},{message}".format(result=result,message=message))
             if disconf_server_info:
                 _dep_detail_callback(deploy_id,"deploy_disconf")
-            
+            quantity=0
+            for info in docker:
+                ips = info.get('ip') 
+                quantity=quantity+len(ips)
             logging.debug("Docker is " + str(docker))
             for i in docker:
                 while True:
@@ -418,7 +422,7 @@ class AppDeploy(Resource):
                         logging.debug('ip and url: ' + str(ips) + str(i.get('url')))
                         ip = ips[0]
                         # self._image_transit(deploy_id, docker.get("ip"), docker.get("image_url"))
-                        self._image_transit(deploy_id, ip, i.get('url'))
+                        self._image_transit(deploy_id, ip,quantity,i.get('url'))
                         ips.pop(0)
                         #_dep_detail_callback(deploy_id,"deploy_docker",ip)
                     else:
@@ -673,7 +677,7 @@ class AppDeploy(Resource):
             file_object.write(ip)
         return myhosts_path
 
-    def _deploy_docker(self, ip, deploy_id, image_uuid):
+    def _deploy_docker(self, ip,quantity ,deploy_id, image_uuid):
         server = OpenStack.find_vm_from_ipv4(ip = ip)
         newserver = OpenStack.nova_client.servers.rebuild(server=server, image=image_uuid)
         # newserver = OpenStack.nova_client.servers.rebuild(server=server, image='3027f868-8f87-45cd-b85b-8b0da3ecaa84')
@@ -683,12 +687,12 @@ class AppDeploy(Resource):
         vm_id_list.append(newserver.id)
         result_list = []
         timeout = 10
-        TaskManager.task_start(SLEEP_TIME, timeout, result_list, _query_instance_set_status, vm_id_list, deploy_id,ip)
+        TaskManager.task_start(SLEEP_TIME, timeout, result_list, _query_instance_set_status, vm_id_list, deploy_id,ip,quantity)
 
-    def _image_transit(self,deploy_id, ip, image_url):
+    def _image_transit(self,deploy_id, ip,quantity ,image_url):
         result_list = []
         timeout = 10
-        TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, ip, image_url)
+        TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, ip,quantity, image_url)
 
 
 class Upload(Resource):
