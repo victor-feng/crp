@@ -123,5 +123,5 @@ class NovaVMAPIs(Resource):
             }
             return res, 200
 
-openstack_api.add_resource(NovaVMAPIs, '/nova/state')
+openstack_api.add_resource(NovaVMAPI, '/nova/state')
 openstack_api.add_resource(PortAPI, '/port/count')
