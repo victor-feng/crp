@@ -591,6 +591,8 @@ class AppDeploy(Resource):
         database_password = mysql.get("database_password")
         mysql_password = mysql.get("mysql_password")
         mysql_user = mysql.get("mysql_user")
+        mysql_user="kvm"
+        mysql_password="Kvmanger@2wg"
         ip = mysql.get("ip")
         port = mysql.get("port")
         app_ips = [ _docker.get('ip') for _docker in docker ]
@@ -659,7 +661,8 @@ class AppDeploy(Resource):
             file_object.write("#!/bin/bash\n")
             file_object.write("TMP_PWD=$MYSQL_PWD\n")
             file_object.write("export MYSQL_PWD=" + password + "\n")
-            file_object.write("mysql -u" + user + " -P" + port + " -e \"\n")
+            #file_object.write("mysql -u" + user + " -P" + port + " -e \"\n")
+            file_object.write("mysql -u" + user + " -h" + "127.0.0.1" + " -P" + port + " -e \"\n")
             file_object.write(content)
             file_object.write("\"\n")
             file_object.write("export MYSQL_PWD=$TMP_PWD\n")
