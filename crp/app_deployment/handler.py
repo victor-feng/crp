@@ -117,7 +117,7 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
 
     if result_list.__len__() == osins_id_list.__len__():
         # TODO(thread exit): 执行成功调用UOP CallBack停止定时任务退出任务线程
-        _dep_callback(deploy_id,ip,quantity,True,None)
+        _dep_callback(deploy_id,ip,quantity,True,'')
         logging.debug("Task ID "+task_id.__str__()+" all instance create success." +
         #Log.logger.debug("Task ID "+task_id.__str__()+" all instance create success." +
                          " instance id set is "+result_list[:].__str__())
