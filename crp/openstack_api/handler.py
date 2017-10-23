@@ -123,5 +123,38 @@ class NovaVMAPIs(Resource):
             }
             return res, 200
 
+class NovaVMAPIAll(Resource):
+
+    def get(self):
+        try:
+            vm_info_dict={}
+            nova_cli = OpenStack.nova_client
+            vms = nova_cli.servers.list()
+            for vm in vms:
+                os_inst_id=vm.id
+                ip=vm.networks.values()[0][0]
+                status=vm.status.lower()
+                vm_info_dict[os_inst_id]=[ip,status]
+            print len(vm_info_dict)
+        except Exception as e:
+            logging.error('get vm status err: %s' % e.args)
+            res = {
+                "code": 400,
+                "result": {
+                    "msg": e.args,
+                    "vm_info_dict":{}
+                }
+            }
+            return res, 400
+        else:
+            res = {
+                "code": 200,
+                "result": {
+                    "msg": "success",
+                    "vm_info_dict":vm_info_dict
+                }
+            }
+            return res, 200
+openstack_api.add_resource(NovaVMAPIAll, '/nova/states')
 openstack_api.add_resource(NovaVMAPI, '/nova/state')
 openstack_api.add_resource(PortAPI, '/port/count')
