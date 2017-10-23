@@ -108,6 +108,9 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
             result_list.append(int_id)
         if vm_state == 'error':
             rollback_flag = True
+            logging.debug(
+                "Task ID " + task_id.__str__() + " query Instance ID " + int_id.__str__() + " Status is " + vm_state
+            + " ERROR msg is:" + vm.to_dict().__str__())
 
     if result_list.__len__() == osins_id_list.__len__():
         # TODO(thread exit): 执行成功调用UOP CallBack停止定时任务退出任务线程
