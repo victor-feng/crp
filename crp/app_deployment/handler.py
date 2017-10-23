@@ -697,12 +697,12 @@ class AppDeploy(Resource):
         logging.debug("Add the id type is" + str(newserver.id))
         vm_id_list.append(newserver.id)
         result_list = []
-        timeout = 10
+        timeout = 1000
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, _query_instance_set_status, vm_id_list, deploy_id,ip,quantity)
 
     def _image_transit(self,deploy_id, ip,quantity ,image_url):
         result_list = []
-        timeout = 10
+        timeout = 1000
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, ip,quantity, image_url)
 
 
