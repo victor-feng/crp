@@ -41,7 +41,7 @@ app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 DEP_STATUS_CALLBACK = configs[APP_ENV].DEP_STATUS_CALLBACK
 
-def _dep_callback(deploy_id,ip,quantity,success,err_msg):
+def _dep_callback(deploy_id,ip,quantity,err_msg,success):
     data = dict()
     data["ip"]=ip
     data["quantity"]=quantity
@@ -117,7 +117,7 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
 
     if result_list.__len__() == osins_id_list.__len__():
         # TODO(thread exit): 执行成功调用UOP CallBack停止定时任务退出任务线程
-        _dep_callback(deploy_id,ip,quantity,True,'')
+        _dep_callback(deploy_id,ip,quantity,'',True)
         logging.debug("Task ID "+task_id.__str__()+" all instance create success." +
         #Log.logger.debug("Task ID "+task_id.__str__()+" all instance create success." +
                          " instance id set is "+result_list[:].__str__())
@@ -134,7 +134,7 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
          #   nova_client.servers.delete(int_id)
 
         # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
-        _dep_callback(deploy_id,ip,quantity,False,err_msg)
+        _dep_callback(deploy_id,ip,quantity,err_msg,False)
         # 停止定时任务并退出
         TaskManager.task_exit(task_id)
 
