@@ -355,39 +355,38 @@ class ResourceProviderTransitions(object):
                           " Transit harbor docker image success. The result glance image UUID is " +
                           image_uuid)
 
-            for i in range(0, quantity, 1):
-                instance_name = '%s_%s' % (cluster_name, i.__str__())
-                err_msg, osint_id = self._create_docker_by_url(
-                    instance_name, image_uuid, flavor, meta, server_group)
-                if err_msg is None:
-                    uopinst_info = {
-                        'uop_inst_id': cluster_id,
-                        'os_inst_id': osint_id
-                    }
-                    uop_os_inst_id_list.append(uopinst_info)
-                    propertys['instance'].append(
-                        {
-                            'instance_type': cluster_type,
-                            'instance_name': instance_name,
-                            'username': DEFAULT_USERNAME,
-                            'password': DEFAULT_PASSWORD,
-                            'domain': domain,
-                            'port': port,
-                            'os_inst_id': osint_id})
-                else:
-                    Log.logger.error(
-                        "Task ID " +
-                        self.task_id.__str__() +
-                        " ERROR. Error Message is:")
-                    Log.logger.error(err_msg)
-                    self.error_msg=err_msg.__str__()
-                    # 删除全部
-                    is_rollback = True
-                    uop_os_inst_id_list = []
-                    if err_msg == -1:
-                        self.error_type = 'notfound'
-                        self.error_msg="the image is not found"
-
+                for i in range(0, quantity, 1):
+                    instance_name = '%s_%s' % (cluster_name, i.__str__())
+                    err_msg, osint_id = self._create_docker_by_url(
+                        instance_name, image_uuid, flavor, meta, server_group)
+                    if err_msg is None:
+                        uopinst_info = {
+                            'uop_inst_id': cluster_id,
+                            'os_inst_id': osint_id
+                        }
+                        uop_os_inst_id_list.append(uopinst_info)
+                        propertys['instance'].append(
+                            {
+                                'instance_type': cluster_type,
+                                'instance_name': instance_name,
+                                'username': DEFAULT_USERNAME,
+                                'password': DEFAULT_PASSWORD,
+                                'domain': domain,
+                                'port': port,
+                                'os_inst_id': osint_id})
+            else:
+                Log.logger.error(
+                    "Task ID " +
+                    self.task_id.__str__() +
+                    " ERROR. Error Message is:")
+                Log.logger.error(err_msg)
+                self.error_msg=err_msg.__str__()
+                # 删除全部
+                is_rollback = True
+                uop_os_inst_id_list = []
+                if err_msg == -1:
+                    self.error_type = 'notfound'
+                    self.error_msg="the image is not found"
         return is_rollback, uop_os_inst_id_list
 
     # 申请资源集群kvm资源
