@@ -168,7 +168,11 @@ class NovaVMAPIAll(Resource):
             vms = nova_cli.servers.list()
             for vm in vms:
                 os_inst_id=vm.id
-                ip=vm.networks.values()[0][0]
+                ips = vm.networks
+                if ips:
+                    ip = vm.networks.values()[0][0]
+                else:
+                    ip = "127.0.0.1"
                 status=vm.status.lower()
                 vm_info_dict[os_inst_id]=[ip,status]
             print len(vm_info_dict)
