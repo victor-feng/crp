@@ -115,7 +115,10 @@ class ResourceProviderTransitions(object):
         # 待处理的节点
         self.property_mapper = {}
         self.req_dict = req_dict
-        self.NETWORK_ID=req_dict["network_id"]
+        self.docker_network_id=req_dict["docker_network_id"]
+        self.mysql_network_id = req_dict["mysql_network_id"]
+        self.redis_network_id = req_dict["redis_network_id"]
+        self.mongodb_network_id = req_dict["mongodb_network_id"]
         self.error_type = RES_STATUS_FAIL
         self.error_msg = None
         # Initialize the state machine
@@ -289,16 +292,16 @@ class ResourceProviderTransitions(object):
         return int_.id
 
     # 依据镜像URL创建NovaDocker容器
-    def _create_docker_by_url(self, name, image_uuid, flavor, meta, server_group=None):
+    def _create_docker_by_url(self, name, image_uuid, flavor, meta,network_id, server_group=None):
         #err_msg, image_uuid = image_transit(image_url)
         if image_uuid:
             return None, self._create_instance(
-                name, image_uuid, flavor, AVAILABILITY_ZONE_AZ_UOP, self.NETWORK_ID, meta, server_group)
+                name, image_uuid, flavor, AVAILABILITY_ZONE_AZ_UOP, network_id, meta, server_group)
         else:
             return None, None
 
     # 依据资源类型创建资源
-    def _create_instance_by_type(self, ins_type, name, flavor, server_group=None):
+    def _create_instance_by_type(self, ins_type, name, flavor,network_id, server_group=None):
         image = cluster_type_image_port_mappers.get(ins_type)
         image_uuid = image.get('uuid')
         Log.logger.debug(
@@ -313,7 +316,7 @@ class ResourceProviderTransitions(object):
             image_uuid,
             flavor,
             AVAILABILITY_ZONE_AZ_UOP,
-            self.NETWORK_ID, server_group)
+            network_id, server_group)
 
     # 申请应用集群docker资源
     def _create_app_cluster(self, property_mapper):
@@ -358,7 +361,7 @@ class ResourceProviderTransitions(object):
                 for i in range(0, quantity, 1):
                     instance_name = '%s_%s' % (cluster_name, i.__str__())
                     err_msg, osint_id = self._create_docker_by_url(
-                        instance_name, image_uuid, flavor, meta, server_group)
+                        instance_name, image_uuid, flavor, meta, self.docker_network_id,server_group)
                     if err_msg is None:
                         uopinst_info = {
                             'uop_inst_id': cluster_id,
@@ -404,6 +407,12 @@ class ResourceProviderTransitions(object):
         mem = propertys.get('mem')
         disk = propertys.get('disk')
         quantity = propertys.get('quantity')
+        if cluster_type == "mysql" or cluster_type == "mycat":
+            network_id=self.mysql_network_id
+        elif cluster_type == "redis":
+            network_id=self.redis_network_id
+        elif cluster_type == "mongodb":
+            network_id=self.mongodb_network_id
 
         if quantity >= 1:
             cluster_type_image_port_mapper = cluster_type_image_port_mappers.get(
@@ -430,7 +439,7 @@ class ResourceProviderTransitions(object):
                     cluster_type = 'mycat'
                 instance_name = '%s_%s' % (cluster_name, i.__str__())
                 osint_id = self._create_instance_by_type(
-                    cluster_type, instance_name, flavor ,server_group)
+                    cluster_type, instance_name, flavor,network_id ,server_group)
                 uopinst_info = {
                     'uop_inst_id': cluster_id,
                     'os_inst_id': osint_id
@@ -767,8 +776,8 @@ class ResourceProviderTransitions(object):
                     mycat_ip_info.append(tup)
                     _instance['dbtype'] = lvs.pop()
 
-            vid1, vip1 = self.create_vip_port(mysql_ip_info[0][0])
-            vid2, vip2 = self.create_vip_port(mysql_ip_info[0][0])
+            vid1, vip1 = self.create_vip_port(mysql_ip_info[0][0,self.mysql_network_id])
+            vid2, vip2 = self.create_vip_port(mysql_ip_info[0][0],self.mysql_network_id)
             ip_info = mysql_ip_info + mycat_ip_info
             ip_info.append(('vip1', vip1))
             ip_info.append(('vip2', vip2))
@@ -868,7 +877,7 @@ class ResourceProviderTransitions(object):
         # 当redis为单例时  将实IP当虚IP使用
         redis['vip'] = ip1
         if redis.get('quantity') == 2:
-            vid, vip = self.create_vip_port(instance[0]['instance_name'])
+            vid, vip = self.create_vip_port(instance[0]['instance_name'],self.redis_network_id)
             ip2 = instance[1]['ip']
             instance[1]['dbtype'] = 'slave'
             redis['vip'] = vip
@@ -943,10 +952,8 @@ class ResourceProviderTransitions(object):
         else:
             Log.logger.debug('---------restart %s db service 10 times failed---------'% ip)
 
-    def create_vip_port(self,instance_name):
+    def create_vip_port(self,instance_name,network_id):
         neutron_client = OpenStack.neutron_client
-        network_id = self.NETWORK_ID
-
         body_value = {
             "port": {
                 "admin_state_up": True,
@@ -1400,7 +1407,10 @@ class ResourceSet(Resource):
             parser.add_argument('cmdb_repo_id', type=str)
             parser.add_argument('resource_list', type=list, location='json')
             parser.add_argument('compute_list', type=list, location='json')
-            parser.add_argument('network_id', type=str, location='json')
+            parser.add_argument('docker_network_id', type=str, location='json')
+            parser.add_argument('mysql_network_id', type=str, location='json')
+            parser.add_argument('redis_network_id', type=str, location='json')
+            parser.add_argument('mongodb_network_id', type=str, location='json')
             args = parser.parse_args()
 
             req_dict = {}
@@ -1420,7 +1430,10 @@ class ResourceSet(Resource):
             cmdb_repo_id = args.cmdb_repo_id
             resource_list = args.resource_list
             compute_list = args.compute_list
-            network_id=args.network_id
+            docker_network_id=args.docker_network_id
+            mysql_network_id = args.mysql_network_id
+            redis_network_id = args.redis_network_id
+            mongodb_network_id = args.mongodb_network_id
 
             Log.logger.debug(resource_list)
             Log.logger.debug(compute_list)
@@ -1438,7 +1451,10 @@ class ResourceSet(Resource):
             req_dict["domain"] = domain
             req_dict["cmdb_repo_id"] = cmdb_repo_id
             req_dict["status"] = RES_STATUS_DEFAULT
-            req_dict["network_id"] = network_id
+            req_dict["docker_network_id"] = docker_network_id
+            req_dict["mysql_network_id"] = mysql_network_id
+            req_dict["redis_network_id"] = redis_network_id
+            req_dict["mongodb_network_id"] = mongodb_network_id
 
             # init default data
             Log.logger.debug('req_dict\'s object id is :')
