@@ -31,8 +31,15 @@ class NetworkAPI(Resource):
                 name = network.get('name')
                 id_ = network.get('id')
                 status = network.get('status')
+                subnets= network.get('subnets')
+                sub_vlans=[]
+                for subnet in subnets:
+                    sub_info=net_cli.show_subnet(subnet)
+                    sub_vlan=sub_info['subnet']["cidr"]
+                    sub_vlans.append(sub_vlan)
+                print sub_vlans
                 if status=='ACTIVE':
-                    name2id[id_] = name
+                    name2id[id_] = [name,sub_vlans]
         except Exception as e:
             #Log.logger.error('get hypervisors_statistics err: %s' % e.message)
             logging.error('get networks err: %s' % e.message)
