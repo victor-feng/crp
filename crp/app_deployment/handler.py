@@ -109,11 +109,13 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
         if vm_state == 'active':
             result_list.append(int_id)
         if vm_state == 'error'or vm_state == 'shutoff':
-            err_msg= vm.to_dict().__str__()
             rollback_flag = True
+            err_msg=vm_state
+            if vm_state == 'error':
+                err_msg = vm.to_dict().__str__()
             logging.debug(
                 "Task ID " + task_id.__str__() + " query Instance ID " + int_id.__str__() + " Status is " + vm_state
-            + " ERROR msg is:" + vm.to_dict().__str__())
+            + " ERROR msg is:" + err_msg)
 
     if result_list.__len__() == osins_id_list.__len__():
         # TODO(thread exit): 执行成功调用UOP CallBack停止定时任务退出任务线程
