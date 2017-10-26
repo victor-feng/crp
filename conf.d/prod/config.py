@@ -20,7 +20,7 @@ class ProdConfig(BaseConfig):
 
     # NOTE: noused in mpc
     DK_SOCK_URL = 'unix://var/run/docker.sock'
-    DK_CLI_VERSION = '1.22'
+    DK_CLI_VERSION = '1.19'
 
     # NOTE: noused in mpc
     DK_TAR_PATH = '/home/dk/'

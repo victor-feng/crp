@@ -41,9 +41,12 @@ app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 DEP_STATUS_CALLBACK = configs[APP_ENV].DEP_STATUS_CALLBACK
 
-def _dep_callback(deploy_id,ip,success):
+def _dep_callback(deploy_id,ip,quantity,err_msg,vm_state,success):
     data = dict()
     data["ip"]=ip
+    data["quantity"]=quantity
+    data["err_msg"] = err_msg
+    data["vm_state"] = vm_state
     if success:
         data["result"] = "success"
     else:
@@ -85,7 +88,7 @@ def _dep_detail_callback(deploy_id,deploy_type,ip=None):
 
 
 
-def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=None, deploy_id=None,ip=None):
+def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=None, deploy_id=None,ip=None,quantity=0):
     rollback_flag = False
     osint_id_wait_query = list(set(osins_id_list) - set(result_list))
     logging.debug("Query Task ID "+task_id.__str__()+", remain "+osint_id_wait_query[:].__str__())
@@ -96,19 +99,27 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
     nova_client = OpenStack.nova_client
 
     for int_id in osint_id_wait_query:
-        time.sleep(1)
+        time.sleep(30)
         vm = nova_client.servers.get(int_id)
-        vm_state = getattr(vm, 'OS-EXT-STS:vm_state')
+        #vm_state = getattr(vm, 'OS-EXT-STS:vm_state')
+        vm_state = vm.status.lower()
         #Log.logger.debug("Task ID "+task_id.__str__()+" query Instance ID "+int_id.__str__()+" Status is "+ vm_state)
         logging.debug("Task ID "+task_id.__str__()+" query Instance ID "+int_id.__str__()+" Status is "+ vm_state)
-        if vm_state == 'active' or vm_state == 'stopped':
+        #if vm_state == 'active' or vm_state == 'stopped':
+        if vm_state == 'active':
             result_list.append(int_id)
-        if vm_state == 'error':
+        if vm_state == 'error'or vm_state == 'shutoff':
             rollback_flag = True
+            err_msg=vm_state
+            if vm_state == 'error':
+                err_msg = vm.to_dict().__str__()
+            logging.debug(
+                "Task ID " + task_id.__str__() + " query Instance ID " + int_id.__str__() + " Status is " + vm_state
+            + " ERROR msg is:" + err_msg)
 
     if result_list.__len__() == osins_id_list.__len__():
         # TODO(thread exit): 执行成功调用UOP CallBack停止定时任务退出任务线程
-        _dep_callback(deploy_id,ip,True)
+        _dep_callback(deploy_id,ip,quantity,"",vm_state,True)
         logging.debug("Task ID "+task_id.__str__()+" all instance create success." +
         #Log.logger.debug("Task ID "+task_id.__str__()+" all instance create success." +
                          " instance id set is "+result_list[:].__str__())
@@ -125,23 +136,15 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
          #   nova_client.servers.delete(int_id)
 
         # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
-        _dep_callback(deploy_id,ip,False)
+        _dep_callback(deploy_id,ip,quantity,err_msg,vm_state,False)
         # 停止定时任务并退出
         TaskManager.task_exit(task_id)
 
 
-def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, ip = None, image_url = None):
-    err_msg, image_uuid = image_transit(image_url, action='deploy')
-    if err_msg is None:
-        #Log.logger.debug(
-        logging.debug(
-            "Transit harbor docker image success. The result glance image UUID is " + image_uuid)
-        if _check_image_status(image_uuid):
-            obj._deploy_docker(ip, deploy_id, image_uuid)
-    else:
-        #Log.logger.error(
-        logging.error(
-            "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + err_msg)
+def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, ip = None, quantity=0 ,image_uuid = None):
+    #err_msg, image_uuid = image_transit(image_url)
+    if _check_image_status(image_uuid):
+        obj._deploy_docker(ip,quantity,deploy_id, image_uuid)
     TaskManager.task_exit(task_id)
 
 def _check_image_status(image_uuid):
@@ -408,8 +411,22 @@ class AppDeploy(Resource):
                 Log.logger.debug("disconf result:{result},{message}".format(result=result,message=message))
             if disconf_server_info:
                 _dep_detail_callback(deploy_id,"deploy_disconf")
-            
+            quantity=0
+            for info in docker:
+                ips = info.get('ip') 
+                quantity=quantity+len(ips)
             logging.debug("Docker is " + str(docker))
+            if docker:
+                first_docker = docker[0]
+                image_url = first_docker.get('url')
+                err_msg, image_uuid = image_transit(image_url)
+                if err_msg is None:
+                    logging.debug(
+                         "Transit harbor docker image success. The result glance image UUID is " + image_uuid)
+            else:
+                logging.error(
+                     "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + err_msg)
+
             for i in docker:
                 while True:
                     ips = i.get('ip')
@@ -418,7 +435,7 @@ class AppDeploy(Resource):
                         logging.debug('ip and url: ' + str(ips) + str(i.get('url')))
                         ip = ips[0]
                         # self._image_transit(deploy_id, docker.get("ip"), docker.get("image_url"))
-                        self._image_transit(deploy_id, ip, i.get('url'))
+                        self._image_transit(deploy_id, ip, quantity, image_uuid)
                         ips.pop(0)
                         #_dep_detail_callback(deploy_id,"deploy_docker",ip)
                     else:
@@ -585,6 +602,8 @@ class AppDeploy(Resource):
         database_password = mysql.get("database_password")
         mysql_password = mysql.get("mysql_password")
         mysql_user = mysql.get("mysql_user")
+        mysql_user="kvm"
+        mysql_password="Kvmanger@2wg"
         ip = mysql.get("ip")
         port = mysql.get("port")
         app_ips = [ _docker.get('ip') for _docker in docker ]
@@ -653,7 +672,8 @@ class AppDeploy(Resource):
             file_object.write("#!/bin/bash\n")
             file_object.write("TMP_PWD=$MYSQL_PWD\n")
             file_object.write("export MYSQL_PWD=" + password + "\n")
-            file_object.write("mysql -u" + user + " -P" + port + " -e \"\n")
+            #file_object.write("mysql -u" + user + " -P" + port + " -e \"\n")
+            file_object.write("mysql -u" + user + " -h" + "127.0.0.1" + " -P" + port + " -e \"\n")
             file_object.write(content)
             file_object.write("\"\n")
             file_object.write("export MYSQL_PWD=$TMP_PWD\n")
@@ -673,7 +693,7 @@ class AppDeploy(Resource):
             file_object.write(ip)
         return myhosts_path
 
-    def _deploy_docker(self, ip, deploy_id, image_uuid):
+    def _deploy_docker(self, ip,quantity ,deploy_id, image_uuid):
         server = OpenStack.find_vm_from_ipv4(ip = ip)
         newserver = OpenStack.nova_client.servers.rebuild(server=server, image=image_uuid)
         # newserver = OpenStack.nova_client.servers.rebuild(server=server, image='3027f868-8f87-45cd-b85b-8b0da3ecaa84')
@@ -682,13 +702,13 @@ class AppDeploy(Resource):
         logging.debug("Add the id type is" + str(newserver.id))
         vm_id_list.append(newserver.id)
         result_list = []
-        timeout = 10
-        TaskManager.task_start(SLEEP_TIME, timeout, result_list, _query_instance_set_status, vm_id_list, deploy_id,ip)
+        timeout = 1000
+        TaskManager.task_start(SLEEP_TIME, timeout, result_list, _query_instance_set_status, vm_id_list, deploy_id,ip,quantity)
 
-    def _image_transit(self,deploy_id, ip, image_url):
+    def _image_transit(self,deploy_id, ip,quantity ,image_url):
         result_list = []
-        timeout = 10
-        TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, ip, image_url)
+        timeout = 1000
+        TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, ip,quantity, image_url)
 
 
 class Upload(Resource):
