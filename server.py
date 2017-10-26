@@ -6,6 +6,8 @@ from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 from tornado.options import define, options
+import os
+
 
 define('port', type=int, default=8001)
 #define('port', type=int, default=5000)
@@ -28,6 +30,8 @@ def main():
         autoreload.start()
 
     app = create_app(APP_ENV)
+    os.system('rm -rf config.py')
+    os.system('ln -s conf.d/%s/config.py  config.py'%(options.deploy))
     http_server = HTTPServer(WSGIContainer(app))
     http_server.listen(options.port)
     logging.warn("[CRP] CRP is running on: localhost:%d", options.port)
