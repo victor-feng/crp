@@ -776,7 +776,7 @@ class ResourceProviderTransitions(object):
                     mycat_ip_info.append(tup)
                     _instance['dbtype'] = lvs.pop()
 
-            vid1, vip1 = self.create_vip_port(mysql_ip_info[0][0,self.mysql_network_id])
+            vid1, vip1 = self.create_vip_port(mysql_ip_info[0][0],self.mysql_network_id)
             vid2, vip2 = self.create_vip_port(mysql_ip_info[0][0],self.mysql_network_id)
             ip_info = mysql_ip_info + mycat_ip_info
             ip_info.append(('vip1', vip1))
