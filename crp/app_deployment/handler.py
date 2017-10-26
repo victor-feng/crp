@@ -416,28 +416,24 @@ class AppDeploy(Resource):
                 ips = info.get('ip') 
                 quantity=quantity+len(ips)
             logging.debug("Docker is " + str(docker))
-            if docker:
-                first_docker = docker[0]
-                image_url = first_docker.get('url')
+
+            for i in docker:
+                image_url = i.get('url')
                 err_msg, image_uuid = image_transit(image_url)
                 if err_msg is None:
                     logging.debug(
-                         "Transit harbor docker image success. The result glance image UUID is " + image_uuid)
-            else:
-                logging.error(
-                     "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + err_msg)
-
-            for i in docker:
+                        "Transit harbor docker image success. The result glance image UUID is " + image_uuid)
+                else:
+                    logging.error(
+                         "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + err_msg)
                 while True:
                     ips = i.get('ip')
                     length_ip = len(ips)
                     if length_ip > 0:
                         logging.debug('ip and url: ' + str(ips) + str(i.get('url')))
                         ip = ips[0]
-                        # self._image_transit(deploy_id, docker.get("ip"), docker.get("image_url"))
                         self._image_transit(deploy_id, ip, quantity, image_uuid)
                         ips.pop(0)
-                        #_dep_detail_callback(deploy_id,"deploy_docker",ip)
                     else:
                         break
             
