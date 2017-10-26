@@ -26,15 +26,6 @@ DK_UOP_CRP = 'uop-crp'
 
 
 
-
-
-
-
-
-
-
-
-
 def _dk_py_cli():
 
     #DK_SOCK_URL = current_app.config['DK_SOCK_URL']
