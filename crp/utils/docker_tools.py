@@ -24,7 +24,6 @@ GLANCE_RESERVATION_QUANTITY = configs[APP_ENV].GLANCE_RESERVATION_QUANTITY
 DK_CREATED_FROM = 'created_from'
 DK_UOP_CRP = 'uop-crp'
 
-
 def _dk_py_cli():
 
     #DK_SOCK_URL = current_app.config['DK_SOCK_URL']
