@@ -38,7 +38,7 @@ def _dk_py_cli():
 
 def _dk_img_pull(dk_cli, _image_url, repository_hash, tag):
     try:
-        dk_cli.images.pull(_image_url)
+        #dk_cli.images.pull(_image_url)
         image = dk_cli.images.get(_image_url)
         image.tag(repository_hash, tag=tag)
     except docker.errors.ImageNotFound as img_err:
@@ -147,7 +147,7 @@ def _glance_img_create(glance_cli, image_name, tar_file):
     finally:
         fields['data'].close()
         logging.debug(tar_file+" is closed now.")
-        logging.debug(fields['data'].closed)
+        #logging.debug(fields['data'].closed)
         if fields['data'].closed:
             os.remove(tar_file)
             logging.debug(tar_file+" was removed.")
@@ -218,45 +218,64 @@ def _glance_img_reservation(glance_cli, current_image_id, reservation_quantity):
 #    return image.id
 
 
-def image_transit(_image_url, action='res'):
+def image_transit(_image_url):
     # return None, 'd9645ca0-f771-4d90-8a18-0bd44c26abd7'
     try:
         img_tag = _image_url.split(':', 2)
         logging.debug("Docker image url split list is:")
         logging.debug(img_tag)
         glance_cli = _glance_cli()
-        repository_hash = hashlib.sha224(img_tag[0]).hexdigest()
-        _image_url_hash = repository_hash + ':' + img_tag[1]
+        #repository_hash = hashlib.sha224(img_tag[0]).hexdigest()
+        #_image_url_hash = repository_hash + ':' + img_tag[1]
         docker_cli = _dk_py_cli()
         try:
             cur_img = docker_cli.images.get(_image_url)
-            # 如果是部署 就不删除镜像
-            if action!='deploy':
-                docker_cli.images.remove(cur_img.id, force=True)
+            docker_cli.images.remove(cur_img.id, force=True)
         except docker.errors.ImageNotFound, e:
             cur_img = None
+        
+        docker_cli.images.pull(_image_url)
+        try:
+            cur_img = docker_cli.images.get(_image_url)
+        except docker.errors.ImageNotFound, e:
+            cur_img = None
+            return 'image pull error', 0
+
         logging.info('---------------------cur_img---------------------:%s'%(cur_img))
         if cur_img:
             img_id = cur_img.attrs.get('ContainerConfig').get('Image')
             _image_url_hash = img_id.replace(':', '') + ':' + img_tag[1]
             repository_hash = img_id.replace(':', '')
+        err_msg = ''
         logging.info(_image_url_hash)
+        logging.info(repository_hash)
+        try:
+            cur_img.tag(repository_hash, tag=img_tag[1])
+        except docker.errors.ImageNotFound as img_err:
+            logging.error(img_err.message)
+        except docker.errors.APIError as api_err:
+            if api_err.status_code==409:
+                logging.info('------------------------409---------------------:%s'%(api_err))
+                pass
+        except Exception as e:
+            logging.error(e.message)
+            err_msg = e.message
 
         # Docker image tag 为 latest 的镜像总是转换并创建glance image，其它均为glance 中存在则不创建
-        if img_tag[1] != 'latest' and cur_img:
+        if img_tag[1] != 'latest':
             properties = {'name': _image_url_hash}
             images = glance_cli.images.list(filters=properties)
             for image in images:
                 # 如果是  部署就 直接返回镜像
-                if action=='deploy':
-                    return None, image.id
+                #if action=='deploy':
+                #    return None, image.id
                 glance_cli.images.delete(image.id)
                 logging.debug("glance image id is \'" +image.id + " is delete\'.")
     except Exception as e:
         return e.message, None
     dk_cli = _dk_py_cli()
     logging.debug("Docker image pull from harbor url \'" + _image_url + "\' is started.")
-    err_msg = _dk_img_pull(dk_cli, _image_url, repository_hash, img_tag[1])
+    #err_msg = _dk_img_pull(dk_cli, _image_url, repository_hash, img_tag[1])
     logging.debug("Docker image pull from harbor url \'" + _image_url + "\' is done.")
     if err_msg:
         return err_msg, None

@@ -141,18 +141,10 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
         TaskManager.task_exit(task_id)
 
 
-def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, ip = None, quantity=0 ,image_url = None):
-    err_msg, image_uuid = image_transit(image_url, action='deploy')
-    if err_msg is None:
-        #Log.logger.debug(
-        logging.debug(
-            "Transit harbor docker image success. The result glance image UUID is " + image_uuid)
-        if _check_image_status(image_uuid):
-            obj._deploy_docker(ip,quantity,deploy_id, image_uuid)
-    else:
-        #Log.logger.error(
-        logging.error(
-            "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + err_msg)
+def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, ip = None, quantity=0 ,image_uuid = None):
+    #err_msg, image_uuid = image_transit(image_url)
+    if _check_image_status(image_uuid):
+        obj._deploy_docker(ip,quantity,deploy_id, image_uuid)
     TaskManager.task_exit(task_id)
 
 def _check_image_status(image_uuid):
@@ -424,6 +416,17 @@ class AppDeploy(Resource):
                 ips = info.get('ip') 
                 quantity=quantity+len(ips)
             logging.debug("Docker is " + str(docker))
+            if docker:
+                first_docker = docker[0]
+                image_url = first_docker.get('url')
+                err_msg, image_uuid = image_transit(image_url)
+                if err_msg is None:
+                    logging.debug(
+                         "Transit harbor docker image success. The result glance image UUID is " + image_uuid)
+            else:
+                logging.error(
+                     "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + err_msg)
+
             for i in docker:
                 while True:
                     ips = i.get('ip')
@@ -432,7 +435,7 @@ class AppDeploy(Resource):
                         logging.debug('ip and url: ' + str(ips) + str(i.get('url')))
                         ip = ips[0]
                         # self._image_transit(deploy_id, docker.get("ip"), docker.get("image_url"))
-                        self._image_transit(deploy_id, ip,quantity,i.get('url'))
+                        self._image_transit(deploy_id, ip, quantity, image_uuid)
                         ips.pop(0)
                         #_dep_detail_callback(deploy_id,"deploy_docker",ip)
                     else:
