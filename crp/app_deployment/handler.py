@@ -387,7 +387,6 @@ class AppDeploy(Resource):
                     Log.logger.debug('domain_name:{domain_name},domain_ip:{domain_ip} is null'.format(domain_name=domain_name,domain_ip=domain_ip))
                 _dep_detail_callback(deploy_id,"deploy_dns")
 
-
             #添加disconf配置
             for disconf_info in disconf_server_info:
                 Log.logger.debug('The disconf_info: %s' % disconf_info)
