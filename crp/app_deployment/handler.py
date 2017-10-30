@@ -791,6 +791,7 @@ class AppDeploy(Resource):
             time.sleep(6)
         else:
             os_flag = False
+            err_msg = "app health check failed"
         return os_flag,vm_state,err_msg
 
 
