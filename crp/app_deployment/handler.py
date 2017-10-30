@@ -41,12 +41,13 @@ app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 DEP_STATUS_CALLBACK = configs[APP_ENV].DEP_STATUS_CALLBACK
 
-def _dep_callback(deploy_id,ip,quantity,err_msg,vm_state,success):
+def _dep_callback(deploy_id,ip,quantity,err_msg,vm_state,success,cluster_name):
     data = dict()
     data["ip"]=ip
     data["quantity"]=quantity
     data["err_msg"] = err_msg
     data["vm_state"] = vm_state
+    data["cluster_name"] = cluster_name
     if success:
         data["result"] = "success"
     else:
@@ -718,6 +719,7 @@ class AppDeploy(Resource):
 
     def deploy_docker(self, info,quantity ,deploy_id, image_uuid):
         deploy_flag=True
+        cluster_name=info.get("ins_name","")
         while 1:
             ips = info.get('ip')
             length_ip = len(ips)
@@ -726,11 +728,13 @@ class AppDeploy(Resource):
                 ip = ips[0]
                 os_flag,vm_state,err_msg=self._deploy_query_instance_set_status(deploy_id, ip, image_uuid, quantity)
                 if os_flag:
-                    _dep_callback(deploy_id, ip, quantity, "", vm_state, True)
+                    _dep_callback(deploy_id, ip, quantity, "", vm_state, True,cluster_name)
                 else:
-                    _dep_callback(deploy_id, ip, quantity, err_msg, vm_state, False)
+                    _dep_callback(deploy_id, ip, quantity, err_msg, vm_state, False,cluster_name)
                     deploy_flag = False
                     break
+                logging.debug(
+                    "Cluster name " + cluster_name  + " IP is " + ip +" Status is " + vm_state + "Error msg is:" + err_msg)
                 ips.pop(0)
             else:
                 break
