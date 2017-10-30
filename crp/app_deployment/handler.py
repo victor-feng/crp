@@ -788,7 +788,7 @@ class AppDeploy(Resource):
                 os_flag = True
                 logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state)
                 break
-            time.sleep(30)
+            time.sleep(6)
         else:
             os_flag = False
         return os_flag,vm_state,err_msg
