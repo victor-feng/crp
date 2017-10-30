@@ -417,10 +417,16 @@ class AppDeploy(Resource):
                 quantity=quantity+len(ips)
             logging.debug("Docker is " + str(docker))
 
+            id2name = {}
             for i in docker:
                 image_url = i.get('url')
                 err_msg, image_uuid = image_transit(image_url)
-                i["image_uuid"]=image_uuid
+                if image_url in id2name.keys():
+                    image_uuid = id2name.get(image_url)
+                    i["image_uuid"] = image_uuid
+                else:
+                    id2name[image_url] = image_uuid
+                    i["image_uuid"] = image_uuid
                 if err_msg is None:
                     logging.debug(
                         "Transit harbor docker image success. The result glance image UUID is " + image_uuid)
