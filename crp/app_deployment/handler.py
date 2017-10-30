@@ -737,7 +737,6 @@ class AppDeploy(Resource):
             if length_ip > 0:
                 logging.debug('ip and url: ' + str(ips) + str(info.get('url')))
                 ip = ips[0]
-                ips.pop(0)
                 os_flag,vm_state,err_msg=self._deploy_query_instance_set_status(deploy_id, ip, image_uuid, quantity)
                 if os_flag:
                     self.all_ips.remove(ip)
@@ -756,6 +755,7 @@ class AppDeploy(Resource):
                     logging.debug(
                         "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
                     break
+                ips.pop(0)
             else:
                 break
         return deploy_flag
