@@ -426,7 +426,7 @@ class AppDeploy(Resource):
                 ips = info.get('ip') 
                 quantity=quantity+len(ips)
                 all_ips.extend(ips)
-            logging.debug("Docker is " + str(docker),+ " all_ips:" + all_ips.__str__())
+            logging.debug("Docker is " + str(docker) + " all_ips:" + all_ips.__str__())
             self.all_ips=all_ips
             id2name = {}
             for i in docker:
