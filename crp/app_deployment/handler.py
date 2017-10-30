@@ -745,7 +745,7 @@ class AppDeploy(Resource):
                         end_flag=True
                     _dep_callback(deploy_id, ip, quantity, "", vm_state, True, cluster_name,end_flag)
                     logging.debug(
-                        "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + "self.all_ips" + self.all_ips.__str__())
+                        "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
                 else:
                     for d_ip in ips:
                         self.all_ips.remove(d_ip)
@@ -754,7 +754,7 @@ class AppDeploy(Resource):
                     _dep_callback(deploy_id, ip, quantity, err_msg, vm_state, False,cluster_name,end_flag)
                     deploy_flag = False
                     logging.debug(
-                        "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + "self.all_ips" + self.all_ips.__str__())
+                        "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
                     break
             else:
                 break
@@ -777,12 +777,12 @@ class AppDeploy(Resource):
             if vm_state == "error":
                 os_flag=False
                 err_msg=vm.to_dict().__str__()
-                logging.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + "Error msg is:" +err_msg)
+                logging.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Error msg is:" +err_msg)
                 break
             elif vm_state == "shutoff":
                 os_flag = False
                 err_msg="shutoff"
-                logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + "Error msg is:" +err_msg )
+                logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +  "Error msg is:" +err_msg )
                 break
             elif vm_state == "active" and health_check_res == True:
                 os_flag = True
