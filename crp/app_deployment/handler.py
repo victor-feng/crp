@@ -741,6 +741,7 @@ class AppDeploy(Resource):
         os_flag=True
         err_msg=""
         nova_client = OpenStack.nova_client
+        logging.debug( "Begin rebuild docker,IP is" + ip)
         server = OpenStack.find_vm_from_ipv4(ip=ip)
         newserver = OpenStack.nova_client.servers.rebuild(server=server, image=image_uuid)
         os_inst_id=newserver.id
