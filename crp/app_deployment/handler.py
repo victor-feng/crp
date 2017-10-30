@@ -728,6 +728,8 @@ class AppDeploy(Resource):
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, _query_instance_set_status, vm_id_list, deploy_id,ip,quantity)
 
     def deploy_docker(self, info,quantity ,deploy_id, image_uuid):
+        lock = threading.RLock()
+        lock.acquire()
         deploy_flag=True
         end_flag=False
         cluster_name=info.get("ins_name","")
@@ -758,6 +760,7 @@ class AppDeploy(Resource):
                 ips.pop(0)
             else:
                 break
+            lock.release()
         return deploy_flag
 
 
