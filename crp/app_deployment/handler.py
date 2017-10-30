@@ -144,7 +144,7 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
 def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, info = None, quantity=0):
     image_uuid=info.get("image_uuid")
     if _check_image_status(image_uuid):
-        deploy_flag=obj.__deploy_docker(info,quantity,deploy_id, image_uuid)
+        deploy_flag=obj.deploy_docker(info,quantity,deploy_id, image_uuid)
         if not deploy_flag:
             TaskManager.task_exit(task_id)
     TaskManager.task_exit(task_id)
@@ -710,7 +710,7 @@ class AppDeploy(Resource):
         timeout = 1000
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, _query_instance_set_status, vm_id_list, deploy_id,ip,quantity)
 
-    def __deploy_docker(self, info,quantity ,deploy_id, image_uuid):
+    def deploy_docker(self, info,quantity ,deploy_id, image_uuid):
         deploy_flag=True
         while 1:
             ips = info.get('ip')
