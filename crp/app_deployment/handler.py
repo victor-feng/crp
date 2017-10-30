@@ -155,7 +155,7 @@ def _check_image_status(image_uuid):
     check_interval = 5
     for i in range(check_times):
         img = nova_client.images.get(image_uuid)
-        logging.debug("check image status " + str(i) + " times, status: " + img.status.lower())
+        logging.debug("check image status " + str(i) + " times, status: " + img.status.lower()+ " image_uuid:" + image_uuid)
         if (img.status.lower() != "active"):
             time.sleep(check_interval)
         else:
