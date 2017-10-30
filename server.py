@@ -19,6 +19,11 @@ define('deploy', default='dev')
 # True, False
 define('mpc_sync', type=bool, default=False)
 
+os.system('rm -rf config.py')
+os.system('rm -rf conf')
+os.system('ln -s conf.d/%s  conf '%(options.deploy))
+os.system('ln -s conf/config.py  config.py')
+
 from crp import create_app
 from config import APP_ENV
 
@@ -30,8 +35,6 @@ def main():
         autoreload.start()
 
     app = create_app(APP_ENV)
-    os.system('rm -rf config.py')
-    os.system('ln -s conf.d/%s/config.py  config.py'%(options.deploy))
     http_server = HTTPServer(WSGIContainer(app))
     http_server.listen(options.port)
     logging.warn("[CRP] CRP is running on: localhost:%d", options.port)
