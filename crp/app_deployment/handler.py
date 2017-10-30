@@ -744,6 +744,8 @@ class AppDeploy(Resource):
                     if len(self.all_ips) == 0:
                         end_flag=True
                     _dep_callback(deploy_id, ip, quantity, "", vm_state, True, cluster_name,end_flag)
+                    logging.debug(
+                        "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + "self.all_ips" + self.all_ips.__str__())
                 else:
                     for d_ip in ips:
                         self.all_ips.remove(d_ip)
@@ -751,9 +753,9 @@ class AppDeploy(Resource):
                         end_flag=True
                     _dep_callback(deploy_id, ip, quantity, err_msg, vm_state, False,cluster_name,end_flag)
                     deploy_flag = False
+                    logging.debug(
+                        "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + "self.all_ips" + self.all_ips.__str__())
                     break
-                logging.debug(
-                    "Cluster name " + cluster_name  + " IP is " + ip +" Status is " + vm_state)
             else:
                 break
         return deploy_flag
@@ -777,7 +779,7 @@ class AppDeploy(Resource):
                 err_msg=vm.to_dict().__str__()
                 logging.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + "Error msg is:" +err_msg)
                 break
-            elif vm_state == "shutoff" or health_check_res == False:
+            elif vm_state == "shutoff":
                 os_flag = False
                 err_msg="shutoff"
                 logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + "Error msg is:" +err_msg )
