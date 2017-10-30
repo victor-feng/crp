@@ -84,6 +84,9 @@ class TestingConfig(BaseConfig):
     DEFAULT_USERNAME = "root"
     DEFAULT_PASSWORD = "123456"
 
+    HEALTH_CHECK_PORT = "8000"
+    HEALTH_CHECK_PATH = "admin/health"
+
     # Define Request JSON Format
     items_sequence_list_config = [
         {

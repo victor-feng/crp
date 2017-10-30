@@ -41,13 +41,18 @@ app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 DEP_STATUS_CALLBACK = configs[APP_ENV].DEP_STATUS_CALLBACK
 
-def _dep_callback(deploy_id,ip,quantity,err_msg,vm_state,success,cluster_name):
+HEALTH_CHECK_PORT = configs[APP_ENV].HEALTH_CHECK_PORT
+HEALTH_CHECK_PATH = configs[APP_ENV].HEALTH_CHECK_PATH
+
+
+def _dep_callback(deploy_id,ip,quantity,err_msg,vm_state,success,cluster_name,end_flag):
     data = dict()
     data["ip"]=ip
     data["quantity"]=quantity
     data["err_msg"] = err_msg
     data["vm_state"] = vm_state
     data["cluster_name"] = cluster_name
+    data["end_flag"] = end_flag
     if success:
         data["result"] = "success"
     else:
@@ -165,6 +170,9 @@ def _check_image_status(image_uuid):
 
 
 class AppDeploy(Resource):
+
+    def __init__(self):
+        self.all_ips=[]
 
     def run_cmd(self, cmd):
         msg = ''
@@ -413,11 +421,13 @@ class AppDeploy(Resource):
             if disconf_server_info:
                 _dep_detail_callback(deploy_id,"deploy_disconf")
             quantity=0
+            all_ips=[]
             for info in docker:
                 ips = info.get('ip') 
                 quantity=quantity+len(ips)
+                all_ips.extend(ips)
             logging.debug("Docker is " + str(docker))
-
+            self.all_ips=all_ips
             id2name = {}
             for i in docker:
                 image_url = i.get('url')
@@ -719,6 +729,7 @@ class AppDeploy(Resource):
 
     def deploy_docker(self, info,quantity ,deploy_id, image_uuid):
         deploy_flag=True
+        end_flag=False
         cluster_name=info.get("ins_name","")
         while 1:
             ips = info.get('ip')
@@ -726,16 +737,23 @@ class AppDeploy(Resource):
             if length_ip > 0:
                 logging.debug('ip and url: ' + str(ips) + str(info.get('url')))
                 ip = ips[0]
+                ips.pop(0)
                 os_flag,vm_state,err_msg=self._deploy_query_instance_set_status(deploy_id, ip, image_uuid, quantity)
                 if os_flag:
-                    _dep_callback(deploy_id, ip, quantity, "", vm_state, True,cluster_name)
+                    self.all_ips.remove(ip)
+                    if len(self.all_ips) == 0:
+                        end_flag=True
+                    _dep_callback(deploy_id, ip, quantity, "", vm_state, True, cluster_name,end_flag)
                 else:
-                    _dep_callback(deploy_id, ip, quantity, err_msg, vm_state, False,cluster_name)
+                    for d_ip in ips:
+                        self.all_ips.remove(d_ip)
+                    if len(self.all_ips) == 0:
+                        end_flag=True
+                    _dep_callback(deploy_id, ip, quantity, err_msg, vm_state, False,cluster_name,end_flag)
                     deploy_flag = False
                     break
                 logging.debug(
-                    "Cluster name " + cluster_name  + " IP is " + ip +" Status is " + vm_state + "Error msg is:" + err_msg)
-                ips.pop(0)
+                    "Cluster name " + cluster_name  + " IP is " + ip +" Status is " + vm_state)
             else:
                 break
         return deploy_flag
@@ -752,7 +770,8 @@ class AppDeploy(Resource):
         for i in range(10):
             vm = nova_client.servers.get(os_inst_id)
             vm_state = vm.status.lower()
-            health_check_res=True
+            #health_check_res=True
+            health_check_res=self.app_health_check(ip, HEALTH_CHECK_PORT, HEALTH_CHECK_PATH)
             if vm_state == "error":
                 os_flag=False
                 err_msg=vm.to_dict().__str__()
@@ -782,6 +801,21 @@ class AppDeploy(Resource):
         result_list = []
         timeout = 1000
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, info,quantity)
+    def app_health_check(self,ip,port,url_path):
+        check_url="http://%s:%s/%s" % (ip,port,url_path)
+        headers = {'Content-Type': 'application/json'}
+        try:
+            res = requests.get(check_url, headers=headers)
+            res = json.loads(res.content)
+            app_status=res["status"]
+            if app_status == "UP":
+                return True
+            else:
+                return False
+        except Exception as e:
+            return False
+
+
 
 
 class Upload(Resource):
