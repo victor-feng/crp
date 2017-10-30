@@ -141,10 +141,12 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
         TaskManager.task_exit(task_id)
 
 
-def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, ip = None, quantity=0 ,image_uuid = None):
-    #err_msg, image_uuid = image_transit(image_url)
+def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, info = None, quantity=0):
+    image_uuid=info.get("image_uuid")
     if _check_image_status(image_uuid):
-        obj._deploy_docker(ip,quantity,deploy_id, image_uuid)
+        deploy_flag=obj.__deploy_docker(info,quantity,deploy_id, image_uuid)
+        if not deploy_flag:
+            TaskManager.task_exit(task_id)
     TaskManager.task_exit(task_id)
 
 def _check_image_status(image_uuid):
@@ -154,7 +156,6 @@ def _check_image_status(image_uuid):
     for i in range(check_times):
         img = nova_client.images.get(image_uuid)
         logging.debug("check image status " + str(i) + " times, status: " + img.status.lower())
-        #Log.logger.debug("check image status " + str(i) + " times, status: " + img.status.lower())
         if (img.status.lower() != "active"):
             time.sleep(check_interval)
         else:
@@ -420,14 +421,20 @@ class AppDeploy(Resource):
             for i in docker:
                 image_url = i.get('url')
                 err_msg, image_uuid = image_transit(image_url)
+                i["image_uuid"]=image_uuid
                 if err_msg is None:
                     logging.debug(
                         "Transit harbor docker image success. The result glance image UUID is " + image_uuid)
                 else:
                     logging.error(
                          "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + err_msg)
+                    
+
+            """        
+            for i in docker:
                 while True:
                     ips = i.get('ip')
+                    image_uuid=i.get("image_uuid")
                     length_ip = len(ips)
                     if length_ip > 0:
                         logging.debug('ip and url: ' + str(ips) + str(i.get('url')))
@@ -435,8 +442,11 @@ class AppDeploy(Resource):
                         self._image_transit(deploy_id, ip, quantity, image_uuid)
                         ips.pop(0)
                     else:
-                        break
-            
+                      break
+           """
+            for info in docker:
+                self.__image_transit(deploy_id, info, quantity)
+
             if not (sql_ret and mongodb_res):
                 res = _dep_callback(deploy_id, False)
                 if res.status_code == 500:
@@ -701,10 +711,67 @@ class AppDeploy(Resource):
         timeout = 1000
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, _query_instance_set_status, vm_id_list, deploy_id,ip,quantity)
 
+    def __deploy_docker(self, info,quantity ,deploy_id, image_uuid):
+        deploy_flag=True
+        while 1:
+            ips = info.get('ip')
+            length_ip = len(ips)
+            if length_ip > 0:
+                logging.debug('ip and url: ' + str(ips) + str(info.get('url')))
+                ip = ips[0]
+                os_flag,vm_state,err_msg=self._deploy_query_instance_set_status(self, deploy_id, ip, image_uuid, quantity)
+                if os_flag:
+                    _dep_callback(deploy_id, ip, quantity, "", vm_state, True)
+                else:
+                    _dep_callback(deploy_id, ip, quantity, err_msg, vm_state, False)
+                    deploy_flag = False
+                    break
+                ips.pop(0)
+            else:
+                break
+        return deploy_flag
+
+
+    def _deploy_query_instance_set_status(self,deploy_id=None,ip=None,image_uuid=None,quantity=0):
+        os_flag=True
+        err_msg=""
+        nova_client = OpenStack.nova_client
+        server = OpenStack.find_vm_from_ipv4(ip=ip)
+        newserver = OpenStack.nova_client.servers.rebuild(server=server, image=image_uuid)
+        os_inst_id=newserver.id
+        for i in range(10):
+            vm = nova_client.servers.get(os_inst_id)
+            vm_state = vm.status.lower()
+            health_check_res=True
+            if vm_state == "error":
+                os_flag=False
+                err_msg=vm.to_dict().__str__()
+                logging.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + "Error msg is:" +err_msg)
+                break
+            elif vm_state == "shutoff" or health_check_res == False:
+                os_flag = False
+                err_msg="shutoff"
+                logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + "Error msg is:" +err_msg )
+                break
+            elif vm_state == "active" and health_check_res == True:
+                os_flag = True
+                logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state)
+                break
+            time.sleep(30)
+        else:
+            os_flag = False
+        return os_flag,vm_state,err_msg
+
+
     def _image_transit(self,deploy_id, ip,quantity ,image_url):
         result_list = []
         timeout = 1000
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, ip,quantity, image_url)
+
+    def __image_transit(self,deploy_id, info,quantity):
+        result_list = []
+        timeout = 1000
+        TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, info,quantity)
 
 
 class Upload(Resource):
