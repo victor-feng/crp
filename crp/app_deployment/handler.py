@@ -718,7 +718,7 @@ class AppDeploy(Resource):
             if length_ip > 0:
                 logging.debug('ip and url: ' + str(ips) + str(info.get('url')))
                 ip = ips[0]
-                os_flag,vm_state,err_msg=self._deploy_query_instance_set_status(self, deploy_id, ip, image_uuid, quantity)
+                os_flag,vm_state,err_msg=self._deploy_query_instance_set_status(deploy_id, ip, image_uuid, quantity)
                 if os_flag:
                     _dep_callback(deploy_id, ip, quantity, "", vm_state, True)
                 else:
