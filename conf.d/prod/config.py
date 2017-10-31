@@ -59,12 +59,17 @@ class ProdConfig(BaseConfig):
     }
 
     KVM_FLAVOR = {
-        '2': 'uop-2C4G80G',
-        '4': 'uop-4C8G80G',
+        # '2': 'uop-2C4G80G',
+        # '4': 'uop-4C8G80G',
+        '48': '2a01b654-3b84-45e5-ac7a-5bf5f2730c74', #prod-redis-4C8G50G
+        # "8": 'xiaojian_sas_4C8G50G',
+        "mycat": "363f6916-f699-46d1-960b-06ed2b17c232", # prod - nginx - 4C4G50G
+        "816": '11e80fa5-3076-4dbc-a6bb-49de2e304694', # prod-8C16G50G-sas
+        "832": '762d5741-6b98-4ba1-b853-1807fd8a7506', # prodsas-mysql-8C32G80G
     }
     DOCKER_FLAVOR = {
-        "2": "uop-docker-2C4G50G",
-        "4": "uop-docker-4C8G50G"
+        # "2": "uop-docker-2C4G50G",
+        "4": "96f98a7f-ab4e-4e1c-a597-ccac02306df9" #prod-docker-tomcat-4C4G30G
     }
 
     # AVAILABILITY_ZONE
