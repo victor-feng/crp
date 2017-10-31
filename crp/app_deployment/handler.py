@@ -784,7 +784,7 @@ class AppDeploy(Resource):
                 break
             elif vm_state == "shutoff":
                 os_flag = False
-                err_msg="shutoff"
+                err_msg="vm status is shutoff"
                 logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:"+ str(health_check_res) + " Error msg is:" +err_msg )
                 break
             elif vm_state == "active" and health_check_res == True:
