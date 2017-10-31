@@ -18,7 +18,7 @@ define('mode', default='debug')
 define('deploy', default='dev')
 # True, False
 define('mpc_sync', type=bool, default=False)
-
+options.parse_command_line()
 os.system('rm -rf config.py')
 os.system('rm -rf conf')
 os.system('ln -s conf.d/%s  conf '%(options.deploy))
@@ -28,7 +28,6 @@ from crp import create_app
 from config import APP_ENV
 
 def main():
-    options.parse_command_line()
 
     if options.mode.lower() == "debug":
         from tornado import autoreload
