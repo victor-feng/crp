@@ -780,23 +780,23 @@ class AppDeploy(Resource):
             if vm_state == "error":
                 os_flag=False
                 err_msg=vm.to_dict().__str__()
-                logging.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +  " Health check res"+ health_check_res +" Error msg is:" +err_msg)
+                logging.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +  " Health check res:"+ str(health_check_res) +" Error msg is:" +err_msg)
                 break
             elif vm_state == "shutoff":
                 os_flag = False
                 err_msg="shutoff"
-                logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res"+ health_check_res + " Error msg is:" +err_msg )
+                logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:"+ str(health_check_res) + " Error msg is:" +err_msg )
                 break
             elif vm_state == "active" and health_check_res == True:
                 os_flag = True
-                logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res"+ health_check_res)
+                logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:"+ str(health_check_res))
                 break
             time.sleep(6)
         else:
             os_flag = False
             err_msg = "app health check failed"
             logging.debug(
-                " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res" + health_check_res + " Error msg is:" + err_msg)
+                " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:" + str(health_check_res) + " Error msg is:" + err_msg)
         return os_flag,vm_state,err_msg
 
 
