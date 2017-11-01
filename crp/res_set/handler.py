@@ -409,8 +409,6 @@ class ResourceProviderTransitions(object):
         quantity = propertys.get('quantity')
         if cluster_type == "mysql" and str(cpu) == "2": # dev\test 环境
             flavor = KVM_FLAVOR.get("mysql", 'uop-2C4G50G')
-        if cluster_type == "mycat":
-            flavor = KVM_FLAVOR.get("mycat", 'uop-2C4G50G')
         if cluster_type == "mysql" or cluster_type == "mycat":
             network_id=self.mysql_network_id
         elif cluster_type == "redis":
@@ -442,7 +440,8 @@ class ResourceProviderTransitions(object):
                 if cluster_type == 'mysql' and i == 3:
                     cluster_type = 'mycat'
                 instance_name = '%s_%s' % (cluster_name, i.__str__())
-
+                if cluster_type == "mycat":
+                    flavor = KVM_FLAVOR.get("mycat", 'uop-2C4G50G')
                 osint_id = self._create_instance_by_type(
                     cluster_type, instance_name, flavor, network_id ,server_group)
                 uopinst_info = {
