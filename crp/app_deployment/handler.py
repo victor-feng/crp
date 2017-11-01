@@ -678,8 +678,8 @@ class AppDeploy(Resource):
                 output = output.replace('-', '').replace('+', '').replace('|','')
                 databases = output.split('\\r\\n')[3:-2][3:]
                 #####################################################
-                if databases:
-                    for data_name in databases and database_user not in user_output:
+                if databases and database_user not in user_output:
+                    for data_name in databases:
                         data_name = data_name.strip(' ')
                         cmd = ''
                         for app_ip in ips:
