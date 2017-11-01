@@ -355,7 +355,7 @@ class NamedManagerApi(object):
             else:
                 raise ServerError('The zone [{zone_name}] does not exist'.format(zone_name=domain))
         except Exception as e:
-            res = e.message
+            res = e.args
         return res
 
 
