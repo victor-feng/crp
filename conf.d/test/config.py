@@ -60,15 +60,31 @@ class TestingConfig(BaseConfig):
         }
     }
 
+    # KVM_FLAVOR = {
+    #     '2': 'uop-2C4G80G',
+    #     '4': 'uop-4C8G80G',
+    #     "mycat": "242c5ee6-d9b5-4456-88db-7603e765f075",  # pret-nginx-4C4G50G
+    # }
+    # DOCKER_FLAVOR = {
+    #     "2": "uop-docker-2C4G50G",
+    #     "4": "uop-docker-4C8G50G"
+    # }
     KVM_FLAVOR = {
         '2': 'uop-2C4G80G',
-        '4': 'uop-4C8G80G',
+        # '4': 'uop-4C8G80G',
+        '48': '00d92209-b17e-45cb-991c-d79600e68969',  # xiaojian_sas_4C8G50G
+        # "8": 'xiaojian_sas_4C8G50G',
+        "mycat": "242c5ee6-d9b5-4456-88db-7603e765f075",  # pret-nginx-4C4G50G
+        "816": '105deffb-dff9-4a16-8757-92a9d44e9b91',  # K8S-8C16G50G
+        "832": '8257eac4-c9cb-48f0-b5d4-183e3e08137f',  # pret-mysql-8C32G80G
+        # 'uop-4C16G180G': 'uop-4C16G180G',
+        # 'uop-8C8180G': 'uop-8C8G180G',
+        # 'uop-8C32G180G': 'uop-8C32G180G',
     }
     DOCKER_FLAVOR = {
-        "2": "uop-docker-2C4G50G",
-        "4": "uop-docker-4C8G50G"
+        "2": "83c52038-3cc1-4865-958a-a85cfde96bc0",
+        # "4": "uop-docker-4C4G30G"
     }
-
     # AVAILABILITY_ZONE
     AVAILABILITY_ZONE_AZ_UOP = 'AZ_UOP'
     DEV_NETWORK_ID = '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'

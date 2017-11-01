@@ -403,8 +403,8 @@ class ResourceProviderTransitions(object):
         cluster_type = propertys.get('cluster_type')
         version = propertys.get('version')
         cpu = propertys.get('cpu')
-        flavor = KVM_FLAVOR.get(str(cpu), 'uop-2C4G50G')
         mem = propertys.get('mem')
+        flavor = KVM_FLAVOR.get(str(cpu) + str(mem), 'uop-2C4G50G')
         disk = propertys.get('disk')
         quantity = propertys.get('quantity')
         if cluster_type == "mysql" or cluster_type == "mycat":
@@ -438,8 +438,10 @@ class ResourceProviderTransitions(object):
                 if cluster_type == 'mysql' and i == 3:
                     cluster_type = 'mycat'
                 instance_name = '%s_%s' % (cluster_name, i.__str__())
+                if cluster_type == "mycat":
+                    flavor = KVM_FLAVOR.get("mycat", 'uop-2C4G50G')
                 osint_id = self._create_instance_by_type(
-                    cluster_type, instance_name, flavor,network_id ,server_group)
+                    cluster_type, instance_name, flavor, network_id ,server_group)
                 uopinst_info = {
                     'uop_inst_id': cluster_id,
                     'os_inst_id': osint_id
