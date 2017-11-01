@@ -473,6 +473,7 @@ class AppDeploy(Resource):
         except Exception as e:
             code = 500
             msg = "internal server error: " + str(e.args)
+            logging.error(msg)
         return code, msg
 
     def _deploy_mongodb(self, mongodb):
