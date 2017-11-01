@@ -648,7 +648,7 @@ class AppDeploy(Resource):
         # sql = args.mysql.get("sql_script").replace('\xc2\xa0', ' ')
         path_filename = mysql.get("path_filename")
         if not path_filename:
-            return True
+            return True,None
         # if sql:
         #     sql_srcipt_file_name = self._make_sql_script_file(workdir,sql)
 
