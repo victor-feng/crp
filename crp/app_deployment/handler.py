@@ -45,10 +45,10 @@ HEALTH_CHECK_PORT = configs[APP_ENV].HEALTH_CHECK_PORT
 HEALTH_CHECK_PATH = configs[APP_ENV].HEALTH_CHECK_PATH
 
 
-def _dep_callback(deploy_id,ip,quantity,err_msg,vm_state,success,cluster_name,end_flag):
+def _dep_callback(deploy_id,ip,res_type,err_msg,vm_state,success,cluster_name,end_flag):
     data = dict()
     data["ip"]=ip
-    data["quantity"]=quantity
+    data["res_type"]=res_type
     data["err_msg"] = err_msg
     data["vm_state"] = vm_state
     data["cluster_name"] = cluster_name
@@ -147,10 +147,10 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
         TaskManager.task_exit(task_id)
 
 
-def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, info = None, quantity=0):
+def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, info = None):
     image_uuid=info.get("image_uuid")
     if _check_image_status(image_uuid):
-        deploy_flag=obj.deploy_docker(info,quantity,deploy_id, image_uuid)
+        deploy_flag=obj.deploy_docker(info,deploy_id, image_uuid)
         if not deploy_flag:
             TaskManager.task_exit(task_id)
     TaskManager.task_exit(task_id)
@@ -364,11 +364,21 @@ class AppDeploy(Resource):
                 _dep_detail_callback(deploy_id,"deploy_nginx")
             if mongodb:
                 logging.debug("The mongodb data is %s" % mongodb)
-                mongodb_res = self._deploy_mongodb(mongodb)
-                _dep_detail_callback(deploy_id,"deploy_mongodb")
+                mongodb_res,err_msg = self._deploy_mongodb(mongodb)
+                if mongodb_res:
+                    _dep_detail_callback(deploy_id,"deploy_mongodb")
+                else:
+                    _dep_callback(deploy_id, "ip", "mongodb", err_msg, "active", False, "mongodb", True)
+                    code = 500
+                    return code,msg
             if mysql:
-                sql_ret = self._deploy_mysql(mysql, docker)
-                _dep_detail_callback(deploy_id,"deploy_mysql")
+                sql_ret,err_msg = self._deploy_mysql(mysql, docker)
+                if sql_ret:
+                    _dep_detail_callback(deploy_id,"deploy_mysql")
+                else:
+                    _dep_callback(deploy_id, "ip", "mysql", err_msg, "active", False,"mysql", True)
+                    code=500
+                    return code,msg
 
             #logging.debug("Docker is " + str(docker))
             #for i in docker:
@@ -420,11 +430,9 @@ class AppDeploy(Resource):
                 Log.logger.debug("disconf result:{result},{message}".format(result=result,message=message))
             if disconf_server_info:
                 _dep_detail_callback(deploy_id,"deploy_disconf")
-            quantity=0
             all_ips=[]
             for info in docker:
-                ips = info.get('ip') 
-                quantity=quantity+len(ips)
+                ips = info.get('ip')
                 all_ips.extend(ips)
             logging.debug("Docker is " + str(docker) + " all_ips:" + all_ips.__str__())
             self.all_ips=all_ips
@@ -461,13 +469,13 @@ class AppDeploy(Resource):
                       break
            """
             for info in docker:
-                self.__image_transit(deploy_id, info, quantity)
+                self.__image_transit(deploy_id, info)
 
-            if not (sql_ret and mongodb_res):
-                res = _dep_callback(deploy_id, False)
-                if res.status_code == 500:
-                    code = 500
-                    msg = "uop server error"
+            #if not (sql_ret and mongodb_res):
+            #    res = _dep_callback(deploy_id, False)
+            #    if res.status_code == 500:
+            #        code = 500
+            #        msg = "uop server error"
 
             lock.release()
         except Exception as e:
@@ -486,6 +494,7 @@ class AppDeploy(Resource):
         db_password = mongodb.get('mongodb_password', '')
         mongodb_username = mongodb.get('db_username', '')
         mongodb_password = mongodb.get('db_password', '')
+        vip = mongodb.get('vip', '')
         vip1 = mongodb.get('vip1', '')
         vip2 = mongodb.get('vip2', '')
         vip3 = mongodb.get('vip3', '')
@@ -493,7 +502,7 @@ class AppDeploy(Resource):
         database = mongodb.get('database', '')
         path_filename = mongodb.get("path_filename", '')
         if not path_filename:
-            return True
+            return True,None
         ips = [vip1, vip2, vip3]
 
         local_path = path_filename[0]
@@ -516,19 +525,20 @@ class AppDeploy(Resource):
         # return res
 
         # 只需要对主节点进行认证操作
-        host_path = self.mongodb_hosts_file(vip3)
-        ansible_cmd = 'ansible -i ' + host_path + ' ' + vip3 + ' ' + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -m'
+        host_path = self.mongodb_hosts_file(vip)
+        ansible_cmd = 'ansible -i ' + host_path + ' ' + vip + ' ' + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -m'
         ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + sh_path + ' dest=' + remote_path + '"'
         ansible_sh_cmd = ansible_cmd + ' shell -a "%s < %s"' % (configs[APP_ENV].MONGODB_PATH, remote_path)
-
-        if self._exec_ansible_cmd(ansible_sql_cmd):
-            if self._exec_ansible_cmd(ansible_sh_cmd):
-
+        ans_res,err_msg=self._exec_ansible_cmd(ansible_sql_cmd)
+        if ans_res:
+            ans_res,err_msg=self._exec_ansible_cmd(ansible_sh_cmd)
+            if ans_res:
                 sh_path = self.mongodb_command_file(mongodb_password, mongodb_username, port, database, "")
                 ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + sh_path + ' dest=' + remote_path + '"'
                 query_current_db = ansible_cmd + 'shell -a "%s < %s"' % (configs[APP_ENV].MONGODB_PATH, remote_path)
 
-                if self._exec_ansible_cmd(ansible_sql_cmd):
+                ans_res,err_msg=self._exec_ansible_cmd(ansible_sql_cmd)
+                if ans_res:
                     logging.debug("upload query file success and then get the db name")
                     status, output = commands.getstatusoutput(query_current_db)
                     output_list = output.split('\n')[5:-1]   # ['admin  0.000GB', 'local  0.001GB']
@@ -546,7 +556,8 @@ class AppDeploy(Resource):
                         exec_auth_file = ansible_cmd + ' shell -a "%s < %s"' % \
                                                          (configs[APP_ENV].MONGODB_AUTH_PATH, remote_path)
                         logging.debug("start upload auth file")
-                        if self._exec_ansible_cmd(ansible_sql_cmd):
+                        ans_res,err_msg=self._exec_ansible_cmd(ansible_sql_cmd)
+                        if ans_res:
                             logging.debug("end upload and start exec auth file")
                             status, output = commands.getstatusoutput(exec_auth_file)
                             logging.debug("end exec auth file status is %s output is %s" % (status, output))
@@ -554,13 +565,13 @@ class AppDeploy(Resource):
                             self.ansible_exec(host_path, vip3, remote_path)  # del the ansible file had uploaded
 
                             logging.debug("del the ansible file successful")
-                    return True
+                    return True,err_msg
                 else:
-                    return False
+                    return False,err_msg
             else:
-                return False
+                return False,err_msg
         else:
-            return False
+            return False,err_msg
 
     def ansible_exec(self, host_path, vip3, file_path):
         cmd = 'ansible -i ' + host_path + ' ' + vip3 + ' ' + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -m'
@@ -651,18 +662,24 @@ class AppDeploy(Resource):
         ansible_cmd = 'ansible -i ' + host_path + ' ip ' +  ' --private-key=crp/res_set/playbook-0830/old_id_rsa -u root -m'
         ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + local_path + ' dest=' + remote_path + '"'
         ansible_sh_cmd =  ansible_cmd + ' script -a ' + sh_path
-        if self._exec_ansible_cmd(ansible_sql_cmd):
-            if self._exec_ansible_cmd(ansible_sh_cmd):
+        ans_res,err_msg=self._exec_ansible_cmd(ansible_sql_cmd)
+        if ans_res:
+            ans_res, err_msg=self._exec_ansible_cmd(ansible_sh_cmd)
+            if ans_res:
                 show_path = self._excute_mysql_cmd(mysql_password, mysql_user, port, 'show databases;')
                 ansible_show_databases_cmd = ansible_cmd + " script -a " + show_path\
                                              + " |grep 'stdout' |awk -F: '{print $NF}' |head -1 |awk -F, '{print $1}'"
                 (status, output) = commands.getstatusoutput(ansible_show_databases_cmd)
+                show_user_path = self._excute_mysql_cmd(mysql_password, mysql_user, port, "select user from mysql.user;")
+                ansible_show_user_cmd = ansible_cmd + " script -a " + show_user_path \
+                                             + " |grep 'stdout' |awk -F: '{print $NF}' |head -1 |awk -F, '{print $1}'"
+                (user_status, user_output) = commands.getstatusoutput(ansible_show_user_cmd)
                 ##########  去掉影响查询新增数据库的干扰字符 ##########
                 output = output.replace('-', '').replace('+', '').replace('|','')
                 databases = output.split('\\r\\n')[3:-2][3:]
                 #####################################################
                 if databases:
-                    for data_name in databases:
+                    for data_name in databases and database_user not in user_output:
                         data_name = data_name.strip(' ')
                         cmd = ''
                         for app_ip in ips:
@@ -672,22 +689,26 @@ class AppDeploy(Resource):
                             cmd += cmd1 + cmd2
                         create_path = self._excute_mysql_cmd(mysql_password, mysql_user, port, cmd)
                         ansible_create_cmd = ansible_cmd + ' script -a ' + create_path
-                        if not self._exec_ansible_cmd(ansible_create_cmd):
-                            return False
-                    return True
-            return False
+                        ans_res,err_msg=self._exec_ansible_cmd(ansible_create_cmd)
+                        if not ans_res:
+                            return False,err_msg
+                    return True,err_msg
+                return True, err_msg
+            return False,err_msg
         else:
-             return False
+             return False,err_msg
 
     def _exec_ansible_cmd(self,cmd):
         (status, output) = commands.getstatusoutput(cmd)
         if output.lower().find("error") == -1 and output.lower().find("failed") == -1:
             logging.debug("ansible exec succeed,command: " + str(cmd) + " output: " + output)
             #Log.logger.debug("ansible exec succeed,command: " + str(cmd) + " output: " + output)
-            return True
+            err_msg=None
+            return True,err_msg
         logging.debug("ansible exec failed,command: " + str(cmd) + " output: " + output)
         #Log.logger.debug("ansible exec failed,command: " + str(cmd) + " output: " + output)
-        return False
+        err_msg=output
+        return False,err_msg
 
     def _excute_mysql_cmd(self, password, user, port, content):
         sh_path = os.path.join(UPLOAD_FOLDER, 'mysql', 'tmp.sh')
@@ -728,7 +749,7 @@ class AppDeploy(Resource):
         timeout = 1000
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, _query_instance_set_status, vm_id_list, deploy_id,ip,quantity)
 
-    def deploy_docker(self, info,quantity ,deploy_id, image_uuid):
+    def deploy_docker(self, info,deploy_id, image_uuid):
         #lock = threading.RLock()
         #lock.acquire()
         deploy_flag=True
@@ -740,12 +761,12 @@ class AppDeploy(Resource):
             if length_ip > 0:
                 logging.debug('ip and url: ' + str(ips) + str(info.get('url')))
                 ip = ips[0]
-                os_flag,vm_state,err_msg=self._deploy_query_instance_set_status(deploy_id, ip, image_uuid, quantity)
+                os_flag,vm_state,err_msg=self._deploy_query_instance_set_status(deploy_id, ip, image_uuid)
                 if os_flag:
                     self.all_ips.remove(ip)
                     if len(self.all_ips) == 0:
                         end_flag=True
-                    _dep_callback(deploy_id, ip, quantity, "", vm_state, True, cluster_name,end_flag)
+                    _dep_callback(deploy_id, ip, "docker", "", vm_state, True, cluster_name,end_flag)
                     logging.debug(
                         "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
                 else:
@@ -753,7 +774,7 @@ class AppDeploy(Resource):
                         self.all_ips.remove(d_ip)
                     if len(self.all_ips) == 0:
                         end_flag=True
-                    _dep_callback(deploy_id, ip, quantity, err_msg, vm_state, False,cluster_name,end_flag)
+                    _dep_callback(deploy_id, ip, "docker", err_msg, vm_state, False,cluster_name,end_flag)
                     deploy_flag = False
                     logging.debug(
                         "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
@@ -765,7 +786,7 @@ class AppDeploy(Resource):
         return deploy_flag
 
 
-    def _deploy_query_instance_set_status(self,deploy_id=None,ip=None,image_uuid=None,quantity=0):
+    def _deploy_query_instance_set_status(self,deploy_id=None,ip=None,image_uuid=None):
         os_flag=True
         err_msg=""
         nova_client = OpenStack.nova_client
@@ -806,10 +827,10 @@ class AppDeploy(Resource):
         timeout = 1000
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, ip,quantity, image_url)
 
-    def __image_transit(self,deploy_id, info,quantity):
+    def __image_transit(self,deploy_id, info):
         result_list = []
         timeout = 1000
-        TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, info,quantity)
+        TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, info)
     def app_health_check(self,ip,port,url_path):
         check_url="http://%s:%s/%s" % (ip,port,url_path)
         headers = {'Content-Type': 'application/json'}
