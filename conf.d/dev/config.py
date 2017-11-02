@@ -15,7 +15,7 @@ class DevelopmentConfig(BaseConfig):
     MPC_URL = "http://mpc-dev.syswin.com/"
     OPENRC_PATH = "/root/openrc"
     DK_SOCK_URL = 'unix://var/run/docker.sock'
-    DK_CLI_VERSION = '1.22'
+    DK_CLI_VERSION = '1.19'
     DK_TAR_PATH = '/home/dk/'
     GLANCE_RESERVATION_QUANTITY = 3
     UPLOAD_FOLDER = '/data/'
