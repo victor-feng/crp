@@ -979,7 +979,7 @@ class ResourceProviderTransitions(object):
             os.makedirs(sh_dir)
         with open(sh_path, "wb+") as file_object:
             file_object.write("#!/bin/bash\n")
-            file_object.write("MongoDB='/opt/mongodb/bin/mongo '$%s':28010'\n" % ip)
+            file_object.write("MongoDB='/opt/mongodb/bin/mongo %s:28010'\n" % ip)
             file_object.write("$MongoDB <<EOF\n")
             file_object.write("use admin\n")
             file_object.write("""db.createUser({user: "admin",pwd: "123456",roles:[{role: "userAdminAnyDatabase", db: "admin"},{role: "readAnyDatabase", db: "admin" },{role: "dbOwner", db: "admin" },{role: "userAdmin", db: "admin" },{role: "root", db: "admin" },{role: "dbAdmin", db: "admin" }]})\n""")
