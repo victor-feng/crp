@@ -670,7 +670,7 @@ class AppDeploy(Resource):
                 ansible_show_databases_cmd = ansible_cmd + " script -a " + show_path\
                                              + " |grep 'stdout' |awk -F: '{print $NF}' |head -1 |awk -F, '{print $1}'"
                 (status, output) = commands.getstatusoutput(ansible_show_databases_cmd)
-                show_user_path = self._excute_mysql_cmd(mysql_password, mysql_user, port, "select user from mysql.user;")
+                show_user_path = self._excute_mysql_cmd(mysql_password, mysql_user, port, "select user,host from mysql.user;")
                 ansible_show_user_cmd = ansible_cmd + " script -a " + show_user_path \
                                              + " |grep 'stdout' |awk -F: '{print $NF}' |head -1 |awk -F, '{print $1}'"
                 (user_status, user_output) = commands.getstatusoutput(ansible_show_user_cmd)
