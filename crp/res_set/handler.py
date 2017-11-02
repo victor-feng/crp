@@ -407,6 +407,8 @@ class ResourceProviderTransitions(object):
         flavor = KVM_FLAVOR.get(str(cpu) + str(mem), 'uop-2C4G50G')
         disk = propertys.get('disk')
         quantity = propertys.get('quantity')
+        if cluster_type == "mysql" and str(cpu) == "2": # dev\test 环境
+            flavor = KVM_FLAVOR.get("mysql", 'uop-2C4G50G')
         if cluster_type == "mysql" or cluster_type == "mycat":
             network_id=self.mysql_network_id
         elif cluster_type == "redis":
