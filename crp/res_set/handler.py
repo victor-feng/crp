@@ -875,7 +875,14 @@ class ResourceProviderTransitions(object):
             self.exec_db_service(ip,cmd)
             self.exec_db_service(ip,scp_cmd)
             self.exec_db_service(ip,ch_cmd)
-            self.exec_db_service(ip,exec_cmd)
+            #self.exec_db_service(ip,exec_cmd)
+            p = subprocess.Popen(
+                exec_cmd,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT)
+            stdout=p.stdout.read()
+            Log.logger.debug(stdout)
             Log.logger.debug(
                 'mongodb single instance end {ip}'.format(
                     ip=mongodb['ip']))
