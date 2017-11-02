@@ -866,7 +866,7 @@ class ResourceProviderTransitions(object):
             ip= instance[0].get('ip')
             mongodb['ip'] = ip
             #单实例创建admin用户并验证启动mongodb
-            sh_path=self._excute_mongo_cmd(self, ip)
+            sh_path=self._excute_mongo_cmd(ip)
             cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m shell -a '/opt/mongodb/bin/mongod --config=/data/mongodb/conf/mongodb.conf'".format(ip=ip,dir=self.dir)
             scp_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m synchronize -a 'src={sh_path} dest=/tmp/'".format(ip=ip,sh_path=sh_path ,dir=self.dir)
             ch_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m shell -a 'chmod 777 /tmp/mongodb_single.sh'".format(ip=ip, dir=self.dir)
