@@ -988,7 +988,7 @@ class ResourceProviderTransitions(object):
             file_object.write("$MongoDB <<EOF\n")
             file_object.write("use admin\n")
             file_object.write("db.auth('admin','123456')\n")
-            file_object.write("exit;")
+            file_object.write("exit;\n")
             file_object.write("EOF")
         return sh_path
 
