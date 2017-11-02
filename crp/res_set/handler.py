@@ -1586,6 +1586,7 @@ class MongodbCluster(object):
         start_time = time.time()
         while not self.flag:
             for ip in self.ip:
+                time.sleep(3)
                 p = subprocess.Popen(
                     'nmap %s -p 22' %
                     str(ip),
@@ -1593,7 +1594,7 @@ class MongodbCluster(object):
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT)
                 try:
-                    a = p.stdout.readlines()
+                    a = p.stdout.read()
                     Log.logger.debug('nmap ack result:%s' % a)
                 except IndexError as e:
                     print e
