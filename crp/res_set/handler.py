@@ -1595,7 +1595,7 @@ class MongodbCluster(object):
                     stderr=subprocess.STDOUT)
                 try:
                     a = p.stdout.read()
-                    Log.logger.debug('nmap ack  %s result:%s' % (a,ip))
+                    Log.logger.debug('nmap ack  %s result:%s' % (ip,a))
                 except IndexError as e:
                     a = 'false'
                     Log.logger.debug('%s' % e)
