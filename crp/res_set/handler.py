@@ -27,6 +27,7 @@ KVM_FLAVOR = configs[APP_ENV].KVM_FLAVOR
 DOCKER_FLAVOR = configs[APP_ENV].DOCKER_FLAVOR
 AVAILABILITY_ZONE_AZ_UOP = configs[APP_ENV].AVAILABILITY_ZONE_AZ_UOP
 #DEV_NETWORK_ID = configs[APP_ENV].DEV_NETWORK_ID
+UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 OS_EXT_PHYSICAL_SERVER_ATTR = configs[APP_ENV].OS_EXT_PHYSICAL_SERVER_ATTR
 RES_CALLBACK = configs[APP_ENV].RES_CALLBACK
 RES_STATUS_CALLBACK = configs[APP_ENV].RES_STATUS_CALLBACK
@@ -864,9 +865,17 @@ class ResourceProviderTransitions(object):
             instance = mongodb.get('instance', '')
             ip= instance[0].get('ip')
             mongodb['ip'] = ip
+            #单实例创建admin用户并验证启动mongodb
+            sh_path=self._excute_mongo_cmd(self, ip)
             cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m shell -a '/opt/mongodb/bin/mongod --config=/data/mongodb/conf/mongodb.conf'".format(ip=ip,dir=self.dir)
+            scp_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m synchronize -a 'src={sh_path} dest=/tmp/'".format(ip=ip,sh_path=sh_path ,dir=self.dir)
+            ch_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m shell -a 'chmod 777 /tmp/mongodb_single.sh'".format(ip=ip, dir=self.dir)
+            exec_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m shell -a 'sh /tmp/mongodb_single.sh'".format(ip=ip, dir=self.dir)
             Log.logger.debug(cmd)
             self.exec_db_service(ip,cmd)
+            self.exec_db_service(ip,scp_cmd)
+            self.exec_db_service(ip,ch_cmd)
+            self.exec_db_service(ip,exec_cmd)
             Log.logger.debug(
                 'mongodb single instance end {ip}'.format(
                     ip=mongodb['ip']))
@@ -955,6 +964,26 @@ class ResourceProviderTransitions(object):
                 break
         else:
             Log.logger.debug('---------restart %s db service 10 times failed---------'% ip)
+
+    def _excute_mongo_cmd(self, ip):
+        sh_path = os.path.join(UPLOAD_FOLDER, 'mongodb', 'mongodb_single.sh')
+        sh_dir = os.path.join(UPLOAD_FOLDER, 'mongodb')
+        if not os.path.exists(sh_dir):
+            os.makedirs(sh_dir)
+        with open(sh_path, "wb+") as file_object:
+            file_object.write("#!/bin/bash\n")
+            file_object.write("MongoDB='/opt/mongodb/bin/mongo '$%s':28010'\n" % ip)
+            file_object.write("$MongoDB <<EOF\n")
+            file_object.write("use admin\n")
+            file_object.write("""db.createUser({user: "admin",pwd: "123456",roles:[{role: "userAdminAnyDatabase", db: "admin"},{role: "readAnyDatabase", db: "admin" },{role: "dbOwner", db: "admin" },{role: "userAdmin", db: "admin" },{role: "root", db: "admin" },{role: "dbAdmin", db: "admin" }]})\n""")
+            file_object.write("exit;\n")
+            file_object.write("EOF\n")
+            file_object.write("$MongoDB <<EOF\n")
+            file_object.write("use admin\n")
+            file_object.write("db.auth('admin','123456')\n")
+            file_object.write("exit;")
+            file_object.write("EOF")
+        return sh_path
 
     def create_vip_port(self,instance_name,network_id):
         neutron_client = OpenStack.neutron_client
@@ -1557,7 +1586,7 @@ class MongodbCluster(object):
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT)
                 try:
-                    a = p.stdout.readlines()[5]
+                    a = p.stdout.readlines()
                     Log.logger.debug('nmap ack result:%s' % a)
                 except IndexError as e:
                     print e
@@ -1596,49 +1625,37 @@ class MongodbCluster(object):
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
-        for line in p.stdout.readlines():
-            print line
-            Log.logger.debug('mongodb cluster cmd before:%s' % line)
+        Log.logger.debug('mongodb cluster cmd before:%s' % p.stdout.read())
         Log.logger.debug('开始修改权限%s' % ip)
         p = subprocess.Popen(
             authority_cmd,
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
-        for line in p.stdout.readlines():
-            print line
-            Log.logger.debug('mongodb cluster authority:%s' % line)
+        Log.logger.debug('mongodb cluster authority:%s' % p.stdout.read())
         Log.logger.debug('脚本上传完成,开始执行脚本%s' % ip)
         p = subprocess.Popen(
             cmd1,
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
-        for line in p.stdout.readlines():
-            print line
-            Log.logger.debug('mongodb cluster exec write script:%s' % line)
+        Log.logger.debug('mongodb cluster exec write script:%s' % p.stdout.read())
         Log.logger.debug('脚本执行完毕 接下来会部署%s' % ip)
         # for ip in self.ip:
         with open('/tmp/hosts', 'w') as f:
             f.write('%s\n' % ip)
         print '-----', ip, type(ip)
         script = self.d.get(ip)
-        # if str(ip) != '172.28.36.105':
         cmd_s = 'ansible {vip} -u root --private-key={rsa_dir}/old_id_rsa -m script -a "{dir}/{s} sys95"'.\
                 format(vip=ip, rsa_dir=self.dir, dir=self.dir, s=script)
-        # else:
-        #     cmd_s = 'ansible {vip} -u root --private-key=/home/mongo/old_id_rsa -m script -a "/home/mongo/
-        # mongoclu_install/{s}"'.format(vip=ip, s=script)
         p = subprocess.Popen(
             cmd_s,
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
-        for line in p.stdout.readlines():
-            print line,
-            Log.logger.debug(
+        Log.logger.debug(
                 'mongodb cluster push result:%s, -----%s' %
-                (line, ip))
+                (p.stdout.read(), ip))
 
     def exec_final_script(self):
         for i in self.cmd:
@@ -1647,9 +1664,7 @@ class MongodbCluster(object):
                 shell=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT)
-            for line in p.stdout.readlines():
-                print line,
-                Log.logger.debug('mongodb cluster push result:%s' % line)
+            Log.logger.debug('mongodb cluster push result:%s' % p.stdout.read())
 
 def deal_del_request_data(resources_id,os_inst_id_list):
     req_list=[]
