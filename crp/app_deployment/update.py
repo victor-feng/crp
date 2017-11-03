@@ -32,7 +32,7 @@ def config():
     nginx_dir = '/usr/local/nginx/conf/servers_systoon'
     nginx_conf = os.path.join(nginx_dir, domain)
 
-    template = '/shell/template'
+    template = '/tmp/template'
     tp = open(template, 'r')
     tp_str = tp.read()
     tp.close()
