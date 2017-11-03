@@ -832,7 +832,7 @@ class AppDeploy(Resource):
 
     def __image_transit(self,deploy_id, info):
         result_list = []
-        timeout = 1000
+        timeout = 10000
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, info)
     def app_health_check(self,ip,port,url_path):
         check_url="http://%s:%s/%s" % (ip,port,url_path)
