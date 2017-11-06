@@ -147,10 +147,10 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
         TaskManager.task_exit(task_id)
 
 
-def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, info = None):
+def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, info = None,appinfo=[]):
     image_uuid=info.get("image_uuid")
     if _check_image_status(image_uuid):
-        deploy_flag=obj.deploy_docker(info,deploy_id, image_uuid)
+        deploy_flag=obj.deploy_docker(info,deploy_id, image_uuid,appinfo)
         if not deploy_flag:
             TaskManager.task_exit(task_id)
     TaskManager.task_exit(task_id)
@@ -469,7 +469,7 @@ class AppDeploy(Resource):
                       break
            """
             for info in docker:
-                self.__image_transit(deploy_id, info)
+                self.__image_transit(deploy_id, info,appinfo)
 
             #if not (sql_ret and mongodb_res):
             #    res = _dep_callback(deploy_id, False)
@@ -752,7 +752,7 @@ class AppDeploy(Resource):
         timeout = 1000
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, _query_instance_set_status, vm_id_list, deploy_id,ip,quantity)
 
-    def deploy_docker(self, info,deploy_id, image_uuid):
+    def deploy_docker(self, info,deploy_id, image_uuid,appinfo):
         #lock = threading.RLock()
         #lock.acquire()
         deploy_flag=True
@@ -764,7 +764,7 @@ class AppDeploy(Resource):
             if length_ip > 0:
                 logging.debug('ip and url: ' + str(ips) + str(info.get('url')))
                 ip = ips[0]
-                os_flag,vm_state,err_msg=self._deploy_query_instance_set_status(deploy_id, ip, image_uuid)
+                os_flag,vm_state,err_msg=self._deploy_query_instance_set_status(deploy_id, ip, image_uuid,appinfo)
                 if os_flag:
                     self.all_ips.remove(ip)
                     if len(self.all_ips) == 0:
@@ -789,11 +789,14 @@ class AppDeploy(Resource):
         return deploy_flag
 
 
-    def _deploy_query_instance_set_status(self,deploy_id=None,ip=None,image_uuid=None):
+    def _deploy_query_instance_set_status(self,deploy_id=None,ip=None,image_uuid=None,appinfo=[]):
         os_flag=True
         err_msg=""
         nova_client = OpenStack.nova_client
         logging.debug( "Begin rebuild docker,IP is:" + ip)
+        #开始注释nginx配置
+        self.closed_nginx_conf(appinfo,ip)
+        #开始rebuild
         server = OpenStack.find_vm_from_ipv4(ip=ip)
         newserver = OpenStack.nova_client.servers.rebuild(server=server, image=image_uuid)
         os_inst_id=newserver.id
@@ -811,15 +814,18 @@ class AppDeploy(Resource):
                 os_flag = False
                 err_msg="vm status is shutoff"
                 logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:"+ str(health_check_res) + " Error msg is:" +err_msg )
+                #self.open_nginx_conf(appinfo, ip)
                 break
             elif vm_state == "active" and health_check_res == True:
                 os_flag = True
                 logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:"+ str(health_check_res))
+                self.open_nginx_conf(appinfo,ip)
                 break
             time.sleep(6)
         else:
             os_flag = False
             err_msg = "app health check failed"
+            #self.open_nginx_conf(appinfo, ip)
             logging.debug(
                 " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:" + str(health_check_res) + " Error msg is:" + err_msg)
         return os_flag,vm_state,err_msg
@@ -830,10 +836,10 @@ class AppDeploy(Resource):
         timeout = 1000
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, ip,quantity, image_url)
 
-    def __image_transit(self,deploy_id, info):
+    def __image_transit(self,deploy_id, info,appinfo):
         result_list = []
         timeout = 10000
-        TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, info)
+        TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, info,appinfo)
     def app_health_check(self,ip,port,url_path):
         check_url="http://%s:%s/%s" % (ip,port,url_path)
         headers = {'Content-Type': 'application/json'}
@@ -847,6 +853,66 @@ class AppDeploy(Resource):
                 return False
         except Exception as e:
             return False
+
+    def closed_nginx_conf(self,appinfo,ip):
+        try:
+            selfdir = os.path.dirname(os.path.abspath(__file__))
+            conf_dir="/usr/local/nginx/conf/servers_systoon"
+            if appinfo:
+                for info in appinfo:
+                    domain_ip=info.get("domain_ip","")
+                    port = info.get("port", "")
+                    domain=info.get("domain","")
+                    ips=info.get("ips",[])
+                    if ip in ips:
+                        close_cmd="sed  -i 's/server  %s:%s/#server  %s:%s/g' %s/%s" % (ip,port,ip,port,conf_dir,domain)
+                        reload_cmd="/usr/local/nginx/sbin/nginx -s reload"
+                an_close_cmd='''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=close_cmd)
+                logging.debug(an_close_cmd)
+                an_reload_cmd = '''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=reload_cmd)
+                #开始执行注释nginx配置文件和reload nginx 命令
+                self.exec_db_service(domain_ip,an_close_cmd)
+                self.exec_db_service(domain_ip,an_reload_cmd)
+        except Exception as e:
+            logging.error("closed_nginx_conf error %s" % e)
+    def open_nginx_conf(self,appinfo,ip):
+        try:
+            selfdir = os.path.dirname(os.path.abspath(__file__))
+            conf_dir = "/usr/local/nginx/conf/servers_systoon"
+            if appinfo:
+                for info in appinfo:
+                    domain_ip=info.get("domain_ip","")
+                    port = info.get("port", "")
+                    domain=info.get("domain","")
+                    ips=info.get("ips",[])
+                    if ip in ips:
+                        open_cmd="sed  -i 's/#server  %s:%s/server  %s:%s/g' %s/%s" % (ip,port,ip,port,conf_dir,domain)
+                        reload_cmd="/usr/local/nginx/sbin/nginx -s reload"
+                an_open_cmd='''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=open_cmd)
+                logging.debug(an_open_cmd)
+                an_reload_cmd = '''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=reload_cmd)
+                #开始执行注释nginx配置文件和reload nginx 命令
+            self.exec_db_service(domain_ip,an_open_cmd)
+            self.exec_db_service(domain_ip,an_reload_cmd)
+        except Exception as e:
+            logging.error("open_nginx_conf error %s" % e)
+
+    def exec_db_service(self,ip,cmd):
+        with open('/etc/ansible/hosts', 'w') as f:
+            f.write('%s\n' % ip)
+        for i in range(10):
+            time.sleep(1)
+            p = subprocess.Popen(
+                    cmd,
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT)
+            stdout=p.stdout.read()
+            if "SUCCESS" in stdout:
+                logging.debug(stdout)
+                break
+        else:
+            logging.debug('---------execute %s cmd 10 times failed---------'% ip)
 
 
 

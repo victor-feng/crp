@@ -34,6 +34,7 @@ echo "$ip2 $mysql2" >>/etc/hosts
 echo "$ip3 $mysql3" >>/etc/hosts
 echo "$lip1 $lvs1" >>/etc/hosts
 echo "$lip2 $lvs2" >>/etc/hosts
+num2=`cat /tmp/mysql.txt |sed -n '8p'|awk -F "." '{print $4}'`
 
 sed -i "2d" /etc/sysconfig/network
 sed -i "/NETWORKING=yes/a\HOSTNAME=$lvs2" /etc/sysconfig/network
@@ -52,6 +53,7 @@ sed -i 's/R_PORT1/'$SIP1' 3316/g' /etc/keepalived/keepalived.conf
 sed -i 's/R_PORT2/'$SIP2' 3316/g' /etc/keepalived/keepalived.conf
 sed -i 's/connect_port PORT/connect_port 3316/g' /etc/keepalived/keepalived.conf
 #sed -i 's/priority 200/priority 150/g' /etc/keepalived/keepalived.conf
+sed -i 's/virtual_router_id 51/virtual_router_id '$num2'/g' /etc/keepalived/keepalived.conf
 /etc/init.d/keepalived restart
 
 ipvsadm
