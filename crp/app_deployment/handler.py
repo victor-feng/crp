@@ -71,11 +71,11 @@ def _dep_callback(deploy_id,ip,res_type,err_msg,vm_state,success,cluster_name,en
     return res
 
 
-def _dep_detail_callback(deploy_id,deploy_type,ip=None):
+def _dep_detail_callback(deploy_id,deploy_type,deploy_msg=None):
     data = {
         "deploy_id":deploy_id,
         "deploy_type":deploy_type,
-        "ip":ip,
+        "deploy_msg":deploy_msg,
         "status":"ok",
     }
     
@@ -303,6 +303,40 @@ class AppDeploy(Resource):
         }
         return res, code
 
+    def put(self):
+        code=200
+        msg="ok"
+        try:
+            parser = reqparse.RequestParser()
+            parser.add_argument('appinfo', type=list, location='json')
+            parser.add_argument('deploy_id', type=str)
+            parser.add_argument('deploy_type', type=str)
+            args = parser.parse_args()
+            appinfo = args.appinfo
+            deploy_id=args.deploy_id
+            deploy_type = args.deploy_type
+            for app in appinfo:
+                self.do_app_push(app)
+            if deploy_type=="increate":
+                deploy_msg="nginx增加扩容docker完成"
+            else:
+                deploy_msg = "nginx缩减缩容docker完成"
+            _dep_detail_callback(deploy_id, "deploy_nginx", deploy_msg)
+        except Exception as e:
+            logging.exception("AppDeploy put exception:%s " %e)
+            code = 500
+            msg = "internal server error: %s"  %e
+        res = {
+            "code": code,
+            "result": {
+                "res": "",
+                "msg": msg
+            }
+        }
+        return res, code
+
+
+
     def post(self):
         code = 200
         msg = "ok"
@@ -361,7 +395,7 @@ class AppDeploy(Resource):
                 Log.logger.info("No nginx ip information, no need to push nginx something")
             for app in appinfo:
                 self.do_app_push(app)
-                _dep_detail_callback(deploy_id,"deploy_nginx")
+            _dep_detail_callback(deploy_id,"deploy_nginx")
             if mongodb:
                 logging.debug("The mongodb data is %s" % mongodb)
                 mongodb_res,err_msg = self._deploy_mongodb(mongodb)

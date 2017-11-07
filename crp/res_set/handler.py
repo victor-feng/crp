@@ -4,6 +4,7 @@ import json
 import time
 import subprocess
 import requests
+import uuid
 from transitions import Machine
 from flask_restful import reqparse, Api, Resource
 from flask import request
@@ -122,6 +123,7 @@ class ResourceProviderTransitions(object):
         self.mongodb_network_id = req_dict["mongodb_network_id"]
         self.error_type = RES_STATUS_FAIL
         self.error_msg = None
+        self.set_flag=req_dict["set_flag"]
         # Initialize the state machine
         self.machine = Machine(
             model=self,
@@ -549,7 +551,7 @@ class ResourceProviderTransitions(object):
                                     self.task_id.__str__() +
                                     " Instance Info: " +
                                     mapper.__str__())
-                                res_instance_push_callback(self.task_id,self.req_dict,quantity,instance,{})
+                                res_instance_push_callback(self.task_id,self.req_dict,quantity,instance,{},self.set_flag)
                 result_inst_id_list.append(uop_os_inst_id)
             if inst.status == 'ERROR':
                 # 置回滚标志位
@@ -837,7 +839,7 @@ class ResourceProviderTransitions(object):
             cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m shell -a '/etc/init.d/m3316 restart'".format(ip=ip,dir=self.dir)
             Log.logger.debug(cmd)
             self.exec_db_service(ip,cmd)
-        res_instance_push_callback(9999,self.req_dict,0,{},mysql)     
+        res_instance_push_callback(9999,self.req_dict,0,{},mysql,self.set_flag)
 
     @transition_state_logger
     def do_mongodb_push(self):
@@ -886,7 +888,7 @@ class ResourceProviderTransitions(object):
             Log.logger.debug(
                 'mongodb single instance end {ip}'.format(
                     ip=mongodb['ip']))
-        res_instance_push_callback(9999,self.req_dict,0,{},mongodb)
+        res_instance_push_callback(9999,self.req_dict,0,{},mongodb,self.set_flag)
 
     @transition_state_logger
     def do_redis_push(self):
@@ -952,7 +954,7 @@ class ResourceProviderTransitions(object):
             cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m shell -a '/usr/local/redis-2.8.14/src/redis-server /usr/local/redis-2.8.14/redis.conf'".format(ip=ip,dir=self.dir)
             Log.logger.debug(cmd)
             self.exec_db_service(ip,cmd)
-        res_instance_push_callback(9999,self.req_dict,0,{},redis)
+        res_instance_push_callback(9999,self.req_dict,0,{},redis,self.set_flag)
             
 
     def exec_db_service(self,ip,cmd):
@@ -1172,7 +1174,7 @@ def do_transit_repo_items(
 
 
 #crp res_set detail  status callback to uop
-def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_info):
+def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_info,set_flag):
     try:
         resource_id = req_dict["resource_id"]
         if instance_info:
@@ -1209,6 +1211,7 @@ def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_i
         data={
             "instance":instance,
             "db_push":db_push,
+            "set_flag":set_flag,
         }
         data_str=json.dumps(data)
         headers = {
@@ -1451,6 +1454,7 @@ class ResourceSet(Resource):
             parser.add_argument('mysql_network_id', type=str, location='json')
             parser.add_argument('redis_network_id', type=str, location='json')
             parser.add_argument('mongodb_network_id', type=str, location='json')
+            parser.add_argument('set_flag', type=str, location='json')
             args = parser.parse_args()
 
             req_dict = {}
@@ -1474,6 +1478,7 @@ class ResourceSet(Resource):
             mysql_network_id = args.mysql_network_id
             redis_network_id = args.redis_network_id
             mongodb_network_id = args.mongodb_network_id
+            set_flag = args.set_flag
 
             Log.logger.debug(resource_list)
             Log.logger.debug(compute_list)
@@ -1495,6 +1500,7 @@ class ResourceSet(Resource):
             req_dict["mysql_network_id"] = mysql_network_id
             req_dict["redis_network_id"] = redis_network_id
             req_dict["mongodb_network_id"] = mongodb_network_id
+            req_dict["set_flag"] = set_flag
 
             # init default data
             Log.logger.debug('req_dict\'s object id is :')
@@ -1695,11 +1701,17 @@ class ResourceDelete(Resource):
             resources=deal_del_request_data(resources_id,os_inst_id_list)
             resources=resources.get('resources')
             vid_list=request_data.get('vid_list')
+            unique_flag=str(uuid.uuid1())
+            quantity=0
             #delete  kvm
+            d_resources=[]
             for resource in resources:
+                d_resources.append(resource)
+                if len(d_resources) == len(resources):
+                    end_flag=True
                 TaskManager.task_start(
                     SLEEP_TIME, TIMEOUT,
-                    {'current_status': QUERY_VM},
+                    {'current_status': QUERY_VM,"unique_flag":unique_flag,"quantity":quantity},
                     delete_instance_and_query, resource)
             #delete vip
             for port_id in vid_list:

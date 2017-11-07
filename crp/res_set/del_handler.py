@@ -47,7 +47,7 @@ def query_instance(task_id, result, resource):
                 "Query Task ID " + str(task_id) +
                 " query Instance ID " + os_inst_id +
                 " result " + result.__str__())
-        #request_res_callback(task_id, result)
+        delete_request_callback(task_id, result)
         TaskManager.task_exit(task_id)
 
 def delete_instance(task_id, result):
@@ -56,7 +56,7 @@ def delete_instance(task_id, result):
     try:
         nova_client.servers.delete(os_inst_id)
         result['current_status'] = QUERY_VM
-        result['msg']='delete instance success begin query Instance status'
+        result['msg']='delete instance begin query Instance status'
         result['code'] = 200
         Log.logger.debug(
               "Query Task ID " + str(task_id) +
@@ -85,7 +85,7 @@ def delete_instance_and_query(task_id, result, resource):
             query_instance(task_id, result, resource)
     except Exception as e:
         Log.logger.error("Query Task ID " + str(task_id) +" [CRP] delete_instance_and_query failed, Exception:%s" %e)
-         #request_res_callback(task_id, result)
+        #request_res_callback(task_id, result)
         TaskManager.task_exit(task_id)
 
 
@@ -102,51 +102,28 @@ def delete_vip(port_id):
 
 
 # request UOP res_callback
-def request_res_callback(task_id, result):
-    ret = [
-        {
+def delete_request_callback(task_id, result):
+    data = {
             'resources_id': result.get('resources_id', ''),
             'os_inst_id': result.get('os_inst_id', ''),
             'msg': result.get('msg', ''),
             'code': result.get('code', ''),
+            'unique_flag': result.get('unique_flag',''),
+            'quantity': result.get('quantity', 0),
         }
-    ]
-    err_msg = None
-    cbk_result = None
+    headers = {'Content-Type': 'application/json'}
+    DELETE_CALL_BACK=configs[APP_ENV].UOP_URL + 'api/res_callback/delete'
     try:
-        cbk_result = uop_resource_callback(ret)
-        cbk_result = json.dumps(cbk_result.json())
-    except requests.exceptions.ConnectionError as rq:
-        err_msg = rq.args
+        data_str=json.dumps(data)
+        res=requests.post(DELETE_CALL_BACK,data=data_str,headers=headers)
+        res=json.dumps(res.json())
+        Log.logger.debug(res)
     except BaseException as e:
         err_msg = e.args
-    finally:
         Log.logger.debug(
-            "Callback Task ID " + str(task_id) + '\r\n' +
-            'mpc_res_callback result ' + str(cbk_result))
-        if err_msg:
-            Log.logger.debug(
                 "Callback Task ID " + str(task_id) + '\r\n' +
-                'mpc_res_callback err_msg ' + str(err_msg))
+                'delete_request_callback err_msg ' + str(err_msg))
 
-
-def uop_resource_callback(ret):
-    UOP_RES_CALLBACK_URL = UOP_URL + 'api/resource/mpc_resources_callback'
-    data_dict = {
-        'ret': ret
-    }
-    data_str = json.dumps(data_dict)
-    url = UOP_RES_CALLBACK_URL
-    headers = {
-        'Content-Type': 'application/json'
-    }
-    # Log.logger.debug(
-    Log.logger.debug(
-        "uop_resource_callback: " + url +
-        ' ' + json.dumps(headers) + ' ' + data_str)
-    cbk_result = requests.put(
-        url=url, headers=headers, data=data_str)
-    return cbk_result
 
 
 
