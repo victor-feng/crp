@@ -1704,7 +1704,6 @@ class ResourceDelete(Resource):
             unique_flag=str(uuid.uuid1())
             quantity=len(resources)
             #delete  kvm
-            d_resources=[]
             for resource in resources:
                 TaskManager.task_start(
                     SLEEP_TIME, TIMEOUT,
