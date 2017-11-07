@@ -1700,15 +1700,12 @@ class ResourceDelete(Resource):
             os_inst_id_list=request_data.get('os_inst_id_list')
             resources=deal_del_request_data(resources_id,os_inst_id_list)
             resources=resources.get('resources')
-            vid_list=request_data.get('vid_list')
+            vid_list=request_data.get('vid_list',[])
             unique_flag=str(uuid.uuid1())
-            quantity=0
+            quantity=len(resources)
             #delete  kvm
             d_resources=[]
             for resource in resources:
-                d_resources.append(resource)
-                if len(d_resources) == len(resources):
-                    end_flag=True
                 TaskManager.task_start(
                     SLEEP_TIME, TIMEOUT,
                     {'current_status': QUERY_VM,"unique_flag":unique_flag,"quantity":quantity},
