@@ -1712,7 +1712,7 @@ class ResourceDelete(Resource):
                     {'current_status': QUERY_VM,
                      "unique_flag":unique_flag,
                      "quantity":quantity,
-                     "os_ins_ip_list":os_ins_ip_list},
+                     "del_os_ins_ip_list":os_ins_ip_list},
                     delete_instance_and_query, resource)
             #delete vip
             for port_id in vid_list:
