@@ -110,6 +110,7 @@ def delete_request_callback(task_id, result):
             'code': result.get('code', ''),
             'unique_flag': result.get('unique_flag',''),
             'quantity': result.get('quantity', 0),
+            'os_ins_ip_list': result.get('os_ins_ip_list', []),
         }
     headers = {'Content-Type': 'application/json'}
     DELETE_CALL_BACK=configs[APP_ENV].UOP_URL + 'api/res_callback/delete'
