@@ -1306,6 +1306,7 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list,error_ms
     data["domain"] = req_dict["domain"]
     data["cmdb_repo_id"] = req_dict["cmdb_repo_id"]
     data["status"] = status
+    data["set_flag"] = req_dict["set_flag"]
     #if error_mag:
     data["error_msg"] = error_msg
 
