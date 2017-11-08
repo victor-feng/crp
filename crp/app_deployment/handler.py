@@ -395,7 +395,7 @@ class AppDeploy(Resource):
                 Log.logger.info("No nginx ip information, no need to push nginx something")
             for app in appinfo:
                 self.do_app_push(app)
-            _dep_detail_callback(deploy_id,"deploy_nginx")
+                _dep_detail_callback(deploy_id,"deploy_nginx")
             if mongodb:
                 logging.debug("The mongodb data is %s" % mongodb)
                 mongodb_res,err_msg = self._deploy_mongodb(mongodb)
