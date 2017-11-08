@@ -71,12 +71,13 @@ def _dep_callback(deploy_id,ip,res_type,err_msg,vm_state,success,cluster_name,en
     return res
 
 
-def _dep_detail_callback(deploy_id,deploy_type,deploy_msg=None):
+def _dep_detail_callback(deploy_id,deploy_type,set_flag,deploy_msg=None):
     data = {
         "deploy_id":deploy_id,
         "deploy_type":deploy_type,
         "deploy_msg":deploy_msg,
         "status":"ok",
+        "set_flag": set_flag,
     }
     
     data_str = json.dumps(data)
@@ -310,18 +311,18 @@ class AppDeploy(Resource):
             parser = reqparse.RequestParser()
             parser.add_argument('appinfo', type=list, location='json')
             parser.add_argument('deploy_id', type=str)
-            parser.add_argument('deploy_type', type=str)
+            parser.add_argument('set_flag', type=str)
             args = parser.parse_args()
             appinfo = args.appinfo
             deploy_id=args.deploy_id
-            deploy_type = args.deploy_type
+            set_flag = args.set_flag
             for app in appinfo:
                 self.do_app_push(app)
-            if deploy_type=="increate":
+            if set_flag=="increate":
                 deploy_msg="nginx增加扩容docker完成"
-            else:
+            elif set_flag=="reduce":
                 deploy_msg = "nginx缩减缩容docker完成"
-            _dep_detail_callback(deploy_id, "deploy_nginx", deploy_msg)
+            _dep_detail_callback(deploy_id, "deploy_nginx",set_flag,deploy_msg)
         except Exception as e:
             logging.exception("AppDeploy put exception:%s " %e)
             code = 500
@@ -395,12 +396,12 @@ class AppDeploy(Resource):
                 Log.logger.info("No nginx ip information, no need to push nginx something")
             for app in appinfo:
                 self.do_app_push(app)
-                _dep_detail_callback(deploy_id,"deploy_nginx")
+                _dep_detail_callback(deploy_id,"deploy_nginx","res")
             if mongodb:
                 logging.debug("The mongodb data is %s" % mongodb)
                 mongodb_res,err_msg = self._deploy_mongodb(mongodb)
                 if mongodb_res:
-                    _dep_detail_callback(deploy_id,"deploy_mongodb")
+                    _dep_detail_callback(deploy_id,"deploy_mongodb","res")
                 else:
                     _dep_callback(deploy_id, "ip", "mongodb", err_msg, "active", False, "mongodb", True)
                     code = 500
@@ -408,7 +409,7 @@ class AppDeploy(Resource):
             if mysql:
                 sql_ret,err_msg = self._deploy_mysql(mysql, docker)
                 if sql_ret:
-                    _dep_detail_callback(deploy_id,"deploy_mysql")
+                    _dep_detail_callback(deploy_id,"deploy_mysql","res")
                 else:
                     _dep_callback(deploy_id, "ip", "mysql", err_msg, "active", False,"mysql", True)
                     code=500
@@ -439,7 +440,7 @@ class AppDeploy(Resource):
                     Log.logger.debug('The dns add result: %s' % msg)
                 else:
                     Log.logger.debug('domain_name:{domain_name},domain_ip:{domain_ip} is null'.format(domain_name=domain_name,domain_ip=domain_ip))
-                _dep_detail_callback(deploy_id,"deploy_dns")
+                _dep_detail_callback(deploy_id,"deploy_dns","res")
 
             #添加disconf配置
             for disconf_info in disconf_server_info:
@@ -463,7 +464,7 @@ class AppDeploy(Resource):
                                                 )
                 Log.logger.debug("disconf result:{result},{message}".format(result=result,message=message))
             if disconf_server_info:
-                _dep_detail_callback(deploy_id,"deploy_disconf")
+                _dep_detail_callback(deploy_id,"deploy_disconf","res")
             all_ips=[]
             for info in docker:
                 ips = info.get('ip')
