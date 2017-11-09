@@ -947,7 +947,7 @@ class AppDeploy(Resource):
                 logging.debug(stdout)
                 break
         else:
-            logging.debug('---------execute %s cmd 10 times failed---------'% ip)
+            logging.debug('---------execute%s %s cmd 10 times failed---------'% (ip,cmd))
 
 
 
