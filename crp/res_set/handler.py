@@ -1351,7 +1351,7 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list,error_ms
     Log.logger.debug(res.status_code)
     Log.logger.debug(res.content)
     #ret = eval(res.content.decode('unicode_escape'))
-    ret=json.dumps(res.json())
+    #ret=json.dumps(res.json())
     nova_client = OpenStack.nova_client
     server_groups = nova_client.server_groups.list()
     server_group_names = ['create_app_cluster_server_group', 'create_resource_cluster_server_group'] 
@@ -1362,7 +1362,7 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list,error_ms
         logging.info('----------------准备删除server_group--------------')
         sg.manager.delete(sg.id)
         logging.info('------------删除成功-------------')
-    return ret
+    return res
 
 
 # res_set REST API Controller
