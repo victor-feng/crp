@@ -321,12 +321,16 @@ class AppDeploy(Resource):
             if set_flag=="increate" and appinfo:
                 deploy_msg="nginx增加扩容docker完成"
                 _dep_detail_callback(deploy_id, "deploy_increate_nginx", set_flag, deploy_msg)
+                deploy_msg = "扩容完成"
+                _dep_detail_callback(deploy_id, "deploy", set_flag, deploy_msg)
             elif set_flag=="increate" and not appinfo:
                 deploy_msg = "扩容完成"
                 _dep_detail_callback(deploy_id, "deploy", set_flag, deploy_msg)
             if set_flag=="reduce" and appinfo:
                 deploy_msg = "nginx缩减缩容docker完成"
                 _dep_detail_callback(deploy_id, "deploy_increate_nginx",set_flag,deploy_msg)
+                deploy_msg = "扩容完成"
+                _dep_detail_callback(deploy_id, "deploy", set_flag, deploy_msg)
             elif set_flag=="reduce" and not appinfo:
                 deploy_msg = "缩容完成"
                 _dep_detail_callback(deploy_id, "deploy", set_flag, deploy_msg)
