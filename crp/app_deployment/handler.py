@@ -319,13 +319,13 @@ class AppDeploy(Resource):
             for app in appinfo:
                 self.do_app_push(app)
             if set_flag=="increate":
-                deploy_msg=" nginx增加扩容docker完成"
+                deploy_msg="nginx增加扩容docker完成"
                 _dep_detail_callback(deploy_id, "deploy_increate_nginx", set_flag, deploy_msg)
-                _dep_detail_callback(deploy_id, "increate_success", set_flag, "扩容成功")
+                _dep_detail_callback(deploy_id, "increate_success", set_flag, u"扩容成功")
             elif set_flag=="reduce":
-                deploy_msg = " nginx缩减缩容docker完成"
+                deploy_msg = "nginx缩减缩容docker完成"
                 _dep_detail_callback(deploy_id, "deploy_increate_nginx",set_flag,deploy_msg)
-                _dep_detail_callback(deploy_id, "reduce_success", set_flag, "缩容成功")
+                _dep_detail_callback(deploy_id, "reduce_success", set_flag, u"缩容成功")
 
         except Exception as e:
             logging.exception("AppDeploy put exception:%s " %e)
