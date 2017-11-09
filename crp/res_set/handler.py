@@ -1704,9 +1704,9 @@ class ResourceDelete(Resource):
             resources=deal_del_request_data(resources_id,os_inst_id_list)
             resources=resources.get('resources')
             vid_list=request_data.get('vid_list',[])
-            os_ins_ip_list=request_data.get("os_ins_ip_list",[])
+            del_os_ins_ip_list=request_data.get("os_ins_ip_list",[])
             unique_flag=str(uuid.uuid1())
-            quantity=len(resources)
+            quantity=len(del_os_ins_ip_list)
             #delete  kvm
             for resource in resources:
                 TaskManager.task_start(
@@ -1714,7 +1714,7 @@ class ResourceDelete(Resource):
                     {'current_status': QUERY_VM,
                      "unique_flag":unique_flag,
                      "quantity":quantity,
-                     "del_os_ins_ip_list":os_ins_ip_list},
+                     "del_os_ins_ip_list":del_os_ins_ip_list},
                     delete_instance_and_query, resource)
             #delete vip
             for port_id in vid_list:
