@@ -360,9 +360,9 @@ class ResourceProviderTransitions(object):
                           self.task_id.__str__() +
                           " Transit harbor docker image success. The result glance image UUID is " +
                           image_uuid)
-
+                docker_tag=time.time().__str__()[6:10]
                 for i in range(0, quantity, 1):
-                    instance_name = '%s_%s' % (cluster_name, i.__str__())
+                    instance_name = '%s_%s_%s' % (cluster_name,docker_tag, i.__str__())
                     err_msg, osint_id = self._create_docker_by_url(
                         instance_name, image_uuid, flavor, meta, self.docker_network_id,server_group)
                     if err_msg is None:
