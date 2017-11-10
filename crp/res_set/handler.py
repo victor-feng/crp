@@ -325,7 +325,7 @@ class ResourceProviderTransitions(object):
     def _create_app_cluster(self, property_mapper):
         is_rollback = False
         uop_os_inst_id_list = []
-
+        docker_tag = time.time().__str__()[6:10]
         propertys = property_mapper.get('app_cluster')
         cluster_name = propertys.get('cluster_name')
         cluster_id = propertys.get('cluster_id')
@@ -360,7 +360,6 @@ class ResourceProviderTransitions(object):
                           self.task_id.__str__() +
                           " Transit harbor docker image success. The result glance image UUID is " +
                           image_uuid)
-                docker_tag=time.time().__str__()[6:10]
                 for i in range(0, quantity, 1):
                     instance_name = '%s_%s_%s' % (cluster_name,docker_tag, i.__str__())
                     err_msg, osint_id = self._create_docker_by_url(
