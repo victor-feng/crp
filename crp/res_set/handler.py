@@ -1706,14 +1706,12 @@ class ResourceDelete(Resource):
             vid_list=request_data.get('vid_list',[])
             del_os_ins_ip_list=request_data.get("os_ins_ip_list",[])
             unique_flag=str(uuid.uuid1())
-            quantity=len(del_os_ins_ip_list)
             #delete  kvm
             for resource in resources:
                 TaskManager.task_start(
                     SLEEP_TIME, TIMEOUT,
                     {'current_status': QUERY_VM,
                      "unique_flag":unique_flag,
-                     "quantity":quantity,
                      "del_os_ins_ip_list":del_os_ins_ip_list},
                     delete_instance_and_query, resource)
             #delete vip
