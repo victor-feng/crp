@@ -240,7 +240,7 @@ class ResourceProviderTransitions(object):
                 #卸载volume
                 try:
                     nova_client.volumes.delete_server_volume(os_inst_id,os_vol_id)
-                except BaseException as e
+                except BaseException as e:
                     pass
                 #删除创建的volume
                 cinder_client.volumes.delete(os_vol_id)
