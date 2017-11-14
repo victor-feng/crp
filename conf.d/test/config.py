@@ -140,7 +140,8 @@ class TestingConfig(BaseConfig):
             'cpu': 'cpu',
             'mem': 'mem',
             'disk': 'disk',
-            'quantity': 'quantity'
+            'quantity': 'quantity',
+            'volume_size': 'volume_size',
         }
     }
     SCRIPTPATH = r'crp/res_set/playbook-0830/'
