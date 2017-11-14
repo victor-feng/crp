@@ -3,17 +3,38 @@
 import json
 import requests
 import logging
+from crp.log import Log
 from crp.openstack import OpenStack
 # 创建volume
 # 挂载volume到虚机
 
 
 def create_volume(vm,volume_size):
+    """
     data_dict = {
         "volume": {
             'size': volume_size,
             "display_name": "%s-vol" % vm.get('vm_name', ''),
             "lvm_instance_id": vm.get('os_inst_id', ''),
+        }
+    }
+    """
+    data_dict = {
+        "volume": {
+            "status": "creating",
+            "availability_zone": "nova",
+            "source_volid": None,
+            "display_description": None,
+            "snapshot_id": None,
+            "user_id": None,
+            "size": volume_size,
+            "display_name": "%s-vol" % vm.get('vm_name', ''),
+            "imageRef": None,
+            "attach_status": "detached",
+            "volume_type": None,
+            "project_id": None,
+            "metadata": {},
+            "lvm_instance_id": vm.get('os_inst_id', '')
         }
     }
     cv_result = None
@@ -35,10 +56,10 @@ def create_volume(vm,volume_size):
         logging.debug('error msg: %s' % err_msg)
     except BaseException as e:
         err_msg = e.msg
-        logging.debug('error msg: %s' % err_msg)
+        Log.logger.debug('error msg: %s' % err_msg)
     finally:
         if err_msg:
-            logging.debug("CreateVolume Task ID " + str(vm.get('vm_name', '')) + '\r\n' + 'create_volume err_msg ' + str(err_msg))
+            Log.logger.debug("CreateVolume Task ID " + str(vm.get('vm_name', '')) + '\r\n' + 'create_volume err_msg ' + str(err_msg))
         else:
             cv_result_dict = cv_result.json()
             volume = cv_result_dict.get('volume', {})
@@ -46,14 +67,14 @@ def create_volume(vm,volume_size):
                 'id': volume.get('id', ''),
                 'display_name': volume.get('display_name', ''),
             }
-            logging.debug("CreateVolume success %s" % res)
+            Log.logger.debug("CreateVolume success %s" % res)
             return volume
 
 def instance_attach_volume(os_inst_id, os_vol_id,device=None):
     nova_client = OpenStack.nova_client
     vol_attach_result = nova_client.volumes.create_server_volume(
         os_inst_id, os_vol_id, device)
-    logging.debug(
+    Log.logger.debug(
         "AttachVolume Task ID " +
         "\r\nvolume ID " + os_vol_id +
         "\r\ninstance ID " + os_inst_id +
