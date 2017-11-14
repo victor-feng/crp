@@ -585,15 +585,16 @@ class ResourceProviderTransitions(object):
             if inst.status == 'ERROR' or vol_status == "error":
                 #如果 kvm 或者 volume的状态为error 全部回滚
                 # 置回滚标志位
+                if inst.status == 'ERROR':
+                    self.error_msg=inst.to_dict().__str__()
+                elif vol_status == "error":
+                    self.error_msg = "volume status is error"
                 Log.logger.debug(
                     "Query Task ID " +
                     self.task_id.__str__() +
                     " ERROR Instance Info: " +
-                    inst.to_dict().__str__())
-                if inst.status == 'ERROR':
-                    self.error_msg=inst.to_dict().__str__()
-                elif vol_status == "error":
-                    self.error_msg = vol.to_dict().__str__()
+                    self.error_msg)
+
                 is_rollback = True
 
         if result_inst_id_list.__len__() == uop_os_inst_id_list.__len__():
