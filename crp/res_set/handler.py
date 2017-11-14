@@ -238,7 +238,10 @@ class ResourceProviderTransitions(object):
             os_vol_id = uop_os_inst_id.get('os_vol_id')
             if os_vol_id is not None:
                 #卸载volume
-                nova_client.volumes.delete_server_volume(os_inst_id,os_vol_id)
+                try:
+                    nova_client.volumes.delete_server_volume(os_inst_id,os_vol_id)
+                except BaseException as e
+                    pass
                 #删除创建的volume
                 cinder_client.volumes.delete(os_vol_id)
                 Log.logger.debug('--------------rollback delete volume--------------%s-----------'% os_vol_id )
