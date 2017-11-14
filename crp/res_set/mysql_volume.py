@@ -50,10 +50,11 @@ def create_volume(vm,volume_size):
         }
 
         data_str = json.dumps(data_dict)
+        Log.logger.debug(data_str)
         cv_result = requests.post(url=url, headers=headers, data=data_str)
     except requests.exceptions.ConnectionError as rq:
         err_msg = rq.message.message
-        logging.debug('error msg: %s' % err_msg)
+        Log.logger.debug('error msg: %s' % err_msg)
     except BaseException as e:
         err_msg = e.msg
         Log.logger.debug('error msg: %s' % err_msg)
