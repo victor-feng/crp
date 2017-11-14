@@ -8,10 +8,10 @@ from crp.openstack import OpenStack
 # 挂载volume到虚机
 
 
-def create_volume(vm):
+def create_volume(vm,volume_size):
     data_dict = {
         "volume": {
-            'size': 10,
+            'size': volume_size,
             "display_name": "%s-vol" % vm.get('vm_name', ''),
             "lvm_instance_id": vm.get('os_inst_id', ''),
         }
@@ -34,7 +34,7 @@ def create_volume(vm):
         err_msg = rq.message.message
         logging.debug('error msg: %s' % err_msg)
     except BaseException as e:
-        err_msg = e.message
+        err_msg = e.msg
         logging.debug('error msg: %s' % err_msg)
     finally:
         if err_msg:
@@ -47,17 +47,12 @@ def create_volume(vm):
                 'display_name': volume.get('display_name', ''),
             }
             logging.debug("CreateVolume success %s" % res)
-            _instance_attach_volume(vm, volume)
+            return volume
 
-
-def _instance_attach_volume(vm, volume):
-    # vm = result.get('vm', {})
-    os_inst_id = vm.get('os_inst_id', '')
-    # volume = res.get('volume', {})
-    os_vol_id = volume.get('id', '')
+def instance_attach_volume(os_inst_id, os_vol_id,device=None):
     nova_client = OpenStack.nova_client
     vol_attach_result = nova_client.volumes.create_server_volume(
-        os_inst_id, os_vol_id, None)
+        os_inst_id, os_vol_id, device)
     logging.debug(
         "AttachVolume Task ID " +
         "\r\nvolume ID " + os_vol_id +

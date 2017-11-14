@@ -9,7 +9,7 @@ from transitions import Machine
 from flask_restful import reqparse, Api, Resource
 from flask import request
 from crp.taskmgr import *
-from mysql_volume import create_volume
+from mysql_volume import create_volume,instance_attach_volume
 from crp.dns.dns_api import DnsApi,NamedManagerApi
 from crp.res_set import resource_set_blueprint
 from crp.res_set.errors import resource_set_errors
@@ -40,6 +40,7 @@ DEFAULT_PASSWORD = configs[APP_ENV].DEFAULT_PASSWORD
 items_sequence_list_config = configs[APP_ENV].items_sequence_list_config
 property_json_mapper_config = configs[APP_ENV].property_json_mapper_config
 SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
+VOLUME_DEVICE= '/dev/vdb'
 
 AVAILABILITY_ZONE_AZ_UOP = configs[APP_ENV].AVAILABILITY_ZONE_AZ_UOP
 IS_OPEN_AFFINITY_SCHEDULING = configs[APP_ENV].IS_OPEN_AFFINITY_SCHEDULING
@@ -217,6 +218,7 @@ class ResourceProviderTransitions(object):
             uop_os_inst_id_list,
             result_uop_os_inst_id_list):
         nova_client = OpenStack.nova_client
+        cinder_client = OpenStack.cinder_client
         # fail_list = list(set(uop_os_inst_id_list) - set(result_uop_os_inst_id_list))
         fail_list = self._uop_os_list_sub(
             uop_os_inst_id_list, result_uop_os_inst_id_list)
@@ -232,7 +234,16 @@ class ResourceProviderTransitions(object):
             fail_list[:].__str__())
         # 删除全部，完成rollback
         for uop_os_inst_id in uop_os_inst_id_list:
-            nova_client.servers.delete(uop_os_inst_id['os_inst_id'])
+            os_inst_id=uop_os_inst_id['os_inst_id']
+            os_vol_id = uop_os_inst_id.get('os_vol_id')
+            if os_vol_id is not None:
+                #卸载volume
+                nova_client.volumes.delete_server_volume(os_inst_id,os_vol_id)
+                #删除创建的volume
+                cinder_client.volumes.delete(os_vol_id)
+                Log.logger.debug('--------------rollback delete volume--------------%s-----------'% os_vol_id )
+            #删除虚机
+            nova_client.servers.delete(os_inst_id)
         Log.logger.debug(
             "Task ID " +
             self.task_id.__str__() +
@@ -409,6 +420,8 @@ class ResourceProviderTransitions(object):
         flavor = KVM_FLAVOR.get(str(cpu) + str(mem), 'uop-2C4G50G')
         disk = propertys.get('disk')
         quantity = propertys.get('quantity')
+        volume_size=propertys.get('volume_size',0)
+        #volume_size 默认为0
         if cluster_type == "mysql" and str(cpu) == "2": # dev\test 环境
             flavor = KVM_FLAVOR.get("mysql", 'uop-2C4G50G')
         if cluster_type == "mysql" or cluster_type == "mycat":
@@ -445,10 +458,22 @@ class ResourceProviderTransitions(object):
                 if cluster_type == "mycat":
                     flavor = KVM_FLAVOR.get("mycat", 'uop-2C4G50G')
                 osint_id = self._create_instance_by_type(
-                    cluster_type, instance_name, flavor, network_id ,server_group)
+                    cluster_type, instance_name, flavor, network_id, server_group)
+                if (cluster_type == 'mysql' or cluster_type == 'mongodb') and volume_size != 0:
+                    #如果cluster_type是mysql 和 mongodb 就挂卷 或者 volume_size 不为0时
+                    vm = {
+                        'vm_name': instance_name,
+                        'os_inst_id': osint_id,
+                    }
+                    #创建volume
+                    volume=create_volume(vm, volume_size)
+                    os_vol_id = volume.get('id')
+                else:
+                    os_vol_id=None
                 uopinst_info = {
                     'uop_inst_id': cluster_id,
-                    'os_inst_id': osint_id
+                    'os_inst_id': osint_id,
+                    'os_vol_id': os_vol_id
                 }
                 uop_os_inst_id_list.append(uopinst_info)
                 propertys['instance'].append({'instance_type': cluster_type,
@@ -457,16 +482,6 @@ class ResourceProviderTransitions(object):
                                               'password': DEFAULT_PASSWORD,
                                               'port': port,
                                               'os_inst_id': osint_id})
-
-                if cluster_type == 'mysql':
-                    pass
-                    # TODO mysql volume
-                    # vm = {
-                    #     'vm_name': instance_name,
-                    #     'os_inst_id': osint_id,
-                    # }
-                    # create_volume(vm)
-
         return is_rollback, uop_os_inst_id_list
 
     # 将第一阶段输出结果新增至第四阶段
@@ -522,16 +537,31 @@ class ResourceProviderTransitions(object):
             ", Content is " +
             result_inst_id_list[:].__str__())
         nova_client = OpenStack.nova_client
+        cinder_client=OpenStack.cinder_client
         for uop_os_inst_id in uop_os_inst_id_wait_query:
-            inst = nova_client.servers.get(uop_os_inst_id['os_inst_id'])
+            os_inst_id=uop_os_inst_id['os_inst_id']
+            inst = nova_client.servers.get(os_inst_id)
+            os_vol_id = uop_os_inst_id.get('os_vol_id')
+            if os_vol_id is None:
+                vol_status = 'available'
+            else:
+                vol = cinder_client.volumes.get(os_vol_id)
+                vol_status = vol.status
             Log.logger.debug(
                 "Query Task ID " +
                 self.task_id.__str__() +
                 " query Instance ID " +
                 uop_os_inst_id['os_inst_id'] +
-                " Status is " +
-                inst.status)
-            if inst.status == 'ACTIVE':
+                " Status is " + inst.status + " Volume status is " + vol_status)
+            if inst.status == 'ACTIVE' and vol_status == 'available':
+                #检查kvm 和 volume 的状态，如果状态分别为ACTIVE 和available 开始挂卷
+                if os_vol_id:
+                    instance_attach_volume(os_inst_id, os_vol_id,VOLUME_DEVICE) #挂卷后在查询volume的状态是否为in-use
+                    vol_status = vol.status
+                else:
+                    #不是 mysql 和 mongodb的kvm 自动为in-use
+                    vol_status = 'in-use'
+            if inst.status == 'ACTIVE' and vol_status == 'in-use':
                 _ips = self._get_ip_from_instance(inst)
                 _ip = _ips.pop() if _ips.__len__() >= 1 else ''
                 physical_server = getattr(inst, OS_EXT_PHYSICAL_SERVER_ATTR)
@@ -542,7 +572,7 @@ class ResourceProviderTransitions(object):
                     if instances is not None:
                         for instance in value.get('instance'):
                             if instance.get(
-                                    'os_inst_id') == uop_os_inst_id['os_inst_id']:
+                                'os_inst_id') == uop_os_inst_id['os_inst_id']:
                                 instance['ip'] = _ip
                                 instance['physical_server'] = physical_server
                                 Log.logger.debug(
@@ -552,14 +582,18 @@ class ResourceProviderTransitions(object):
                                     mapper.__str__())
                                 res_instance_push_callback(self.task_id,self.req_dict,quantity,instance,{},self.set_flag)
                 result_inst_id_list.append(uop_os_inst_id)
-            if inst.status == 'ERROR':
+            if inst.status == 'ERROR' or vol_status == "error":
+                #如果 kvm 或者 volume的状态为error 全部回滚
                 # 置回滚标志位
                 Log.logger.debug(
                     "Query Task ID " +
                     self.task_id.__str__() +
                     " ERROR Instance Info: " +
                     inst.to_dict().__str__())
-                self.error_msg=inst.to_dict().__str__()
+                if inst.status == 'ERROR':
+                    self.error_msg=inst.to_dict().__str__()
+                elif vol_status == "error":
+                    self.error_msg = vol.to_dict().__str__()
                 is_rollback = True
 
         if result_inst_id_list.__len__() == uop_os_inst_id_list.__len__():
