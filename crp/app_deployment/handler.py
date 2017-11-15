@@ -841,7 +841,7 @@ class AppDeploy(Resource):
         nova_client = OpenStack.nova_client
         logging.debug( "Begin rebuild docker,IP is:" + ip)
         #开始注释nginx配置
-        self.closed_nginx_conf(appinfo,ip)
+        closed_nginx_conf(appinfo,ip)
         #开始rebuild
         server = OpenStack.find_vm_from_ipv4(ip=ip)
         newserver = OpenStack.nova_client.servers.rebuild(server=server, image=image_uuid)
@@ -865,7 +865,7 @@ class AppDeploy(Resource):
             elif vm_state == "active" and health_check_res == True:
                 os_flag = True
                 logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:"+ str(health_check_res))
-                self.open_nginx_conf(appinfo,ip)
+                open_nginx_conf(appinfo,ip)
                 break
             time.sleep(6)
         else:
@@ -900,65 +900,66 @@ class AppDeploy(Resource):
         except Exception as e:
             return False
 
-    def closed_nginx_conf(self,appinfo,ip):
-        try:
-            selfdir = os.path.dirname(os.path.abspath(__file__))
-            conf_dir="/usr/local/nginx/conf/servers_systoon"
-            if appinfo:
-                for info in appinfo:
-                    domain_ip=info.get("domain_ip","")
-                    port = info.get("port", "")
-                    domain=info.get("domain","")
-                    ips=info.get("ips",[])
-                    if ip in ips:
-                        close_cmd="sed  -i 's/server  %s:%s/#server  %s:%s/g' %s/%s" % (ip,port,ip,port,conf_dir,domain)
-                        reload_cmd="/usr/local/nginx/sbin/nginx -s reload"
-                an_close_cmd='''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=close_cmd)
-                logging.debug(an_close_cmd)
-                an_reload_cmd = '''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=reload_cmd)
-                #开始执行注释nginx配置文件和reload nginx 命令
-                self.exec_db_service(domain_ip,an_close_cmd)
-                self.exec_db_service(domain_ip,an_reload_cmd)
-        except Exception as e:
-            logging.error("closed_nginx_conf error %s" % e)
-    def open_nginx_conf(self,appinfo,ip):
-        try:
-            selfdir = os.path.dirname(os.path.abspath(__file__))
-            conf_dir = "/usr/local/nginx/conf/servers_systoon"
-            if appinfo:
-                for info in appinfo:
-                    domain_ip=info.get("domain_ip","")
-                    port = info.get("port", "")
-                    domain=info.get("domain","")
-                    ips=info.get("ips",[])
-                    if ip in ips:
-                        open_cmd="sed  -i 's/#server  %s:%s/server  %s:%s/g' %s/%s" % (ip,port,ip,port,conf_dir,domain)
-                        reload_cmd="/usr/local/nginx/sbin/nginx -s reload"
-                an_open_cmd='''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=open_cmd)
-                logging.debug(an_open_cmd)
-                an_reload_cmd = '''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=reload_cmd)
-                #开始执行注释nginx配置文件和reload nginx 命令
-            self.exec_db_service(domain_ip,an_open_cmd)
-            self.exec_db_service(domain_ip,an_reload_cmd)
-        except Exception as e:
-            logging.error("open_nginx_conf error %s" % e)
+def closed_nginx_conf(appinfo,ip):
+    try:
+        selfdir = os.path.dirname(os.path.abspath(__file__))
+        conf_dir="/usr/local/nginx/conf/servers_systoon"
+        if appinfo:
+            for info in appinfo:
+                domain_ip=info.get("domain_ip","")
+                port = info.get("port", "")
+                domain=info.get("domain","")
+                ips=info.get("ips",[])
+                if ip in ips:
+                    close_cmd="sed  -i 's/server  %s:%s/#server  %s:%s/g' %s/%s" % (ip,port,ip,port,conf_dir,domain)
+                    reload_cmd="/usr/local/nginx/sbin/nginx -s reload"
+            an_close_cmd='''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=close_cmd)
+            logging.debug(an_close_cmd)
+            an_reload_cmd = '''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=reload_cmd)
+            #开始执行注释nginx配置文件和reload nginx 命令
+            exec_db_service(domain_ip,an_close_cmd, 1)
+            exec_db_service(domain_ip,an_reload_cmd, 1)
+    except Exception as e:
+        logging.error("closed_nginx_conf error %s" % e)
 
-    def exec_db_service(self,ip,cmd):
-        with open('/etc/ansible/hosts', 'w') as f:
-            f.write('%s\n' % ip)
-        for i in range(10):
-            time.sleep(1)
-            p = subprocess.Popen(
-                    cmd,
-                    shell=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT)
-            stdout=p.stdout.read()
-            if "SUCCESS" in stdout:
-                logging.debug(stdout)
-                break
-        else:
-            logging.debug('---------execute%s %s cmd 10 times failed---------'% (ip,cmd))
+def open_nginx_conf(appinfo,ip):
+    try:
+        selfdir = os.path.dirname(os.path.abspath(__file__))
+        conf_dir = "/usr/local/nginx/conf/servers_systoon"
+        if appinfo:
+            for info in appinfo:
+                domain_ip=info.get("domain_ip","")
+                port = info.get("port", "")
+                domain=info.get("domain","")
+                ips=info.get("ips",[])
+                if ip in ips:
+                    open_cmd="sed  -i 's/#server  %s:%s/server  %s:%s/g' %s/%s" % (ip,port,ip,port,conf_dir,domain)
+                    reload_cmd="/usr/local/nginx/sbin/nginx -s reload"
+            an_open_cmd='''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=open_cmd)
+            logging.debug(an_open_cmd)
+            an_reload_cmd = '''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=reload_cmd)
+            #开始执行注释nginx配置文件和reload nginx 命令
+        exec_db_service(domain_ip,an_open_cmd, 1)
+        exec_db_service(domain_ip,an_reload_cmd, 1)
+    except Exception as e:
+        logging.error("open_nginx_conf error %s" % e)
+
+def exec_db_service(ip,cmd, sleep):
+    with open('/etc/ansible/hosts', 'w') as f:
+        f.write('%s\n' % ip)
+    for i in range(10):
+        time.sleep(sleep)
+        p = subprocess.Popen(
+                cmd,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT)
+        stdout=p.stdout.read()
+        if "SUCCESS" in stdout:
+            logging.debug(stdout)
+            break
+    else:
+        logging.debug('---------execute%s %s cmd 10 times failed---------'% (ip,cmd))
 
 
 

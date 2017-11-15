@@ -9,6 +9,8 @@ import threading
 from transitions import Machine
 from flask_restful import reqparse, Api, Resource
 from flask import request
+
+from crp.app_deployment.handler import exec_db_service
 from crp.taskmgr import *
 from mysql_volume import create_volume,instance_attach_volume
 from crp.dns.dns_api import DnsApi,NamedManagerApi
@@ -881,9 +883,10 @@ class ResourceProviderTransitions(object):
             ip=instance[0]['ip']
             cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m shell -a '/etc/init.d/m3316 restart'".format(ip=ip,dir=self.dir)
             Log.logger.debug(cmd)
-            self.exec_db_service(ip,cmd)
+            exec_db_service(ip, cmd, 6)
             if volume_size >0:
                 self.mount_volume(ip,"mysql")
+
         res_instance_push_callback(9999,self.req_dict,0,{},mysql,self.set_flag)
 
     @transition_state_logger
@@ -922,9 +925,9 @@ class ResourceProviderTransitions(object):
             ch_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m shell -a 'chmod 777 /tmp/mongodb_single.sh'".format(ip=ip, dir=self.dir)
             exec_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m shell -a 'sh /tmp/mongodb_single.sh'".format(ip=ip, dir=self.dir)
             Log.logger.debug(cmd)
-            self.exec_db_service(ip,cmd)
-            self.exec_db_service(ip,scp_cmd)
-            self.exec_db_service(ip,ch_cmd)
+            exec_db_service(ip,cmd, 6)
+            exec_db_service(ip,scp_cmd, 6)
+            exec_db_service(ip,ch_cmd, 6)
             #self.exec_db_service(ip,exec_cmd)
             p = subprocess.Popen(
                 exec_cmd,
@@ -1003,26 +1006,9 @@ class ResourceProviderTransitions(object):
             #redis_version="redis-2.8.14"
             cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m shell -a '/usr/local/redis-2.8.14/src/redis-server /usr/local/redis-2.8.14/redis.conf'".format(ip=ip,dir=self.dir)
             Log.logger.debug(cmd)
-            self.exec_db_service(ip,cmd)
+            exec_db_service(ip,cmd, 6)
         res_instance_push_callback(9999,self.req_dict,0,{},redis,self.set_flag)
-            
 
-    def exec_db_service(self,ip,cmd):
-        with open('/etc/ansible/hosts', 'w') as f:
-            f.write('%s\n' % ip)
-        for i in range(10):
-            time.sleep(6)
-            p = subprocess.Popen(
-                    cmd,
-                    shell=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT)
-            stdout=p.stdout.read()
-            if "SUCCESS" in stdout:            
-                Log.logger.debug(stdout)
-                break
-        else:
-            Log.logger.debug('---------restart %s db service 10 times failed---------'% ip)
 
     def mount_volume(self,ip,cluster_type):
         scp_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m synchronize -a 'src={dir}/volume.py dest=/tmp/'".format(ip=ip,dir=self.dir)
