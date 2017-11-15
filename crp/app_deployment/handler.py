@@ -920,7 +920,10 @@ def closed_nginx_conf(appinfo,ip):
             exec_db_service(domain_ip,an_close_cmd, 1)
             exec_db_service(domain_ip,an_reload_cmd, 1)
     except Exception as e:
-        logging.error("closed_nginx_conf error %s" % e)
+        msg = "closed_nginx_conf error %s" % e
+        logging.error(msg)
+        return -1, msg
+    return 1, ''
 
 def open_nginx_conf(appinfo,ip):
     try:
@@ -942,7 +945,10 @@ def open_nginx_conf(appinfo,ip):
         exec_db_service(domain_ip,an_open_cmd, 1)
         exec_db_service(domain_ip,an_reload_cmd, 1)
     except Exception as e:
-        logging.error("open_nginx_conf error %s" % e)
+        msg = "open_nginx_conf error %s" % e
+        logging.error(msg)
+        return -1, msg
+    return 1, ''
 
 def exec_db_service(ip,cmd, sleep):
     with open('/etc/ansible/hosts', 'w') as f:
