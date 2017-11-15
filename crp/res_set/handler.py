@@ -1735,8 +1735,8 @@ def deal_del_request_data(resources_id,del_os_ins_ip_list):
     req_list=[]
     resources={}
     for os_ip in del_os_ins_ip_list:
-        os_inst_id=os_ip["os_ins_id"]
-        os_vol_id=os_ip["os_vol_id"]
+        os_inst_id=os_ip.get("os_ins_id")
+        os_vol_id=os_ip.get("os_vol_id")
         req_dic={}
         req_dic['resources_id'] = resources_id
         req_dic['os_inst_id'] = os_inst_id
