@@ -244,6 +244,7 @@ class ResourceProviderTransitions(object):
             resource["resource_id"]=self.resource_id
             resource["os_inst_id"]=os_inst_id
             resource["os_vol_id"] = os_vol_id
+            #调用删除虚机和卷的接口进行回滚操作
             TaskManager.task_start(
                 SLEEP_TIME, TIMEOUT,
                 {'current_status': DETACH_VOLUME,
@@ -918,11 +919,12 @@ class ResourceProviderTransitions(object):
                 instance[2]['dbtype'] = 'master'
             except IndexError as e:
                 Log.logger.debug('mongodb ips error {e}'.format(e=e))
+            mongo_ip_list= mongodb_ip_list
             mongodb_ip_list.append(mongodb_ip_list[-1])
             mongodb_cluster = MongodbCluster(mongodb_ip_list)
             mongodb_cluster.exec_final_script()
             if volume_size > 0:
-                self.mount_volumes(mongodb_ip_list,"mongodb")
+                self.mount_volumes(mongo_ip_list,"mongodb")
         else:
             Log.logger.debug('mongodb single instance start')
             instance = mongodb.get('instance', '')
