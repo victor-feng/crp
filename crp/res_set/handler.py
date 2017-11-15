@@ -807,7 +807,7 @@ class ResourceProviderTransitions(object):
     def do_mysql_push(self):
         mysql_ip_list=[]
         mysql = self.property_mapper.get('mysql', {})
-        volume_size=mysql.get("volune_size",0)
+        volume_size=mysql.get("volume_size",0)
         instance = mysql.get('instance')
         if mysql.get('quantity') == 5:
             mysql_ip_info = []
