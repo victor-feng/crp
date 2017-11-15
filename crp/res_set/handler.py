@@ -5,7 +5,6 @@ import time
 import subprocess
 import requests
 import uuid
-import threading
 from transitions import Machine
 from flask_restful import reqparse, Api, Resource
 from flask import request
@@ -885,7 +884,8 @@ class ResourceProviderTransitions(object):
                 strout += line + os.linesep
             Log.logger.debug('mysql cluster push result:%s' % strout)
             if volume_size >0:
-                self.mount_volumes(mysql_ip_list,"mysql")
+                for ip in mysql_ip_list:
+                    self.mount_volume(ip,"mysql")
         else:
             # 当MYSQL为单例时  将实IP当虚IP使用
             mysql['wvip'] = instance[0]['ip']
@@ -924,7 +924,8 @@ class ResourceProviderTransitions(object):
             mongodb_cluster = MongodbCluster(mongodb_ip_list)
             mongodb_cluster.exec_final_script()
             if volume_size > 0:
-                self.mount_volumes(mongo_ip_list,"mongodb")
+                for ip in mongo_ip_list:
+                    self.mount_volume(ip,"mongodb")
         else:
             Log.logger.debug('mongodb single instance start')
             instance = mongodb.get('instance', '')
@@ -1028,17 +1029,6 @@ class ResourceProviderTransitions(object):
         exec_db_service(ip, scp_cmd,6)
         exec_db_service(ip, exec_cmd,6)
 
-    def mount_volumes(self, ip_list, cluster_type):
-        threads = []
-        for ip in ip_list:
-            t= threading.Thread(target=self.mount_volume, args=(ip,cluster_type))
-            threads.append(t)
-        for t in threads:
-            time.sleep(0.001)
-            t.start()
-        for t in threads:
-            time.sleep(0.001)
-            t.join()
     def _excute_mongo_cmd(self, ip):
         sh_path = os.path.join(UPLOAD_FOLDER, 'mongodb', 'mongodb_single.sh')
         sh_dir = os.path.join(UPLOAD_FOLDER, 'mongodb')
