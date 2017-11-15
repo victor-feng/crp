@@ -1735,7 +1735,7 @@ def deal_del_request_data(resources_id,del_os_ins_ip_list):
     req_list=[]
     resources={}
     for os_ip in del_os_ins_ip_list:
-        os_inst_id=os_ip["os_inst_id"]
+        os_inst_id=os_ip["os_ins_id"]
         os_vol_id=os_ip["os_vol_id"]
         req_dic={}
         req_dic['resources_id'] = resources_id
@@ -1752,7 +1752,6 @@ class ResourceDelete(Resource):
         try:
             request_data=json.loads(request.data)
             resources_id=request_data.get('resources_id')
-            os_inst_id_list=request_data.get('os_inst_id_list')
             vid_list=request_data.get('vid_list',[])
             del_os_ins_ip_list=request_data.get("os_ins_ip_list",[])
             resources = deal_del_request_data(resources_id,del_os_ins_ip_list)
