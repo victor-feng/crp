@@ -1013,8 +1013,8 @@ class ResourceProviderTransitions(object):
     def mount_volume(self,ip,cluster_type):
         scp_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m synchronize -a 'src={dir}/volume.py dest=/tmp/'".format(ip=ip,dir=self.dir)
         exec_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m shell -a 'pythom /tmp/volume.py {cluster_type}".format(ip=ip, dir=self.dir,cluster_type=cluster_type)
-        self.exec_db_service(ip, scp_cmd)
-        self.exec_db_service(ip, exec_cmd)
+        exec_db_service(ip, scp_cmd,6)
+        exec_db_service(ip, exec_cmd,6)
 
     def mount_volumes(self, ip_list, cluster_type):
         threads = []
