@@ -5,6 +5,7 @@ import time
 import subprocess
 import requests
 import uuid
+import threading
 from transitions import Machine
 from flask_restful import reqparse, Api, Resource
 from flask import request
@@ -40,7 +41,7 @@ DEFAULT_PASSWORD = configs[APP_ENV].DEFAULT_PASSWORD
 items_sequence_list_config = configs[APP_ENV].items_sequence_list_config
 property_json_mapper_config = configs[APP_ENV].property_json_mapper_config
 SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
-VOLUME_DEVICE= '/dev/vdb'
+#VOLUME_DEVICE= '/dev/vdb'
 
 AVAILABILITY_ZONE_AZ_UOP = configs[APP_ENV].AVAILABILITY_ZONE_AZ_UOP
 IS_OPEN_AFFINITY_SCHEDULING = configs[APP_ENV].IS_OPEN_AFFINITY_SCHEDULING
@@ -558,10 +559,10 @@ class ResourceProviderTransitions(object):
                 " Status is " + inst.status + " Volume status is " + vol_status)
             if inst.status == 'ACTIVE' and vol_status == 'available':
                 #检查kvm 和 volume 的状态，如果状态分别为ACTIVE 和available 开始挂卷
-                if os_vol_id:
-                    instance_attach_volume(os_inst_id, os_vol_id,VOLUME_DEVICE) #挂卷后在查询volume的状态是否为in-use
+                if os_vol_id and vol_status.lower() != "attaching":
+                    instance_attach_volume(os_inst_id, os_vol_id) #挂卷后在查询volume的状态是否为in-use
                     vol_status = vol.status
-                else:
+                elif not os_vol_id :
                     #不是 mysql 和 mongodb的kvm 自动为in-use
                     vol_status = 'in-use'
             if inst.status == 'ACTIVE' and vol_status == 'in-use':
@@ -804,7 +805,9 @@ class ResourceProviderTransitions(object):
 
     @transition_state_logger
     def do_mysql_push(self):
+        mysql_ip_list=[]
         mysql = self.property_mapper.get('mysql', {})
+        volume_size=mysql.get("volune_size",0)
         instance = mysql.get('instance')
         if mysql.get('quantity') == 5:
             mysql_ip_info = []
@@ -815,6 +818,7 @@ class ResourceProviderTransitions(object):
                 tup = (_instance['instance_name'], _instance['ip'])
                 if _instance['instance_type'] == 'mysql':
                     mysql_ip_info.append(tup)
+                    mysql_ip_list.append(tup[1])
                     _instance['dbtype'] = master_slave.pop()
                 else:
                     mycat_ip_info.append(tup)
@@ -867,6 +871,8 @@ class ResourceProviderTransitions(object):
             for line in p.stdout.readlines():
                 strout += line + os.linesep
             Log.logger.debug('mysql cluster push result:%s' % strout)
+            if volume_size >0:
+                self.mount_volumes(mysql_ip_list,"mysql")
         else:
             # 当MYSQL为单例时  将实IP当虚IP使用
             mysql['wvip'] = instance[0]['ip']
@@ -876,12 +882,15 @@ class ResourceProviderTransitions(object):
             cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m shell -a '/etc/init.d/m3316 restart'".format(ip=ip,dir=self.dir)
             Log.logger.debug(cmd)
             self.exec_db_service(ip,cmd)
+            if volume_size >0:
+                self.mount_volume(ip,"mysql")
         res_instance_push_callback(9999,self.req_dict,0,{},mysql,self.set_flag)
 
     @transition_state_logger
     def do_mongodb_push(self):
         mongodb_ip_list = []
         mongodb = self.property_mapper.get('mongodb', {})
+        volume_size=mongodb.get("volume_size",0)
         if mongodb.get('quantity', {}) == 3:
             instance = mongodb.get('instance', '')
             for ins in instance:
@@ -899,6 +908,8 @@ class ResourceProviderTransitions(object):
             mongodb_ip_list.append(mongodb_ip_list[-1])
             mongodb_cluster = MongodbCluster(mongodb_ip_list)
             mongodb_cluster.exec_final_script()
+            if volume_size > 0:
+                self.mount_volumes(mongodb_ip_list,"mongodb")
         else:
             Log.logger.debug('mongodb single instance start')
             instance = mongodb.get('instance', '')
@@ -925,6 +936,8 @@ class ResourceProviderTransitions(object):
             Log.logger.debug(
                 'mongodb single instance end {ip}'.format(
                     ip=mongodb['ip']))
+            if volume_size > 0:
+                self.mount_volume(ip,"mongodb")
         res_instance_push_callback(9999,self.req_dict,0,{},mongodb,self.set_flag)
 
     @transition_state_logger
@@ -1011,6 +1024,23 @@ class ResourceProviderTransitions(object):
         else:
             Log.logger.debug('---------restart %s db service 10 times failed---------'% ip)
 
+    def mount_volume(self,ip,cluster_type):
+        scp_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m synchronize -a 'src={dir}/volume.py dest=/tmp/'".format(ip=ip,dir=self.dir)
+        exec_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m shell -a 'pythom /tmp/volume.py {cluster_type}".format(ip=ip, dir=self.dir,cluster_type=cluster_type)
+        self.exec_db_service(ip, scp_cmd)
+        self.exec_db_service(ip, exec_cmd)
+
+    def mount_volumes(self, ip_list, cluster_type):
+        threads = []
+        for ip in ip_list:
+            t= threading.Thread(target=self.mount_volume, args=(ip,cluster_type))
+            threads.append(t)
+        for t in threads:
+            time.sleep(0.001)
+            t.start()
+        for t in threads:
+            time.sleep(0.001)
+            t.join()
     def _excute_mongo_cmd(self, ip):
         sh_path = os.path.join(UPLOAD_FOLDER, 'mongodb', 'mongodb_single.sh')
         sh_dir = os.path.join(UPLOAD_FOLDER, 'mongodb')
