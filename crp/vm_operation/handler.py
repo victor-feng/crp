@@ -59,16 +59,16 @@ class VMStartOrStop(VMOperation):
         ip = request.json.get('ip')
         operation = request.json.get('operation')
 
-        if operation == 'start':
-            method = open_nginx_conf
-        else:
-            method = closed_nginx_conf
-
-        if res[0].get('code') == 200:
-            result = method(appinfo, ip)
-            if  result[0] == -1:
-                res[0]['code'] = 500
-                res[0]['result']['msg'] = result[1]
+        # if operation == 'start':
+        #     method = open_nginx_conf
+        # else:
+        #     method = closed_nginx_conf
+        #
+        # if res[0].get('code') == 200:
+        #     result = method(appinfo, ip)
+        #     if  result[0] == -1:
+        #         res[0]['code'] = 500
+        #         res[0]['result']['msg'] = result[1]
 
         return res
 
