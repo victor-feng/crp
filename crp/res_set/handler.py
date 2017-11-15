@@ -128,6 +128,7 @@ class ResourceProviderTransitions(object):
         self.error_type = RES_STATUS_FAIL
         self.error_msg = None
         self.set_flag=req_dict["set_flag"]
+        self.resource_id=req_dict["resource_id"]
         # Initialize the state machine
         self.machine = Machine(
             model=self,
@@ -237,14 +238,27 @@ class ResourceProviderTransitions(object):
             fail_list[:].__str__())
         # 删除全部，完成rollback
         for uop_os_inst_id in uop_os_inst_id_list:
+            resource={}
             os_inst_id=uop_os_inst_id['os_inst_id']
             os_vol_id = uop_os_inst_id.get('os_vol_id')
+            resource["resource_id"]=self.resource_id
+            resource["os_inst_id"]=os_inst_id
+            resource["os_vol_id"] = os_vol_id
+            TaskManager.task_start(
+                SLEEP_TIME, TIMEOUT,
+                {'current_status': DETACH_VOLUME,
+                 "unique_flag": "",
+                 "del_os_ins_ip_list": [],
+                 "sef_flag": "rollback"},
+                delete_instance_and_query, resource)
+            """
             if os_vol_id is not None:
                 #删除创建的volume
                 cinder_client.volumes.delete(os_vol_id)
                 Log.logger.debug('--------------rollback delete volume--------------%s-----------'% os_vol_id )
             #删除虚机
             nova_client.servers.delete(os_inst_id)
+            """
         Log.logger.debug(
             "Task ID " +
             self.task_id.__str__() +
@@ -1754,6 +1768,7 @@ class ResourceDelete(Resource):
             resources_id=request_data.get('resources_id')
             vid_list=request_data.get('vid_list',[])
             del_os_ins_ip_list=request_data.get("os_ins_ip_list",[])
+            set_flag = request_data.get('set_flag')
             resources = deal_del_request_data(resources_id,del_os_ins_ip_list)
             resources = resources.get('resources')
             unique_flag=str(uuid.uuid1())
@@ -1763,7 +1778,8 @@ class ResourceDelete(Resource):
                     SLEEP_TIME, TIMEOUT,
                     {'current_status': DETACH_VOLUME,
                      "unique_flag":unique_flag,
-                     "del_os_ins_ip_list":del_os_ins_ip_list},
+                     "del_os_ins_ip_list":del_os_ins_ip_list,
+                     "sef_flag":set_flag},
                     delete_instance_and_query, resource)
             #delete vip
             for port_id in vid_list:
