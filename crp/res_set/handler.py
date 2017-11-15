@@ -20,7 +20,7 @@ from crp.log import Log
 from crp.openstack import OpenStack
 from crp.utils.docker_tools import image_transit
 from config import configs, APP_ENV
-from del_handler import delete_instance_and_query,QUERY_VM,delete_vip
+from del_handler import delete_instance_and_query,DETACH_VOLUME,delete_vip
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 
@@ -240,11 +240,6 @@ class ResourceProviderTransitions(object):
             os_inst_id=uop_os_inst_id['os_inst_id']
             os_vol_id = uop_os_inst_id.get('os_vol_id')
             if os_vol_id is not None:
-                #卸载volume
-                try:
-                    nova_client.volumes.delete_server_volume(os_inst_id,os_vol_id)
-                except BaseException as e:
-                    pass
                 #删除创建的volume
                 cinder_client.volumes.delete(os_vol_id)
                 Log.logger.debug('--------------rollback delete volume--------------%s-----------'% os_vol_id )
@@ -595,7 +590,7 @@ class ResourceProviderTransitions(object):
                 if inst.status == 'ERROR':
                     self.error_msg=inst.to_dict().__str__()
                 elif vol_status == "error":
-                    self.error_msg = "volume status is error"
+                    self.error_msg = "create volume failed,volume status is error!!"
                 Log.logger.debug(
                     "Query Task ID " +
                     self.task_id.__str__() +
@@ -1736,14 +1731,18 @@ class MongodbCluster(object):
                 stderr=subprocess.STDOUT)
             Log.logger.debug('mongodb cluster push result:%s' % p.stdout.read())
 
-def deal_del_request_data(resources_id,os_inst_id_list):
+def deal_del_request_data(resources_id,os_inst_id_list,del_os_ins_ip_list):
     req_list=[]
     resources={}
     for os_inst_id in os_inst_id_list:
-        req_dic={}
-        req_dic['resources_id'] = resources_id
-        req_dic['os_inst_id'] = os_inst_id
-        req_list.append(req_dic)
+        for os_ip in del_os_ins_ip_list:
+            if os_inst_id == os_ip["os_inst_id"]:
+                os_vol_id=os_ip["os_vol_id"]
+                req_dic={}
+                req_dic['resources_id'] = resources_id
+                req_dic['os_inst_id'] = os_inst_id
+                req_dic['os_vol_id']=os_vol_id
+                req_list.append(req_dic)
     resources['resources']=req_list
     return resources
         
@@ -1755,16 +1754,16 @@ class ResourceDelete(Resource):
             request_data=json.loads(request.data)
             resources_id=request_data.get('resources_id')
             os_inst_id_list=request_data.get('os_inst_id_list')
-            resources=deal_del_request_data(resources_id,os_inst_id_list)
-            resources=resources.get('resources')
             vid_list=request_data.get('vid_list',[])
             del_os_ins_ip_list=request_data.get("os_ins_ip_list",[])
+            resources = deal_del_request_data(resources_id, os_inst_id_list,del_os_ins_ip_list)
+            resources = resources.get('resources')
             unique_flag=str(uuid.uuid1())
             #delete  kvm
             for resource in resources:
                 TaskManager.task_start(
                     SLEEP_TIME, TIMEOUT,
-                    {'current_status': QUERY_VM,
+                    {'current_status': DETACH_VOLUME,
                      "unique_flag":unique_flag,
                      "del_os_ins_ip_list":del_os_ins_ip_list},
                     delete_instance_and_query, resource)
