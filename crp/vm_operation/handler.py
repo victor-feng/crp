@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from flask_restful import reqparse, Api, Resource
+from flask import request
 
 from crp.app_deployment.handler import closed_nginx_conf, open_nginx_conf
 from crp.vm_operation import vm_operation_blueprint
@@ -53,22 +54,21 @@ class VMOperation(Resource):
 
 class VMStartOrStop(VMOperation):
     def post(self):
-        res = super(VMStartOrStop).post()
-        parser = reqparse.RequestParser()
-        parser.add_argument('appinfo', type=str)
-        parser.add_argument('ip', type=str)
-        parser.add_argument('operation', type=str)
-        args = parser.parse_args()
-        if args.get('operation') == 'start':
+        res = super(VMStartOrStop, self).post()
+        appinfo = request.json.get('appinfo')
+        ip = request.json.get('ip')
+        operation = request.json.get('operation')
+
+        if operation == 'start':
             method = open_nginx_conf
         else:
             method = closed_nginx_conf
 
-        if res.get('code') == 200:
-            result = method(args.get('appinfo', []), args.get('ip'))
+        if res[0].get('code') == 200:
+            result = method(appinfo, ip)
             if  result[0] == -1:
-                res['code'] = 500
-                res['result']['msg'] = result[1]
+                res[0]['code'] = 500
+                res[0]['result']['msg'] = result[1]
 
         return res
 
