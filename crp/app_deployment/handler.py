@@ -206,8 +206,12 @@ class AppDeploy(Resource):
             """
             selfdir = os.path.dirname(os.path.abspath(__file__))
             nip = kwargs.get('nip')
-            with open('/etc/ansible/hosts', 'w') as f:
-                f.write('%s\n' % nip)
+            check_cmd = "cat /etc/ansible/hosts | grep %s | wc -l" % nip
+            res = os.popen(check_cmd).read().strip()
+            # 向ansible配置文件中追加ip，如果存在不追加
+            if int(res) == 0:
+                with open('/etc/ansible/hosts', 'a+') as f:
+                    f.write('%s\n' % nip)
             Log.logger.debug('----->start push:{}dir:{}'.format(kwargs, selfdir))
             self.run_cmd(
                 "ansible {nip} --private-key={dir}/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip,dir=selfdir))
@@ -951,8 +955,12 @@ def open_nginx_conf(appinfo,ip):
     return 1, ''
 
 def exec_db_service(ip,cmd, sleep):
-    with open('/etc/ansible/hosts', 'w') as f:
-        f.write('%s\n' % ip)
+    check_cmd="cat /etc/ansible/hosts | grep %s | wc -l" % ip
+    res=os.popen(check_cmd).read().strip()
+    #向ansible配置文件中追加ip，如果存在不追加
+    if int(res) == 0:
+        with open('/etc/ansible/hosts', 'a+') as f:
+            f.write('%s\n' % ip)
     for i in range(10):
         time.sleep(sleep)
         p = subprocess.Popen(

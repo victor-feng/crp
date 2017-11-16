@@ -1643,8 +1643,12 @@ class MongodbCluster(object):
 
     def write_ip_to_server(self):
         for ip in self.ip:
-            with open('/etc/ansible/hosts', 'a') as f:
-                f.write('%s\n' % ip)
+            check_cmd = "cat /etc/ansible/hosts | grep %s | wc -l" % ip
+            res = os.popen(check_cmd).read().strip()
+            # 向ansible配置文件中追加ip，如果存在不追加
+            if int(res) == 0:
+                with open('/etc/ansible/hosts', 'a+') as f:
+                    f.write('%s\n' % ip)
 
     def telnet_ack(self):
         start_time = time.time()
