@@ -9,8 +9,8 @@ from crp.openstack import OpenStack
 from crp.taskmgr import *
 from config import APP_ENV, configs
 
-DETACH_VOLUME = 0
-QUERY_DETACH = 1
+QUERY_VOLUME = 0
+DETACH_VOLUME = 1
 DETACH_VOLUME_SUCCESSFUL = 2
 QUERY_VM=3
 DELETE_VM=4
@@ -80,9 +80,8 @@ def delete_instance(task_id, result):
 def detach_volume(task_id, result, resource):
     os_inst_id = resource.get('os_inst_id')
     os_vol_id = resource.get('os_vol_id')
-    logging.info(
-        'Task ID %s, _detach_volume, os_inst_id is %s, os_vol_id is %s.',
-        task_id, os_inst_id, os_vol_id)
+    Log.logger.debug(
+        'Task ID %s,begin detach_volume, os_inst_id is %s, os_vol_id is %s.'% (task_id, os_inst_id, os_vol_id))
 
     try:
         if os_vol_id:
@@ -94,25 +93,28 @@ def detach_volume(task_id, result, resource):
     except Exception as e:
         raise e
     else:
-        result['current_status'] = QUERY_DETACH
+        result['current_status'] = QUERY_VOLUME
 
 #查询volume状态
-def query_detach_status(task_id, result, resource):
+def query_volume_status(task_id, result, resource):
     os_vol_id = resource.get('os_vol_id')
     if os_vol_id:
+        #如果volume存在直接查询volume状态
         cinder_client = OpenStack.cinder_client
         vol = cinder_client.volumes.get(os_vol_id)
-        logging.debug(
-            "Task ID %s, _query_detach_status, Volume status: %s, info: %s",
-            task_id, vol.status, vol)
+        Log.logger.debug(
+            "Task ID %s, query_detach_status, Volume status: %s, info: %s" % (task_id, vol.status, vol))
         if vol.status == 'available':
             result['current_status'] = DETACH_VOLUME_SUCCESSFUL
-            logging.info(
-                "Task ID %s, detach volume(%s) successful.",
-                task_id, os_vol_id)
+            Log.logger.info(
+                "Task ID %s, detach volume(%s) successful." % (task_id, os_vol_id))
+        elif vol.status == 'attaching':
+            result['current_status'] = DETACH_VOLUME
+            Log.logger.debug(
+                "Task ID %s, begin detach volume , vol_id is %s" %(task_id,os_vol_id))
         elif vol.status == 'error' or 'error' in vol.status:
-            logging.error(
-                "Task ID %s, detach volume error, vol_id is %s",os_vol_id)
+            Log.logger.error(
+                "Task ID %s, volume status is error begin delete volume, vol_id is %s" %(task_id,os_vol_id))
             result['current_status'] = DETACH_VOLUME_SUCCESSFUL
     elif not os_vol_id:
         #volume 不存在 直接删除虚机
@@ -127,9 +129,11 @@ def delete_volume(task_id,result,resource):
             cinder_client = OpenStack.cinder_client
             cinder_client.volumes.delete(os_vol_id)
         result['current_status'] = QUERY_VM
+        Log.logger.debug(
+            "Task ID %s, delete volume , vol_id is %s" % (task_id,os_vol_id))
     except Exception as e:
-        logging.exception(
-            "[CRP] _delete_volume failed, Exception:%s",e.args)
+        Log.logger.exception(
+            "[CRP] _delete_volume failed, Exception:%s" %e.args)
         result['current_status'] = QUERY_VM
 
 
@@ -139,10 +143,12 @@ def delete_instance_and_query(task_id, result, resource):
          "Task ID %s,\r\n resource %s ." %
          (task_id, resource))
     try:
-        if current_status == DETACH_VOLUME:
+        if current_status == QUERY_VOLUME:
+            query_volume_status(task_id, result, resource)
+        elif current_status == DETACH_VOLUME:
             detach_volume(task_id, result, resource)
-        elif current_status == QUERY_DETACH:
-            query_detach_status(task_id, result, resource)
+        elif current_status == QUERY_VOLUME:
+            query_volume_status(task_id, result, resource)
         elif current_status == DETACH_VOLUME_SUCCESSFUL:
             delete_volume(task_id, result,resource)
         elif current_status == QUERY_VM:

@@ -19,7 +19,7 @@ from crp.log import Log
 from crp.openstack import OpenStack
 from crp.utils.docker_tools import image_transit
 from config import configs, APP_ENV
-from del_handler import delete_instance_and_query,DETACH_VOLUME,delete_vip
+from del_handler import delete_instance_and_query,QUERY_VOLUME,delete_vip
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 
@@ -246,7 +246,7 @@ class ResourceProviderTransitions(object):
             #调用删除虚机和卷的接口进行回滚操作
             TaskManager.task_start(
                 SLEEP_TIME, TIMEOUT,
-                {'current_status': DETACH_VOLUME,
+                {'current_status': QUERY_VOLUME,
                  "unique_flag": "",
                  "del_os_ins_ip_list": [],
                  "sef_flag": "rollback"},
@@ -1772,7 +1772,7 @@ class ResourceDelete(Resource):
             for resource in resources:
                 TaskManager.task_start(
                     SLEEP_TIME, TIMEOUT,
-                    {'current_status': DETACH_VOLUME,
+                    {'current_status': QUERY_VOLUME,
                      "unique_flag":unique_flag,
                      "del_os_ins_ip_list":del_os_ins_ip_list,
                      "sef_flag":set_flag},
