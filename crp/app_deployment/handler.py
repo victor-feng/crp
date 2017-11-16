@@ -452,6 +452,7 @@ class AppDeploy(Resource):
             #推送mongodb和mysql脚本
             if mongodb:
                 logging.debug("The mongodb data is %s" % mongodb)
+                mongodb=eval(mongodb)
                 path_filename=mongodb.get("path_filename")
                 if path_filename:
                     mongodb_res,err_msg = self._deploy_mongodb(mongodb)
@@ -463,6 +464,7 @@ class AppDeploy(Resource):
                         return code,msg
             if mysql:
                 logging.debug("The mysql data is %s" % mysql)
+                mysql=eval(mysql)
                 path_filename = mysql.get("path_filename")
                 if path_filename:
                     sql_ret,err_msg = self._deploy_mysql(mysql, docker)
