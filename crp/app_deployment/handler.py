@@ -463,8 +463,8 @@ class AppDeploy(Resource):
                         code = 500
                         return code,msg
             if mysql:
-                logging.debug("The mysql data is %s" % mysql)
-                mysql=eval(mysql)
+                logging.debug("The mysql data is %s" % str(mysql))
+                #mysql=eval(mysql)
                 path_filename = mysql.get("path_filename")
                 if path_filename:
                     sql_ret,err_msg = self._deploy_mysql(mysql, docker)
