@@ -72,12 +72,17 @@ def create_volume(vm,volume_size):
             return volume
 
 def instance_attach_volume(os_inst_id, os_vol_id,device=None):
-    nova_client = OpenStack.nova_client
-    vol_attach_result = nova_client.volumes.create_server_volume(
-        os_inst_id, os_vol_id, device)
-    Log.logger.debug(
-        "AttachVolume Task ID " +
-        "\r\nvolume ID " + os_vol_id +
-        "\r\ninstance ID " + os_inst_id +
-        "\r\nresult: " + str(vol_attach_result.to_dict())
-    )
+    try:
+        nova_client = OpenStack.nova_client
+        vol_attach_result = nova_client.volumes.create_server_volume(os_inst_id, os_vol_id, device)
+        Log.logger.debug(
+            "AttachVolume Task ID " +
+            "\r\nvolume ID " + os_vol_id +
+            "\r\ninstance ID " + os_inst_id +
+            "\r\nresult: " + str(vol_attach_result.to_dict()))
+        return "AttachVolumeSuccess"
+    except BaseException as e:
+        err_msg=e.args
+        Log.logger.error('attach volume os_inst_id is %s os_vol_id is  error msg: %s' % (os_inst_id,os_vol_id,err_msg))
+        return "AttachVolumeError"
+

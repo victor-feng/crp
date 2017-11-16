@@ -568,10 +568,18 @@ class ResourceProviderTransitions(object):
                 uop_os_inst_id['os_inst_id'] +
                 " Status is " + inst.status + " Volume status is " + vol_status)
             if inst.status == 'ACTIVE' and vol_status == 'available':
-                #检查kvm 和 volume 的状态，如果状态分别为ACTIVE 和available 开始挂卷
+                #检查kvm 和 volume 的状态，如果状态分别为ACTIVE 和available 开始挂卷,尝试挂卷5次
                 if os_vol_id and vol_status.lower() != "attaching":
-                    instance_attach_volume(os_inst_id, os_vol_id) #挂卷后在查询volume的状态是否为in-use
+                    for i in range(5):
+                        res=instance_attach_volume(os_inst_id, os_vol_id)
+                        if res == "AttachVolumeSuccess":
+                            break
+                        time.sleep(1)
+                    else:
+                        self.error_msg="attach volume error"
+                        is_rollback = True
                     vol_status = vol.status
+                    # 挂卷后在查询volume的状态是否为in-use
                 elif not os_vol_id :
                     #不是 mysql 和 mongodb的kvm 自动为in-use
                     vol_status = 'in-use'
