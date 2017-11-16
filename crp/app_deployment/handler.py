@@ -411,7 +411,7 @@ class AppDeploy(Resource):
                 Log.logger.info("No nginx ip information, no need to push nginx something")
             for app in appinfo:
                 self.do_app_push(app)
-            _dep_detail_callback(deploy_id,"deploy_nginx","res")
+                _dep_detail_callback(deploy_id,"deploy_nginx","res")
             if mongodb:
                 logging.debug("The mongodb data is %s" % mongodb)
                 mongodb_res,err_msg = self._deploy_mongodb(mongodb)
@@ -455,7 +455,7 @@ class AppDeploy(Resource):
                     Log.logger.debug('The dns add result: %s' % msg)
                 else:
                     Log.logger.debug('domain_name:{domain_name},domain_ip:{domain_ip} is null'.format(domain_name=domain_name,domain_ip=domain_ip))
-            _dep_detail_callback(deploy_id,"deploy_dns","res")
+                _dep_detail_callback(deploy_id,"deploy_dns","res")
 
             #添加disconf配置
             for disconf_info in disconf_server_info:
