@@ -127,7 +127,6 @@ class ResourceProviderTransitions(object):
         self.error_type = RES_STATUS_FAIL
         self.error_msg = None
         self.set_flag=req_dict["set_flag"]
-        self.resource_id=req_dict["resource_id"]
         # Initialize the state machine
         self.machine = Machine(
             model=self,
@@ -240,7 +239,7 @@ class ResourceProviderTransitions(object):
             resource={}
             os_inst_id=uop_os_inst_id['os_inst_id']
             os_vol_id = uop_os_inst_id.get('os_vol_id')
-            resource["resource_id"]=self.resource_id
+            resource["resource_id"]=resource_id
             resource["os_inst_id"]=os_inst_id
             resource["os_vol_id"] = os_vol_id
             #调用删除虚机和卷的接口进行回滚操作
