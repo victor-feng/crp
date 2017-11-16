@@ -71,10 +71,10 @@ def create_volume(vm,volume_size):
             Log.logger.debug("CreateVolume success %s" % res)
             return volume
 
-def instance_attach_volume(os_inst_id, os_vol_id):
+def instance_attach_volume(os_inst_id, os_vol_id,device=None):
     nova_client = OpenStack.nova_client
     vol_attach_result = nova_client.volumes.create_server_volume(
-        os_inst_id, os_vol_id)
+        os_inst_id, os_vol_id, device)
     Log.logger.debug(
         "AttachVolume Task ID " +
         "\r\nvolume ID " + os_vol_id +
