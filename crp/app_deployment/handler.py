@@ -412,37 +412,6 @@ class AppDeploy(Resource):
             for app in appinfo:
                 self.do_app_push(app)
                 _dep_detail_callback(deploy_id,"deploy_nginx","res")
-            if mongodb:
-                logging.debug("The mongodb data is %s" % mongodb)
-                mongodb_res,err_msg = self._deploy_mongodb(mongodb)
-                if mongodb_res:
-                    _dep_detail_callback(deploy_id,"deploy_mongodb","res")
-                else:
-                    _dep_callback(deploy_id, "ip", "mongodb", err_msg, "active", False, "mongodb", True)
-                    code = 500
-                    return code,msg
-            if mysql:
-                sql_ret,err_msg = self._deploy_mysql(mysql, docker)
-                if sql_ret:
-                    _dep_detail_callback(deploy_id,"deploy_mysql","res")
-                else:
-                    _dep_callback(deploy_id, "ip", "mysql", err_msg, "active", False,"mysql", True)
-                    code=500
-                    return code,msg
-
-            #logging.debug("Docker is " + str(docker))
-            #for i in docker:
-            #    while True:
-            #        ips = i.get('ip')
-            #        length_ip = len(ips)
-            #        if length_ip > 0:
-            #            logging.debug('ip and url: ' + str(ips) + str(i.get('url')))
-            #            ip = ips[0]
-            #            # self._image_transit(deploy_id, docker.get("ip"), docker.get("image_url"))
-            #            self._image_transit(deploy_id, ip, i.get('url'))
-            #            ips.pop(0)
-            #        else:
-            #            break
 
             #添加dns解析
             for item in dns:
@@ -480,6 +449,26 @@ class AppDeploy(Resource):
                 Log.logger.debug("disconf result:{result},{message}".format(result=result,message=message))
             if disconf_server_info:
                 _dep_detail_callback(deploy_id,"deploy_disconf","res")
+            #推送mongodb和mysql脚本
+            if mongodb:
+                logging.debug("The mongodb data is %s" % mongodb)
+                mongodb_res,err_msg = self._deploy_mongodb(mongodb)
+                if mongodb_res:
+                    _dep_detail_callback(deploy_id,"deploy_mongodb","res")
+                else:
+                    _dep_callback(deploy_id, "ip", "mongodb", err_msg, "active", False, "mongodb", True)
+                    code = 500
+                    return code,msg
+            if mysql:
+                sql_ret,err_msg = self._deploy_mysql(mysql, docker)
+                if sql_ret:
+                    _dep_detail_callback(deploy_id,"deploy_mysql","res")
+                else:
+                    _dep_callback(deploy_id, "ip", "mysql", err_msg, "active", False,"mysql", True)
+                    code=500
+                    return code,msg
+
+            #部署docker
             all_ips=[]
             for info in docker:
                 ips = info.get('ip')
@@ -502,31 +491,9 @@ class AppDeploy(Resource):
                     else:
                         logging.error(
                              "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + err_msg)
-                    
 
-            """        
-            for i in docker:
-                while True:
-                    ips = i.get('ip')
-                    image_uuid=i.get("image_uuid")
-                    length_ip = len(ips)
-                    if length_ip > 0:
-                        logging.debug('ip and url: ' + str(ips) + str(i.get('url')))
-                        ip = ips[0]
-                        self._image_transit(deploy_id, ip, quantity, image_uuid)
-                        ips.pop(0)
-                    else:
-                      break
-           """
             for info in docker:
                 self.__image_transit(deploy_id, info,appinfo)
-
-            #if not (sql_ret and mongodb_res):
-            #    res = _dep_callback(deploy_id, False)
-            #    if res.status_code == 500:
-            #        code = 500
-            #        msg = "uop server error"
-
             lock.release()
         except Exception as e:
             code = 500
@@ -560,19 +527,6 @@ class AppDeploy(Resource):
         logging.debug("local_path and remote_path is %s-%s" % (local_path, remote_path))
         sh_path = self.mongodb_command_file(mongodb_password, mongodb_username, port, database, local_path)
         logging.debug("start deploy mongodb cluster", sh_path)
-
-        # for ip in ips:
-        #     host_path = self.mongodb_hosts_file(ip)
-        #     ansible_cmd = 'ansible -i ' + host_path + ' ' + ip + ' ' + '
-        # --private-key=crp/res_set/playbook-0830/old_id_rsa -m'
-        #     ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + local_path + ' dest=' + remote_path + '"'
-        #     ansible_sh_cmd = ansible_cmd + ' shell -a "%s < %s"' % (configs[APP_ENV].MONGODB_PATH, remote_path)
-        #     if self._exec_ansible_cmd(ansible_sql_cmd):
-        #         res = self._exec_ansible_cmd(ansible_sh_cmd)
-        #         logging.debug("end deploy mongodb cluster")
-        #     else:
-        #         res = False
-        # return res
 
         # 只需要对主节点进行认证操作
         host_path = self.mongodb_hosts_file(vip)
