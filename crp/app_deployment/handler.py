@@ -452,21 +452,26 @@ class AppDeploy(Resource):
             #推送mongodb和mysql脚本
             if mongodb:
                 logging.debug("The mongodb data is %s" % mongodb)
-                mongodb_res,err_msg = self._deploy_mongodb(mongodb)
-                if mongodb_res:
-                    _dep_detail_callback(deploy_id,"deploy_mongodb","res")
-                else:
-                    _dep_callback(deploy_id, "ip", "mongodb", err_msg, "active", False, "mongodb", True)
-                    code = 500
-                    return code,msg
+                path_filename=mongodb.get("path_filename")
+                if path_filename:
+                    mongodb_res,err_msg = self._deploy_mongodb(mongodb)
+                    if mongodb_res:
+                        _dep_detail_callback(deploy_id,"deploy_mongodb","res")
+                    else:
+                        _dep_callback(deploy_id, "ip", "mongodb", err_msg, "active", False, "mongodb", True)
+                        code = 500
+                        return code,msg
             if mysql:
-                sql_ret,err_msg = self._deploy_mysql(mysql, docker)
-                if sql_ret:
-                    _dep_detail_callback(deploy_id,"deploy_mysql","res")
-                else:
-                    _dep_callback(deploy_id, "ip", "mysql", err_msg, "active", False,"mysql", True)
-                    code=500
-                    return code,msg
+                logging.debug("The mysql data is %s" % mysql)
+                path_filename = mysql.get("path_filename")
+                if path_filename:
+                    sql_ret,err_msg = self._deploy_mysql(mysql, docker)
+                    if sql_ret:
+                        _dep_detail_callback(deploy_id,"deploy_mysql","res")
+                    else:
+                        _dep_callback(deploy_id, "ip", "mysql", err_msg, "active", False,"mysql", True)
+                        code=500
+                        return code,msg
 
             #部署docker
             all_ips=[]
