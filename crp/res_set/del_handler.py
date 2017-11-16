@@ -108,7 +108,7 @@ def query_volume_status(task_id, result, resource):
             result['current_status'] = DETACH_VOLUME_SUCCESSFUL
             Log.logger.info(
                 "Task ID %s, detach volume(%s) successful." % (task_id, os_vol_id))
-        elif vol.status == 'attaching':
+        elif vol.status == 'in-use':
             result['current_status'] = DETACH_VOLUME
             Log.logger.debug(
                 "Task ID %s, begin detach volume , vol_id is %s" %(task_id,os_vol_id))
