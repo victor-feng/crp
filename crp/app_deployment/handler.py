@@ -809,7 +809,7 @@ class AppDeploy(Resource):
         server = OpenStack.find_vm_from_ipv4(ip=ip)
         newserver = OpenStack.nova_client.servers.rebuild(server=server, image=image_uuid)
         os_inst_id=newserver.id
-        for i in range(10):
+        for i in range(20):
             vm = nova_client.servers.get(os_inst_id)
             vm_state = vm.status.lower()
             #health_check_res=True
