@@ -927,8 +927,8 @@ def open_nginx_conf(appinfo,ip):
             logging.debug(an_open_cmd)
             an_reload_cmd = '''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=reload_cmd)
             #开始执行注释nginx配置文件和reload nginx 命令
-        exec_db_service(domain_ip,an_open_cmd, 1)
-        exec_db_service(domain_ip,an_reload_cmd, 1)
+            exec_db_service(domain_ip,an_open_cmd, 1)
+            exec_db_service(domain_ip,an_reload_cmd, 1)
     except Exception as e:
         msg = "open_nginx_conf error %s" % e
         logging.error(msg)
