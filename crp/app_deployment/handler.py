@@ -838,8 +838,10 @@ class AppDeploy(Resource):
                 logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +" Begin start 3 times")
                 for i in range(3):
                     #启动vm
-                    nova_client.servers.start(server=server)
-                    time.sleep(10)
+                    task_state=getattr(server,'OS-EXT-STS:task_state')
+                    if task_state != "powering-on":
+                        nova_client.servers.start(server=server)
+                        time.sleep(10)
                     vm = nova_client.servers.get(os_inst_id)
                     vm_state = vm.status.lower()
                     if vm_state != "active":
