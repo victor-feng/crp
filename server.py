@@ -23,6 +23,7 @@ os.system('rm -rf config.py')
 os.system('rm -rf conf')
 os.system('ln -s conf.d/%s  conf '%(options.deploy))
 os.system('ln -s conf/config.py  config.py')
+os.system('> /etc/ansible/hosts')
 
 from crp import create_app
 from config import APP_ENV
