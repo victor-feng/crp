@@ -839,9 +839,8 @@ class AppDeploy(Resource):
                     vm = nova_client.servers.get(os_inst_id)
                     vm_state = vm.status.lower()
                     if vm_state != "active":
+                        logging.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " start %s times" %i)
                         continue
-                        logging.debug(
-                            " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " start %s times" %i)
                 else:
                     os_flag = False
                     err_msg="vm status is shutoff"
