@@ -804,7 +804,7 @@ class AppDeploy(Resource):
                     _dep_callback(deploy_id, ip, "docker", err_msg, vm_state, False,cluster_name,end_flag)
                     logging.debug(
                         "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
-                    if end_flag:break
+                    if len(ips):break
                 ips.pop(0)
             else:
                 break
@@ -822,6 +822,7 @@ class AppDeploy(Resource):
         #开始rebuild
         server = OpenStack.find_vm_from_ipv4(ip=ip)
         newserver = OpenStack.nova_client.servers.rebuild(server=server, image=image_uuid)
+        time.sleep(1)
         os_inst_id=newserver.id
         for i in range(20):
             vm = nova_client.servers.get(os_inst_id)
