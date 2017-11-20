@@ -790,14 +790,18 @@ class AppDeploy(Resource):
                         "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
                 else:
                     #如果索引为0，表示第一个ip部署失败，部署停止
-                    ip_index=int(ip_index_dict[ip])
+                    ip_index = int(ip_index_dict[ip])
+                    logging.debug(
+                        "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " ip_index:" + ip_index)
                     if ip_index == 0:
                         for d_ip in ips:
                             self.all_ips.remove(d_ip)
+                    else:
+                        self.all_ips.remove(ip)
                     if len(self.all_ips) == 0:
                         end_flag=True
+                        deploy_flag = False
                     _dep_callback(deploy_id, ip, "docker", err_msg, vm_state, False,cluster_name,end_flag)
-                    deploy_flag = False
                     logging.debug(
                         "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
                     break
