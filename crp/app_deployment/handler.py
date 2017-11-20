@@ -770,12 +770,13 @@ class AppDeploy(Resource):
         end_flag=False
         cluster_name=info.get("ins_name","")
         ip_index_dict={}
-        ips=info.get('ip')
-        length_ip = len(ips)
+        ip_list=info.get('ip')
         #获取每个ip在列表中的索引
-        for ip in ips:
-            ip_index_dict[ip]=ips.index(ip)
+        for ip in ip_list:
+            ip_index_dict[ip]=ip_list.index(ip)
         while 1:
+            ips = info.get('ip')
+            length_ip = len(ips)
             if length_ip > 0:
                 logging.debug('ip and url: ' + str(ips) + str(info.get('url')))
                 ip = ips[0]
