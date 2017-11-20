@@ -829,14 +829,15 @@ class AppDeploy(Resource):
         for i in range(20):
             vm = nova_client.servers.get(os_inst_id)
             vm_state = vm.status.lower()
+            task_state = getattr(vm, 'OS-EXT-STS:task_state')
             #health_check_res=True
             health_check_res=self.app_health_check(ip, HEALTH_CHECK_PORT, HEALTH_CHECK_PATH)
-            if vm_state == "error":
+            if vm_state == "error" and (task_state !="rebuilding" or task_state !="rebuild_spawning"):
                 os_flag=False
                 err_msg="vm status is error"
                 logging.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +  " Health check res:"+ str(health_check_res) +" Error msg is:" +err_msg)
                 break
-            elif vm_state == "shutoff":
+            elif vm_state == "shutoff" and (task_state !="rebuilding" or task_state !="rebuild_spawning"):
                 # 如果vm状态是关闭时重启3次
                 logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +" Begin start 3 times")
                 for i in range(3):
