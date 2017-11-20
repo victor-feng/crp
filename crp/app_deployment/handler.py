@@ -769,6 +769,11 @@ class AppDeploy(Resource):
         deploy_flag=True
         end_flag=False
         cluster_name=info.get("ins_name","")
+        ip_index_dict={}
+        ip_list=info.get('ip')
+        #获取每个ip在列表中的索引
+        for ip in ip_list:
+            ip_index_dict[ip]=ip_list.index(ip)
         while 1:
             ips = info.get('ip')
             length_ip = len(ips)
@@ -784,10 +789,14 @@ class AppDeploy(Resource):
                     logging.debug(
                         "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
                 else:
-                    for d_ip in ips:
-                        self.all_ips.remove(d_ip)
+                    #如果索引为0，表示第一个ip部署失败，部署停止
+                    ip_index=int(ip_index_dict[ip])
+                    if ip_index == 0:
+                        for d_ip in ips:
+                            self.all_ips.remove(d_ip)
                     if len(self.all_ips) == 0:
                         end_flag=True
+
                     _dep_callback(deploy_id, ip, "docker", err_msg, vm_state, False,cluster_name,end_flag)
                     deploy_flag = False
                     logging.debug(
