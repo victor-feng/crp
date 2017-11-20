@@ -796,7 +796,6 @@ class AppDeploy(Resource):
                             self.all_ips.remove(d_ip)
                     if len(self.all_ips) == 0:
                         end_flag=True
-
                     _dep_callback(deploy_id, ip, "docker", err_msg, vm_state, False,cluster_name,end_flag)
                     deploy_flag = False
                     logging.debug(
@@ -831,11 +830,24 @@ class AppDeploy(Resource):
                 logging.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +  " Health check res:"+ str(health_check_res) +" Error msg is:" +err_msg)
                 break
             elif vm_state == "shutoff":
-                os_flag = False
-                err_msg="vm status is shutoff"
-                logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:"+ str(health_check_res) + " Error msg is:" +err_msg )
-                #self.open_nginx_conf(appinfo, ip)
-                break
+                # 如果vm状态是关闭时重启3次
+                logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +" Begin start 3 times")
+                for i in range(3):
+                    #启动vm
+                    nova_client.servers.start(server=server)
+                    time.sleep(10)
+                    vm = nova_client.servers.get(os_inst_id)
+                    vm_state = vm.status.lower()
+                    if vm_state != "active":
+                        continue
+                        logging.debug(
+                            " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " start %s times" %i)
+                else:
+                    os_flag = False
+                    err_msg="vm status is shutoff"
+                    logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:"+ str(health_check_res) + " Error msg is:" +err_msg )
+                    #self.open_nginx_conf(appinfo, ip)
+                    break
             elif vm_state == "active" and health_check_res == True:
                 os_flag = True
                 logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:"+ str(health_check_res))
