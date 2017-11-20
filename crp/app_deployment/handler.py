@@ -768,6 +768,7 @@ class AppDeploy(Resource):
         #lock.acquire()
         deploy_flag=True
         end_flag=False
+        first_error_flag=False
         cluster_name=info.get("ins_name","")
         ip_index_dict={}
         ip_list=info.get('ip')
@@ -794,6 +795,7 @@ class AppDeploy(Resource):
                     logging.debug(
                         "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " ip_index:" + str(ip_index))
                     if ip_index == 0:
+                        first_error_flag = True
                         for d_ip in ips:
                             self.all_ips.remove(d_ip)
                     else:
@@ -804,7 +806,7 @@ class AppDeploy(Resource):
                     _dep_callback(deploy_id, ip, "docker", err_msg, vm_state, False,cluster_name,end_flag)
                     logging.debug(
                         "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
-                    if len(ips):break
+                    if first_error_flag:break
                 ips.pop(0)
             else:
                 break
