@@ -770,13 +770,12 @@ class AppDeploy(Resource):
         end_flag=False
         cluster_name=info.get("ins_name","")
         ip_index_dict={}
-        ip_list=info.get('ip')
+        ips=info.get('ip')
+        length_ip = len(ips)
         #获取每个ip在列表中的索引
-        for ip in ip_list:
-            ip_index_dict[ip]=ip_list.index(ip)
+        for ip in ips:
+            ip_index_dict[ip]=ips.index(ip)
         while 1:
-            ips = info.get('ip')
-            length_ip = len(ips)
             if length_ip > 0:
                 logging.debug('ip and url: ' + str(ips) + str(info.get('url')))
                 ip = ips[0]
@@ -792,7 +791,7 @@ class AppDeploy(Resource):
                     #如果索引为0，表示第一个ip部署失败，部署停止
                     ip_index = int(ip_index_dict[ip])
                     logging.debug(
-                        "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " ip_index:" + ip_index)
+                        "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " ip_index:" + str(ip_index))
                     if ip_index == 0:
                         for d_ip in ips:
                             self.all_ips.remove(d_ip)
