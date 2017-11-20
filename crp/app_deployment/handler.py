@@ -841,7 +841,7 @@ class AppDeploy(Resource):
                     vm = nova_client.servers.get(os_inst_id)
                     task_state=getattr(vm,'OS-EXT-STS:task_state')
                     vm_state = vm.status.lower()
-                    if task_state != "powering-on" and  vm_state != "active":
+                    if task_state != "powering-on" and  vm_state == "shutoff":
                         nova_client.servers.start(server=server)
                         time.sleep(10)
                     vm = nova_client.servers.get(os_inst_id)
