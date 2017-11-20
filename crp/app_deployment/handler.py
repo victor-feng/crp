@@ -804,7 +804,7 @@ class AppDeploy(Resource):
                     _dep_callback(deploy_id, ip, "docker", err_msg, vm_state, False,cluster_name,end_flag)
                     logging.debug(
                         "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
-                    break
+                    if end_flag:break
                 ips.pop(0)
             else:
                 break
@@ -830,7 +830,7 @@ class AppDeploy(Resource):
             health_check_res=self.app_health_check(ip, HEALTH_CHECK_PORT, HEALTH_CHECK_PATH)
             if vm_state == "error":
                 os_flag=False
-                err_msg=vm.to_dict().__str__()
+                err_msg="vm status is error"
                 logging.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +  " Health check res:"+ str(health_check_res) +" Error msg is:" +err_msg)
                 break
             elif vm_state == "shutoff":
