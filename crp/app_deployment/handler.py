@@ -832,12 +832,12 @@ class AppDeploy(Resource):
             task_state = getattr(vm, 'OS-EXT-STS:task_state')
             #health_check_res=True
             health_check_res=self.app_health_check(ip, HEALTH_CHECK_PORT, HEALTH_CHECK_PATH)
-            if vm_state == "error" and  "rebuild" not in task_state :
+            if vm_state == "error" and  "rebuild" not in str(task_state) :
                 os_flag=False
                 err_msg="vm status is error"
                 logging.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +  " Health check res:"+ str(health_check_res) +" Error msg is:" +err_msg)
                 break
-            elif vm_state == "shutoff" and "rebuild" not in task_state:
+            elif vm_state == "shutoff" and "rebuild" not in str(task_state):
                 # 如果vm状态是关闭时重启3次
                 logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +" Begin start 3 times")
                 for i in range(3):
@@ -860,7 +860,7 @@ class AppDeploy(Resource):
                     logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:"+ str(health_check_res) + " Error msg is:" +err_msg )
                     #self.open_nginx_conf(appinfo, ip)
                     break
-            elif vm_state == "active" and health_check_res == True and "rebuild" not in task_state:
+            elif vm_state == "active" and health_check_res == True and "rebuild" not in str(task_state):
                 os_flag = True
                 logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:"+ str(health_check_res))
                 open_nginx_conf(appinfo,ip)
