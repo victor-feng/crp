@@ -212,10 +212,10 @@ class Dockerlogs(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('osid', type=str)
         args = parser.parse_args()
-        os_inst_id = args.os_inst_id
+        osid = args.osid
         try:
             nova_cli = OpenStack.nova_client
-            vm = nova_cli.servers.get(os_inst_id)
+            vm = nova_cli.servers.get(osid)
             logging.info("#####vm:{}".format(vm))
             logs = vm.get_console_output()
         except Exception as e:
