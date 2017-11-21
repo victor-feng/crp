@@ -215,6 +215,7 @@ class Dockerlogs(Resource):
         osid = args.osid
         try:
             nova_cli = OpenStack.nova_client
+            logging.info("#####osid:{}".format(osid))
             vm = nova_cli.servers.get(osid)
             logging.info("#####vm:{}".format(vm))
             logs = vm.get_console_output()
