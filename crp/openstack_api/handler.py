@@ -206,7 +206,41 @@ class NovaVMAPIAll(Resource):
                 }
             }
             return res, 200
+
+class Dockerlogs(Resource):
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('osid', type=str)
+        args = parser.parse_args()
+        os_inst_id = args.os_inst_id
+        try:
+            nova_cli = OpenStack.nova_client
+            vm = nova_cli.servers.get(os_inst_id)
+            logging.info("#####vm:{}".format(vm))
+            logs = vm.get_console_output()
+        except Exception as e:
+            logging.error('get vm logs err: %s' % e.message)
+            res = {
+                "code": 400,
+                "result": {
+                    "vm_state": "failed",
+                    "msg": e.message
+                }
+            }
+            return res, 400
+        else:
+            res = {
+                "code": 200,
+                "result": {
+                    "msg": "success",
+                    "logs": logs
+                }
+            }
+            return res, 200
+
+
 openstack_api.add_resource(NovaVMAPIAll, '/nova/states')
 openstack_api.add_resource(NovaVMAPI, '/nova/state')
 openstack_api.add_resource(PortAPI, '/port/count')
 openstack_api.add_resource(NetworkAPI, '/network/list')
+openstack_api.add_resource(Dockerlogs, '/docker/logs/')
