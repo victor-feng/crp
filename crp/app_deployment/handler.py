@@ -45,7 +45,7 @@ HEALTH_CHECK_PORT = configs[APP_ENV].HEALTH_CHECK_PORT
 HEALTH_CHECK_PATH = configs[APP_ENV].HEALTH_CHECK_PATH
 
 
-def _dep_callback(deploy_id,ip,res_type,err_msg,vm_state,success,cluster_name,end_flag):
+def _dep_callback(deploy_id,ip,res_type,err_msg,vm_state,success,cluster_name,end_flag,deploy_type):
     data = dict()
     data["ip"]=ip
     data["res_type"]=res_type
@@ -53,6 +53,7 @@ def _dep_callback(deploy_id,ip,res_type,err_msg,vm_state,success,cluster_name,en
     data["vm_state"] = vm_state
     data["cluster_name"] = cluster_name
     data["end_flag"] = end_flag
+    data["deploy_type"]=deploy_type
     if success:
         data["result"] = "success"
     else:
@@ -148,10 +149,10 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
         TaskManager.task_exit(task_id)
 
 
-def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, info = None,appinfo=[]):
+def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, info = None,appinfo=[],deploy_type=None):
     image_uuid=info.get("image_uuid")
     if _check_image_status(image_uuid):
-        deploy_flag=obj.deploy_docker(info,deploy_id, image_uuid,appinfo)
+        deploy_flag=obj.deploy_docker(info,deploy_id, image_uuid,appinfo,deploy_type)
         if not deploy_flag:
             TaskManager.task_exit(task_id)
     TaskManager.task_exit(task_id)
@@ -365,12 +366,14 @@ class AppDeploy(Resource):
             parser.add_argument('dns', type=list, location='json')
             parser.add_argument('appinfo', type=list, location='json')
             parser.add_argument('disconf_server_info', type=list, location='json')
+            parser.add_argument('deploy_type', type=str)
             #parser.add_argument('file', type=werkz
             # eug.datastructures.FileStorage, location='files')
             args = parser.parse_args()
             #logging.debug("AppDeploy receive post request. args is " + str(args))
             Log.logger.debug("AppDeploy receive post request. args is " + str(args))
             deploy_id = args.deploy_id
+            deploy_type = args.deploy_type
             logging.debug("deploy_id is " + str(deploy_id))
             docker = args.docker
             mongodb = args.mongodb
@@ -380,7 +383,7 @@ class AppDeploy(Resource):
             appinfo = args.appinfo
             print "appinfo", appinfo
             logging.debug("Thread exec start")
-            t = threading.Thread(target=self.deploy_anything, args=(mongodb, mysql, docker, dns, deploy_id, appinfo, disconf_server_info))
+            t = threading.Thread(target=self.deploy_anything, args=(mongodb, mysql, docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type))
             t.start()
             logging.debug("Thread exec done")
 
@@ -399,7 +402,7 @@ class AppDeploy(Resource):
         }
         return res, code
 
-    def deploy_anything(self, mongodb, mysql, docker, dns, deploy_id, appinfo, disconf_server_info):
+    def deploy_anything(self, mongodb, mysql, docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type):
         try:
             lock = threading.RLock()
             lock.acquire()
@@ -500,7 +503,7 @@ class AppDeploy(Resource):
                              "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + err_msg)
 
             for info in docker:
-                self.__image_transit(deploy_id, info,appinfo)
+                self.__image_transit(deploy_id, info,appinfo,deploy_type)
             lock.release()
         except Exception as e:
             code = 500
@@ -763,7 +766,7 @@ class AppDeploy(Resource):
         timeout = 1000
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, _query_instance_set_status, vm_id_list, deploy_id,ip,quantity)
 
-    def deploy_docker(self, info,deploy_id, image_uuid,appinfo):
+    def deploy_docker(self, info,deploy_id, image_uuid,appinfo,deploy_type):
         #lock = threading.RLock()
         #lock.acquire()
         deploy_flag=True
@@ -786,7 +789,7 @@ class AppDeploy(Resource):
                     self.all_ips.remove(ip)
                     if len(self.all_ips) == 0:
                         end_flag=True
-                    _dep_callback(deploy_id, ip, "docker", "", vm_state, True, cluster_name,end_flag)
+                    _dep_callback(deploy_id, ip, "docker", "", vm_state, True, cluster_name,end_flag,deploy_type)
                     logging.debug(
                         "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
                 else:
@@ -803,7 +806,7 @@ class AppDeploy(Resource):
                     if len(self.all_ips) == 0:
                         end_flag=True
                         deploy_flag = False
-                    _dep_callback(deploy_id, ip, "docker", err_msg, vm_state, False,cluster_name,end_flag)
+                    _dep_callback(deploy_id, ip, "docker", err_msg, vm_state, False,cluster_name,end_flag,deploy_type)
                     logging.debug(
                         "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
                     if first_error_flag:break
@@ -879,10 +882,10 @@ class AppDeploy(Resource):
         timeout = 1000
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, ip,quantity, image_url)
 
-    def __image_transit(self,deploy_id, info,appinfo):
+    def __image_transit(self,deploy_id, info,appinfo,deploy_type):
         result_list = []
         timeout = 10000
-        TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, info,appinfo)
+        TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, info,appinfo,deploy_type)
     def app_health_check(self,ip,port,url_path):
         check_url="http://%s:%s/%s" % (ip,port,url_path)
         headers = {'Content-Type': 'application/json'}
