@@ -209,6 +209,7 @@ class NovaVMAPIAll(Resource):
 
 class Dockerlogs(Resource):
     def post(self):
+        logging.info("request.post:{}".format())
         parser = reqparse.RequestParser()
         parser.add_argument("osid", type=str, location='json')
         args = parser.parse_args()
@@ -222,7 +223,7 @@ class Dockerlogs(Resource):
         except Exception as e:
             logging.error('get vm logs err: %s' % e.message)
             res = {
-                "code": 400,
+                "code": 400 if "not be found" in e.message else 504,
                 "result": {
                     "vm_state": "failed",
                     "msg": e.message
