@@ -209,7 +209,6 @@ class NovaVMAPIAll(Resource):
 
 class Dockerlogs(Resource):
     def post(self):
-        logging.info("request.post:{}".format())
         parser = reqparse.RequestParser()
         parser.add_argument("osid", type=str, location='json')
         args = parser.parse_args()
