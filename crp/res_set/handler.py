@@ -219,8 +219,8 @@ class ResourceProviderTransitions(object):
             resource_id,
             uop_os_inst_id_list,
             result_uop_os_inst_id_list):
-        nova_client = OpenStack.nova_client
-        cinder_client = OpenStack.cinder_client
+        #nova_client = OpenStack.nova_client
+        #cinder_client = OpenStack.cinder_client
         # fail_list = list(set(uop_os_inst_id_list) - set(result_uop_os_inst_id_list))
         fail_list = self._uop_os_list_sub(
             uop_os_inst_id_list, result_uop_os_inst_id_list)
