@@ -218,9 +218,8 @@ class Dockerlogs(Resource):
             os_log_dir = os.path.join(OS_DOCKER_LOGS, osid)
             os_log_file = os.path.join(os_log_dir, "docker_start.log")
             if os.path.exists(os_log_file):
-                f=open(os_log_file,'r')
-                logs = f.read().strip()
-                f.close()
+                with open(os_log_file,'r') as f:
+                    logs = f.read().strip()
             else:
                 logs=''
         except Exception as e:
