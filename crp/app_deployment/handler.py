@@ -1011,7 +1011,7 @@ class Upload(Resource):
             'file_info': result,
         }
 
-def write_docker_logs_to_file(task_id=None,os_inst_id=None):
+def write_docker_logs_to_file(task_id=None,os_inst_id=None,result_list=None):
     try:
         time.sleep(60)
         nova_cli = OpenStack.nova_client
