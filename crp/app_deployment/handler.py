@@ -1034,6 +1034,7 @@ def start_write_log(ip):
     os_inst_id=server.id
     timeout = 10000
     sleep_time=1
+    logging.debug("Begin wrtite log to file,the docker ip is %s" % ip)
     TaskManager.task_start(sleep_time, timeout, result_list,write_docker_logs_to_file,os_inst_id)
 
 

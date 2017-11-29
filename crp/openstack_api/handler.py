@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
-
+import os
 from flask_restful import reqparse, Api, Resource
-
-# TODO: import * is bad!!!
-from crp.taskmgr import *
-
 from crp.openstack_api import openstack_blueprint
 from crp.openstack_api.errors import az_errors
 from crp.openstack import OpenStack
@@ -15,6 +11,7 @@ from config import configs, APP_ENV
 
 # 配置可用域
 AVAILABILITY_ZONE_AZ_UOP = configs[APP_ENV].AVAILABILITY_ZONE_AZ_UOP
+OS_DOCKER_LOGS = configs[APP_ENV].OS_DOCKER_LOGS
 
 openstack_api = Api(openstack_blueprint, errors=az_errors)
 
@@ -214,11 +211,18 @@ class Dockerlogs(Resource):
         args = parser.parse_args()
         osid = args.osid
         try:
-            nova_cli = OpenStack.nova_client
+            #nova_cli = OpenStack.nova_client
             logging.info("#####osid:{}".format(osid))
-            vm = nova_cli.servers.get(osid)
-            logging.info("#####vm:{}".format(vm))
-            logs = vm.get_console_output()
+            #vm = nova_cli.servers.get(osid)
+            #logging.info("#####vm:{}".format(vm))
+            os_log_dir = os.path.join(OS_DOCKER_LOGS, osid)
+            os_log_file = os.path.join(os_log_dir, "docker_start.log")
+            if os.path.exists(os_log_file):
+                f=open(os_log_file,'r')
+                logs = f.read().strip()
+                f.close()
+            else:
+                logs=''
         except Exception as e:
             logging.error('get vm logs err: %s' % e.message)
             res = {
