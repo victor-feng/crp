@@ -104,6 +104,7 @@ class TestingConfig(BaseConfig):
 
     HEALTH_CHECK_PORT = "8000"
     HEALTH_CHECK_PATH = "admin/health"
+    OS_DOCKER_LOGS = "/os_docker_logs"
 
     # Define Request JSON Format
     items_sequence_list_config = [
