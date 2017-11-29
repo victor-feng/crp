@@ -1013,7 +1013,6 @@ class Upload(Resource):
 
 def write_docker_logs_to_file(task_id=None,os_inst_id=None,result_list=None):
     try:
-        time.sleep(60)
         nova_cli = OpenStack.nova_client
         vm = nova_cli.servers.get(os_inst_id)
         logs = vm.get_console_output()
@@ -1027,7 +1026,7 @@ def write_docker_logs_to_file(task_id=None,os_inst_id=None,result_list=None):
             f.write('%s' % str(logs))
         TaskManager.task_exit(task_id)
     except Exception as e:
-        logging.error("CRP get log from openstack write to file error: %s" %e.args)
+        logging.error("CRP get log from openstack write to file error: %s" %e )
 
 def start_write_log(ip):
     result_list = []
