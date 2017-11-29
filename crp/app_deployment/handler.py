@@ -1015,7 +1015,10 @@ def write_docker_logs_to_file(task_id,result_list=None,os_inst_id=None):
     try:
         nova_cli = OpenStack.nova_client
         vm = nova_cli.servers.get(os_inst_id)
-        logs = vm.get_console_output()
+        try:
+            logs = vm.get_console_output()
+        except Exception as e:
+            logs='The logs is too big,opsnstack can not get it to crp '
         os_log_dir=os.path.join(OS_DOCKER_LOGS,os_inst_id)
         os_log_file=os.path.join(os_log_dir,"docker_start.log")
         #目录不存在创建目录
@@ -1027,6 +1030,7 @@ def write_docker_logs_to_file(task_id,result_list=None,os_inst_id=None):
         TaskManager.task_exit(task_id)
     except Exception as e:
         logging.error("CRP get log from openstack write to file error: %s" %e )
+        TaskManager.task_exit(task_id)
 
 def start_write_log(ip):
     result_list = []
