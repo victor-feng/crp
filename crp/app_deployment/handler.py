@@ -43,7 +43,7 @@ DEP_STATUS_CALLBACK = configs[APP_ENV].DEP_STATUS_CALLBACK
 
 HEALTH_CHECK_PORT = configs[APP_ENV].HEALTH_CHECK_PORT
 HEALTH_CHECK_PATH = configs[APP_ENV].HEALTH_CHECK_PATH
-
+OS_DOCKER_LOGS = configs[APP_ENV].OS_DOCKER_LOGS
 
 def _dep_callback(deploy_id,ip,res_type,err_msg,vm_state,success,cluster_name,end_flag,deploy_type):
     data = dict()
@@ -785,6 +785,8 @@ class AppDeploy(Resource):
                 logging.debug('ip and url: ' + str(ips) + str(info.get('url')))
                 ip = ips[0]
                 os_flag,vm_state,err_msg=self._deploy_query_instance_set_status(deploy_id, ip, image_uuid,appinfo)
+                #执行写日志的操作
+                start_write_log(ip)
                 if os_flag:
                     self.all_ips.remove(ip)
                     if len(self.all_ips) == 0:
@@ -1008,6 +1010,35 @@ class Upload(Resource):
             'msg': '上传成功！',
             'file_info': result,
         }
+
+def write_docker_logs_to_file(task_id,os_inst_id):
+    try:
+        time.sleep(60)
+        nova_cli = OpenStack.nova_client
+        vm = nova_cli.servers.get(os_inst_id)
+        logs = vm.get_console_output()
+        os_log_dir=os.path.join(OS_DOCKER_LOGS,os_inst_id)
+        os_log_file=os.path.join(os_log_dir,"docker_start.log")
+        #目录不存在创建目录
+        if not os.path.exists(os_log_dir):
+            os.makedirs(os_log_dir)
+        #将日志写入文件
+        with open(os_log_file, 'w') as f:
+            f.write('%s' % str(logs))
+        TaskManager.task_exit(task_id)
+    except Exception as e:
+        logging.error("CRP get log from openstack write to file error: %s" %e.args)
+
+def start_write_log(ip):
+    result_list = []
+    server = OpenStack.find_vm_from_ipv4(ip=ip)
+    os_inst_id=server.id
+    timeout = 10000
+    sleep_time=1
+    TaskManager.task_start(sleep_time, timeout, result_list,write_docker_logs_to_file,os_inst_id)
+
+
+
 
 
 app_deploy_api.add_resource(AppDeploy, '/deploys')
