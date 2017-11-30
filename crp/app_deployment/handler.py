@@ -838,7 +838,7 @@ class AppDeploy(Resource):
             health_check_res=self.app_health_check(ip, HEALTH_CHECK_PORT, HEALTH_CHECK_PATH)
             logging.debug(
                 " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:" + str(
-                    health_check_res) + "Query Times is:" + str(i))
+                    health_check_res) + " Query Times is:" + str(i))
             if vm_state == "error" and  "rebuild" not in str(task_state) :
                 os_flag=False
                 err_msg="vm status is error"
