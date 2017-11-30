@@ -859,6 +859,7 @@ class AppDeploy(Resource):
                     vm_state = vm.status.lower()
                     if vm_state != "active":
                         logging.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " start %s times" %i)
+                        time.sleep(5)
                         continue
                     elif vm_state == "active":break
                 else:
