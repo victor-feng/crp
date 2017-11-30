@@ -462,7 +462,7 @@ class AppDeploy(Resource):
                     if mongodb_res:
                         _dep_detail_callback(deploy_id,"deploy_mongodb","res")
                     else:
-                        _dep_callback(deploy_id, "ip", "mongodb", err_msg, "active", False, "mongodb", True)
+                        _dep_callback(deploy_id, "ip", "mongodb", err_msg, "active", False, "mongodb", True,'deploy')
                         code = 500
                         return code,msg
             if mysql:
@@ -474,7 +474,7 @@ class AppDeploy(Resource):
                     if sql_ret:
                         _dep_detail_callback(deploy_id,"deploy_mysql","res")
                     else:
-                        _dep_callback(deploy_id, "ip", "mysql", err_msg, "active", False,"mysql", True)
+                        _dep_callback(deploy_id, "ip", "mysql", err_msg, "active", False,"mysql", True,'deploy')
                         code=500
                         return code,msg
 
