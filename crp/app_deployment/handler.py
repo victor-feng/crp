@@ -1028,6 +1028,7 @@ def write_docker_logs_to_file(task_id,result_list=None,os_inst_id=None):
             logs = vm.get_console_output()
         except Exception as e:
             logs='The logs is too big or get docker log error,opsnstack can not get it to crp '
+            logging.debug('CRP get docker from openstack error:%s' % e)
         os_log_dir=os.path.join(OS_DOCKER_LOGS,os_inst_id)
         os_log_file=os.path.join(os_log_dir,"docker_start.log")
         #目录不存在创建目录
