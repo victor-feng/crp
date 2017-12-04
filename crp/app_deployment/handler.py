@@ -699,15 +699,19 @@ class AppDeploy(Resource):
                         data_name = data_name.strip(' ')
                         cmd = ''
                         for app_ip in ips:
-                            cmd2 = "grant select, update, insert, delete, execute on " + data_name + ".* to \'" + database_user + "\'@\'" + app_ip + "\';\n"
                             if database_user in user_output and app_ip in user_output:
                                 cmd1=""
+                                if environment == 'dev':
+                                    cmd2 = "grant select, update, insert, delete, execute on " + data_name + ".* to \'" + database_user + "\'@\'" + "172.%" + "\';\n"
+                                else:
+                                    cmd2 = "grant select, update, insert, delete, execute on " + data_name + ".* to \'" + database_user + "\'@\'" + app_ip + "\';\n"
                             else:
                                 if environment == 'dev':
                                     cmd1="create user \'" + database_user + "\'@\'" + '172.%' + "\' identified by  \'" + database_password + "\' ;\n"
                                     cmd2 = "grant select, update, insert, delete, execute on " + data_name + ".* to \'" + database_user + "\'@\'" + "172.%" + "\';\n"
                                 else:
-                                    cmd1 = "create user \'" + database_user + "\'@\'" + app_ip + "\' identified by  \'" + database_password + "\' ;\n"
+                                    cmd1 = "creat user \'" + database_user + "\'@\'" + app_ip + "\' identified by  \'" + database_password + "\' ;\n"
+                                    cmd2 = "grant select, update, insert, delete, execute on " + data_name + ".* to \'" + database_user + "\'@\'" + app_ip + "\';\n"
                             cmd += cmd1 + cmd2
                         create_path = self._excute_mysql_cmd(mysql_password, mysql_user, port, cmd)
                         ansible_create_cmd = ansible_cmd + ' script -a ' + create_path
