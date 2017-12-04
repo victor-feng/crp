@@ -367,6 +367,7 @@ class AppDeploy(Resource):
             parser.add_argument('appinfo', type=list, location='json')
             parser.add_argument('disconf_server_info', type=list, location='json')
             parser.add_argument('deploy_type', type=str)
+            parser.add_argument('environment', type=str)
             #parser.add_argument('file', type=werkz
             # eug.datastructures.FileStorage, location='files')
             args = parser.parse_args()
@@ -381,9 +382,10 @@ class AppDeploy(Resource):
             dns = args.dns
             disconf_server_info = args.disconf_server_info
             appinfo = args.appinfo
+            environment=args.environment
             print "appinfo", appinfo
             logging.debug("Thread exec start")
-            t = threading.Thread(target=self.deploy_anything, args=(mongodb, mysql, docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type))
+            t = threading.Thread(target=self.deploy_anything, args=(mongodb, mysql, docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment))
             t.start()
             logging.debug("Thread exec done")
 
@@ -402,7 +404,7 @@ class AppDeploy(Resource):
         }
         return res, code
 
-    def deploy_anything(self, mongodb, mysql, docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type):
+    def deploy_anything(self, mongodb, mysql, docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment):
         try:
             lock = threading.RLock()
             lock.acquire()
@@ -470,7 +472,7 @@ class AppDeploy(Resource):
                 #mysql=eval(mysql)
                 path_filename = mysql.get("path_filename")
                 if path_filename:
-                    sql_ret,err_msg = self._deploy_mysql(mysql, docker)
+                    sql_ret,err_msg = self._deploy_mysql(mysql, docker,environment)
                     if sql_ret:
                         _dep_detail_callback(deploy_id,"deploy_mysql","res")
                     else:
@@ -645,7 +647,7 @@ class AppDeploy(Resource):
         with open(work_dir + '/hosts', 'w') as f:
             f.write(' ')
 
-    def _deploy_mysql(self,mysql, docker):
+    def _deploy_mysql(self,mysql, docker,environment):
         database_user = mysql.get("database_user")
         database_password = mysql.get("database_password")
         mysql_password = mysql.get("mysql_password")
@@ -697,12 +699,15 @@ class AppDeploy(Resource):
                         data_name = data_name.strip(' ')
                         cmd = ''
                         for app_ip in ips:
+                            cmd2 = "grant select, update, insert, delete, execute on " + data_name + ".* to \'" + database_user + "\'@\'" + app_ip + "\';\n"
                             if database_user in user_output and app_ip in user_output:
                                 cmd1=""
                             else:
-                                cmd1 = "create user \'" + database_user + "\'@\'" + app_ip + "\' identified by  \'" + database_password + "\' ;\n"
-                            cmd2 = "grant select, update, insert, delete, execute on " + data_name + ".* to \'" + database_user +\
-                                   "\'@\'" + app_ip + "\';\n"
+                                if environment == 'dev':
+                                    cmd1="create user \'" + database_user + "\'@\'" + '172.%' + "\' identified by  \'" + database_password + "\' ;\n"
+                                else:
+                                    cmd1 = "create user \'" + database_user + "\'@\'" + app_ip + "\' identified by  \'" + database_password + "\' ;\n"
+                                    cmd2 = "grant select, update, insert, delete, execute on " + data_name + ".* to \'" + database_user +"\'@\'" + "172.%"+ "\';\n"
                             cmd += cmd1 + cmd2
                         create_path = self._excute_mysql_cmd(mysql_password, mysql_user, port, cmd)
                         ansible_create_cmd = ansible_cmd + ' script -a ' + create_path
