@@ -61,13 +61,13 @@ def _dep_callback(deploy_id,ip,res_type,err_msg,vm_state,success,cluster_name,en
     data_str = json.dumps(data)
 
     headers = {'Content-Type': 'application/json'}
-    logging.debug("data string:" + str(data))
+    Log.logger.debug("data string:" + str(data))
     #Log.logger.debug("data string:" + str(data))
     CALLBACK_URL = configs[APP_ENV].UOP_URL + 'api/dep_result/'
-    logging.debug("[CRP] _dep_callback callback_url: %s ", CALLBACK_URL)
+    Log.logger.debug("[CRP] _dep_callback callback_url: %s ", CALLBACK_URL)
     # CALLBACK_URL = urljoin(current_app.config['UOP_URL'], 'api/dep_result/')
     res = requests.put(CALLBACK_URL + deploy_id + "/", data=data_str, headers=headers)
-    logging.debug("call dep_result callback,res: " + str(res))
+    Log.logger.debug("call dep_result callback,res: " + str(res))
     #Log.logger.debug("call dep_result callback,res: " + str(res))
     return res
 
@@ -84,13 +84,13 @@ def _dep_detail_callback(deploy_id,deploy_type,set_flag,deploy_msg=None):
     data_str = json.dumps(data)
 
     headers = {'Content-Type': 'application/json'}
-    logging.debug("data string:" + str(data))
+    Log.logger.debug("data string:" + str(data))
     #Log.logger.debug("data string:" + str(data))
     #CALLBACK_URL = configs[APP_ENV].UOP_URL + 'api/dep_result/'
-    logging.debug("[CRP] _dep_detail_callback callback_url: %s ", DEP_STATUS_CALLBACK)
+    Log.logger.debug("[CRP] _dep_detail_callback callback_url: %s ", DEP_STATUS_CALLBACK)
     #DEP_STATUS_CALLBACK="http://127.0.0.1:5000/"
     res = requests.post(DEP_STATUS_CALLBACK, data=data_str, headers=headers)
-    logging.debug("call dep_detail_result callback,res: " + str(res))
+    Log.logger.debug("call dep_detail_result callback,res: " + str(res))
     #Log.logger.debug("call dep_result callback,res: " + str(res))
     return res
 
@@ -99,9 +99,9 @@ def _dep_detail_callback(deploy_id,deploy_type,set_flag,deploy_msg=None):
 def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=None, deploy_id=None,ip=None,quantity=0):
     rollback_flag = False
     osint_id_wait_query = list(set(osins_id_list) - set(result_list))
-    logging.debug("Query Task ID "+task_id.__str__()+", remain "+osint_id_wait_query[:].__str__())
+    Log.logger.debug("Query Task ID "+task_id.__str__()+", remain "+osint_id_wait_query[:].__str__())
     #Log.logger.debug("Query Task ID "+task_id.__str__()+", remain "+osint_id_wait_query[:].__str__())
-    logging.debug("Test Task Scheduler Class result_list object id is " + id(result_list).__str__() +
+    Log.logger.debug("Test Task Scheduler Class result_list object id is " + id(result_list).__str__() +
     #Log.logger.debug("Test Task Scheduler Class result_list object id is " + id(result_list).__str__() +
                      ", Content is " + result_list[:].__str__())
     nova_client = OpenStack.nova_client
@@ -112,7 +112,7 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
         #vm_state = getattr(vm, 'OS-EXT-STS:vm_state')
         vm_state = vm.status.lower()
         #Log.logger.debug("Task ID "+task_id.__str__()+" query Instance ID "+int_id.__str__()+" Status is "+ vm_state)
-        logging.debug("Task ID "+task_id.__str__()+" query Instance ID "+int_id.__str__()+" Status is "+ vm_state)
+        Log.logger.debug("Task ID "+task_id.__str__()+" query Instance ID "+int_id.__str__()+" Status is "+ vm_state)
         #if vm_state == 'active' or vm_state == 'stopped':
         if vm_state == 'active':
             result_list.append(int_id)
@@ -121,21 +121,21 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
             err_msg=vm_state
             if vm_state == 'error':
                 err_msg = vm.to_dict().__str__()
-            logging.debug(
+            Log.logger.debug(
                 "Task ID " + task_id.__str__() + " query Instance ID " + int_id.__str__() + " Status is " + vm_state
             + " ERROR msg is:" + err_msg)
 
     if result_list.__len__() == osins_id_list.__len__():
         # TODO(thread exit): 执行成功调用UOP CallBack停止定时任务退出任务线程
         _dep_callback(deploy_id,ip,quantity,"",vm_state,True)
-        logging.debug("Task ID "+task_id.__str__()+" all instance create success." +
+        Log.logger.debug("Task ID "+task_id.__str__()+" all instance create success." +
         #Log.logger.debug("Task ID "+task_id.__str__()+" all instance create success." +
                          " instance id set is "+result_list[:].__str__())
         TaskManager.task_exit(task_id)
 
     if rollback_flag:
         fail_list = list(set(osins_id_list) - set(result_list))
-        logging.debug("Task ID "+task_id.__str__()+" have one or more instance create failed." +
+        Log.logger.debug("Task ID "+task_id.__str__()+" have one or more instance create failed." +
         #Log.logger.debug("Task ID "+task_id.__str__()+" have one or more instance create failed." +
                          " Successful instance id set is "+result_list[:].__str__() +
                          " Failed instance id set is "+fail_list[:].__str__())
@@ -163,7 +163,7 @@ def _check_image_status(image_uuid):
     check_interval = 5
     for i in range(check_times):
         img = nova_client.images.get(image_uuid)
-        logging.debug("check image status " + str(i) + " times, status: " + img.status.lower()+ " image_uuid:" + image_uuid)
+        Log.logger.debug("check image status " + str(i) + " times, status: " + img.status.lower()+ " image_uuid:" + image_uuid)
         if (img.status.lower() != "active"):
             time.sleep(check_interval)
         else:
@@ -269,7 +269,7 @@ class AppDeploy(Resource):
             nip = dl.get("domain_ip")
             domain = dl.get('domain')
             if not nip or not domain:
-                logging.info("nginx ip or domain is null, do nothing")
+                Log.logger.info("nginx ip or domain is null, do nothing")
                 continue
             self.run_cmd(
                 "ansible {nip} --private-key={dir}/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip, dir=selfdir))
@@ -340,7 +340,7 @@ class AppDeploy(Resource):
                 deploy_msg = "缩容完成"
                 _dep_detail_callback(deploy_id, "reduce", set_flag, deploy_msg)
         except Exception as e:
-            logging.exception("AppDeploy put exception:%s " %e)
+            Log.logger.error("AppDeploy put exception:%s " %e)
             code = 500
             msg = "internal server error: %s"  %e
         res = {
@@ -371,11 +371,11 @@ class AppDeploy(Resource):
             #parser.add_argument('file', type=werkz
             # eug.datastructures.FileStorage, location='files')
             args = parser.parse_args()
-            #logging.debug("AppDeploy receive post request. args is " + str(args))
+            #Log.logger.debug("AppDeploy receive post request. args is " + str(args))
             Log.logger.debug("AppDeploy receive post request. args is " + str(args))
             deploy_id = args.deploy_id
             deploy_type = args.deploy_type
-            logging.debug("deploy_id is " + str(deploy_id))
+            Log.logger.debug("deploy_id is " + str(deploy_id))
             docker = args.docker
             mongodb = args.mongodb
             mysql = args.mysql
@@ -384,13 +384,13 @@ class AppDeploy(Resource):
             appinfo = args.appinfo
             environment=args.environment
             print "appinfo", appinfo
-            logging.debug("Thread exec start")
+            Log.logger.debug("Thread exec start")
             t = threading.Thread(target=self.deploy_anything, args=(mongodb, mysql, docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment))
             t.start()
-            logging.debug("Thread exec done")
+            Log.logger.debug("Thread exec done")
 
         except Exception as e:
-            logging.exception("AppDeploy exception: ")
+            Log.logger.error("AppDeploy exception: ")
             # Log.logger.error("AppDeploy exception: " + e.message)
             code = 500
             msg = "internal server error: " + e.message
@@ -456,7 +456,7 @@ class AppDeploy(Resource):
                 _dep_detail_callback(deploy_id,"deploy_disconf","res")
             #推送mongodb和mysql脚本
             if mongodb:
-                logging.debug("The mongodb data is %s" % mongodb)
+                Log.logger.debug("The mongodb data is %s" % mongodb)
                 mongodb=eval(mongodb)
                 path_filename=mongodb.get("path_filename")
                 if path_filename:
@@ -468,7 +468,7 @@ class AppDeploy(Resource):
                         code = 500
                         return code,msg
             if mysql:
-                logging.debug("The mysql data is %s" % str(mysql))
+                Log.logger.debug("The mysql data is %s" % str(mysql))
                 #mysql=eval(mysql)
                 path_filename = mysql.get("path_filename")
                 if path_filename:
@@ -485,7 +485,7 @@ class AppDeploy(Resource):
             for info in docker:
                 ips = info.get('ip')
                 all_ips.extend(ips)
-            logging.debug("Docker is " + str(docker) + " all_ips:" + all_ips.__str__())
+            Log.logger.debug("Docker is " + str(docker) + " all_ips:" + all_ips.__str__())
             self.all_ips=all_ips
             id2name = {}
             for i in docker:
@@ -498,10 +498,10 @@ class AppDeploy(Resource):
                     id2name[image_url] = image_uuid
                     i["image_uuid"] = image_uuid
                     if err_msg is None:
-                        logging.debug(
+                        Log.logger.debug(
                             "Transit harbor docker image success. The result glance image UUID is " + image_uuid)
                     else:
-                        logging.error(
+                        Log.logger.error(
                              "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + err_msg)
 
             for info in docker:
@@ -510,14 +510,14 @@ class AppDeploy(Resource):
         except Exception as e:
             code = 500
             msg = "internal server error: " + str(e.args)
-            logging.error(msg)
+            Log.logger.error(msg)
         return code, msg
 
     def _deploy_mongodb(self, mongodb):
         res = None
         old_db_list = []
         new_db_list = []
-        logging.debug("args is %s" % mongodb)
+        Log.logger.debug("args is %s" % mongodb)
         mongodb = eval(mongodb)
         db_username = mongodb.get('mongodb_username', '')
         db_password = mongodb.get('mongodb_password', '')
@@ -536,9 +536,9 @@ class AppDeploy(Resource):
 
         local_path = path_filename[0]
         remote_path = '/tmp/' + path_filename[1]
-        logging.debug("local_path and remote_path is %s-%s" % (local_path, remote_path))
+        Log.logger.debug("local_path and remote_path is %s-%s" % (local_path, remote_path))
         sh_path = self.mongodb_command_file(mongodb_password, mongodb_username, port, database, local_path)
-        logging.debug("start deploy mongodb cluster", sh_path)
+        Log.logger.debug("start deploy mongodb cluster", sh_path)
 
         # 只需要对主节点进行认证操作
         host_path = self.mongodb_hosts_file(vip)
@@ -555,32 +555,32 @@ class AppDeploy(Resource):
 
                 ans_res,err_msg=self._exec_ansible_cmd(ansible_sql_cmd)
                 if ans_res:
-                    logging.debug("upload query file success and then get the db name")
+                    Log.logger.debug("upload query file success and then get the db name")
                     status, output = commands.getstatusoutput(query_current_db)
                     output_list = output.split('\n')[5:-1]   # ['admin  0.000GB', 'local  0.001GB']
                     for i in output_list:
                         old_db_list.append(i.split(' ')[0])  # ['admin', 'local']
-                    logging.debug("the db list is %s" % old_db_list)
+                    Log.logger.debug("the db list is %s" % old_db_list)
                     for db in old_db_list:  # need get the new created db
                         # if db == 'admin' or 'local':
                         if db not in ['admin', 'local']:
                             new_db_list.append(db)
-                    logging.debug("the new create db list is %s" % new_db_list)
+                    Log.logger.debug("the new create db list is %s" % new_db_list)
                     if len(new_db_list):
                         auth_path = self.mongodb_auth_file(mongodb_username, mongodb_password, new_db_list)
                         ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + auth_path + ' dest=' + remote_path + '"'
                         exec_auth_file = ansible_cmd + ' shell -a "%s < %s"' % \
                                                          (configs[APP_ENV].MONGODB_AUTH_PATH, remote_path)
-                        logging.debug("start upload auth file")
+                        Log.logger.debug("start upload auth file")
                         ans_res,err_msg=self._exec_ansible_cmd(ansible_sql_cmd)
                         if ans_res:
-                            logging.debug("end upload and start exec auth file")
+                            Log.logger.debug("end upload and start exec auth file")
                             status, output = commands.getstatusoutput(exec_auth_file)
-                            logging.debug("end exec auth file status is %s output is %s" % (status, output))
+                            Log.logger.debug("end exec auth file status is %s output is %s" % (status, output))
 
                             self.ansible_exec(host_path, vip3, remote_path)  # del the ansible file had uploaded
 
-                            logging.debug("del the ansible file successful")
+                            Log.logger.debug("del the ansible file successful")
                     return True,err_msg
                 else:
                     return False,err_msg
@@ -595,9 +595,9 @@ class AppDeploy(Resource):
         status, output = commands.getstatusoutput(exec_del_cmd)
         if not status:
             res = 'del success'
-            logging.debug("%s" % res)
+            Log.logger.debug("%s" % res)
         else:
-            logging.debug("%s" % output)
+            Log.logger.debug("%s" % output)
 
     def mongodb_auth_file(self, username, password, db_list):
         auth_path = os.path.join(UPLOAD_FOLDER, 'mongodb_auth.js')
@@ -611,7 +611,7 @@ class AppDeploy(Resource):
 
     def mongodb_command_file(self, username, password, port, db, script_file):
         sh_path = ""
-        logging.debug("sh_path is %s" % script_file)
+        Log.logger.debug("sh_path is %s" % script_file)
         if script_file:
             sh_path = os.path.join(UPLOAD_FOLDER, 'mongodb.js')
             with open(script_file, 'r') as f2:
@@ -621,14 +621,14 @@ class AppDeploy(Resource):
                 f.write("db.auth('admin','123456')\n")
                 for i in file_script:
                     f.write(i)
-            logging.debug("end write sh_path****")
+            Log.logger.debug("end write sh_path****")
         else:
             sh_path = os.path.join(UPLOAD_FOLDER, 'query_mongodb.js')
             with open(sh_path, 'wb+') as f:
                 f.write("use admin\n")
                 f.write("db.auth('admin','123456')\n")
                 f.write("show dbs\n")
-            logging.debug("end write query_mongodb sh_path+++")
+            Log.logger.debug("end write query_mongodb sh_path+++")
         return sh_path
 
     def mongodb_hosts_file(self, ip):
@@ -727,11 +727,11 @@ class AppDeploy(Resource):
     def _exec_ansible_cmd(self,cmd):
         (status, output) = commands.getstatusoutput(cmd)
         if output.lower().find("error") == -1 and output.lower().find("failed") == -1:
-            logging.debug("ansible exec succeed,command: " + str(cmd) + " output: " + output)
+            Log.logger.debug("ansible exec succeed,command: " + str(cmd) + " output: " + output)
             #Log.logger.debug("ansible exec succeed,command: " + str(cmd) + " output: " + output)
             err_msg=None
             return True,err_msg
-        logging.debug("ansible exec failed,command: " + str(cmd) + " output: " + output)
+        Log.logger.debug("ansible exec failed,command: " + str(cmd) + " output: " + output)
         #Log.logger.debug("ansible exec failed,command: " + str(cmd) + " output: " + output)
         err_msg=output
         return False,err_msg
@@ -769,7 +769,7 @@ class AppDeploy(Resource):
         # newserver = OpenStack.nova_client.servers.rebuild(server=server, image='3027f868-8f87-45cd-b85b-8b0da3ecaa84')
         vm_id_list = []
         # Log.logger.debug("Add the id type is" + type(newserver.id))
-        logging.debug("Add the id type is" + str(newserver.id))
+        Log.logger.debug("Add the id type is" + str(newserver.id))
         vm_id_list.append(newserver.id)
         result_list = []
         timeout = 1000
@@ -791,7 +791,7 @@ class AppDeploy(Resource):
             ips = info.get('ip')
             length_ip = len(ips)
             if length_ip > 0:
-                logging.debug('ip and url: ' + str(ips) + str(info.get('url')))
+                Log.logger.debug('ip and url: ' + str(ips) + str(info.get('url')))
                 ip = ips[0]
                 os_flag,vm_state,err_msg=self._deploy_query_instance_set_status(deploy_id, ip, image_uuid,appinfo)
                 #执行写日志的操作
@@ -801,12 +801,12 @@ class AppDeploy(Resource):
                     if len(self.all_ips) == 0:
                         end_flag=True
                     _dep_callback(deploy_id, ip, "docker", "", vm_state, True, cluster_name,end_flag,deploy_type)
-                    logging.debug(
+                    Log.logger.debug(
                         "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
                 else:
                     #如果索引为0，表示第一个ip部署失败，部署停止
                     ip_index = int(ip_index_dict[ip])
-                    logging.debug(
+                    Log.logger.debug(
                         "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " ip_index:" + str(ip_index))
                     if ip_index == 0:
                         first_error_flag = True
@@ -818,7 +818,7 @@ class AppDeploy(Resource):
                         end_flag=True
                         deploy_flag = False
                     _dep_callback(deploy_id, ip, "docker", err_msg, vm_state, False,cluster_name,end_flag,deploy_type)
-                    logging.debug(
+                    Log.logger.debug(
                         "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
                     if first_error_flag:break
                 ips.pop(0)
@@ -832,7 +832,7 @@ class AppDeploy(Resource):
         os_flag=True
         err_msg=""
         nova_client = OpenStack.nova_client
-        logging.debug( "Begin rebuild docker,IP is:" + ip)
+        Log.logger.debug( "Begin rebuild docker,IP is:" + ip)
         #开始注释nginx配置
         closed_nginx_conf(appinfo,ip)
         #开始rebuild
@@ -845,17 +845,17 @@ class AppDeploy(Resource):
             task_state = getattr(vm, 'OS-EXT-STS:task_state')
             #health_check_res=True
             health_check_res=self.app_health_check(ip, HEALTH_CHECK_PORT, HEALTH_CHECK_PATH)
-            logging.debug(
+            Log.logger.debug(
                 " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:" + str(
                     health_check_res) + " Query Times is:" + str(i))
             if vm_state == "error" and  "rebuild" not in str(task_state) :
                 os_flag=False
                 err_msg="vm status is error"
-                logging.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +  " Health check res:"+ str(health_check_res) +" Error msg is:" +err_msg)
+                Log.logger.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +  " Health check res:"+ str(health_check_res) +" Error msg is:" +err_msg)
                 break
             elif vm_state == "shutoff" and "rebuild" not in str(task_state):
                 # 如果vm状态是关闭时重启3次
-                logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +" Begin start 3 times")
+                Log.logger.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +" Begin start 3 times")
                 for i in range(3):
                     #启动vm
                     vm = nova_client.servers.get(os_inst_id)
@@ -867,19 +867,19 @@ class AppDeploy(Resource):
                     vm = nova_client.servers.get(os_inst_id)
                     vm_state = vm.status.lower()
                     if vm_state != "active":
-                        logging.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " start %s times" %i)
+                        Log.logger.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " start %s times" %i)
                         time.sleep(5)
                         continue
                     elif vm_state == "active":break
                 else:
                     os_flag = False
                     err_msg="vm status is shutoff"
-                    logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:"+ str(health_check_res) + " Error msg is:" +err_msg )
+                    Log.logger.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:"+ str(health_check_res) + " Error msg is:" +err_msg )
                     #self.open_nginx_conf(appinfo, ip)
                     break
             elif vm_state == "active" and health_check_res == True and "rebuild" not in str(task_state):
                 os_flag = True
-                logging.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:"+ str(health_check_res))
+                Log.logger.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:"+ str(health_check_res))
                 open_nginx_conf(appinfo,ip)
                 break
             time.sleep(6)
@@ -887,7 +887,7 @@ class AppDeploy(Resource):
             os_flag = False
             err_msg = "app health check failed"
             #self.open_nginx_conf(appinfo, ip)
-            logging.debug(
+            Log.logger.debug(
                 " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:" + str(health_check_res) + " Error msg is:" + err_msg)
         return os_flag,vm_state,err_msg
 
@@ -929,14 +929,14 @@ def closed_nginx_conf(appinfo,ip):
                     close_cmd="sed  -i 's/server  %s:%s/#server  %s:%s/g' %s/%s" % (ip,port,ip,port,conf_dir,domain)
                     reload_cmd="/usr/local/nginx/sbin/nginx -s reload"
             an_close_cmd='''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=close_cmd)
-            logging.debug(an_close_cmd)
+            Log.logger.debug(an_close_cmd)
             an_reload_cmd = '''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=reload_cmd)
             #开始执行注释nginx配置文件和reload nginx 命令
             exec_db_service(domain_ip,an_close_cmd, 1)
             exec_db_service(domain_ip,an_reload_cmd, 1)
     except Exception as e:
         msg = "closed_nginx_conf error %s" % e
-        logging.error(msg)
+        Log.logger.error(msg)
         return -1, msg
     return 1, ''
 
@@ -954,14 +954,14 @@ def open_nginx_conf(appinfo,ip):
                     open_cmd="sed  -i 's/#server  %s:%s/server  %s:%s/g' %s/%s" % (ip,port,ip,port,conf_dir,domain)
                     reload_cmd="/usr/local/nginx/sbin/nginx -s reload"
             an_open_cmd='''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=open_cmd)
-            logging.debug(an_open_cmd)
+            Log.logger.debug(an_open_cmd)
             an_reload_cmd = '''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=reload_cmd)
             #开始执行注释nginx配置文件和reload nginx 命令
             exec_db_service(domain_ip,an_open_cmd, 1)
             exec_db_service(domain_ip,an_reload_cmd, 1)
     except Exception as e:
         msg = "open_nginx_conf error %s" % e
-        logging.error(msg)
+        Log.logger.error(msg)
         return -1, msg
     return 1, ''
 
@@ -981,10 +981,10 @@ def exec_db_service(ip,cmd, sleep):
                 stderr=subprocess.STDOUT)
         stdout=p.stdout.read()
         if "SUCCESS" in stdout:
-            logging.debug(stdout)
+            Log.logger.debug(stdout)
             break
     else:
-        logging.debug('---------execute%s %s cmd 10 times failed---------'% (ip,cmd))
+        Log.logger.debug('---------execute%s %s cmd 10 times failed---------'% (ip,cmd))
 
 
 
@@ -1032,7 +1032,7 @@ def write_docker_logs_to_file(task_id,result_list=None,os_inst_id=None):
             logs = vm.get_console_output()
         except Exception as e:
             logs='The logs is too big or get docker log error,opsnstack can not get it to crp '
-            logging.debug('CRP get docker from openstack error:%s' % e)
+            Log.logger.debug('CRP get docker from openstack error:%s' % e)
         os_log_dir=os.path.join(OS_DOCKER_LOGS,os_inst_id)
         os_log_file=os.path.join(os_log_dir,"docker_start.log")
         #目录不存在创建目录
@@ -1043,7 +1043,7 @@ def write_docker_logs_to_file(task_id,result_list=None,os_inst_id=None):
             f.write('%s' % str(logs))
         TaskManager.task_exit(task_id)
     except Exception as e:
-        logging.error("CRP get log from openstack write to file error: %s" %e )
+        Log.logger.error("CRP get log from openstack write to file error: %s" %e )
         TaskManager.task_exit(task_id)
 
 def start_write_log(ip):
@@ -1052,7 +1052,7 @@ def start_write_log(ip):
     os_inst_id=server.id
     timeout = 10000
     sleep_time=1
-    logging.debug("Begin wrtite log to file,the docker ip is %s" % ip)
+    Log.logger.debug("Begin wrtite log to file,the docker ip is %s" % ip)
     TaskManager.task_start(sleep_time, timeout, result_list,write_docker_logs_to_file,os_inst_id)
 
 

@@ -31,7 +31,7 @@ class FlavorAPI(Resource):
         except Exception as e:
             err_msg = e.message
             #Log.logger.error('list flavor err: %s' % err_msg)
-            logging.error('list flavor err: %s' % err_msg)
+            Log.logger.error('list flavor err: %s' % err_msg)
             res = {
                 "code": 400,
                 "result": {

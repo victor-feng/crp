@@ -43,17 +43,17 @@ def _dk_img_pull(dk_cli, _image_url, repository_hash, tag):
         image = dk_cli.images.get(_image_url)
         image.tag(repository_hash, tag=tag)
     except docker.errors.ImageNotFound as img_err:
-        logging.error(img_err.message)
+        Log.logger.error(img_err.message)
         return -1
     except docker.errors.APIError as api_err:
         if api_err.status_code==409:
-            logging.info('------------------------409---------------------:%s'%(api_err))
+            Log.logger.info('------------------------409---------------------:%s'%(api_err))
             pass
         else:
-            logging.error(api_err)
+            Log.logger.error(api_err)
             return api_err
     except Exception as e:
-        logging.error(e.message)
+        Log.logger.error(e.message)
         return e.message
     else:
         return None
@@ -69,7 +69,7 @@ def _dk_img_save(dk_cli, _image_url):
     #         for chunk in resp.stream():
     #             f.write(chunk)
     # except Exception as e:
-    #     logging.error(e.message)
+    #     Log.logger.error(e.message)
     #     return e.message, None
     # else:
     #     return None, tar_file
@@ -86,7 +86,7 @@ def _dk_img_save(dk_cli, _image_url):
         else:
             return msg, None
     except Exception as e:
-        logging.error(e.message)
+        Log.logger.error(e.message)
         return e.message, None
 
 
@@ -139,19 +139,19 @@ def _glance_img_create(glance_cli, image_name, tar_file):
     }
     try:
         fields['data'] = open(tar_file, 'rb')
-        logging.debug(tar_file+" is opened now.")
+        Log.logger.debug(tar_file+" is opened now.")
         image = glance_cli.images.create(**fields)
         return None, image
     except Exception as e:
-        logging.error(e.message)
+        Log.logger.error(e.message)
         return e.message, None
     finally:
         fields['data'].close()
-        logging.debug(tar_file+" is closed now.")
-        #logging.debug(fields['data'].closed)
+        Log.logger.debug(tar_file+" is closed now.")
+        #Log.logger.debug(fields['data'].closed)
         if fields['data'].closed:
             os.remove(tar_file)
-            logging.debug(tar_file+" was removed.")
+            Log.logger.debug(tar_file+" was removed.")
 
 
 def _cmp_img_info_time(img_item1, img_item2):
@@ -190,11 +190,11 @@ def _glance_img_reservation(glance_cli, current_image_id, reservation_quantity):
             }
             sort_img_reserv_info_list.append(img_info)
     if sort_img_reserv_info_list.__len__() >= 1:
-        logging.debug("Original sort_img_reserv_info_list:")
-        logging.debug(sort_img_reserv_info_list)
+        Log.logger.debug("Original sort_img_reserv_info_list:")
+        Log.logger.debug(sort_img_reserv_info_list)
         sort_img_reserv_info_list.sort(_cmp_img_info_time, key=None, reverse=True)
-        logging.debug("Sorted sort_img_reserv_info_list:")
-        logging.debug(sort_img_reserv_info_list)
+        Log.logger.debug("Sorted sort_img_reserv_info_list:")
+        Log.logger.debug(sort_img_reserv_info_list)
 
     quantity = 0
     img_sum = sort_img_reserv_info_list.__len__() + img_current
@@ -203,13 +203,13 @@ def _glance_img_reservation(glance_cli, current_image_id, reservation_quantity):
 
     if quantity > 0:
         img_info_to_be_delete = sort_img_reserv_info_list[reservation_quantity-1:]
-        logging.debug("image quantity is " + img_sum.__str__() +
+        Log.logger.debug("image quantity is " + img_sum.__str__() +
                          " big than " + reservation_quantity.__str__() + ", img_info_to_be_delete:")
-        logging.debug(img_info_to_be_delete)
+        Log.logger.debug(img_info_to_be_delete)
         for img in img_info_to_be_delete:
             img_id = img.get('id')
             glance_cli.images.delete(img_id)
-            logging.debug(" glance Image ID " + img_id + " is deleting.")
+            Log.logger.debug(" glance Image ID " + img_id + " is deleting.")
 #def image_update(image_id):
 #    glance_cli = _glance_cli()
 #    fields = {
@@ -223,8 +223,8 @@ def image_transit(_image_url):
     # return None, 'd9645ca0-f771-4d90-8a18-0bd44c26abd7'
     try:
         img_tag = _image_url.split(':', 2)
-        logging.debug("Docker image url split list is:")
-        logging.debug(img_tag)
+        Log.logger.debug("Docker image url split list is:")
+        Log.logger.debug(img_tag)
         glance_cli = _glance_cli()
         #repository_hash = hashlib.sha224(img_tag[0]).hexdigest()
         #_image_url_hash = repository_hash + ':' + img_tag[1]
@@ -242,24 +242,24 @@ def image_transit(_image_url):
             cur_img = None
             return 'image pull error', 0
 
-        logging.info('---------------------cur_img---------------------:%s'%(cur_img))
+        Log.logger.info('---------------------cur_img---------------------:%s'%(cur_img))
         if cur_img:
             img_id = cur_img.attrs.get('ContainerConfig').get('Image')
             _image_url_hash = img_id.replace(':', '') + ':' + img_tag[1]
             repository_hash = img_id.replace(':', '')
         err_msg = ''
-        logging.info(_image_url_hash)
-        logging.info(repository_hash)
+        Log.logger.info(_image_url_hash)
+        Log.logger.info(repository_hash)
         try:
             cur_img.tag(repository_hash, tag=img_tag[1])
         except docker.errors.ImageNotFound as img_err:
-            logging.error(img_err.message)
+            Log.logger.error(img_err.message)
         except docker.errors.APIError as api_err:
             if api_err.status_code==409:
-                logging.info('------------------------409---------------------:%s'%(api_err))
+                Log.logger.info('------------------------409---------------------:%s'%(api_err))
                 pass
         except Exception as e:
-            logging.error(e.message)
+            Log.logger.error(e.message)
             err_msg = e.message
 
         # Docker image tag 为 latest 的镜像总是转换并创建glance image，其它均为glance 中存在则不创建
@@ -271,28 +271,28 @@ def image_transit(_image_url):
                 #if action=='deploy':
                 #    return None, image.id
                 glance_cli.images.delete(image.id)
-                logging.debug("glance image id is \'" +image.id + " is delete\'.")
+                Log.logger.debug("glance image id is \'" +image.id + " is delete\'.")
     except Exception as e:
         return e.message, None
     dk_cli = _dk_py_cli()
-    logging.debug("Docker image pull from harbor url \'" + _image_url + "\' is started.")
+    Log.logger.debug("Docker image pull from harbor url \'" + _image_url + "\' is started.")
     #err_msg = _dk_img_pull(dk_cli, _image_url, repository_hash, img_tag[1])
-    logging.debug("Docker image pull from harbor url \'" + _image_url + "\' is done.")
+    Log.logger.debug("Docker image pull from harbor url \'" + _image_url + "\' is done.")
     if err_msg:
         return err_msg, None
     else:
-        logging.debug("Docker image save as a tar package from harbor url \'" + _image_url +
+        Log.logger.debug("Docker image save as a tar package from harbor url \'" + _image_url +
                          " witch name with tag transit to sha224 " + _image_url_hash + "\' is started.")
         err_msg, tar_file = _dk_img_save(dk_cli, _image_url_hash)
-        logging.debug("Docker image save as a tar package from harbor url \'" + _image_url +
+        Log.logger.debug("Docker image save as a tar package from harbor url \'" + _image_url +
                          " witch name with tag transit to sha224 " + _image_url_hash + "\' is done.")
         if err_msg:
             return err_msg, None
         else:
-            logging.debug("Docker image tar package create glance image from harbor url \'" + _image_url +
+            Log.logger.debug("Docker image tar package create glance image from harbor url \'" + _image_url +
                              " witch name with tag transit to sha224 " + _image_url_hash + "\' is started.")
             err_msg, image = _glance_img_create(glance_cli, _image_url_hash, tar_file)
-            logging.debug("Docker image tar package create glance image from harbor url \'" + _image_url +
+            Log.logger.debug("Docker image tar package create glance image from harbor url \'" + _image_url +
                              " witch name with tag transit to sha224 " + _image_url_hash + "\' is done.")
             if err_msg:
                 return err_msg, None

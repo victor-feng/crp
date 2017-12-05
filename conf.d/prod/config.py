@@ -9,8 +9,8 @@ class BaseConfig:
     DEBUG = False
 
 class ProdConfig(BaseConfig):
-    TESTING = True
-    DEBUG = True
+    TESTING = False
+    DEBUG = False
 
     # NOTE: noused in mpc
     UOP_URL = "http://uop.syswin.com/" #域名自己定义好后想运维申请，我自己先定了prod

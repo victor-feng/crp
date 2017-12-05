@@ -31,10 +31,10 @@ def _dep_callback(deploy_id, success):
 def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=None, deploy_id=None):
     rollback_flag = False
     osint_id_wait_query = list(set(osins_id_list) - set(result_list))
-    logging.debug("Query Task ID "+task_id.__str__()+", remain "+osint_id_wait_query[:].__str__())
+    Log.logger.debug("Query Task ID "+task_id.__str__()+", remain "+osint_id_wait_query[:].__str__())
     #Log.logger.debug("Query Task ID "+task_id.__str__()+", remain "+osint_id_wait_query[:].__str__())
     #Log.logger.debug("Test Task Scheduler Class result_list object id is " + id(result_list).__str__() +
-    logging.debug("Test Task Scheduler Class result_list object id is " + id(result_list).__str__() +
+    Log.logger.debug("Test Task Scheduler Class result_list object id is " + id(result_list).__str__() +
                      ", Content is " + result_list[:].__str__())
     nova_client = OpenStack.nova_client
     for int_id in osint_id_wait_query:
@@ -51,7 +51,7 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
         # TODO(thread exit): 执行成功调用UOP CallBack停止定时任务退出任务线程
         _dep_callback(deploy_id, True)
         #Log.logger.debug("Task ID "+task_id.__str__()+" all instance create success." +
-        logging.debug("Task ID "+task_id.__str__()+" all instance create success." +
+        Log.logger.debug("Task ID "+task_id.__str__()+" all instance create success." +
                          " instance id set is "+result_list[:].__str__())
         TaskManager.task_exit(task_id)
 
@@ -88,7 +88,7 @@ class DockerDeploy(Resource):
             #newserver = OpenStack.nova_client.servers.rebuild(server=server, image='3027f868-8f87-45cd-b85b-8b0da3ecaa84')
             vm_id_list = []
             # Log.logger.debug("Add the id type is" + type(newserver.id))
-            logging.debug("Add the id type is" + type(newserver.id))
+            Log.logger.debug("Add the id type is" + type(newserver.id))
             vm_id_list.append(newserver.id)
 
 

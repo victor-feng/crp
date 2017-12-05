@@ -288,7 +288,6 @@ class ResourceProviderTransitions(object):
         nics_list = []
         nic_info = {'net-id': network_id}
         nics_list.append(nic_info)
-        import logging
         if meta:
             meta = eval(meta)
             Log.logger.debug(meta)
@@ -301,11 +300,11 @@ class ResourceProviderTransitions(object):
                 Log.logger.debug(type(meta))
         if server_group:
             server_group_dict = {'group': server_group.id}
-            logging.info(server_group.id)
+            Log.logger.info(server_group.id)
             int_ = nova_client.servers.create(name, image, flavor,meta=meta,
                                          availability_zone=availability_zone,
                                          nics=nics_list, scheduler_hints=server_group_dict)
-            logging.info('------------finish---create-------------')
+            Log.logger.info('------------finish---create-------------')
         else:
             int_ = nova_client.servers.create(name, image, flavor, meta=meta,
                                          availability_zone=availability_zone,
@@ -462,8 +461,6 @@ class ResourceProviderTransitions(object):
             server_group = None
             if IS_OPEN_AFFINITY_SCHEDULING:
                 server_group = nova_client.server_groups.create(**{'name': 'create_resource_cluster_server_group', 'policies': ['anti-affinity']})
-            import logging
-            logging.info('--------------server_group---------------', server_group)
             for i in range(0, quantity, 1):
                 # 为mysql创建2个mycat镜像的LVS
                 if cluster_type == 'mysql' and i == 3:
@@ -1418,12 +1415,10 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list,error_ms
     server_groups = nova_client.server_groups.list()
     server_group_names = ['create_app_cluster_server_group', 'create_resource_cluster_server_group'] 
     server_group = [ sg for sg in server_groups if sg.name in server_group_names ]
-    import logging
-    logging.info(server_group)
     for sg in server_group:
-        logging.info('----------------准备删除server_group--------------')
+        Log.logger.info('----------------准备删除server_group--------------')
         sg.manager.delete(sg.id)
-        logging.info('------------删除成功-------------')
+        Log.logger.info('------------删除成功-------------')
     return res
 
 

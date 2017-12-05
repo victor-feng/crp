@@ -42,7 +42,7 @@ class NetworkAPI(Resource):
                         sub_vlans=subnet_info[network_id]
                         name2id[name] = [id_,sub_vlans]
         except Exception as e:
-            logging.error('get networks err: %s' % e.args)
+            Log.logger.error('get networks err: %s' % e.args)
             res = {
                 "code": 400,
                 "result": {
@@ -78,7 +78,7 @@ class PortAPI(Resource):
                 count = len(ports)
         except Exception as e:
             #Log.logger.error('get hypervisors_statistics err: %s' % e.message)
-            logging.error('get port err: %s' % e.message)
+            Log.logger.error('get port err: %s' % e.message)
             res = {
                 "code": 400,
                 "result": {
@@ -108,10 +108,10 @@ class NovaVMAPI(Resource):
         try:
             nova_cli = OpenStack.nova_client
             vm = nova_cli.servers.get(os_inst_id)
-            logging.info("#####vm:{}".format(vm))
+            Log.logger.info("#####vm:{}".format(vm))
             vm_state = getattr(vm, 'OS-EXT-STS:vm_state')
         except Exception as e:
-            logging.error('get vm status err: %s' % e.message)
+            Log.logger.error('get vm status err: %s' % e.message)
             res = {
                 "code": 400,
                 "result": {
@@ -148,7 +148,7 @@ class NovaVMAPIs(Resource):
                     vm_state = "failed"
                 os_inst_status_dic[os_inst_id] = vm_state
         except Exception as e:
-            logging.error('get vm status err: %s' % e.args)
+            Log.logger.error('get vm status err: %s' % e.args)
             res = {
                 "code": 400,
                 "result": {
@@ -185,7 +185,7 @@ class NovaVMAPIAll(Resource):
                 vm_info_dict[os_inst_id]=[ip,status]
             print len(vm_info_dict)
         except Exception as e:
-            logging.error('get vm status err: %s' % e.args)
+            Log.logger.error('get vm status err: %s' % e.args)
             res = {
                 "code": 400,
                 "result": {
@@ -212,9 +212,9 @@ class Dockerlogs(Resource):
         osid = args.osid
         try:
             #nova_cli = OpenStack.nova_client
-            logging.info("#####osid:{}".format(osid))
+            Log.logger.info("#####osid:{}".format(osid))
             #vm = nova_cli.servers.get(osid)
-            #logging.info("#####vm:{}".format(vm))
+            #Log.logger.info("#####vm:{}".format(vm))
             os_log_dir = os.path.join(OS_DOCKER_LOGS, osid)
             os_log_file = os.path.join(os_log_dir, "docker_start.log")
             if os.path.exists(os_log_file):
@@ -223,7 +223,7 @@ class Dockerlogs(Resource):
             else:
                 logs=''
         except Exception as e:
-            logging.error('get vm logs err: %s' % e.message)
+            Log.logger.error('get vm logs err: %s' % e.message)
             res = {
                 "code": 400 if "not be found" in e.message else 504,
                 "result": {

@@ -46,7 +46,7 @@ class ImageListAPI(Resource):
                     })
         except Exception as e:
             err_msg = e.message
-            logging.error('list glance image err: %s' % err_msg)
+            Log.logger.error('list glance image err: %s' % err_msg)
             #Log.logger.error('list glance image err: %s' % err_msg)
             res = {
                 "code": 400,
