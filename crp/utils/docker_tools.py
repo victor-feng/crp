@@ -43,7 +43,7 @@ def _dk_img_pull(dk_cli, _image_url, repository_hash, tag):
         image = dk_cli.images.get(_image_url)
         image.tag(repository_hash, tag=tag)
     except docker.errors.ImageNotFound as img_err:
-        Log.logger.error(img_err.message)
+        Log.logger.error(img_err.args)
         return -1
     except docker.errors.APIError as api_err:
         if api_err.status_code==409:
@@ -53,8 +53,8 @@ def _dk_img_pull(dk_cli, _image_url, repository_hash, tag):
             Log.logger.error(api_err)
             return api_err
     except Exception as e:
-        Log.logger.error(e.message)
-        return e.message
+        Log.logger.error(e.args)
+        return e.args
     else:
         return None
 
@@ -69,8 +69,8 @@ def _dk_img_save(dk_cli, _image_url):
     #         for chunk in resp.stream():
     #             f.write(chunk)
     # except Exception as e:
-    #     Log.logger.error(e.message)
-    #     return e.message, None
+    #     Log.logger.error(e.args)
+    #     return e.args, None
     # else:
     #     return None, tar_file
 
@@ -86,8 +86,8 @@ def _dk_img_save(dk_cli, _image_url):
         else:
             return msg, None
     except Exception as e:
-        Log.logger.error(e.message)
-        return e.message, None
+        Log.logger.error(e.args)
+        return e.args, None
 
 
 # def _get_endpoint_and_token(auth_url, username, password, tenant_name):
@@ -143,8 +143,8 @@ def _glance_img_create(glance_cli, image_name, tar_file):
         image = glance_cli.images.create(**fields)
         return None, image
     except Exception as e:
-        Log.logger.error(e.message)
-        return e.message, None
+        Log.logger.error(e.args)
+        return e.args, None
     finally:
         fields['data'].close()
         Log.logger.debug(tar_file+" is closed now.")
@@ -253,14 +253,14 @@ def image_transit(_image_url):
         try:
             cur_img.tag(repository_hash, tag=img_tag[1])
         except docker.errors.ImageNotFound as img_err:
-            Log.logger.error(img_err.message)
+            Log.logger.error(img_err.args)
         except docker.errors.APIError as api_err:
             if api_err.status_code==409:
                 Log.logger.info('------------------------409---------------------:%s'%(api_err))
                 pass
         except Exception as e:
-            Log.logger.error(e.message)
-            err_msg = e.message
+            Log.logger.error(e.args)
+            err_msg = e.args
 
         # Docker image tag 为 latest 的镜像总是转换并创建glance image，其它均为glance 中存在则不创建
         if img_tag[1] != 'latest':
@@ -273,7 +273,7 @@ def image_transit(_image_url):
                 glance_cli.images.delete(image.id)
                 Log.logger.debug("glance image id is \'" +image.id + " is delete\'.")
     except Exception as e:
-        return e.message, None
+        return e.args, None
     dk_cli = _dk_py_cli()
     Log.logger.debug("Docker image pull from harbor url \'" + _image_url + "\' is started.")
     #err_msg = _dk_img_pull(dk_cli, _image_url, repository_hash, img_tag[1])
