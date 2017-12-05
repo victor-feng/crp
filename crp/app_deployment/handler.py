@@ -499,10 +499,10 @@ class AppDeploy(Resource):
                     i["image_uuid"] = image_uuid
                     if err_msg is None:
                         Log.logger.debug(
-                            "Transit harbor docker image success. The result glance image UUID is " + image_uuid)
+                            "Transit harbor docker image success. The result glance image UUID is " + str(image_uuid))
                     else:
                         Log.logger.error(
-                             "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + err_msg)
+                             "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + str(err_msg))
 
             for info in docker:
                 self.__image_transit(deploy_id, info,appinfo,deploy_type)
