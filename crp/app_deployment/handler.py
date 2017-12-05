@@ -466,7 +466,7 @@ class AppDeploy(Resource):
                     else:
                         _dep_callback(deploy_id, "ip", "mongodb", err_msg, "active", False, "mongodb", True,'deploy')
                         code = 500
-                        return code,msg
+                        return code,err_msg
             if mysql:
                 Log.logger.debug("The mysql data is %s" % str(mysql))
                 #mysql=eval(mysql)
@@ -478,7 +478,7 @@ class AppDeploy(Resource):
                     else:
                         _dep_callback(deploy_id, "ip", "mysql", err_msg, "active", False,"mysql", True,'deploy')
                         code=500
-                        return code,msg
+                        return code,err_msg
 
             #部署docker
             all_ips=[]
@@ -503,6 +503,10 @@ class AppDeploy(Resource):
                     else:
                         Log.logger.error(
                              "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + str(err_msg))
+                        err_msg="image get error image url is %s err_msg is %s " % (str(image_url),str(err_msg))
+                        _dep_callback(deploy_id, "None", "docker", err_msg, "None", False, "docker", True, 'deploy')
+                        code = 500
+                        return code, err_msg
 
             for info in docker:
                 self.__image_transit(deploy_id, info,appinfo,deploy_type)
