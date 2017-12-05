@@ -489,7 +489,10 @@ class AppDeploy(Resource):
             self.all_ips=all_ips
             id2name = {}
             for i in docker:
-                image_url = i.get('url')
+                image_url = i.get('url','')
+                cluster_name = info.get("ins_name", "")
+                ip=i.get('ip',[])
+                ip=','.join(ip)
                 if image_url in id2name.keys():
                     image_uuid = id2name.get(image_url)
                     i["image_uuid"] = image_uuid
@@ -504,7 +507,7 @@ class AppDeploy(Resource):
                         Log.logger.error(
                              "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + str(err_msg))
                         err_msg="image get error image url is %s err_msg is %s " % (str(image_url),str(err_msg))
-                        _dep_callback(deploy_id, "None", "docker", err_msg, "None", False, "docker", True, 'deploy')
+                        _dep_callback(deploy_id, ip, "docker", err_msg, "None", False, cluster_name, True, 'deploy')
                         code = 500
                         return code, err_msg
 
