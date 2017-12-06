@@ -1772,6 +1772,7 @@ def deal_del_request_data(resources_id,del_os_ins_ip_list):
         err_msg = str(e.args)
         Log.logger.error(
             "[CRP] deal_del_request_data error, Exception:%s" % err_msg)
+        return resources
         
 
 class ResourceDelete(Resource):
