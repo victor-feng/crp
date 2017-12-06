@@ -489,17 +489,13 @@ class AppDeploy(Resource):
                         return code,err_msg
 
             #部署docker
-            all_ips=[]
-            for info in docker:
-                ips = info.get('ip')
-                all_ips.extend(ips)
-            Log.logger.debug("Docker is " + str(docker) + " all_ips:" + all_ips.__str__())
-            self.all_ips=all_ips
+            Log.logger.debug("All Docker is " + str(docker))
+            #pull docker images
             id2name = {}
             err_dockers=[]
             for i in docker:
                 image_url = i.get('url','')
-                cluster_name = info.get("ins_name", "")
+                cluster_name = i.get("ins_name", "")
                 ip=i.get('ip',[])
                 ip=','.join(ip)
                 if image_url in id2name.keys():
@@ -517,12 +513,21 @@ class AppDeploy(Resource):
                              "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + str(err_msg))
                         err_msg="image get error image url is %s err_msg is %s " % (str(image_url),str(err_msg))
                         #将错误信息返回给uop
-                        _dep_callback(deploy_id, ip, "docker", err_msg, "None", False, cluster_name, True, 'deploy')
+                        end_flag=False
+                        if len(docker) ==1:
+                            end_flag=True
+                        _dep_callback(deploy_id, ip, "docker", err_msg, "None", False, cluster_name, end_flag, 'deploy')
                         err_dockers.append(i)
-            #将这个集群从docker中删除
+            #如果有集群拉取镜像失败，将这个集群从docker中删除
             for err_docker in err_dockers:
                 docker.remove(err_docker)
-            Log.logger.debug("Docker is " + str(docker))
+                Log.logger.debug("Deleted Docker is " + str(docker))
+            #获取所有集群的ip
+            all_ips = []
+            for info in docker:
+                ips = info.get('ip')
+                all_ips.extend(ips)
+            self.all_ips = all_ips
             #部署docker
             for info in docker:
                 self.__image_transit(deploy_id, info,appinfo,deploy_type)
