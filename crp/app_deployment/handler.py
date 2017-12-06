@@ -511,7 +511,7 @@ class AppDeploy(Resource):
                     else:
                         Log.logger.error(
                              "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + str(err_msg))
-                        err_msg="image get error image url is %s err_msg is %s " % (str(image_url),str(err_msg))
+                        err_msg="image get error image url is: %s, err_msg is: %s " % (str(image_url),str(err_msg))
                         #将错误信息返回给uop
                         end_flag=False
                         if len(docker) ==1:
