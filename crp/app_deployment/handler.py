@@ -496,6 +496,7 @@ class AppDeploy(Resource):
             Log.logger.debug("Docker is " + str(docker) + " all_ips:" + all_ips.__str__())
             self.all_ips=all_ips
             id2name = {}
+            err_dockers=[]
             for i in docker:
                 image_url = i.get('url','')
                 cluster_name = info.get("ins_name", "")
@@ -517,9 +518,12 @@ class AppDeploy(Resource):
                         err_msg="image get error image url is %s err_msg is %s " % (str(image_url),str(err_msg))
                         #将错误信息返回给uop
                         _dep_callback(deploy_id, ip, "docker", err_msg, "None", False, cluster_name, True, 'deploy')
-                        #将这个集群从docker中删除
-                        docker.remove(i)
-
+                        err_dockers.append(i)
+            #将这个集群从docker中删除
+            for err_docker in err_dockers:
+                docker.remove(err_docker)
+            Log.logger.debug("Docker is " + str(docker))
+            #部署docker
             for info in docker:
                 self.__image_transit(deploy_id, info,appinfo,deploy_type)
             lock.release()
