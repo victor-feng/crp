@@ -250,14 +250,6 @@ class ResourceProviderTransitions(object):
                  "del_os_ins_ip_list": [],
                  "sef_flag": "rollback"},
                 delete_instance_and_query, resource)
-            """
-            if os_vol_id is not None:
-                #删除创建的volume
-                cinder_client.volumes.delete(os_vol_id)
-                Log.logger.debug('--------------rollback delete volume--------------%s-----------'% os_vol_id )
-            #删除虚机
-            nova_client.servers.delete(os_inst_id)
-            """
         Log.logger.debug(
             "Task ID " +
             self.task_id.__str__() +
@@ -274,17 +266,6 @@ class ResourceProviderTransitions(object):
             availability_zone,
             network_id, meta=None, server_group=None):
         nova_client = OpenStack.nova_client
-        """
-        ints = nova_client.servers.list()
-        Log.logger.debug(ints)
-        def create(self, name, image, flavor, meta=None, files=None,
-                   reservation_id=None, min_count=None,
-                   max_count=None, security_groups=None, userdata=None,
-                   key_name=None, availability_zone=None,
-                   block_device_mapping=None, block_device_mapping_v2=None,
-                   nics=None, scheduler_hints=None,
-                   config_drive=None, disk_config=None, **kwargs):
-        """
         nics_list = []
         nic_info = {'net-id': network_id}
         nics_list.append(nic_info)
