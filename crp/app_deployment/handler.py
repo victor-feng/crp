@@ -62,13 +62,10 @@ def _dep_callback(deploy_id,ip,res_type,err_msg,vm_state,success,cluster_name,en
 
     headers = {'Content-Type': 'application/json'}
     Log.logger.debug("data string:" + str(data))
-    #Log.logger.debug("data string:" + str(data))
     CALLBACK_URL = configs[APP_ENV].UOP_URL + 'api/dep_result/'
     Log.logger.debug("[CRP] _dep_callback callback_url: %s ", CALLBACK_URL)
-    # CALLBACK_URL = urljoin(current_app.config['UOP_URL'], 'api/dep_result/')
     res = requests.put(CALLBACK_URL + deploy_id + "/", data=data_str, headers=headers)
     Log.logger.debug("call dep_result callback,res: " + str(res))
-    #Log.logger.debug("call dep_result callback,res: " + str(res))
     return res
 
 
@@ -85,13 +82,9 @@ def _dep_detail_callback(deploy_id,deploy_type,set_flag,deploy_msg=None):
 
     headers = {'Content-Type': 'application/json'}
     Log.logger.debug("data string:" + str(data))
-    #Log.logger.debug("data string:" + str(data))
-    #CALLBACK_URL = configs[APP_ENV].UOP_URL + 'api/dep_result/'
     Log.logger.debug("[CRP] _dep_detail_callback callback_url: %s ", DEP_STATUS_CALLBACK)
-    #DEP_STATUS_CALLBACK="http://127.0.0.1:5000/"
     res = requests.post(DEP_STATUS_CALLBACK, data=data_str, headers=headers)
     Log.logger.debug("call dep_detail_result callback,res: " + str(res))
-    #Log.logger.debug("call dep_result callback,res: " + str(res))
     return res
 
 
@@ -100,20 +93,15 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
     rollback_flag = False
     osint_id_wait_query = list(set(osins_id_list) - set(result_list))
     Log.logger.debug("Query Task ID "+task_id.__str__()+", remain "+osint_id_wait_query[:].__str__())
-    #Log.logger.debug("Query Task ID "+task_id.__str__()+", remain "+osint_id_wait_query[:].__str__())
     Log.logger.debug("Test Task Scheduler Class result_list object id is " + id(result_list).__str__() +
-    #Log.logger.debug("Test Task Scheduler Class result_list object id is " + id(result_list).__str__() +
                      ", Content is " + result_list[:].__str__())
     nova_client = OpenStack.nova_client
 
     for int_id in osint_id_wait_query:
         time.sleep(30)
         vm = nova_client.servers.get(int_id)
-        #vm_state = getattr(vm, 'OS-EXT-STS:vm_state')
         vm_state = vm.status.lower()
-        #Log.logger.debug("Task ID "+task_id.__str__()+" query Instance ID "+int_id.__str__()+" Status is "+ vm_state)
         Log.logger.debug("Task ID "+task_id.__str__()+" query Instance ID "+int_id.__str__()+" Status is "+ vm_state)
-        #if vm_state == 'active' or vm_state == 'stopped':
         if vm_state == 'active':
             result_list.append(int_id)
         if vm_state == 'error'or vm_state == 'shutoff':
@@ -129,20 +117,14 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
         # TODO(thread exit): 执行成功调用UOP CallBack停止定时任务退出任务线程
         _dep_callback(deploy_id,ip,quantity,"",vm_state,True)
         Log.logger.debug("Task ID "+task_id.__str__()+" all instance create success." +
-        #Log.logger.debug("Task ID "+task_id.__str__()+" all instance create success." +
                          " instance id set is "+result_list[:].__str__())
         TaskManager.task_exit(task_id)
 
     if rollback_flag:
         fail_list = list(set(osins_id_list) - set(result_list))
         Log.logger.debug("Task ID "+task_id.__str__()+" have one or more instance create failed." +
-        #Log.logger.debug("Task ID "+task_id.__str__()+" have one or more instance create failed." +
                          " Successful instance id set is "+result_list[:].__str__() +
                          " Failed instance id set is "+fail_list[:].__str__())
-        # 删除全部，完成rollback
-        #for int_id in osins_id_list:
-         #   nova_client.servers.delete(int_id)
-
         # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
         _dep_callback(deploy_id,ip,quantity,err_msg,vm_state,False)
         # 停止定时任务并退出
@@ -270,8 +252,6 @@ class AppDeploy(Resource):
         selfdir = os.path.dirname(os.path.abspath(__file__))
         domain_list = kwargs.get("domain_list")
         disconf_list = kwargs.get("disconf_list")
-        # Log.logger.debug("---------start delete disconf profiles-------")
-        # delete_disconf(disconf_list)
         Log.logger.debug("---------start delete nginx profiles-------")
         for dl in domain_list:
             nip = dl.get("domain_ip")
@@ -376,10 +356,7 @@ class AppDeploy(Resource):
             parser.add_argument('disconf_server_info', type=list, location='json')
             parser.add_argument('deploy_type', type=str)
             parser.add_argument('environment', type=str)
-            #parser.add_argument('file', type=werkz
-            # eug.datastructures.FileStorage, location='files')
             args = parser.parse_args()
-            #Log.logger.debug("AppDeploy receive post request. args is " + str(args))
             Log.logger.debug("AppDeploy receive post request. args is " + str(args))
             deploy_id = args.deploy_id
             deploy_type = args.deploy_type
@@ -398,10 +375,9 @@ class AppDeploy(Resource):
             Log.logger.debug("Thread exec done")
 
         except Exception as e:
-            Log.logger.error("AppDeploy exception: ")
-            # Log.logger.error("AppDeploy exception: " + e.message)
+            msg = "internal server error: " + str(e.args)
+            Log.logger.error("AppDeploy exception: %s" % msg)
             code = 500
-            msg = "internal server error: " + e.message
 
         res = {
             "code": code,
@@ -477,7 +453,6 @@ class AppDeploy(Resource):
                         return code,err_msg
             if mysql:
                 Log.logger.debug("The mysql data is %s" % str(mysql))
-                #mysql=eval(mysql)
                 path_filename = mysql.get("path_filename")
                 if path_filename:
                     sql_ret,err_msg = self._deploy_mysql(mysql, docker,environment)
@@ -753,11 +728,9 @@ class AppDeploy(Resource):
         (status, output) = commands.getstatusoutput(cmd)
         if output.lower().find("error") == -1 and output.lower().find("failed") == -1:
             Log.logger.debug("ansible exec succeed,command: " + str(cmd) + " output: " + output)
-            #Log.logger.debug("ansible exec succeed,command: " + str(cmd) + " output: " + output)
             err_msg=None
             return True,err_msg
         Log.logger.debug("ansible exec failed,command: " + str(cmd) + " output: " + output)
-        #Log.logger.debug("ansible exec failed,command: " + str(cmd) + " output: " + output)
         err_msg=output
         return False,err_msg
 
@@ -791,9 +764,7 @@ class AppDeploy(Resource):
     def _deploy_docker(self, ip,quantity ,deploy_id, image_uuid):
         server = OpenStack.find_vm_from_ipv4(ip = ip)
         newserver = OpenStack.nova_client.servers.rebuild(server=server, image=image_uuid)
-        # newserver = OpenStack.nova_client.servers.rebuild(server=server, image='3027f868-8f87-45cd-b85b-8b0da3ecaa84')
         vm_id_list = []
-        # Log.logger.debug("Add the id type is" + type(newserver.id))
         Log.logger.debug("Add the id type is" + str(newserver.id))
         vm_id_list.append(newserver.id)
         result_list = []
@@ -1041,7 +1012,7 @@ class Upload(Resource):
         except Exception as e:
             return {
                 'code': 500,
-                'msg': e.message
+                'msg': str(e.args)
             }
         return {
             'code': 200,
