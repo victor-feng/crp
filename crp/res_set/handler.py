@@ -1063,11 +1063,9 @@ class ResourceProviderTransitions(object):
             }
         }
         Log.logger.debug('Create port for cluster/instance ' + instance_name)
-        # Log.logger.debug('Create port for cluster/instance ' + instance_name)
         response = neutron_client.create_port(body=body_value)
         ip = response.get('port').get('fixed_ips').pop().get('ip_address')
         id = response.get('port').get('id')
-        # Log.logger.debug('Port id: ' + response.get('port').get('id') +
         Log.logger.debug('Port id: ' + response.get('port').get('id') +
                          'Port ip: ' + ip)
         return id, ip
@@ -1421,9 +1419,9 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list,error_ms
     server_group_names = ['create_app_cluster_server_group', 'create_resource_cluster_server_group'] 
     server_group = [ sg for sg in server_groups if sg.name in server_group_names ]
     for sg in server_group:
-        Log.logger.info('----------------准备删除server_group--------------')
+        Log.logger.info('准备删除server_group')
         sg.manager.delete(sg.id)
-        Log.logger.info('------------删除成功-------------')
+        Log.logger.info('删除成功')
     return res
 
 

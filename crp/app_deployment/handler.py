@@ -957,25 +957,30 @@ def open_nginx_conf(appinfo,ip):
     return 1, ''
 
 def exec_db_service(ip,cmd, sleep):
-    check_cmd="cat /etc/ansible/hosts | grep %s | wc -l" % ip
-    res=os.popen(check_cmd).read().strip()
-    #向ansible配置文件中追加ip，如果存在不追加
-    if int(res) == 0:
-        with open('/etc/ansible/hosts', 'a+') as f:
-            f.write('%s\n' % ip)
-    for i in range(10):
-        time.sleep(sleep)
-        p = subprocess.Popen(
-                cmd,
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT)
-        stdout=p.stdout.read()
-        if "SUCCESS" in stdout:
+    try:
+        check_cmd="cat /etc/ansible/hosts | grep %s | wc -l" % ip
+        res=os.popen(check_cmd).read().strip()
+        #向ansible配置文件中追加ip，如果存在不追加
+        if int(res) == 0:
+            with open('/etc/ansible/hosts', 'a+') as f:
+                f.write('%s\n' % ip)
+        for i in range(10):
+            time.sleep(sleep)
+            p = subprocess.Popen(
+                    cmd,
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT)
+            stdout=p.stdout.read()
+            if "SUCCESS" in stdout:
+                Log.logger.debug(stdout)
+                break
+        else:
             Log.logger.debug(stdout)
-            break
-    else:
-        Log.logger.debug('---------execute%s %s cmd 10 times failed---------'% (ip,cmd))
+            Log.logger.debug('execute%s %s cmd 10 times failed'% (ip,cmd))
+    except Exception as e:
+        err_msg=str(e.args)
+        Log.logger.error("CRP exec_db_service error ,error msg is:%s" %err_msg)
 
 
 
