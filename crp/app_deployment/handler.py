@@ -134,7 +134,7 @@ def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=Non
 def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, info = None,appinfo=[],deploy_type=None):
     image_uuid=info.get("image_uuid")
     if _check_image_status(image_uuid):
-        deploy_flag=obj.deploy_docker(info,deploy_id, image_uuid,appinfo,deploy_type)
+        deploy_flag=obj._deploy_docker(info,deploy_id, image_uuid,appinfo,deploy_type)
         if not deploy_flag:
             TaskManager.task_exit(task_id)
     else:
@@ -500,7 +500,7 @@ class AppDeploy(Resource):
             self.all_ips = all_ips
             #部署docker
             for info in docker:
-                self.__image_transit(deploy_id, info,appinfo,deploy_type)
+                self._image_transit(deploy_id, info,appinfo,deploy_type)
             lock.release()
         except Exception as e:
             code = 500
@@ -756,7 +756,7 @@ class AppDeploy(Resource):
             file_object.write(ip)
         return myhosts_path
 
-    def _deploy_docker(self, ip,quantity ,deploy_id, image_uuid):
+    def __deploy_docker(self, ip,quantity ,deploy_id, image_uuid):
         server = OpenStack.find_vm_from_ipv4(ip = ip)
         newserver = OpenStack.nova_client.servers.rebuild(server=server, image=image_uuid)
         vm_id_list = []
@@ -766,7 +766,7 @@ class AppDeploy(Resource):
         timeout = 1000
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, _query_instance_set_status, vm_id_list, deploy_id,ip,quantity)
 
-    def deploy_docker(self, info,deploy_id, image_uuid,appinfo,deploy_type):
+    def _deploy_docker(self, info,deploy_id, image_uuid,appinfo,deploy_type):
         #lock = threading.RLock()
         #lock.acquire()
         deploy_flag=True
@@ -883,12 +883,12 @@ class AppDeploy(Resource):
         return os_flag,vm_state,err_msg
 
 
-    def _image_transit(self,deploy_id, ip,quantity ,image_url):
+    def __image_transit(self,deploy_id, ip,quantity ,image_url):
         result_list = []
         timeout = 1000
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, ip,quantity, image_url)
 
-    def __image_transit(self,deploy_id, info,appinfo,deploy_type):
+    def _image_transit(self,deploy_id, info,appinfo,deploy_type):
         result_list = []
         timeout = 10000
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, info,appinfo,deploy_type)
