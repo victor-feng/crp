@@ -514,7 +514,7 @@ class AppDeploy(Resource):
                         err_msg="image get error image url is: %s, err_msg is: %s " % (str(image_url),str(err_msg))
                         #将错误信息返回给uop
                         end_flag=False
-                        if len(docker) ==1:
+                        if len(docker) == (docker.index(i)+1):
                             end_flag=True
                         _dep_callback(deploy_id, ip, "docker", err_msg, "None", False, cluster_name, end_flag, 'deploy')
                         err_dockers.append(i)
