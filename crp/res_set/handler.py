@@ -1232,8 +1232,17 @@ def do_transit_repo_items(
     return property_mappers_list
 
 
-#crp res_set detail  status callback to uop
 def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_info,set_flag):
+    """
+    crp 将预留资源时的状态和信息回调给uop
+    :param task_id:
+    :param req_dict:
+    :param quantity:
+    :param instance_info:
+    :param db_push_info:
+    :param set_flag:
+    :return:
+    """
     try:
         resource_id = req_dict["resource_id"]
         if instance_info:
@@ -1276,8 +1285,8 @@ def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_i
         headers = {
         'Content-Type': 'application/json'
         }
-        #RES_STATUS_CALLBACK="http://127.0.0.1:5000/api/res_callback/status"
         res = requests.post(RES_STATUS_CALLBACK,data=data_str,headers=headers)
+        Log.logger.debug(res)
     except Exception as e:
         err_msg=e.args
         Log.logger.error("res_instance_push_callback error %s" % err_msg)
@@ -1366,7 +1375,6 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list,error_ms
     data["cmdb_repo_id"] = req_dict["cmdb_repo_id"]
     data["status"] = status
     data["set_flag"] = req_dict["set_flag"]
-    #if error_mag:
     data["error_msg"] = error_msg
 
     container = []
@@ -1404,13 +1412,10 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list,error_ms
         task_id.__str__() +
         " UOP res_callback Request Body is: " +
         data_str)
-    #RES_CALLBACK="http://127.0.0.1:5000/api/res_callback/res"
     headers = {'Content-Type': 'application/json'}
     res = requests.post(RES_CALLBACK, data=data_str,headers=headers)
     Log.logger.debug(res.status_code)
     Log.logger.debug(res.content)
-    #ret = eval(res.content.decode('unicode_escape'))
-    #ret=json.dumps(res.json())
     nova_client = OpenStack.nova_client
     server_groups = nova_client.server_groups.list()
     server_group_names = ['create_app_cluster_server_group', 'create_resource_cluster_server_group'] 
@@ -1744,23 +1749,38 @@ class MongodbCluster(object):
             Log.logger.debug('mongodb cluster push result:%s' % p.stdout.read())
 
 def deal_del_request_data(resources_id,del_os_ins_ip_list):
-    req_list=[]
-    resources={}
-    for os_ip in del_os_ins_ip_list:
-        os_inst_id=os_ip.get("os_ins_id")
-        os_vol_id=os_ip.get("os_vol_id")
-        req_dic={}
-        req_dic['resources_id'] = resources_id
-        req_dic['os_inst_id'] = os_inst_id
-        req_dic['os_vol_id']=os_vol_id
-        req_list.append(req_dic)
-    resources['resources']=req_list
-    return resources
+    """
+    处理uop传的数据，处理成一定格式
+    :param resources_id:
+    :param del_os_ins_ip_list:
+    :return:
+    """
+    try:
+        req_list=[]
+        resources={}
+        for os_ip in del_os_ins_ip_list:
+            os_inst_id=os_ip.get("os_ins_id")
+            os_vol_id=os_ip.get("os_vol_id")
+            req_dic={}
+            req_dic['resources_id'] = resources_id
+            req_dic['os_inst_id'] = os_inst_id
+            req_dic['os_vol_id']=os_vol_id
+            req_list.append(req_dic)
+        resources['resources']=req_list
+        return resources
+    except BaseException as e:
+        err_msg = str(e.args)
+        Log.logger.error(
+            "[CRP] deal_del_request_data error, Exception:%s" % err_msg)
         
 
 class ResourceDelete(Resource):
     
     def delete(self):
+        """
+        删除资源的接口（虚机、卷、虚IP）
+        :return:
+        """
         try:
             request_data=json.loads(request.data)
             resources_id=request_data.get('resources_id')
@@ -1770,7 +1790,7 @@ class ResourceDelete(Resource):
             resources = deal_del_request_data(resources_id,del_os_ins_ip_list)
             resources = resources.get('resources')
             unique_flag=str(uuid.uuid1())
-            #delete  kvm
+            #删除虚机和卷
             for resource in resources:
                 TaskManager.task_start(
                     SLEEP_TIME, TIMEOUT,
@@ -1779,31 +1799,32 @@ class ResourceDelete(Resource):
                      "del_os_ins_ip_list":del_os_ins_ip_list,
                      "set_flag":set_flag},
                     delete_instance_and_query, resource)
-            #delete vip
+            #删除虚IP
             for port_id in vid_list:
                 delete_vip(port_id)
                 
         except Exception as e:
-            err_msg=e.args
-            Log.logger.debug(
-                "[CRP] Resource delete failed, Exception:%s",
-                e.args)
+            err_msg=str(e.args)
+            Log.logger.error(
+                "[CRP] Resource delete failed, Exception:%s" % err_msg)
+            code=400
             res = {
-                "code": 400,
+                "code": code,
                 "result": {
                     "res": "failed",
                     "msg": err_msg
                 }
             }
-            return res, 400
+            return res, code
         else:
+            code=200
             res = {
-                "code": 200,
+                "code": code,
                 "result": {
                     "msg": "提交成功"
                 }
             }
-            return res, 200
+            return res, code
 
 
 resource_set_api.add_resource(ResourceSet, '/sets')

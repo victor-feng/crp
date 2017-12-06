@@ -11,13 +11,10 @@ from crp.openstack import OpenStack
 
 def create_volume(vm,volume_size):
     """
-    data_dict = {
-        "volume": {
-            'size': volume_size,
-            "display_name": "%s-vol" % vm.get('vm_name', ''),
-            "lvm_instance_id": vm.get('os_inst_id', ''),
-        }
-    }
+    创建卷
+    :param vm:
+    :param volume_size:
+    :return:
     """
     data_dict = {
         "volume": {
@@ -54,10 +51,10 @@ def create_volume(vm,volume_size):
         cv_result = requests.post(url=url, headers=headers, data=data_str)
     except requests.exceptions.ConnectionError as rq:
         err_msg = rq.message.message
-        Log.logger.debug('error msg: %s' % err_msg)
+        Log.logger.error('error msg: %s' % err_msg)
     except BaseException as e:
         err_msg = e.msg
-        Log.logger.debug('error msg: %s' % err_msg)
+        Log.logger.error('error msg: %s' % err_msg)
     finally:
         if err_msg:
             Log.logger.debug("CreateVolume Task ID " + str(vm.get('vm_name', '')) + '\r\n' + 'create_volume err_msg ' + str(err_msg))
@@ -72,6 +69,13 @@ def create_volume(vm,volume_size):
             return volume
 
 def instance_attach_volume(os_inst_id, os_vol_id,device=None):
+    """
+    挂载卷
+    :param os_inst_id:
+    :param os_vol_id:
+    :param device:
+    :return:
+    """
     try:
         nova_client = OpenStack.nova_client
         vol_attach_result = nova_client.volumes.create_server_volume(os_inst_id, os_vol_id, device)
@@ -82,7 +86,7 @@ def instance_attach_volume(os_inst_id, os_vol_id,device=None):
             "\r\nresult: " + str(vol_attach_result.to_dict()))
         return "AttachVolumeSuccess"
     except BaseException as e:
-        err_msg=e.args
+        err_msg=str(e.args)
         Log.logger.error('attach volume os_inst_id is %s os_vol_id is  error msg: %s' % (os_inst_id,os_vol_id,err_msg))
         return "AttachVolumeError"
 

@@ -18,8 +18,15 @@ DELETE_VM=4
 
 UOP_URL = configs[APP_ENV].UOP_URL
 
-#向openstack查询虚机状态
+
 def query_instance(task_id, result, resource):
+    """
+    向openstack查询虚机状态
+    :param task_id:
+    :param result:
+    :param resource:
+    :return:
+    """
     os_inst_id =resource.get('os_inst_id', '')
     resource_id =resource.get('resources_id', '')
     result['os_inst_id'] = os_inst_id
@@ -56,6 +63,12 @@ def query_instance(task_id, result, resource):
         TaskManager.task_exit(task_id)
 
 def delete_instance(task_id, result):
+    """
+    删除虚机
+    :param task_id:
+    :param result:
+    :return:
+    """
     os_inst_id = result.get('os_inst_id', '')
     nova_client = OpenStack.nova_client
     try:
@@ -76,8 +89,15 @@ def delete_instance(task_id, result):
         TaskManager.task_exit(task_id)
 
 
-#卸载volume
+
 def detach_volume(task_id, result, resource):
+    """
+    卸载卷
+    :param task_id:
+    :param result:
+    :param resource:
+    :return:
+    """
     os_inst_id = resource.get('os_inst_id')
     os_vol_id = resource.get('os_vol_id')
     Log.logger.debug(
@@ -91,38 +111,57 @@ def detach_volume(task_id, result, resource):
             #如果volume不存在直接删除虚机
             result['current_status'] = QUERY_VM
     except Exception as e:
-        raise e
+        err_msg=str(e.args)
+        Log.logger.error('Task ID %s,detach_volume error, os_inst_id is %s, os_vol_id is %s.error msg is %s'% (task_id, os_inst_id, os_vol_id,err_msg))
     else:
         result['current_status'] = QUERY_VOLUME
 
-#查询volume状态
+
 def query_volume_status(task_id, result, resource):
-    os_vol_id = resource.get('os_vol_id')
-    if os_vol_id:
-        #如果volume存在直接查询volume状态
-        cinder_client = OpenStack.cinder_client
-        vol = cinder_client.volumes.get(os_vol_id)
-        Log.logger.debug(
-            "Task ID %s, query_detach_status, Volume status: %s, info: %s" % (task_id, vol.status, vol))
-        if vol.status == 'available':
-            result['current_status'] = DETACH_VOLUME_SUCCESSFUL
-            Log.logger.info(
-                "Task ID %s, detach volume(%s) successful." % (task_id, os_vol_id))
-        elif vol.status == 'in-use':
-            result['current_status'] = DETACH_VOLUME
+    """
+    查询volume状态
+    :param task_id:
+    :param result:
+    :param resource:
+    :return:
+    """
+    try:
+        os_vol_id = resource.get('os_vol_id')
+        if os_vol_id:
+            #如果volume存在直接查询volume状态
+            cinder_client = OpenStack.cinder_client
+            vol = cinder_client.volumes.get(os_vol_id)
             Log.logger.debug(
-                "Task ID %s, begin detach volume , vol_id is %s" %(task_id,os_vol_id))
-        elif vol.status == 'error' or 'error' in vol.status:
-            Log.logger.error(
-                "Task ID %s, volume status is error begin delete volume, vol_id is %s" %(task_id,os_vol_id))
-            result['current_status'] = DETACH_VOLUME_SUCCESSFUL
-    elif not os_vol_id:
-        #volume 不存在 直接删除虚机
-        result['current_status']=QUERY_VM
+                    "Task ID %s, query_detach_status, Volume status: %s, info: %s" % (task_id, vol.status, vol))
+            if vol.status == 'available':
+                result['current_status'] = DETACH_VOLUME_SUCCESSFUL
+                Log.logger.info(
+                    "Task ID %s, detach volume(%s) successful." % (task_id, os_vol_id))
+            elif vol.status == 'in-use':
+                result['current_status'] = DETACH_VOLUME
+                Log.logger.debug(
+                    "Task ID %s, begin detach volume , vol_id is %s" %(task_id,os_vol_id))
+            elif vol.status == 'error' or 'error' in vol.status:
+                Log.logger.error(
+                    "Task ID %s, volume status is error begin delete volume, vol_id is %s" %(task_id,os_vol_id))
+                result['current_status'] = DETACH_VOLUME_SUCCESSFUL
+        elif not os_vol_id:
+            #volume 不存在 直接删除虚机
+            result['current_status']=QUERY_VM
+    except Exception as e:
+        err_msg=str(e.args)
+        Log.logger.error('Task ID %s,query_volume_status error.error msg is %s' % (task_id, err_msg))
 
 
 
 def delete_volume(task_id,result,resource):
+    """
+    删除卷
+    :param task_id:
+    :param result:
+    :param resource:
+    :return:
+    """
     os_vol_id = resource.get('os_vol_id')
     try:
         if os_vol_id:
@@ -132,12 +171,19 @@ def delete_volume(task_id,result,resource):
         Log.logger.debug(
             "Task ID %s, delete volume , vol_id is %s" % (task_id,os_vol_id))
     except Exception as e:
-        Log.logger.exception(
+        Log.logger.error(
             "[CRP] _delete_volume failed, Exception:%s" %e.args)
         result['current_status'] = QUERY_VM
 
 
 def delete_instance_and_query(task_id, result, resource):
+    """
+    查询和删除虚机和卷的类状态机
+    :param task_id:
+    :param result:
+    :param resource:
+    :return:
+    """
     current_status = result.get('current_status', None)
     Log.logger.debug(
          "Task ID %s,\r\n resource %s ." %
@@ -159,13 +205,17 @@ def delete_instance_and_query(task_id, result, resource):
             query_instance(task_id, result, resource)
     except Exception as e:
         Log.logger.error("Query Task ID " + str(task_id) +" [CRP] delete_instance_and_query failed, Exception:%s" %e)
-        #request_res_callback(task_id, result)
         TaskManager.task_exit(task_id)
 
 
 
 
 def delete_vip(port_id):
+    """
+    删除虚拟IP
+    :param port_id:
+    :return:
+    """
     try:
         neutron_client = OpenStack.neutron_client
         neutron_client.delete_port(port_id)
@@ -177,8 +227,13 @@ def delete_vip(port_id):
     
 
 
-# request UOP res_callback
 def delete_request_callback(task_id, result):
+    """
+    把删除信息和状态回调给uop
+    :param task_id:
+    :param result:
+    :return:
+    """
     data = {
             'resources_id': result.get('resources_id', ''),
             'os_inst_id': result.get('os_inst_id', ''),
@@ -196,8 +251,8 @@ def delete_request_callback(task_id, result):
         res=json.dumps(res.json())
         Log.logger.debug(res)
     except BaseException as e:
-        err_msg = e.args
-        Log.logger.debug(
+        err_msg = str(e.args)
+        Log.logger.error(
                 "Callback Task ID " + str(task_id) + '\r\n' +
                 'delete_request_callback err_msg ' + str(err_msg))
 
