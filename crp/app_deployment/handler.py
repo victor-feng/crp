@@ -155,6 +155,14 @@ def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_i
         deploy_flag=obj.deploy_docker(info,deploy_id, image_uuid,appinfo,deploy_type)
         if not deploy_flag:
             TaskManager.task_exit(task_id)
+    else:
+        #检查镜像五次状态不为active将错误返回给uop
+        image_url = info.get('url', '')
+        cluster_name = info.get("ins_name", "")
+        ip = info.get('ip', [])
+        ip = ','.join(ip)
+        err_msg="check image five times,image status not active,image url is:%s" % image_url
+        _dep_callback(deploy_id, ip, "docker", err_msg, "None", False, cluster_name, True, 'deploy')
     TaskManager.task_exit(task_id)
 
 def _check_image_status(image_uuid):
@@ -507,9 +515,10 @@ class AppDeploy(Resource):
                         Log.logger.error(
                              "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + str(err_msg))
                         err_msg="image get error image url is %s err_msg is %s " % (str(image_url),str(err_msg))
+                        #将错误信息返回给uop
                         _dep_callback(deploy_id, ip, "docker", err_msg, "None", False, cluster_name, True, 'deploy')
-                        code = 500
-                        return code, err_msg
+                        #将这个集群从docker中删除
+                        docker.remove(i)
 
             for info in docker:
                 self.__image_transit(deploy_id, info,appinfo,deploy_type)
