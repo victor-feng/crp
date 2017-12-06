@@ -309,6 +309,7 @@ class AppDeploy(Resource):
             appinfo = args.appinfo
             deploy_id=args.deploy_id
             set_flag = args.set_flag
+            deploy_type=set_flag
             msg_dict={
                 "increase":"扩容完成",
                 "reduce":"缩容完成",
@@ -319,9 +320,9 @@ class AppDeploy(Resource):
                 self.do_app_push(app)
             if appinfo:
                 _dep_detail_callback(deploy_id, "deploy_%s_nginx" % set_flag, set_flag, msg_dict["deploy_%s_nginx" % set_flag])
-                _dep_detail_callback(deploy_id, set_flag, set_flag, msg_dict[set_flag])
+                _dep_detail_callback(deploy_id, deploy_type, set_flag, msg_dict[set_flag])
             elif not appinfo:
-                _dep_detail_callback(deploy_id, set_flag, set_flag, msg_dict[set_flag])
+                _dep_detail_callback(deploy_id, deploy_type, set_flag, msg_dict[set_flag])
         except Exception as e:
             Log.logger.error("AppDeploy put exception:%s " %str(e))
             code = 500
@@ -363,7 +364,6 @@ class AppDeploy(Resource):
             disconf_server_info = args.disconf_server_info
             appinfo = args.appinfo
             environment=args.environment
-            print "appinfo", appinfo
             Log.logger.debug("Thread exec start")
             t = threading.Thread(target=self.deploy_anything, args=(mongodb, mysql, docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment))
             t.start()
