@@ -309,28 +309,23 @@ class AppDeploy(Resource):
             appinfo = args.appinfo
             deploy_id=args.deploy_id
             set_flag = args.set_flag
+            msg_dict={
+                "increase":"扩容完成",
+                "reduce":"缩容完成",
+                "deploy_increase_nginx":"nginx增加扩容docker完成",
+                "deploy_reduce_nginx":"nginx缩减缩容docker完成",
+            }
             for app in appinfo:
                 self.do_app_push(app)
-            if set_flag=="increase" and appinfo:
-                deploy_msg="nginx增加扩容docker完成"
-                _dep_detail_callback(deploy_id, "deploy_increase_nginx", set_flag, deploy_msg)
-                deploy_msg = "扩容完成"
-                _dep_detail_callback(deploy_id, "increase", set_flag, deploy_msg)
-            elif set_flag=="increase" and not appinfo:
-                deploy_msg = "扩容完成"
-                _dep_detail_callback(deploy_id, "increase", set_flag, deploy_msg)
-            if set_flag=="reduce" and appinfo:
-                deploy_msg = "nginx缩减缩容docker完成"
-                _dep_detail_callback(deploy_id, "deploy_reduce_nginx",set_flag,deploy_msg)
-                deploy_msg = "缩容完成"
-                _dep_detail_callback(deploy_id, "reduce", set_flag, deploy_msg)
-            elif set_flag=="reduce" and not appinfo:
-                deploy_msg = "缩容完成"
-                _dep_detail_callback(deploy_id, "reduce", set_flag, deploy_msg)
+            if appinfo:
+                _dep_detail_callback(deploy_id, "deploy_%s_nginx" % set_flag, set_flag, msg_dict["deploy_%s_nginx" % set_flag])
+                _dep_detail_callback(deploy_id, set_flag, set_flag, msg_dict[set_flag])
+            elif not appinfo:
+                _dep_detail_callback(deploy_id, set_flag, set_flag, msg_dict[set_flag])
         except Exception as e:
-            Log.logger.error("AppDeploy put exception:%s " %e)
+            Log.logger.error("AppDeploy put exception:%s " %str(e))
             code = 500
-            msg = "internal server error: %s"  %e
+            msg = "internal server error: %s"  %str(e)
         res = {
             "code": code,
             "result": {
