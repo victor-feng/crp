@@ -172,11 +172,11 @@ class ResourceProviderTransitions(object):
         elif self.phase == 'push':
             self.preload_property_mapper(self.push_mappers_list)
 
-        if len(self.property_mapper) != 0:
+        if len(self.property_mapper) != 0 and self.property_mapper.keys()[0] != "app" :
             item_id = self.property_mapper.keys()[0]
             if self.phase == 'create':
                 func = getattr(self, item_id, None)
-            elif self.phase == 'push' and item_id != 'app':
+            elif self.phase == 'push':
                 func = getattr(self, ('%s_push' % item_id), None)
             if not func:
                 raise NotImplementedError("Unexpected item_id=%s" % item_id)
