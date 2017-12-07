@@ -19,13 +19,13 @@ import werkzeug
 from crp.app_deployment import app_deploy_blueprint
 from crp.app_deployment.errors import user_errors
 from crp.utils.docker_tools import image_transit
-from crp.utils.aio import async
 from crp.openstack import OpenStack
 from crp.taskmgr import *
 from crp.dns.dns_api import NamedManagerApi
 from crp.log import Log
 from crp.disconf.disconf_api import *
 from crp.disconf.handler import delete_disconf
+from crp.utils.aio import exec_cmd_ten_times,async
 
 import sys
 reload(sys)
@@ -35,9 +35,6 @@ from config import APP_ENV, configs
 
 app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 #TODO: move to global conf
-#url = "http://172.28.11.111:8001/cmdb/api/"
-#url = "http://uop-test.syswin.com/api/dep_result/"
-#url = "http://uop-test.syswin.com/api/dep_result/"
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 DEP_STATUS_CALLBACK = configs[APP_ENV].DEP_STATUS_CALLBACK
 
@@ -46,6 +43,19 @@ HEALTH_CHECK_PATH = configs[APP_ENV].HEALTH_CHECK_PATH
 OS_DOCKER_LOGS = configs[APP_ENV].OS_DOCKER_LOGS
 
 def _dep_callback(deploy_id,ip,res_type,err_msg,vm_state,success,cluster_name,end_flag,deploy_type):
+    """
+    将部署的状态和日志，以及错误信息回调给uop
+    :param deploy_id:
+    :param ip:
+    :param res_type:
+    :param err_msg:
+    :param vm_state:
+    :param success:
+    :param cluster_name:
+    :param end_flag:
+    :param deploy_type:
+    :return:
+    """
     data = dict()
     data["ip"]=ip
     data["res_type"]=res_type
@@ -70,6 +80,14 @@ def _dep_callback(deploy_id,ip,res_type,err_msg,vm_state,success,cluster_name,en
 
 
 def _dep_detail_callback(deploy_id,deploy_type,set_flag,deploy_msg=None):
+    """
+    将部署的日志和状态回调给uop
+    :param deploy_id:
+    :param deploy_type:
+    :param set_flag:
+    :param deploy_msg:
+    :return:
+    """
     data = {
         "deploy_id":deploy_id,
         "deploy_type":deploy_type,
@@ -87,48 +105,6 @@ def _dep_detail_callback(deploy_id,deploy_type,set_flag,deploy_msg=None):
     Log.logger.debug("call dep_detail_result callback,res: " + str(res))
     return res
 
-
-
-def _query_instance_set_status(task_id=None, result_list=None, osins_id_list=None, deploy_id=None,ip=None,quantity=0):
-    rollback_flag = False
-    osint_id_wait_query = list(set(osins_id_list) - set(result_list))
-    Log.logger.debug("Query Task ID "+task_id.__str__()+", remain "+osint_id_wait_query[:].__str__())
-    Log.logger.debug("Test Task Scheduler Class result_list object id is " + id(result_list).__str__() +
-                     ", Content is " + result_list[:].__str__())
-    nova_client = OpenStack.nova_client
-
-    for int_id in osint_id_wait_query:
-        time.sleep(30)
-        vm = nova_client.servers.get(int_id)
-        vm_state = vm.status.lower()
-        Log.logger.debug("Task ID "+task_id.__str__()+" query Instance ID "+int_id.__str__()+" Status is "+ vm_state)
-        if vm_state == 'active':
-            result_list.append(int_id)
-        if vm_state == 'error'or vm_state == 'shutoff':
-            rollback_flag = True
-            err_msg=vm_state
-            if vm_state == 'error':
-                err_msg = vm.to_dict().__str__()
-            Log.logger.debug(
-                "Task ID " + task_id.__str__() + " query Instance ID " + int_id.__str__() + " Status is " + vm_state
-            + " ERROR msg is:" + err_msg)
-
-    if result_list.__len__() == osins_id_list.__len__():
-        # TODO(thread exit): 执行成功调用UOP CallBack停止定时任务退出任务线程
-        _dep_callback(deploy_id,ip,quantity,"",vm_state,True)
-        Log.logger.debug("Task ID "+task_id.__str__()+" all instance create success." +
-                         " instance id set is "+result_list[:].__str__())
-        TaskManager.task_exit(task_id)
-
-    if rollback_flag:
-        fail_list = list(set(osins_id_list) - set(result_list))
-        Log.logger.debug("Task ID "+task_id.__str__()+" have one or more instance create failed." +
-                         " Successful instance id set is "+result_list[:].__str__() +
-                         " Failed instance id set is "+fail_list[:].__str__())
-        # TODO(thread exit): 执行失败调用UOP CallBack停止定时任务退出任务线程
-        _dep_callback(deploy_id,ip,quantity,err_msg,vm_state,False)
-        # 停止定时任务并退出
-        TaskManager.task_exit(task_id)
 
 
 def _image_transit_task(task_id = None, result_list = None, obj = None, deploy_id = None, info = None,appinfo=[],deploy_type=None):
@@ -166,25 +142,6 @@ class AppDeploy(Resource):
     def __init__(self):
         self.all_ips=[]
 
-    def run_cmd(self, cmd):
-        msg = ''
-        p = subprocess.Popen(
-            cmd,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            close_fds=True)
-        while True:
-            line = p.stdout.readline()
-            Log.logger.debug('The nginx config push result is %s' % line)
-            if not line and p.poll() is not None:
-                break
-            else:
-                msg += line
-                Log.logger.debug('The nginx config push msg is %s' % msg)
-        code = p.wait()
-        return msg, code
-
     def do_app_push(self, app):
         # TODO: do app push
         def do_push_nginx_config(kwargs):
@@ -197,34 +154,29 @@ class AppDeploy(Resource):
             """
             selfdir = os.path.dirname(os.path.abspath(__file__))
             nip = kwargs.get('nip')
-            check_cmd = "cat /etc/ansible/hosts | grep %s | wc -l" % nip
-            res = os.popen(check_cmd).read().strip()
-            # 向ansible配置文件中追加ip，如果存在不追加
-            if int(res) == 0:
-                with open('/etc/ansible/hosts', 'a+') as f:
-                    f.write('%s\n' % nip)
             Log.logger.debug('----->start push:{}dir:{}'.format(kwargs, selfdir))
-            self.run_cmd(
-                "ansible {nip} --private-key={dir}/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip,dir=selfdir))
-            self.run_cmd(
-                "ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/update.py dest=/tmp/'".format(
-                    nip=nip, dir=selfdir))
-            self.run_cmd(
-                "ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/template dest=/tmp/'".format(
-                    nip=nip, dir=selfdir))
-            Log.logger.debug('------>上传配置文件完成')
-            self.run_cmd("ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /tmp/update.py'".format(
-                nip=nip, dir=selfdir))
-            self.run_cmd("ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /tmp/template'".format(
-                nip=nip, dir=selfdir))
-            self.run_cmd(
-                'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a '
-                '"/tmp/update.py {domain} {ip} {port}"'.format(
+            yum_install_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip, dir=selfdir)
+            scp_update_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/update.py dest=/tmp/'".format(
+                    nip=nip, dir=selfdir)
+            scp_template_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/template dest=/tmp/'".format(
+                    nip=nip, dir=selfdir)
+            chmod_update_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /tmp/update.py'".format(
+                nip=nip, dir=selfdir)
+            chmod_template_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /tmp/template'".format(
+                nip=nip, dir=selfdir)
+            exec_shell_cmd='ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a ''"/tmp/update.py {domain} {ip} {port}"'.format(
                     nip=kwargs.get('nip'),
                     dir=selfdir,
                     domain=kwargs.get('domain'),
                     ip=kwargs.get('ip'),
-                    port=kwargs.get('port')))
+                    port=kwargs.get('port'))
+            exec_cmd_ten_times(nip,yum_install_cmd,1)
+            exec_cmd_ten_times(nip, scp_update_cmd, 1)
+            exec_cmd_ten_times(nip, scp_template_cmd, 1)
+            Log.logger.debug('------>上传配置文件完成')
+            exec_cmd_ten_times(nip, chmod_update_cmd, 1)
+            exec_cmd_ten_times(nip, chmod_template_cmd, 1)
+            exec_cmd_ten_times(nip, exec_shell_cmd, 1)
             Log.logger.debug('------>end push')
 
         real_ip = ''
@@ -245,36 +197,40 @@ class AppDeploy(Resource):
                                 'ip': real_ip.strip(),
                                 'port': ports.strip()})
         except Exception as e:
-            Log.logger.debug("error:{}".format(e))
+            Log.logger.error("error:{}".format(e))
 
     @async
     def run_delete_cmd(self, **kwargs):
+        """
+        删除nginx配置
+        :param kwargs:
+        :return:
+        """
         selfdir = os.path.dirname(os.path.abspath(__file__))
         domain_list = kwargs.get("domain_list")
         disconf_list = kwargs.get("disconf_list")
-        Log.logger.debug("---------start delete nginx profiles-------")
+        Log.logger.debug("--------->start delete nginx profiles")
         for dl in domain_list:
             nip = dl.get("domain_ip")
             domain = dl.get('domain')
             if not nip or not domain:
                 Log.logger.info("nginx ip or domain is null, do nothing")
                 continue
-            self.run_cmd(
-                "ansible {nip} --private-key={dir}/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip, dir=selfdir))
-            self.run_cmd(
-                "ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/delete.py dest=/tmp/'".format(
-                    nip=nip, dir=selfdir))
-            Log.logger.debug('------>上传删除脚本完成')
-            self.run_cmd("ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /tmp/delete.py'".format(
-                nip=nip, dir=selfdir))
-            self.run_cmd(
-                'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a '
-                '"/tmp/delete.py {domain}"'.format(
+            yum_install_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip, dir=selfdir)
+            scp_delete_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/delete.py dest=/tmp/'".format(
+                    nip=nip, dir=selfdir)
+            chmod_delete_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /tmp/delete.py'".format(
+                nip=nip, dir=selfdir)
+            exec_shell_cmd='ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a ''"/tmp/delete.py {domain}"'.format(
                     nip=nip,
                     dir=selfdir,
                     domain=domain)
-            )
-        Log.logger.debug("---------stop delete nginx profiles: success-------")
+            exec_cmd_ten_times(nip,yum_install_cmd,1)
+            exec_cmd_ten_times(nip,scp_delete_cmd,1)
+            Log.logger.debug('------>上传删除脚本完成')
+            exec_cmd_ten_times(nip, chmod_delete_cmd, 1)
+            exec_cmd_ten_times(nip, exec_shell_cmd, 1)
+        Log.logger.debug("--------->stop delete nginx profiles: success")
 
     def delete(self):
         code = 200
@@ -756,19 +712,7 @@ class AppDeploy(Resource):
             file_object.write(ip)
         return myhosts_path
 
-    def __deploy_docker(self, ip,quantity ,deploy_id, image_uuid):
-        server = OpenStack.find_vm_from_ipv4(ip = ip)
-        newserver = OpenStack.nova_client.servers.rebuild(server=server, image=image_uuid)
-        vm_id_list = []
-        Log.logger.debug("Add the id type is" + str(newserver.id))
-        vm_id_list.append(newserver.id)
-        result_list = []
-        timeout = 1000
-        TaskManager.task_start(SLEEP_TIME, timeout, result_list, _query_instance_set_status, vm_id_list, deploy_id,ip,quantity)
-
     def _deploy_docker(self, info,deploy_id, image_uuid,appinfo,deploy_type):
-        #lock = threading.RLock()
-        #lock.acquire()
         deploy_flag=True
         end_flag=False
         first_error_flag=False
@@ -815,7 +759,6 @@ class AppDeploy(Resource):
                 ips.pop(0)
             else:
                 break
-            #lock.release()
         return deploy_flag
 
 
@@ -866,7 +809,6 @@ class AppDeploy(Resource):
                     os_flag = False
                     err_msg="vm status is shutoff"
                     Log.logger.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:"+ str(health_check_res) + " Error msg is:" +err_msg )
-                    #self.open_nginx_conf(appinfo, ip)
                     break
             elif vm_state == "active" and health_check_res == True and "rebuild" not in str(task_state):
                 os_flag = True
@@ -877,16 +819,10 @@ class AppDeploy(Resource):
         else:
             os_flag = False
             err_msg = "app health check failed"
-            #self.open_nginx_conf(appinfo, ip)
             Log.logger.debug(
                 " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:" + str(health_check_res) + " Error msg is:" + err_msg)
         return os_flag,vm_state,err_msg
 
-
-    def __image_transit(self,deploy_id, ip,quantity ,image_url):
-        result_list = []
-        timeout = 1000
-        TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, ip,quantity, image_url)
 
     def _image_transit(self,deploy_id, info,appinfo,deploy_type):
         result_list = []
@@ -923,8 +859,8 @@ def closed_nginx_conf(appinfo,ip):
             Log.logger.debug(an_close_cmd)
             an_reload_cmd = '''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=reload_cmd)
             #开始执行注释nginx配置文件和reload nginx 命令
-            exec_db_service(domain_ip,an_close_cmd, 1)
-            exec_db_service(domain_ip,an_reload_cmd, 1)
+            exec_cmd_ten_times(domain_ip,an_close_cmd, 1)
+            exec_cmd_ten_times(domain_ip,an_reload_cmd, 1)
     except Exception as e:
         msg = "closed_nginx_conf error %s" % e
         Log.logger.error(msg)
@@ -948,40 +884,13 @@ def open_nginx_conf(appinfo,ip):
             Log.logger.debug(an_open_cmd)
             an_reload_cmd = '''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=reload_cmd)
             #开始执行注释nginx配置文件和reload nginx 命令
-            exec_db_service(domain_ip,an_open_cmd, 1)
-            exec_db_service(domain_ip,an_reload_cmd, 1)
+            exec_cmd_ten_times(domain_ip,an_open_cmd, 1)
+            exec_cmd_ten_times(domain_ip,an_reload_cmd, 1)
     except Exception as e:
         msg = "open_nginx_conf error %s" % e
         Log.logger.error(msg)
         return -1, msg
     return 1, ''
-
-def exec_db_service(ip,cmd, sleep):
-    try:
-        check_cmd="cat /etc/ansible/hosts | grep %s | wc -l" % ip
-        res=os.popen(check_cmd).read().strip()
-        #向ansible配置文件中追加ip，如果存在不追加
-        if int(res) == 0:
-            with open('/etc/ansible/hosts', 'a+') as f:
-                f.write('%s\n' % ip)
-        for i in range(10):
-            time.sleep(sleep)
-            p = subprocess.Popen(
-                    cmd,
-                    shell=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT)
-            stdout=p.stdout.read()
-            if "SUCCESS" in stdout:
-                Log.logger.debug(stdout)
-                break
-        else:
-            Log.logger.debug(stdout)
-            Log.logger.debug('execute%s %s cmd 10 times failed'% (ip,cmd))
-    except Exception as e:
-        err_msg=str(e.args)
-        Log.logger.error("CRP exec_db_service error ,error msg is:%s" %err_msg)
-
 
 
 
@@ -1028,7 +937,7 @@ def write_docker_logs_to_file(task_id,result_list=None,os_inst_id=None):
             logs = vm.get_console_output()
         except Exception as e:
             logs='The logs is too big or get docker log error,opsnstack can not get it to crp '
-            Log.logger.error('CRP get docker from openstack error:%s' % e)
+            Log.logger.error('CRP get docker from openstack error:%s' % str(e.args))
         os_log_dir=os.path.join(OS_DOCKER_LOGS,os_inst_id)
         os_log_file=os.path.join(os_log_dir,"docker_start.log")
         #目录不存在创建目录

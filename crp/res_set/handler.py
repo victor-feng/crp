@@ -9,7 +9,6 @@ from transitions import Machine
 from flask_restful import reqparse, Api, Resource
 from flask import request
 
-from crp.app_deployment.handler import exec_db_service
 from crp.taskmgr import *
 from mysql_volume import create_volume,instance_attach_volume
 from crp.dns.dns_api import DnsApi,NamedManagerApi
@@ -20,6 +19,7 @@ from crp.openstack import OpenStack
 from crp.utils.docker_tools import image_transit
 from config import configs, APP_ENV
 from del_handler import delete_instance_and_query,QUERY_VOLUME,delete_vip
+from crp.utils.aio import exec_cmd_ten_times,exec_cmd_one_times
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 
@@ -70,28 +70,26 @@ class ResourceProviderTransitions(object):
         'app_cluster',
         'resource_cluster',
         'query',
+        'query_volume',
         'status',
-        'app_push',
         'mysql_push',
         'mongodb_push',
-        'redis_push',
-        'dns_push']
+        'redis_push',]
 
     # Define transitions.
     transitions = [
-        {'trigger': 'success', 'source': ['status', 'app_push', 'mysql_push', 'mongodb_push', 'redis_push', 'dns_push'], 'dest': 'success', 'after': 'do_success'},
+        {'trigger': 'success', 'source': ['status', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'success', 'after': 'do_success'},
         {'trigger': 'fail', 'source': 'rollback', 'dest': 'fail', 'after': 'do_fail'},
         {'trigger': 'rollback', 'source': '*', 'dest': 'rollback', 'after': 'do_rollback'},
         {'trigger': 'stop', 'source': ['success', 'fail'], 'dest': 'stop', 'after': 'do_stop'},
         {'trigger': 'app_cluster', 'source': ['init', 'app_cluster', 'resource_cluster'], 'dest': 'app_cluster', 'after': 'do_app_cluster'},
         {'trigger': 'resource_cluster', 'source': ['init', 'app_cluster', 'resource_cluster'], 'dest': 'resource_cluster', 'after': 'do_resource_cluster'},
         {'trigger': 'query', 'source': ['app_cluster', 'resource_cluster', 'query'], 'dest': 'query', 'after': 'do_query'},
-        {'trigger': 'status', 'source': ['query', 'status'], 'dest': 'status', 'after': 'do_status'},
-        {'trigger': 'app_push', 'source': ['status', 'app_push', 'dns_push', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'app_push', 'after': 'do_app_push'},
-        {'trigger': 'dns_push', 'source': ['status', 'app_push', 'dns_push', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'dns_push', 'after': 'do_dns_push'},
-        {'trigger': 'mysql_push', 'source': ['status', 'app_push', 'dns_push', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'mysql_push', 'after': 'do_mysql_push'},
-        {'trigger': 'mongodb_push', 'source': ['status', 'app_push', 'dns_push', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'mongodb_push', 'after': 'do_mongodb_push'},
-        {'trigger': 'redis_push', 'source': ['status', 'app_push', 'dns_push', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'redis_push', 'after': 'do_redis_push'},
+        {'trigger': 'query_volume', 'source': ['app_cluster', 'resource_cluster', 'query', 'query_volume'],'dest': 'query_volume', 'after': 'do_query_volume'},
+        {'trigger': 'status', 'source': ['query','query_volume','status'], 'dest': 'status', 'after': 'do_status'},
+        {'trigger': 'mysql_push', 'source': ['status', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'mysql_push', 'after': 'do_mysql_push'},
+        {'trigger': 'mongodb_push', 'source': ['status', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'mongodb_push', 'after': 'do_mongodb_push'},
+        {'trigger': 'redis_push', 'source': ['status', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'redis_push', 'after': 'do_redis_push'},
     ]
 
     def __init__(self, resource_id, property_mappers_list, req_dict):
@@ -101,6 +99,7 @@ class ResourceProviderTransitions(object):
         self.phase_list = [
             'create',
             'query',
+            'query_volume',
             'status',
             'push',
             'callback',
@@ -109,6 +108,7 @@ class ResourceProviderTransitions(object):
         self.task_id = None
         self.resource_id = resource_id
         self.result_inst_id_list = []
+        self.result_inst_vol_id_list = []
         self.uop_os_inst_id_list = []
         self.property_mappers_list = copy.deepcopy(property_mappers_list)
         self.property_mappers_list.reverse()
@@ -145,6 +145,8 @@ class ResourceProviderTransitions(object):
         self.phase = self.phase_list[index + 1]
         if self.phase == 'query':
             self.query()
+        elif self.phase == 'query_volume':
+            self.query_volume()
         elif self.phase == 'status':
             self.status()
 
@@ -163,7 +165,7 @@ class ResourceProviderTransitions(object):
     def tick_announce(self):
         if self.is_need_rollback:
             self.rollback()
-        if self.phase == 'query' or self.phase == 'status' or self.phase == 'stop':
+        if self.phase == 'query' or self.phase == 'query_volume' or self.phase == 'status' or self.phase == 'stop':
             return
         if self.phase == 'create':
             self.preload_property_mapper(self.property_mappers_list)
@@ -219,9 +221,6 @@ class ResourceProviderTransitions(object):
             resource_id,
             uop_os_inst_id_list,
             result_uop_os_inst_id_list):
-        #nova_client = OpenStack.nova_client
-        #cinder_client = OpenStack.cinder_client
-        # fail_list = list(set(uop_os_inst_id_list) - set(result_uop_os_inst_id_list))
         fail_list = self._uop_os_list_sub(
             uop_os_inst_id_list, result_uop_os_inst_id_list)
         Log.logger.debug(
@@ -285,7 +284,6 @@ class ResourceProviderTransitions(object):
             int_ = nova_client.servers.create(name, image, flavor,meta=meta,
                                          availability_zone=availability_zone,
                                          nics=nics_list, scheduler_hints=server_group_dict)
-            Log.logger.info('------------finish---create-------------')
         else:
             int_ = nova_client.servers.create(name, image, flavor, meta=meta,
                                          availability_zone=availability_zone,
@@ -503,7 +501,7 @@ class ResourceProviderTransitions(object):
             self.push_mappers_list.insert(0, temp_push_property_mapper)
         if len(temp_result_property_mapper) > 0:
             self.result_mappers_list.insert(0, temp_result_property_mapper)
-
+    """
     # 向OpenStack查询已申请资源的定时任务
     def _query_resource_set_status(
             self,
@@ -603,6 +601,137 @@ class ResourceProviderTransitions(object):
 
         # 回滚全部资源和容器
         return is_finish, is_rollback
+    """
+    # 向OpenStack查询已申请资源的定时任务
+    def _query_resource_set_status(
+            self,
+            uop_os_inst_id_list=None,
+            result_inst_id_list=None,
+            result_mappers_list=None):
+        is_finish = False
+        is_rollback = False
+        # uop_os_inst_id_wait_query = list(set(uop_os_inst_id_list) - set(result_inst_id_list))
+        uop_os_inst_id_wait_query = self._uop_os_list_sub(
+            uop_os_inst_id_list, result_inst_id_list)
+        Log.logger.debug(
+            "Query Task ID " +
+            self.task_id.__str__() +
+            ", remain " +
+            uop_os_inst_id_wait_query[:].__str__())
+        Log.logger.debug(
+            "Query Task ID " +
+            self.task_id.__str__() +
+            " Test Task Scheduler Class result_inst_id_list object id is " +
+            id(result_inst_id_list).__str__() +
+            ", Content is " +
+            result_inst_id_list[:].__str__())
+        nova_client = OpenStack.nova_client
+        for uop_os_inst_id in uop_os_inst_id_wait_query:
+            inst = nova_client.servers.get(uop_os_inst_id['os_inst_id'])
+            Log.logger.debug(
+                "Query Task ID " +
+                self.task_id.__str__() +
+                " query Instance ID " +
+                uop_os_inst_id['os_inst_id'] +
+                " Status is " +
+                inst.status)
+            if inst.status == 'ACTIVE':
+                _ips = self._get_ip_from_instance(inst)
+                _ip = _ips.pop() if _ips.__len__() >= 1 else ''
+                physical_server = getattr(inst, OS_EXT_PHYSICAL_SERVER_ATTR)
+                for mapper in result_mappers_list:
+                    value = mapper.values()[0]
+                    quantity = value.get('quantity', 0)
+                    instances = value.get('instance')
+                    if instances is not None:
+                        for instance in value.get('instance'):
+                            if instance.get(
+                                    'os_inst_id') == uop_os_inst_id['os_inst_id']:
+                                instance['ip'] = _ip
+                                instance['physical_server'] = physical_server
+                                Log.logger.debug(
+                                    "Query Task ID " +
+                                    self.task_id.__str__() +
+                                    " Instance Info: " +
+                                    mapper.__str__())
+                                res_instance_push_callback(self.task_id, self.req_dict, quantity, instance, {},
+                                                           self.set_flag)
+                result_inst_id_list.append(uop_os_inst_id)
+            if inst.status == 'ERROR':
+                # 置回滚标志位
+                Log.logger.debug(
+                    "Query Task ID " +
+                    self.task_id.__str__() +
+                    " ERROR Instance Info: " +
+                    inst.to_dict().__str__())
+                self.error_msg = inst.to_dict().__str__()
+                is_rollback = True
+
+        if result_inst_id_list.__len__() == uop_os_inst_id_list.__len__():
+            is_finish = True
+        # 回滚全部资源和容器
+        return is_finish, is_rollback
+
+    # 向openstack定时查询volume的状态
+    def _query_volume_set_status(
+            self,
+            uop_os_inst_id_list=None,
+            result_inst_vol_id_list=None,
+            result_mappers_list=None):
+        is_finish = False
+        is_rollback = False
+        uop_os_inst_id_wait_query = self._uop_os_list_sub(
+            uop_os_inst_id_list, result_inst_vol_id_list)
+        cinder_client = OpenStack.cinder_client
+        for uop_os_inst_id in uop_os_inst_id_wait_query:
+            os_inst_id = uop_os_inst_id['os_inst_id']
+            os_vol_id = uop_os_inst_id.get('os_vol_id')
+            if os_vol_id:
+                vol = cinder_client.volumes.get(os_vol_id)
+                vol_status = vol.status
+                Log.logger.debug(
+                    "Query Task ID " +
+                    self.task_id.__str__() +
+                    " query Instance ID " +
+                    uop_os_inst_id['os_inst_id'] + " volume id " + os_vol_id + " Volume status " + vol_status)
+                if vol_status == 'available' and vol_status != "attaching":
+                    for i in range(5):
+                        res = instance_attach_volume(os_inst_id, os_vol_id)
+                        if res == "AttachVolumeSuccess":
+                           break
+                        time.sleep(1)
+                    else:
+                        self.error_msg = "attach volume error"
+                        is_rollback = True
+                    vol_status = vol.status
+                if vol_status == 'in-use':
+                    for mapper in result_mappers_list:
+                        value = mapper.values()[0]
+                        instances = value.get('instance')
+                        if instances is not None:
+                            for instance in instances:
+                                if instance.get('os_inst_id') == os_inst_id:
+                                    instance['os_vol_id'] = os_vol_id
+                                    Log.logger.debug(
+                                        "Query Task ID " +
+                                        self.task_id.__str__() +
+                                        " Instance Info: " +
+                                        mapper.__str__())
+                    result_inst_vol_id_list.append(uop_os_inst_id)
+                if vol_status == "error":
+                    self.error_msg = "create volume failed,volume status is error!!"
+                    Log.logger.debug(
+                        "Query Task ID " +
+                        self.task_id.__str__() +
+                        " ERROR Instance Info: " +
+                        self.error_msg)
+                    is_rollback = True
+            else:
+                result_inst_vol_id_list.append(uop_os_inst_id)
+        if result_inst_vol_id_list.__len__() == uop_os_inst_id_list.__len__():
+            is_finish = True
+        # 回滚全部资源和容器
+        return is_finish, is_rollback
 
     def start(self):
         if self.is_running is not True:
@@ -610,7 +739,7 @@ class ResourceProviderTransitions(object):
             self.run()
 
     def run(self):
-        while self.phase != 'query' and self.phase != 'status' and self.phase != 'stop':
+        while self.phase != 'query' and self.phase != 'query_volume' and self.phase != 'status' and self.phase != 'stop':
             self.tick_announce()
         self.is_running = False
 
@@ -697,102 +826,20 @@ class ResourceProviderTransitions(object):
             self.next_phase()
 
     @transition_state_logger
+    def do_query_volume(self):
+        is_finished, self.is_need_rollback = self._query_volume_set_status(
+            self.uop_os_inst_id_list, self.result_inst_vol_id_list, self.result_mappers_list)
+        if self.is_need_rollback:
+            self.rollback()
+        if is_finished is True:
+            self.next_phase()
+
+    @transition_state_logger
     def do_status(self):
         # 查询KVM操作系统状态
         is_finished = True
         if is_finished is True:
             self.next_phase()
-
-    @transition_state_logger
-    def do_app_push(self):
-        # TODO: do app push
-        def do_push_nginx_config(kwargs):
-            """
-            need the nip domain ip
-            nip:这是nginx那台机器的ip
-            need write the update file into vm
-            :param kwargs:
-            :return:
-            """
-            nip = kwargs.get('nip')
-            with open('/etc/ansible/hosts', 'w') as f:
-                f.write('%s\n' % nip)
-            Log.logger.debug('----->start push', kwargs)
-            self.run_cmd(
-                "ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip,dir=self.dir))
-            self.run_cmd(
-                "ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m synchronize -a 'src={dir}/update.py dest=/shell/'".format(
-                    nip=nip, dir=self.dir))
-            self.run_cmd(
-                "ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m synchronize -a 'src={dir}/template dest=/shell/'".format(
-                    nip=nip, dir=self.dir))
-            Log.logger.debug('------>上传配置文件完成')
-            self.run_cmd("ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m shell -a 'chmod 777 /shell/update.py'".format(
-                nip=nip, dir=self.dir))
-            self.run_cmd("ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m shell -a 'chmod 777 /shell/template'".format(
-                nip=nip, dir=self.dir))
-            self.run_cmd(
-                'ansible {nip} --private-key={dir}/playbook-0830/id_rsa_98 -m shell -a '
-                '"/shell/update.py {domain} {ip} {port}"'.format(
-                    nip=kwargs.get('nip'),
-                    dir=self.dir,
-                    domain=kwargs.get('domain'),
-                    ip=kwargs.get('ip'),
-                    port=kwargs.get('port')))
-            Log.logger.debug('------>end push')
-
-        # real_ip = ''
-        # app = self.property_mapper.get('app', '')
-        # app_instance = app.get('instance')
-        # Log.logger.debug("####current compute instance is:{}".format(self.property_mapper))
-        # domain_ip = app.get('domain_ip', "")
-        # for ins in app_instance:
-        #     domain = ins.get('domain', '')
-        #     ip_str = str(ins.get('ip')) + ' '
-        #     real_ip += ip_str
-        # ports = str(app.get('port'))
-        # Log.logger.debug(
-        #     'the receive (domain, nginx, ip, port) is (%s, %s, %s, %s)' %
-        #     (domain, domain_ip, real_ip, ports))
-        # do_push_nginx_config({'nip': domain_ip,
-        #                       'domain': domain,
-        #                       'ip': real_ip.strip(),
-        #                       'port': ports.strip()})
-        # do_push_nginx_config({'nip': nginx_ip_slave,
-        #                       'domain': domain,
-        #                       'ip': real_ip.strip(),
-        #                       'port': ports.strip()})
-
-        #添加dns操作#
-        # try:
-        #     domain_ip = self.property_mapper.get('app',{}).get('domain_ip','10.0.0.1')
-        #     if len(domain_ip.strip()) == 0:
-        #         domain_ip = '10.0.0.1'
-        #     Log.logger.debug("self.property_mapper: %s" % self.property_mapper)
-        #     domain_name = self.property_mapper.get('app',{}).get('domain',{})
-        #     Log.logger.debug('dns add -->ip:%s,domain:%s' %(domain_ip, domain_name))
-        #     self.do_dns_push(domain_name=domain_name, domain_ip=domain_ip)
-        # except Exception as e:
-        #     Log.logger.debug("dns error: %s" % e.message)
-
-    def run_cmd(self, cmd):
-        msg = ''
-        p = subprocess.Popen(
-            cmd,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            close_fds=True)
-        while True:
-            line = p.stdout.readline()
-            Log.logger.debug('The nginx config push result is %s' % line)
-            if not line and p.poll() is not None:
-                break
-            else:
-                msg += line
-                Log.logger.debug('The nginx config push msg is %s' % msg)
-        code = p.wait()
-        return msg, code
 
     @transition_state_logger
     def do_dns_push(self, domain_name, domain_ip):
@@ -880,11 +927,11 @@ class ResourceProviderTransitions(object):
             cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m " \
                 "shell -a '/etc/init.d/m3316 restart'".format(ip=ip,dir=self.dir)
             Log.logger.debug(cmd)
-            exec_db_service(ip, cmd, 6)
+            exec_cmd_ten_times(ip, cmd, 6)
             if volume_size >0:
                 self.mount_volume(ip,"mysql")
 
-        res_instance_push_callback(9999,self.req_dict,0,{},mysql,self.set_flag)
+        res_instance_push_callback(self.task_id,self.req_dict,0,{},mysql,self.set_flag)
 
     @transition_state_logger
     def do_mongodb_push(self):
@@ -928,23 +975,16 @@ class ResourceProviderTransitions(object):
             exec_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m " \
                      "shell -a 'sh /tmp/mongodb_single.sh'".format(ip=ip, dir=self.dir)
             Log.logger.debug(cmd)
-            exec_db_service(ip,cmd, 6)
-            exec_db_service(ip,scp_cmd, 6)
-            exec_db_service(ip,ch_cmd, 6)
-            #self.exec_db_service(ip,exec_cmd)
-            p = subprocess.Popen(
-                exec_cmd,
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT)
-            stdout=p.stdout.read()
-            Log.logger.debug(stdout)
+            exec_cmd_ten_times(ip,cmd, 6)
+            exec_cmd_ten_times(ip,scp_cmd, 6)
+            exec_cmd_ten_times(ip,ch_cmd, 6)
+            exec_cmd_one_times(ip,exec_cmd)
             Log.logger.debug(
                 'mongodb single instance end {ip}'.format(
                     ip=mongodb['ip']))
             if volume_size > 0:
                 self.mount_volume(ip,"mongodb")
-        res_instance_push_callback(9999,self.req_dict,0,{},mongodb,self.set_flag)
+        res_instance_push_callback(self.task_id,self.req_dict,0,{},mongodb,self.set_flag)
 
     @transition_state_logger
     def do_redis_push(self):
@@ -1010,8 +1050,8 @@ class ResourceProviderTransitions(object):
             cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m " \
                 "shell -a '/usr/local/redis-2.8.14/src/redis-server /usr/local/redis-2.8.14/redis.conf'".format(ip=ip,dir=self.dir)
             Log.logger.debug(cmd)
-            exec_db_service(ip,cmd, 6)
-        res_instance_push_callback(9999,self.req_dict,0,{},redis,self.set_flag)
+            exec_cmd_ten_times(ip,cmd, 6)
+        res_instance_push_callback(self.task_id,self.req_dict,0,{},redis,self.set_flag)
 
 
     def mount_volume(self,ip,cluster_type):
@@ -1019,8 +1059,8 @@ class ResourceProviderTransitions(object):
                 " synchronize -a 'src={dir}/volume.py dest=/tmp/'".format(ip=ip,dir=self.dir)
         exec_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa " \
                  "-m shell -a 'python /tmp/volume.py {cluster_type}'".format(ip=ip, dir=self.dir,cluster_type=cluster_type)
-        exec_db_service(ip, scp_cmd,6)
-        exec_db_service(ip, exec_cmd,6)
+        exec_cmd_ten_times(ip, scp_cmd,6)
+        exec_cmd_ten_times(ip, exec_cmd,6)
 
     def _excute_mongo_cmd(self, ip):
         sh_path = os.path.join(UPLOAD_FOLDER, 'mongodb', 'mongodb_single.sh')
@@ -1592,6 +1632,8 @@ def tick_announce(task_id, res_provider_list):
         Log.logger.debug(res_provider.state)
         if res_provider.phase == 'query' and res_provider.state == 'query':
             res_provider.query()
+        elif res_provider.phase == 'query_volume' and res_provider.state == 'query_volume':
+            res_provider.query_volume()
         elif res_provider.phase == 'status' and res_provider.state == 'status':
             res_provider.status()
         else:
