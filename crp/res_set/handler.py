@@ -877,7 +877,8 @@ class ResourceProviderTransitions(object):
             mysql['rvip'] = instance[0]['ip']
             instance[0]['dbtype'] = 'master'
             ip=instance[0]['ip']
-            cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m shell -a '/etc/init.d/m3316 restart'".format(ip=ip,dir=self.dir)
+            cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m " \
+                "shell -a '/etc/init.d/m3316 restart'".format(ip=ip,dir=self.dir)
             Log.logger.debug(cmd)
             exec_db_service(ip, cmd, 6)
             if volume_size >0:
@@ -918,10 +919,14 @@ class ResourceProviderTransitions(object):
             mongodb['ip'] = ip
             #单实例创建admin用户并验证启动mongodb
             sh_path=self._excute_mongo_cmd("127.0.0.1")
-            cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m shell -a '/opt/mongodb/bin/mongod --config=/data/mongodb/conf/mongodb.conf'".format(ip=ip,dir=self.dir)
-            scp_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m synchronize -a 'src={sh_path} dest=/tmp/'".format(ip=ip,sh_path=sh_path ,dir=self.dir)
-            ch_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m shell -a 'chmod 777 /tmp/mongodb_single.sh'".format(ip=ip, dir=self.dir)
-            exec_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m shell -a 'sh /tmp/mongodb_single.sh'".format(ip=ip, dir=self.dir)
+            cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m " \
+                "shell -a '/opt/mongodb/bin/mongod --config=/data/mongodb/conf/mongodb.conf'".format(ip=ip,dir=self.dir)
+            scp_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m " \
+                    "synchronize -a 'src={sh_path} dest=/tmp/'".format(ip=ip,sh_path=sh_path ,dir=self.dir)
+            ch_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m " \
+                   "shell -a 'chmod 777 /tmp/mongodb_single.sh'".format(ip=ip, dir=self.dir)
+            exec_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m " \
+                     "shell -a 'sh /tmp/mongodb_single.sh'".format(ip=ip, dir=self.dir)
             Log.logger.debug(cmd)
             exec_db_service(ip,cmd, 6)
             exec_db_service(ip,scp_cmd, 6)
@@ -1002,15 +1007,18 @@ class ResourceProviderTransitions(object):
         else:
             ip=instance[0]['ip']
             #redis_version="redis-2.8.14"
-            cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m shell -a '/usr/local/redis-2.8.14/src/redis-server /usr/local/redis-2.8.14/redis.conf'".format(ip=ip,dir=self.dir)
+            cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m " \
+                "shell -a '/usr/local/redis-2.8.14/src/redis-server /usr/local/redis-2.8.14/redis.conf'".format(ip=ip,dir=self.dir)
             Log.logger.debug(cmd)
             exec_db_service(ip,cmd, 6)
         res_instance_push_callback(9999,self.req_dict,0,{},redis,self.set_flag)
 
 
     def mount_volume(self,ip,cluster_type):
-        scp_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m synchronize -a 'src={dir}/volume.py dest=/tmp/'".format(ip=ip,dir=self.dir)
-        exec_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m shell -a 'python /tmp/volume.py {cluster_type}'".format(ip=ip, dir=self.dir,cluster_type=cluster_type)
+        scp_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m" \
+                " synchronize -a 'src={dir}/volume.py dest=/tmp/'".format(ip=ip,dir=self.dir)
+        exec_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa " \
+                 "-m shell -a 'python /tmp/volume.py {cluster_type}'".format(ip=ip, dir=self.dir,cluster_type=cluster_type)
         exec_db_service(ip, scp_cmd,6)
         exec_db_service(ip, exec_cmd,6)
 
