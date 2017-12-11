@@ -3,4 +3,4 @@ from flask import Blueprint
 
 resource_set_blueprint = Blueprint('resource_set_blueprint', __name__)
 
-from . import handler, forms, errors
+from . import handler, views, forms, errors
