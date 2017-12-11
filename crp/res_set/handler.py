@@ -1717,6 +1717,7 @@ class ResourceDelete(Resource):
         """
         try:
             request_data=json.loads(request.data)
+            Log.logger.debug("Delete resource data is:" + request_data.__str__())
             resources_id=request_data.get('resources_id')
             vid_list=request_data.get('vid_list',[])
             del_os_ins_ip_list=request_data.get("os_ins_ip_list",[])
