@@ -20,7 +20,7 @@ from crp.utils.docker_tools import image_transit
 from config import configs, APP_ENV
 from del_handler import delete_instance_and_query,QUERY_VOLUME,delete_vip
 from crp.utils.aio import exec_cmd_ten_times,exec_cmd_one_times
-
+from crp.app_deployment.handler import start_write_log
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 
 TIMEOUT = 5000
@@ -538,6 +538,9 @@ class ResourceProviderTransitions(object):
             if inst.status == 'ACTIVE':
                 _ips = self._get_ip_from_instance(inst)
                 _ip = _ips.pop() if _ips.__len__() >= 1 else ''
+                #扩容时获取docker启动日志
+                if self.set_flag == "increase":
+                    start_write_log(_ip)
                 physical_server = getattr(inst, OS_EXT_PHYSICAL_SERVER_ATTR)
                 for mapper in result_mappers_list:
                     value = mapper.values()[0]
@@ -1426,6 +1429,7 @@ class ResourceSet(Resource):
             Log.logger.debug(
                 "property_mappers_list: %s" %
                 property_mappers_list)
+            Log.logger.debug("RES_SET request_data is:" + request_data.__str__())
             parser = reqparse.RequestParser()
             parser.add_argument('unit_name', type=str)
             parser.add_argument('unit_id', type=str)
