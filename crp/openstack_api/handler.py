@@ -148,7 +148,7 @@ class NovaVMAPIs(Resource):
                     vm_state = "failed"
                 os_inst_status_dic[os_inst_id] = vm_state
         except Exception as e:
-            Log.logger.error('get vm status err: %s' % e.args)
+            Log.logger.error('get vm status err: %s' % str(e.args))
             res = {
                 "code": 400,
                 "result": {
