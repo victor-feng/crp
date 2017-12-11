@@ -3,4 +3,4 @@ from flask import Blueprint
 
 az_blueprint = Blueprint('az_blueprint', __name__)
 
-from . import handler, forms, errors
+from . import handler, views, forms, errors

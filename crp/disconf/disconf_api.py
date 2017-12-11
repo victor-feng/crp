@@ -27,8 +27,6 @@ def exchange_disconf_name(name):
 class DisconfServerApi(object):
     def __init__(self,disconf_server_info):
         self.disconf_server_name = disconf_server_info.get('disconf_server_name')
-        #self.disconf_url = 'http://172.28.18.48:8081'
-        #self.disconf_user_info = {'name': 'admin', 'password': 'admin', 'remember': '0'}
         self.disconf_url = disconf_server_info.get('disconf_server_url')
         self.disconf_user_info = {'name':disconf_server_info.get('disconf_server_user'),'password':disconf_server_info.get('disconf_server_password'),'remember':'0'}
         self.SIGNIN = self.disconf_url + '/api/account/signin'

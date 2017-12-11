@@ -47,7 +47,6 @@ def _dk_img_pull(dk_cli, _image_url, repository_hash, tag):
         return -1
     except docker.errors.APIError as api_err:
         if api_err.status_code==409:
-            Log.logger.info('------------------------409---------------------:%s'%(api_err))
             pass
         else:
             Log.logger.error(api_err)
@@ -210,6 +209,7 @@ def _glance_img_reservation(glance_cli, current_image_id, reservation_quantity):
             img_id = img.get('id')
             glance_cli.images.delete(img_id)
             Log.logger.debug(" glance Image ID " + img_id + " is deleting.")
+
 #def image_update(image_id):
 #    glance_cli = _glance_cli()
 #    fields = {
@@ -241,8 +241,6 @@ def image_transit(_image_url):
         except docker.errors.ImageNotFound, e:
             cur_img = None
             return 'image pull error', 0
-
-        Log.logger.info('---------------------cur_img---------------------:%s'%(cur_img))
         if cur_img:
             img_id = cur_img.attrs.get('ContainerConfig').get('Image')
             _image_url_hash = img_id.replace(':', '') + ':' + img_tag[1]
@@ -256,7 +254,6 @@ def image_transit(_image_url):
             Log.logger.error(img_err.args)
         except docker.errors.APIError as api_err:
             if api_err.status_code==409:
-                Log.logger.info('------------------------409---------------------:%s'%(api_err))
                 pass
         except Exception as e:
             Log.logger.error(e.args)

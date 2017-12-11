@@ -3,4 +3,4 @@ from flask import Blueprint
 
 disconf_blueprint = Blueprint('disconf_blueprint', __name__)
 
-from . import handler, forms, errors
+from . import handler, views, forms, errors
