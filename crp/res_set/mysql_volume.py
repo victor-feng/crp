@@ -5,6 +5,7 @@ import requests
 import logging
 from crp.log import Log
 from crp.openstack import OpenStack
+from del_handler import CrpException
 # 创建volume
 # 挂载volume到虚机
 
@@ -50,14 +51,15 @@ def create_volume(vm,volume_size):
         Log.logger.debug(data_str)
         cv_result = requests.post(url=url, headers=headers, data=data_str)
     except requests.exceptions.ConnectionError as rq:
-        err_msg = rq.message.message
+        err_msg = rq.args
         Log.logger.error('error msg: %s' % err_msg)
     except BaseException as e:
-        err_msg = e.msg
+        err_msg = e.args
         Log.logger.error('error msg: %s' % err_msg)
     finally:
         if err_msg:
             Log.logger.debug("CreateVolume Task ID " + str(vm.get('vm_name', '')) + '\r\n' + 'create_volume err_msg ' + str(err_msg))
+            raise CrpException(err_msg)
         else:
             cv_result_dict = cv_result.json()
             volume = cv_result_dict.get('volume', {})

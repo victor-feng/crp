@@ -1497,8 +1497,6 @@ class MongodbCluster(object):
                 stderr=subprocess.STDOUT)
             Log.logger.debug('mongodb cluster push result:%s' % p.stdout.read())
 
-class CrpException(Exception):
-    pass
 
 def deal_del_request_data(resources_id,del_os_ins_ip_list):
     """
@@ -1522,7 +1520,6 @@ def deal_del_request_data(resources_id,del_os_ins_ip_list):
         return resources
     except Exception as e:
         err_msg = str(e.args)
-        raise CrpException(err_msg)
         Log.logger.error(
             "[CRP] deal_del_request_data error, Exception:%s" % err_msg)
         return resources
