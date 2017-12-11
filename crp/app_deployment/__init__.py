@@ -3,4 +3,4 @@ from flask import Blueprint
 
 app_deploy_blueprint = Blueprint('app_deploy_blueprint', __name__)
 
-from . import handler, forms, errors
+from . import handler, views, forms, errors
