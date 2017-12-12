@@ -78,7 +78,11 @@ class TestingConfig(BaseConfig):
     }
 
     # AVAILABILITY_ZONE
-    AVAILABILITY_ZONE_AZ_UOP = 'AZ_UOP'
+    AVAILABILITY_ZONE = {
+        "dev": 'AZ_UOP',
+        "test": 'AZ_SIT',
+        "prod": 'AZ_UOP',
+        }
     DEV_NETWORK_ID = 'c3d17e45-ea99-4441-a745-275e803dff67'
     OS_EXT_PHYSICAL_SERVER_ATTR = 'OS-EXT-SRV-ATTR:host'
 

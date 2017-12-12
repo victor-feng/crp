@@ -73,7 +73,12 @@ class ProdConfig(BaseConfig):
     }
 
     # AVAILABILITY_ZONE
-    AVAILABILITY_ZONE_AZ_UOP = 'AZ-UOP'
+    #AVAILABILITY_ZONE_AZ_UOP = 'AZ-UOP'
+    AVAILABILITY_ZONE = {
+        "dev": 'AZ_UOP',
+        "test": 'AZ_UOP',
+        "prod": 'AZ_UOP',
+    }
     DEV_NETWORK_ID = '04f4f74e-a727-48fc-9871-a55c8ae01ea5'
     OS_EXT_PHYSICAL_SERVER_ATTR = 'OS-EXT-SRV-ATTR:host'
 

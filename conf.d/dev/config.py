@@ -76,7 +76,12 @@ class DevelopmentConfig(BaseConfig):
         # "4": "uop-docker-4C4G30G"
     }
     # AVAILABILITY_ZONE
-    AVAILABILITY_ZONE_AZ_UOP = 'AZ_UOP'
+    #AVAILABILITY_ZONE_AZ_UOP = 'AZ_UOP'
+    AVAILABILITY_ZONE = {
+        "dev": 'AZ_UOP',
+        "test": 'AZ_UOP',
+        "prod": 'AZ_UOP',
+    }
     DEV_NETWORK_ID = '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'
     OS_EXT_PHYSICAL_SERVER_ATTR = 'OS-EXT-SRV-ATTR:host'
 

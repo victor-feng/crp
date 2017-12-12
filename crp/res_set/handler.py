@@ -21,7 +21,6 @@ SLEEP_TIME = 3
 cluster_type_image_port_mappers = configs[APP_ENV].cluster_type_image_port_mappers
 KVM_FLAVOR = configs[APP_ENV].KVM_FLAVOR
 DOCKER_FLAVOR = configs[APP_ENV].DOCKER_FLAVOR
-AVAILABILITY_ZONE_AZ_UOP = configs[APP_ENV].AVAILABILITY_ZONE_AZ_UOP
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 OS_EXT_PHYSICAL_SERVER_ATTR = configs[APP_ENV].OS_EXT_PHYSICAL_SERVER_ATTR
 RES_CALLBACK = configs[APP_ENV].RES_CALLBACK
@@ -32,7 +31,7 @@ RES_STATUS_DEFAULT = configs[APP_ENV].RES_STATUS_DEFAULT
 DEFAULT_USERNAME = configs[APP_ENV].DEFAULT_USERNAME
 DEFAULT_PASSWORD = configs[APP_ENV].DEFAULT_PASSWORD
 SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
-AVAILABILITY_ZONE_AZ_UOP = configs[APP_ENV].AVAILABILITY_ZONE_AZ_UOP
+AVAILABILITY_ZONE = configs[APP_ENV].AVAILABILITY_ZONE
 IS_OPEN_AFFINITY_SCHEDULING = configs[APP_ENV].IS_OPEN_AFFINITY_SCHEDULING
 
 # Transition state Log debug decorator
@@ -115,6 +114,7 @@ class ResourceProviderTransitions(object):
         self.error_type = RES_STATUS_FAIL
         self.error_msg = None
         self.set_flag=req_dict["set_flag"]
+        self.env=req_dict["env"]
         # Initialize the state machine
         self.machine = Machine(
             model=self,
@@ -289,8 +289,9 @@ class ResourceProviderTransitions(object):
     def _create_docker_by_url(self, name, image_uuid, flavor, meta,network_id, server_group=None):
         #err_msg, image_uuid = image_transit(image_url)
         if image_uuid:
+            availability_zone=AVAILABILITY_ZONE.get(self.env,"AZ_UOP")
             return None, self._create_instance(
-                name, image_uuid, flavor, AVAILABILITY_ZONE_AZ_UOP, network_id, meta, server_group)
+                name, image_uuid, flavor, availability_zone, network_id, meta, server_group)
         else:
             return None, None
 
@@ -298,6 +299,7 @@ class ResourceProviderTransitions(object):
     def _create_instance_by_type(self, ins_type, name, flavor,network_id, server_group=None):
         image = cluster_type_image_port_mappers.get(ins_type)
         image_uuid = image.get('uuid')
+        availability_zone = AVAILABILITY_ZONE.get(self.env, "AZ_UOP")
         Log.logger.debug(
             "Task ID " +
             self.task_id.__str__() +
@@ -309,7 +311,7 @@ class ResourceProviderTransitions(object):
             name,
             image_uuid,
             flavor,
-            AVAILABILITY_ZONE_AZ_UOP,
+            availability_zone,
             network_id, server_group)
 
     # 申请应用集群docker资源
