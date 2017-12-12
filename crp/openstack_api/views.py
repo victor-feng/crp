@@ -147,7 +147,6 @@ class NovaVMAPIAll(Resource):
                     ip = "127.0.0.1"
                 status=vm.status.lower()
                 vm_info_dict[os_inst_id]=[ip,status]
-            print len(vm_info_dict)
         except Exception as e:
             Log.logger.error('get vm status err: %s' % str(e.args))
             res = {
