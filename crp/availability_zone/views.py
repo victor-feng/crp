@@ -146,7 +146,7 @@ class UOPStatisticAPI(Resource):
 
     def get(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('env', type=str)
+        parser.add_argument('env', type=str,location='json')
         args = parser.parse_args()
         env=args.env
         hypervisors_statistics = {}
