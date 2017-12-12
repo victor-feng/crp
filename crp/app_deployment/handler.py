@@ -116,21 +116,20 @@ def closed_nginx_conf(appinfo,ip):
     try:
         selfdir = os.path.dirname(os.path.abspath(__file__))
         conf_dir="/usr/local/nginx/conf/servers_systoon"
-        if appinfo:
-            for info in appinfo:
-                domain_ip=info.get("domain_ip","")
+        for info in appinfo:
+            ips=info.get("ips",[])
+            if ip in ips:
+                domain_ip = info.get("domain_ip", "")
                 port = info.get("port", "")
-                domain=info.get("domain","")
-                ips=info.get("ips",[])
-                if ip in ips:
-                    close_cmd="sed  -i 's/server  %s:%s/#server  %s:%s/g' %s/%s" % (ip,port,ip,port,conf_dir,domain)
-                    reload_cmd="/usr/local/nginx/sbin/nginx -s reload"
-            an_close_cmd='''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=close_cmd)
-            Log.logger.debug(an_close_cmd)
-            an_reload_cmd = '''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=reload_cmd)
-            #开始执行注释nginx配置文件和reload nginx 命令
-            exec_cmd_ten_times(domain_ip,an_close_cmd, 1)
-            exec_cmd_ten_times(domain_ip,an_reload_cmd, 1)
+                domain = info.get("domain", "")
+                close_cmd="sed  -i 's/server  %s:%s/#server  %s:%s/g' %s/%s" % (ip,port,ip,port,conf_dir,domain)
+                reload_cmd="/usr/local/nginx/sbin/nginx -s reload"
+                an_close_cmd='''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=close_cmd)
+                Log.logger.debug(an_close_cmd)
+                an_reload_cmd = '''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=reload_cmd)
+                #开始执行注释nginx配置文件和reload nginx 命令
+                exec_cmd_ten_times(domain_ip,an_close_cmd, 1)
+                exec_cmd_ten_times(domain_ip,an_reload_cmd, 1)
     except Exception as e:
         msg = "closed_nginx_conf error %s" % e
         Log.logger.error(msg)
@@ -141,22 +140,21 @@ def open_nginx_conf(appinfo,ip):
     try:
         selfdir = os.path.dirname(os.path.abspath(__file__))
         conf_dir = "/usr/local/nginx/conf/servers_systoon"
-        if appinfo:
-            for info in appinfo:
-                domain_ip=info.get("domain_ip","")
+        for info in appinfo:
+            ips=info.get("ips",[])
+            if ip in ips:
+                domain_ip = info.get("domain_ip", "")
                 port = info.get("port", "")
-                domain=info.get("domain","")
-                ips=info.get("ips",[])
-                if ip in ips:
-                    open_cmd="sed  -i 's/#server  %s:%s/server  %s:%s/g' %s/%s" % (ip,port,ip,port,conf_dir,domain)
-                    reload_cmd="/usr/local/nginx/sbin/nginx -s reload"
-            an_open_cmd='''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=open_cmd)
-            Log.logger.debug(an_open_cmd)
-            an_reload_cmd = '''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=reload_cmd)
-            #开始执行注释nginx配置文件和reload nginx 命令
-            exec_cmd_ten_times(domain_ip,an_open_cmd, 1)
-            exec_cmd_ten_times(domain_ip,an_reload_cmd, 1)
-    except Exception as e:
+                domain = info.get("domain", "")
+                open_cmd="sed  -i 's/#server  %s:%s/server  %s:%s/g' %s/%s" % (ip,port,ip,port,conf_dir,domain)
+                reload_cmd="/usr/local/nginx/sbin/nginx -s reload"
+                an_open_cmd='''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=open_cmd)
+                Log.logger.debug(an_open_cmd)
+                an_reload_cmd = '''ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "{cmd}"'''.format(nip=domain_ip,dir=selfdir,cmd=reload_cmd)
+                #开始执行注释nginx配置文件和reload nginx 命令
+                exec_cmd_ten_times(domain_ip,an_open_cmd, 1)
+                exec_cmd_ten_times(domain_ip,an_reload_cmd, 1)
+    except xception as e:
         msg = "open_nginx_conf error %s" % e
         Log.logger.error(msg)
         return -1, msg
