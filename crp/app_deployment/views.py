@@ -742,6 +742,7 @@ class AppDeploy(Resource):
             cluster_name = info.get("ins_name", "")
             ips = info.get('ip', [])
             ip = ','.join(ips)
+            #将这个集群的ip 从总集群中删除
             for d_ip in ips:
                 self.all_ips.remove(d_ip)
             err_msg = "check image five times,image status not active,image url is:%s" % image_url
@@ -768,7 +769,7 @@ class AppDeploy(Resource):
         check_url="http://%s:%s/%s" % (ip,port,url_path)
         headers = {'Content-Type': 'application/json'}
         try:
-            res = requests.get(check_url, headers=headers)
+            res = requests.get(check_url, headers=headers,timeout=3)
             res = json.loads(res.content)
             app_status=res["status"]
             if app_status == "UP":
