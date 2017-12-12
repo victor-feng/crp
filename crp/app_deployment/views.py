@@ -727,7 +727,43 @@ class AppDeploy(Resource):
     def _image_transit(self,deploy_id, info,appinfo,deploy_type):
         result_list = []
         timeout = 10000
-        TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, info,appinfo,deploy_type)
+        #TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, info,appinfo,deploy_type)
+        TaskManager.task_start(SLEEP_TIME, timeout, result_list, self._image_transit_task, deploy_id, info, appinfo,deploy_type)
+
+    def _image_transit_task(self,task_id=None, result_list=None, deploy_id=None, info=None, appinfo=[],deploy_type=None):
+        image_uuid = info.get("image_uuid")
+        if self._check_image_status(image_uuid):
+            deploy_flag = self._deploy_docker(info, deploy_id, image_uuid, appinfo, deploy_type)
+            if not deploy_flag:
+                TaskManager.task_exit(task_id)
+        else:
+            # 检查镜像五次状态不为active将错误返回给uop
+            image_url = info.get('url', '')
+            cluster_name = info.get("ins_name", "")
+            ips = info.get('ip', [])
+            ip = ','.join(ips)
+            for d_ip in ips:
+                self.all_ips.remove(d_ip)
+            err_msg = "check image five times,image status not active,image url is:%s" % image_url
+            _dep_callback(deploy_id, ip, "docker", err_msg, "None", False, cluster_name, False, 'deploy')
+        TaskManager.task_exit(task_id)
+
+    def _check_image_status(self,image_uuid):
+        nova_client = OpenStack.nova_client
+        check_times = 5
+        check_interval = 5
+        for i in range(check_times):
+            img = nova_client.images.get(image_uuid)
+            Log.logger.debug(
+                "check image status " + str(i) + " times, status: " + img.status.lower() + " image_uuid:" + image_uuid)
+            if (img.status.lower() != "active"):
+                time.sleep(check_interval)
+            else:
+                return True
+        return False
+
+
+
     def app_health_check(self,ip,port,url_path):
         check_url="http://%s:%s/%s" % (ip,port,url_path)
         headers = {'Content-Type': 'application/json'}
@@ -741,6 +777,8 @@ class AppDeploy(Resource):
                 return False
         except Exception as e:
             return False
+
+
 
 
 class Upload(Resource):
