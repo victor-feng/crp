@@ -10,7 +10,7 @@ from config import configs, APP_ENV
 
 
 # 配置可用域
-AVAILABILITY_ZONE_AZ_UOP = configs[APP_ENV].AVAILABILITY_ZONE_AZ_UOP
+AVAILABILITY_ZONE = configs[APP_ENV].AVAILABILITY_ZONE
 OS_DOCKER_LOGS = configs[APP_ENV].OS_DOCKER_LOGS
 
 openstack_api = Api(openstack_blueprint, errors=az_errors)
