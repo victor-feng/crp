@@ -12,7 +12,7 @@ from config import configs, APP_ENV
 
 
 # 配置可用域
-AVAILABILITY_ZONE_AZ_UOP = configs[APP_ENV].AVAILABILITY_ZONE_AZ_UOP
+AVAILABILITY_ZONE = configs[APP_ENV].AVAILABILITY_ZONE
 
 az_api = Api(az_blueprint, errors=az_errors)
 
@@ -145,6 +145,10 @@ class StatisticAPI(Resource):
 class UOPStatisticAPI(Resource):
 
     def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('env', type=str)
+        args = parser.parse_args()
+        env=args.env
         hypervisors_statistics = {}
         try:
             nova_cli = OpenStack.nova_client
@@ -161,7 +165,7 @@ class UOPStatisticAPI(Resource):
 
             target_zone = None
             for zone in availability_zones:
-                if AVAILABILITY_ZONE_AZ_UOP==zone.zoneName:
+                if AVAILABILITY_ZONE[env]==zone.zoneName:
                     target_zone = zone
                     break
             hosts = []
