@@ -745,7 +745,7 @@ class AppDeploy(Resource):
             #将这个集群的ip 从总集群中删除
             for d_ip in ips:
                 self.all_ips.remove(d_ip)
-            err_msg = "check image five times,image status not active,image url is:%s" % image_url
+            err_msg = "check image five times,image status not active,image url is:%s,Image id is %s" % (image_url,image_uuid)
             _dep_callback(deploy_id, ip, "docker", err_msg, "None", False, cluster_name, False, 'deploy')
         TaskManager.task_exit(task_id)
 

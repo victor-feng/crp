@@ -296,6 +296,7 @@ def image_transit(_image_url):
             else:
                 #GLANCE_RESERVATION_QUANTITY = current_app.config['GLANCE_RESERVATION_QUANTITY']
                 _glance_img_reservation(glance_cli, image.id, GLANCE_RESERVATION_QUANTITY)
+                Log.logger.debug("SUCCESS IMAGE ID IS" + image.id + "URL is"+ image_url)
                 return None, image.id
 
 
