@@ -263,12 +263,13 @@ def image_transit(_image_url):
         if img_tag[1] != 'latest':
             properties = {"name": _image_url_hash,"status":"active"}
             images = glance_cli.images.list(filters=properties)
+            Log.logger.debug("FILTER IMAGE IS %s" ,images)
             for image in images:
                 # 如果是  部署就 直接返回镜像
                 #if action=='deploy':
                 #    return None, image.id
                 glance_cli.images.delete(image.id)
-                Log.logger.debug("glance image id is \'" +image.id + " is delete\'.")
+                Log.logger.debug("GLANCE IMAGE id is " +image.id + " IS DELETE " + " image_url " + _image_url)
     except Exception as e:
         return e.args, None
     dk_cli = _dk_py_cli()
