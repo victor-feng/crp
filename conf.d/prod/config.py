@@ -24,7 +24,7 @@ class ProdConfig(BaseConfig):
 
     # NOTE: noused in mpc
     DK_TAR_PATH = '/home/dk/'
-    GLANCE_RESERVATION_QUANTITY = 3
+    GLANCE_RESERVATION_QUANTITY = 100
     UPLOAD_FOLDER = '/data/'
 
     # TODO:

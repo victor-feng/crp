@@ -17,7 +17,7 @@ class DevelopmentConfig(BaseConfig):
     DK_SOCK_URL = 'unix://var/run/docker.sock'
     DK_CLI_VERSION = '1.19'
     DK_TAR_PATH = '/home/dk/'
-    GLANCE_RESERVATION_QUANTITY = 3
+    GLANCE_RESERVATION_QUANTITY = 100
     UPLOAD_FOLDER = '/data/'
     AP_NETWORK_CONF = {
         'AZ_UOP': '7aca50a9-cf4b-4cc7-b078-be055dd7c6af',
