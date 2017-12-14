@@ -271,7 +271,8 @@ def image_transit(_image_url):
                 glance_cli.images.delete(image.id)
                 Log.logger.debug("GLANCE IMAGE id is " +image.id + " IS DELETE " + " image_url " + _image_url)
     except Exception as e:
-        return e.args, None
+        err_msg= "delete glance images error ,error msg is : %s" % str(e.args)
+        return err_msg, None
     dk_cli = _dk_py_cli()
     Log.logger.debug("Docker image pull from harbor url \'" + _image_url + "\' is started.")
     #err_msg = _dk_img_pull(dk_cli, _image_url, repository_hash, img_tag[1])
