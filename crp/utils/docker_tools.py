@@ -261,7 +261,7 @@ def image_transit(_image_url):
 
         # Docker image tag 为 latest 的镜像总是转换并创建glance image，其它均为glance 中存在则不创建
         if img_tag[1] != 'latest':
-            properties = {"name": _image_url_hash,"status":"active"}
+            properties = {"name": _image_url_hash}
             images = glance_cli.images.list(filters=properties)
             Log.logger.debug("FILTER IMAGE IS %s" ,images)
             for image in images:
