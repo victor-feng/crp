@@ -378,7 +378,7 @@ class ResourceProviderTransitions(object):
                     self.task_id.__str__() +
                     " ERROR. Error Message is:")
                 Log.logger.error(err_msg)
-                self.error_msg=err_msg.__str__()
+                self.error_msg="pull image or create image error,error msg is:" +err_msg.__str__()
                 # 删除全部
                 is_rollback = True
                 uop_os_inst_id_list = []
