@@ -241,6 +241,7 @@ def delete_query_glance(glance_cli,image_id,properties):
     :return:
     """
     for i in range(5):
+        Log.logger.debug("Begin delete image,%s times" % i)
         res=delete_glance(glance_cli, image_id)
         if res == "success":break
         else:
@@ -305,7 +306,7 @@ def image_transit(_image_url):
                 #    return None, image.id
                 res=delete_query_glance(glance_cli,image.id,properties)
                 if res == "success":
-                    Log.logger.debug("GLANCE IMAGE id is " +image.id + " IS DELETE " + " image_url " + _image_url)
+                    Log.logger.debug("GLANCE IMAGE id is " +image.id + " IS DELETED " + " image_url " + _image_url)
                 else:
                     err_msg="delete glance images five time error"
                     return err_msg,None
