@@ -142,8 +142,9 @@ def _glance_img_create(glance_cli, image_name, tar_file):
         image = glance_cli.images.create(**fields)
         return None, image
     except Exception as e:
-        Log.logger.error(e.args)
-        return e.args, None
+        err_msg="create image error ,msg is:%s" % str(e.args)
+        Log.logger.error(err_msg)
+        return err_msg, None
     finally:
         fields['data'].close()
         Log.logger.debug(tar_file+" is closed now.")
@@ -218,6 +219,40 @@ def _glance_img_reservation(glance_cli, current_image_id, reservation_quantity):
 #    image = glance_cli.images.update(image.id, **fields)
 #    return image.id
 
+def delete_glance(glance_cli,image_id):
+    """
+    去glance 删除镜像方法，获取返回信息
+    :param glance_cli:
+    :param image_id:
+    :return:
+    """
+    try:
+        glance_cli.images.delete(image_id)
+        return "success"
+    except Exception as e:
+        return "failed"
+
+def delete_query_glance(glance_cli,image_id,properties):
+    """
+    删除镜像并查询镜像状态，删除五次后不能删除退出
+    :param glance_cli:
+    :param image_id:
+    :param _image_url_hash:
+    :return:
+    """
+    for i in range(5):
+        res=delete_glance(glance_cli, image_id)
+        if res == "success":break
+        else:
+            images = glance_cli.images.list(filters=properties)
+            image_list=[image for image in images]
+            if len(image_list) == 0:break
+    else:
+        return "failed"
+    return "success"
+
+
+
 
 def image_transit(_image_url):
     # return None, 'd9645ca0-f771-4d90-8a18-0bd44c26abd7'
@@ -268,10 +303,14 @@ def image_transit(_image_url):
                 # 如果是  部署就 直接返回镜像
                 #if action=='deploy':
                 #    return None, image.id
-                glance_cli.images.delete(image.id)
-                Log.logger.debug("GLANCE IMAGE id is " +image.id + " IS DELETE " + " image_url " + _image_url)
+                res=delete_query_glance(glance_cli,image.id,properties)
+                if res == "success":
+                    Log.logger.debug("GLANCE IMAGE id is " +image.id + " IS DELETE " + " image_url " + _image_url)
+                else:
+                    err_msg="delete glance images five time error"
+                    return err_msg,None
     except Exception as e:
-        err_msg= "delete glance images error ,error msg is : %s" % str(e.args)
+        err_msg= "delete or pull images error ,error msg is : %s" % str(e.args)
         return err_msg, None
     dk_cli = _dk_py_cli()
     Log.logger.debug("Docker image pull from harbor url \'" + _image_url + "\' is started.")
