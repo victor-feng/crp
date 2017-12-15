@@ -294,22 +294,19 @@ def image_transit(_image_url):
         except Exception as e:
             Log.logger.error(e.args)
             err_msg = e.args
-
-        # Docker image tag 为 latest 的镜像总是转换并创建glance image，其它均为glance 中存在则不创建
-        if img_tag[1] != 'latest':
-            properties = {"name": _image_url_hash}
-            images = glance_cli.images.list(filters=properties)
-            Log.logger.debug("FILTER IMAGE IS %s" ,images)
-            for image in images:
-                # 如果是  部署就 直接返回镜像
-                #if action=='deploy':
-                #    return None, image.id
-                res=delete_query_glance(glance_cli,image.id,properties)
-                if res == "success":
-                    Log.logger.debug("GLANCE IMAGE id is " +image.id + " IS DELETED " + " image_url " + _image_url)
-                else:
-                    err_msg="delete glance images five time error"
-                    return err_msg,None
+        properties = {"name": _image_url_hash}
+        images = glance_cli.images.list(filters=properties)
+        Log.logger.debug("FILTER IMAGE IS %s" ,images)
+        for image in images:
+            # 如果是  部署就 直接返回镜像
+            #if action=='deploy':
+            #    return None, image.id
+            res=delete_query_glance(glance_cli,image.id,properties)
+            if res == "success":
+                Log.logger.debug("GLANCE IMAGE id is " +image.id + " IS DELETED " + " image_url " + _image_url)
+            else:
+                err_msg="delete glance images five time error"
+                return err_msg,None
     except Exception as e:
         err_msg= "delete or pull images error ,error msg is : %s" % str(e.args)
         return err_msg, None
