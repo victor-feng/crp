@@ -778,39 +778,38 @@ class AppDeploy(Resource):
         :param health_check:
         :return:
         """
-        res = True
         check_url="http://%s:%s/%s" % (ip,port,url_path)
         headers = {'Content-Type': 'application/json'}
         network_check_cmd="ping -c 4 %s -w 4" %ip
         res_dict = {True: "success", False: "failed"}
         if health_check == 1:
-            msg="app health check %s" % res_dict[res]
+            msg_str="app health check %s"
             try:
                 res = requests.get(check_url, headers=headers,timeout=3)
                 res = json.loads(res.content)
                 app_status=res["status"]
                 if app_status == "UP":
                     res=True
-                    return  res,msg
+                    return  res,msg_str % res_dict[res]
                 else:
                     res = False
-                    return res,msg
+                    return res,msg_str % res_dict[res]
             except Exception as e:
                 res = False
-                return res,msg
+                return res,msg_str % res_dict[res]
         else:
-            msg = "app network check %s" % res_dict[res]
+            msg_str = "app network check %s"
             try:
                 res=os.popen(network_check_cmd).read().strip().split('\n')[-2].split()
                 if int(res[3]) > 0:
                     res=True
-                    return res,msg
+                    return res,msg_str % res_dict[res]
                 else:
                     res=False
-                    return res,msg
+                    return res,msg_str % res_dict[res]
             except Exception as e:
                 res=False
-                return res,msg
+                return res,msg_str % res_dict[res]
 
 
 
