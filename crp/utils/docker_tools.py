@@ -20,7 +20,7 @@ DK_CLI_VERSION = configs[APP_ENV].DK_CLI_VERSION
 DK_TAR_PATH = configs[APP_ENV].DK_TAR_PATH
 GLANCE_RESERVATION_QUANTITY = configs[APP_ENV].GLANCE_RESERVATION_QUANTITY
 
-# TODO: move it to global conf
+
 DK_CREATED_FROM = 'created_from'
 DK_UOP_CRP = 'uop-crp'
 
