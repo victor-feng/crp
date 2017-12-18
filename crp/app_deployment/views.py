@@ -679,14 +679,14 @@ class AppDeploy(Resource):
             vm_state = vm.status.lower()
             task_state = getattr(vm, 'OS-EXT-STS:task_state')
             #check_res=True
-            check_res=self.app_health_or_network_check(ip, HEALTH_CHECK_PORT, HEALTH_CHECK_PATH,health_check)
+            check_res,check_msg=self.app_health_or_network_check(ip, HEALTH_CHECK_PORT, HEALTH_CHECK_PATH,health_check)
             Log.logger.debug(
-                " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:" + str(
+                " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " check res:" + str(
                     check_res) + " Query Times is:" + str(i))
             if vm_state == "error" and  "rebuild" not in str(task_state) :
                 os_flag=False
                 err_msg="vm status is error"
-                Log.logger.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +  " Health check res:"+ str(check_res) +" Error msg is:" +err_msg)
+                Log.logger.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +  " check res:"+ str(check_res) +" Error msg is:" +err_msg)
                 break
             elif vm_state == "shutoff" and "rebuild" not in str(task_state):
                 # 如果vm状态是关闭时重启3次
@@ -709,19 +709,19 @@ class AppDeploy(Resource):
                 else:
                     os_flag = False
                     err_msg="vm status is shutoff"
-                    Log.logger.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:"+ str(check_res) + " Error msg is:" +err_msg )
+                    Log.logger.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " check res:"+ str(check_res) + " Error msg is:" +err_msg )
                     break
             elif vm_state == "active" and check_res == True and "rebuild" not in str(task_state):
                 os_flag = True
-                Log.logger.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:"+ str(check_res))
+                Log.logger.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " check res:"+ str(check_res))
                 open_nginx_conf(appinfo,ip)
                 break
             time.sleep(6)
         else:
             os_flag = False
-            err_msg = "app health check failed"
+            err_msg = check_msg
             Log.logger.debug(
-                " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:" + str(check_res) + " Error msg is:" + err_msg)
+                " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " check res:" + str(check_res) + " Error msg is:" + err_msg)
         return os_flag,vm_state,err_msg
 
 
@@ -767,22 +767,47 @@ class AppDeploy(Resource):
 
 
     def app_health_or_network_check(self,ip,port,url_path,health_check):
+        """
+        健康检查或判断网络是否正常
+        :param ip:
+        :param port:
+        :param url_path:
+        :param health_check:
+        :return:
+        """
+        res = True
         check_url="http://%s:%s/%s" % (ip,port,url_path)
         headers = {'Content-Type': 'application/json'}
-        network_check_cmd="ping -c 4 %s" %ip
+        network_check_cmd="ping -c 4 %s -w 4" %ip
+        res_dict = {True: "success", False: "failed"}
         if health_check == 1:
+            msg="app health check %s" % res_dict[res]
             try:
                 res = requests.get(check_url, headers=headers,timeout=3)
                 res = json.loads(res.content)
                 app_status=res["status"]
                 if app_status == "UP":
-                    return True
+                    res=True
+                    return  res,msg
                 else:
-                    return False
+                    res = False
+                    return res,msg
             except Exception as e:
-                return False
+                res = False
+                return res,msg
         else:
-            pass
+            msg = "app network check %s" % res_dict[res]
+            try:
+                res=os.popen(network_check_cmd).read().strip().split('\n')[-2].split()
+                if int(res[3]) > 0:
+                    res=True
+                    return res,msg
+                else:
+                    res=False
+                    return res,msg
+            except Exception as e:
+                res=False
+                return res,msg
 
 
 
