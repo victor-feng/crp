@@ -619,7 +619,7 @@ class AppDeploy(Resource):
         cluster_name=info.get("ins_name","")
         ip_index_dict={}
         ip_list=info.get('ip')
-        health_check=info.get("health_check",0)
+        health_check=int(info.get("health_check",0))
         #获取每个ip在列表中的索引
         for ip in ip_list:
             ip_index_dict[ip]=ip_list.index(ip)

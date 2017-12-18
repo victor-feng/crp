@@ -16,7 +16,7 @@ sys.setdefaultencoding('utf-8')
 DEP_STATUS_CALLBACK = configs[APP_ENV].DEP_STATUS_CALLBACK
 OS_DOCKER_LOGS = configs[APP_ENV].OS_DOCKER_LOGS
 
-def _dep_callback(deploy_id,ip,res_type,err_msg,vm_state,success,cluster_name,end_flag,deploy_type):
+def _dep_callback(deploy_id,ip,res_type,msg,vm_state,success,cluster_name,end_flag,deploy_type):
     """
     将部署的状态和日志，以及错误信息回调给uop
     :param deploy_id:
@@ -33,7 +33,7 @@ def _dep_callback(deploy_id,ip,res_type,err_msg,vm_state,success,cluster_name,en
     data = dict()
     data["ip"]=ip
     data["res_type"]=res_type
-    data["err_msg"] = err_msg
+    data["msg"] = msg
     data["vm_state"] = vm_state
     data["cluster_name"] = cluster_name
     data["end_flag"] = end_flag
