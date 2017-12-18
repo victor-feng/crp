@@ -668,65 +668,71 @@ class AppDeploy(Resource):
 
 
     def _deploy_query_instance_set_status(self,ip=None,image_uuid=None,appinfo=[],health_check=0):
-        os_flag=True
-        err_msg=""
-        nova_client = OpenStack.nova_client
-        Log.logger.debug( "Begin rebuild docker,IP is:" + ip)
-        #开始注释nginx配置
-        closed_nginx_conf(appinfo,ip)
-        #开始rebuild
-        server = OpenStack.find_vm_from_ipv4(ip=ip)
-        newserver = OpenStack.nova_client.servers.rebuild(server=server, image=image_uuid)
-        os_inst_id=newserver.id
-        for i in range(20):
-            vm = nova_client.servers.get(os_inst_id)
-            vm_state = vm.status.lower()
-            task_state = getattr(vm, 'OS-EXT-STS:task_state')
-            #check_res=True
-            check_res,check_msg=self.app_health_or_network_check(ip, HEALTH_CHECK_PORT, HEALTH_CHECK_PATH,health_check)
-            Log.logger.debug(
-                " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " check res:" + str(
-                    check_res) + " Query Times is:" + str(i))
-            if vm_state == "error" and  "rebuild" not in str(task_state) :
-                os_flag=False
-                err_msg="vm status is error " + check_msg
-                Log.logger.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +  " check res:"+ str(check_res) +" Error msg is:" +err_msg)
-                break
-            elif vm_state == "shutoff" and "rebuild" not in str(task_state):
-                # 如果vm状态是关闭时重启3次
-                Log.logger.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +" Begin start 3 times")
-                for i in range(3):
-                    #启动vm
-                    vm = nova_client.servers.get(os_inst_id)
-                    task_state=getattr(vm,'OS-EXT-STS:task_state')
-                    vm_state = vm.status.lower()
-                    if task_state != "powering-on" and  vm_state == "shutoff":
-                        nova_client.servers.start(server=server)
-                        time.sleep(10)
-                    vm = nova_client.servers.get(os_inst_id)
-                    vm_state = vm.status.lower()
-                    if vm_state != "active":
-                        Log.logger.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " start %s times" %i)
-                        time.sleep(5)
-                        continue
-                    elif vm_state == "active":break
-                else:
-                    os_flag = False
-                    err_msg="vm status is shutoff " + check_msg
-                    Log.logger.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " check res:"+ str(check_res) + " Error msg is:" +err_msg )
+        try:
+            os_flag=True
+            err_msg=""
+            nova_client = OpenStack.nova_client
+            Log.logger.debug( "Begin rebuild docker,IP is:" + ip)
+            #开始注释nginx配置
+            closed_nginx_conf(appinfo,ip)
+            #开始rebuild
+            server = OpenStack.find_vm_from_ipv4(ip=ip)
+            newserver = OpenStack.nova_client.servers.rebuild(server=server, image=image_uuid)
+            os_inst_id=newserver.id
+            for i in range(20):
+                vm = nova_client.servers.get(os_inst_id)
+                vm_state = vm.status.lower()
+                task_state = getattr(vm, 'OS-EXT-STS:task_state')
+                #check_res=True
+                check_res,check_msg=self.app_health_or_network_check(ip, HEALTH_CHECK_PORT, HEALTH_CHECK_PATH,health_check)
+                Log.logger.debug(
+                    " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " check res:" + str(
+                        check_res) + " Query Times is:" + str(i))
+                if vm_state == "error" and  "rebuild" not in str(task_state) :
+                    os_flag=False
+                    err_msg="vm status is error " + check_msg
+                    Log.logger.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +  " check res:"+ str(check_res) +" Error msg is:" +err_msg)
                     break
-            elif vm_state == "active" and check_res == True and "rebuild" not in str(task_state):
-                os_flag = True
-                Log.logger.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " check res:"+ str(check_res))
-                open_nginx_conf(appinfo,ip)
-                break
-            time.sleep(6)
-        else:
-            os_flag = False
-            err_msg = check_msg
-            Log.logger.debug(
-                " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " check res:" + str(check_res) + " Error msg is:" + err_msg)
-        return os_flag,vm_state,err_msg
+                elif vm_state == "shutoff" and "rebuild" not in str(task_state):
+                    # 如果vm状态是关闭时重启3次
+                    Log.logger.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +" Begin start 3 times")
+                    for i in range(3):
+                        #启动vm
+                        vm = nova_client.servers.get(os_inst_id)
+                        task_state=getattr(vm,'OS-EXT-STS:task_state')
+                        vm_state = vm.status.lower()
+                        if task_state != "powering-on" and  vm_state == "shutoff":
+                            nova_client.servers.start(server=server)
+                            time.sleep(10)
+                        vm = nova_client.servers.get(os_inst_id)
+                        vm_state = vm.status.lower()
+                        if vm_state != "active":
+                            Log.logger.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " start %s times" %i)
+                            time.sleep(5)
+                            continue
+                        elif vm_state == "active":break
+                    else:
+                        os_flag = False
+                        err_msg="vm status is shutoff " + check_msg
+                        Log.logger.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " check res:"+ str(check_res) + " Error msg is:" +err_msg )
+                        break
+                elif vm_state == "active" and check_res == True and "rebuild" not in str(task_state):
+                    os_flag = True
+                    Log.logger.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " check res:"+ str(check_res))
+                    open_nginx_conf(appinfo,ip)
+                    break
+                time.sleep(6)
+            else:
+                os_flag = False
+                err_msg = check_msg
+                Log.logger.debug(
+                    " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " check res:" + str(check_res) + " Error msg is:" + err_msg)
+            return os_flag,vm_state,err_msg
+        except Exception as e:
+            os_flag=False
+            err_msg=str(e.args)
+            Log.logger.error( "CRP _deploy_query_instance_set_status Error msg is:" + err_msg)
+            return os_flag,None,err_msg
 
 
     def _image_transit(self,deploy_id, info,appinfo,deploy_type):
