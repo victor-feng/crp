@@ -619,6 +619,7 @@ class AppDeploy(Resource):
         cluster_name=info.get("ins_name","")
         ip_index_dict={}
         ip_list=info.get('ip')
+        health_check=info.get("health_check",0)
         #获取每个ip在列表中的索引
         for ip in ip_list:
             ip_index_dict[ip]=ip_list.index(ip)
@@ -628,14 +629,18 @@ class AppDeploy(Resource):
             if length_ip > 0:
                 Log.logger.debug('ip and url: ' + str(ips) + str(info.get('url')))
                 ip = ips[0]
-                os_flag,vm_state,err_msg=self._deploy_query_instance_set_status(deploy_id, ip, image_uuid,appinfo)
+                os_flag,vm_state,err_msg=self._deploy_query_instance_set_status(ip, image_uuid,appinfo,health_check)
                 #执行写日志的操作
                 start_write_log(ip)
                 if os_flag:
                     self.all_ips.remove(ip)
                     if len(self.all_ips) == 0:
                         end_flag=True
-                    _dep_callback(deploy_id, ip, "docker", "", vm_state, True, cluster_name,end_flag,deploy_type)
+                    if health_check == 1:
+                        msg="健康检查状态为UP"
+                    else:
+                        msg="网络检查正常"
+                    _dep_callback(deploy_id, ip, "docker", msg, vm_state, True, cluster_name,end_flag,deploy_type)
                     Log.logger.debug(
                         "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
                 else:
@@ -662,8 +667,7 @@ class AppDeploy(Resource):
         return deploy_flag
 
 
-    def _deploy_query_instance_set_status(self,deploy_id=None,ip=None,image_uuid=None,appinfo=[]):
-        health_check=appinfo.get("health_check",0)
+    def _deploy_query_instance_set_status(self,ip=None,image_uuid=None,appinfo=[],health_check=0):
         os_flag=True
         err_msg=""
         nova_client = OpenStack.nova_client
@@ -685,7 +689,7 @@ class AppDeploy(Resource):
                     check_res) + " Query Times is:" + str(i))
             if vm_state == "error" and  "rebuild" not in str(task_state) :
                 os_flag=False
-                err_msg="vm status is error"
+                err_msg="vm status is error " + check_msg
                 Log.logger.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +  " check res:"+ str(check_res) +" Error msg is:" +err_msg)
                 break
             elif vm_state == "shutoff" and "rebuild" not in str(task_state):
@@ -708,7 +712,7 @@ class AppDeploy(Resource):
                     elif vm_state == "active":break
                 else:
                     os_flag = False
-                    err_msg="vm status is shutoff"
+                    err_msg="vm status is shutoff " + check_msg
                     Log.logger.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " check res:"+ str(check_res) + " Error msg is:" +err_msg )
                     break
             elif vm_state == "active" and check_res == True and "rebuild" not in str(task_state):
@@ -728,7 +732,6 @@ class AppDeploy(Resource):
     def _image_transit(self,deploy_id, info,appinfo,deploy_type):
         result_list = []
         timeout = 10000
-        #TaskManager.task_start(SLEEP_TIME, timeout, result_list, _image_transit_task, self, deploy_id, info,appinfo,deploy_type)
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, self._image_transit_task, deploy_id, info, appinfo,deploy_type)
 
     def _image_transit_task(self,task_id=None, result_list=None, deploy_id=None, info=None, appinfo=[],deploy_type=None):
