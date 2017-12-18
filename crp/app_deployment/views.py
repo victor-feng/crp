@@ -339,15 +339,15 @@ class AppDeploy(Resource):
                              "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + str(err_msg))
                         err_msg="image get error image url is: %s, err_msg is: %s " % (str(image_url),str(err_msg))
                         #将错误信息返回给uop
+                        err_dockers.append(i)
                         end_flag=False
                         if len(docker) == (docker.index(i)+1):
                             end_flag=True
                         _dep_callback(deploy_id, ip, "docker", err_msg, "None", False, cluster_name, end_flag, 'deploy')
-                        err_dockers.append(i)
             #如果有集群拉取镜像失败，将这个集群从docker中删除
             for err_docker in err_dockers:
                 docker.remove(err_docker)
-                Log.logger.debug("Deleted Docker is " + str(docker))
+                Log.logger.debug("The Latest Docker is " + str(docker))
             #获取所有集群的ip
             all_ips = []
             for info in docker:
