@@ -251,6 +251,7 @@ class AppDeploy(Resource):
                 Log.logger.info("No nginx ip information, no need to push nginx something")
             for app in appinfo:
                 self.do_app_push(app)
+            if appinfo:
                 _dep_detail_callback(deploy_id,"deploy_nginx","res")
 
             #添加dns解析
@@ -264,6 +265,7 @@ class AppDeploy(Resource):
                     Log.logger.debug('The dns add result: %s' % msg)
                 else:
                     Log.logger.debug('domain_name:{domain_name},domain_ip:{domain_ip} is null'.format(domain_name=domain_name,domain_ip=domain_ip))
+            if dns:
                 _dep_detail_callback(deploy_id,"deploy_dns","res")
 
             #添加disconf配置
