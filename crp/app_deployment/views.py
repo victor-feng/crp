@@ -637,9 +637,9 @@ class AppDeploy(Resource):
                     if len(self.all_ips) == 0:
                         end_flag=True
                     if health_check == 1:
-                        msg="应用健康检查正常"
+                        msg=u"应用健康检查正常"
                     else:
-                        msg="docker网络检查正常"
+                        msg=u"docker网络检查正常"
                     _dep_callback(deploy_id, ip, "docker", msg, vm_state, True, cluster_name,end_flag,deploy_type)
                     Log.logger.debug(
                         "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
@@ -749,8 +749,11 @@ class AppDeploy(Resource):
             #将这个集群的ip 从总集群中删除
             for d_ip in ips:
                 self.all_ips.remove(d_ip)
-            err_msg = "check image five times,image status not active,image url is:%s,Image id is %s" % (image_url,image_uuid)
-            _dep_callback(deploy_id, ip, "docker", err_msg, "None", False, cluster_name, False, 'deploy')
+            end_flag=False
+            if len(self.all_ips) == 0:
+                end_flag=True
+            msg = "check image five times,image status not active,image url is:%s,Image id is %s" % (image_url,image_uuid)
+            _dep_callback(deploy_id, ip, "docker", msg, "None", False, cluster_name, end_flag, 'deploy')
         TaskManager.task_exit(task_id)
 
     def _check_image_status(self,image_uuid):
