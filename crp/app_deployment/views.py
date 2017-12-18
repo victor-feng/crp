@@ -637,9 +637,9 @@ class AppDeploy(Resource):
                     if len(self.all_ips) == 0:
                         end_flag=True
                     if health_check == 1:
-                        msg="健康检查状态为UP"
+                        msg="应用健康检查正常"
                     else:
-                        msg="网络检查正常"
+                        msg="docker网络检查正常"
                     _dep_callback(deploy_id, ip, "docker", msg, vm_state, True, cluster_name,end_flag,deploy_type)
                     Log.logger.debug(
                         "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
