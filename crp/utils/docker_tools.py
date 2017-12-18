@@ -245,6 +245,7 @@ def delete_query_glance(glance_cli,image_id,properties):
         res=delete_glance(glance_cli, image_id)
         if res == "success":break
         else:
+            Log.logger.debug("Begin query image, %s times" % i)
             images = glance_cli.images.list(filters=properties)
             image_list=[image for image in images]
             if len(image_list) == 0:break
