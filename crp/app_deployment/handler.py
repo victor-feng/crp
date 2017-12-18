@@ -154,7 +154,7 @@ def open_nginx_conf(appinfo,ip):
                 #开始执行注释nginx配置文件和reload nginx 命令
                 exec_cmd_ten_times(domain_ip,an_open_cmd, 1)
                 exec_cmd_ten_times(domain_ip,an_reload_cmd, 1)
-    except xception as e:
+    except Exception as e:
         msg = "open_nginx_conf error %s" % e
         Log.logger.error(msg)
         return -1, msg
@@ -169,7 +169,7 @@ def write_docker_logs_to_file(task_id,result_list=None,os_inst_id=None):
             logs = vm.get_console_output()
         except Exception as e:
             logs='The logs is too big or get docker log error,opsnstack can not get it to crp '
-            Log.logger.error('CRP get docker from openstack error:%s' % str(e.args))
+            Log.logger.error('CRP get docker  log from openstack error:%s' % str(e.args))
         os_log_dir=os.path.join(OS_DOCKER_LOGS,os_inst_id)
         os_log_file=os.path.join(os_log_dir,"docker_start.log")
         #目录不存在创建目录
