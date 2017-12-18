@@ -663,6 +663,7 @@ class AppDeploy(Resource):
 
 
     def _deploy_query_instance_set_status(self,deploy_id=None,ip=None,image_uuid=None,appinfo=[]):
+        health_check=appinfo.get("health_check",0)
         os_flag=True
         err_msg=""
         nova_client = OpenStack.nova_client
@@ -677,15 +678,15 @@ class AppDeploy(Resource):
             vm = nova_client.servers.get(os_inst_id)
             vm_state = vm.status.lower()
             task_state = getattr(vm, 'OS-EXT-STS:task_state')
-            #health_check_res=True
-            health_check_res=self.app_health_check(ip, HEALTH_CHECK_PORT, HEALTH_CHECK_PATH)
+            #check_res=True
+            check_res=self.app_health_or_network_check(ip, HEALTH_CHECK_PORT, HEALTH_CHECK_PATH,health_check)
             Log.logger.debug(
                 " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:" + str(
-                    health_check_res) + " Query Times is:" + str(i))
+                    check_res) + " Query Times is:" + str(i))
             if vm_state == "error" and  "rebuild" not in str(task_state) :
                 os_flag=False
                 err_msg="vm status is error"
-                Log.logger.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +  " Health check res:"+ str(health_check_res) +" Error msg is:" +err_msg)
+                Log.logger.debug( " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state +  " Health check res:"+ str(check_res) +" Error msg is:" +err_msg)
                 break
             elif vm_state == "shutoff" and "rebuild" not in str(task_state):
                 # 如果vm状态是关闭时重启3次
@@ -708,11 +709,11 @@ class AppDeploy(Resource):
                 else:
                     os_flag = False
                     err_msg="vm status is shutoff"
-                    Log.logger.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:"+ str(health_check_res) + " Error msg is:" +err_msg )
+                    Log.logger.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:"+ str(check_res) + " Error msg is:" +err_msg )
                     break
-            elif vm_state == "active" and health_check_res == True and "rebuild" not in str(task_state):
+            elif vm_state == "active" and check_res == True and "rebuild" not in str(task_state):
                 os_flag = True
-                Log.logger.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:"+ str(health_check_res))
+                Log.logger.debug(" query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:"+ str(check_res))
                 open_nginx_conf(appinfo,ip)
                 break
             time.sleep(6)
@@ -720,7 +721,7 @@ class AppDeploy(Resource):
             os_flag = False
             err_msg = "app health check failed"
             Log.logger.debug(
-                " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:" + str(health_check_res) + " Error msg is:" + err_msg)
+                " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " Health check res:" + str(check_res) + " Error msg is:" + err_msg)
         return os_flag,vm_state,err_msg
 
 
@@ -765,19 +766,23 @@ class AppDeploy(Resource):
 
 
 
-    def app_health_check(self,ip,port,url_path):
+    def app_health_or_network_check(self,ip,port,url_path,health_check):
         check_url="http://%s:%s/%s" % (ip,port,url_path)
         headers = {'Content-Type': 'application/json'}
-        try:
-            res = requests.get(check_url, headers=headers,timeout=3)
-            res = json.loads(res.content)
-            app_status=res["status"]
-            if app_status == "UP":
-                return True
-            else:
+        network_check_cmd="ping -c 4 %s" %ip
+        if health_check == 1:
+            try:
+                res = requests.get(check_url, headers=headers,timeout=3)
+                res = json.loads(res.content)
+                app_status=res["status"]
+                if app_status == "UP":
+                    return True
+                else:
+                    return False
+            except Exception as e:
                 return False
-        except Exception as e:
-            return False
+        else:
+            pass
 
 
 
