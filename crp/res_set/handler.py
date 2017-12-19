@@ -735,12 +735,6 @@ class ResourceProviderTransitions(object):
             self.next_phase()
 
     @transition_state_logger
-    def do_dns_push(self, domain_name, domain_ip):
-        dns_api = NamedManagerApi()
-        msg = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=domain_ip)
-        Log.logger.debug('The dns add result: %s' % msg)
-
-    @transition_state_logger
     def do_mysql_push(self):
         mysql_ip_list=[]
         mysql = self.property_mapper.get('mysql', {})
