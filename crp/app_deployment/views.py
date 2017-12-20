@@ -202,7 +202,7 @@ class AppDeploy(Resource):
             parser.add_argument('mysql', type=dict)
             parser.add_argument('docker', type=list, location='json')
             parser.add_argument('deploy_id', type=str)
-            parser.add_argument('mongodb', type=str)
+            parser.add_argument('mongodb', type=dict)
             parser.add_argument('dns', type=list, location='json')
             parser.add_argument('appinfo', type=list, location='json')
             parser.add_argument('disconf_server_info', type=list, location='json')
@@ -293,8 +293,7 @@ class AppDeploy(Resource):
                 _dep_detail_callback(deploy_id,"deploy_disconf","res")
             #推送mongodb和mysql脚本
             if mongodb:
-                Log.logger.debug("The mongodb data is %s" % mongodb)
-                mongodb=eval(mongodb)
+                Log.logger.debug("The mongodb data is %s" % str(mongodb))
                 path_filename=mongodb.get("path_filename")
                 if path_filename:
                     mongodb_res,err_msg = self._deploy_mongodb(mongodb)
@@ -370,8 +369,7 @@ class AppDeploy(Resource):
         res = None
         old_db_list = []
         new_db_list = []
-        Log.logger.debug("args is %s" % mongodb)
-        mongodb = eval(mongodb)
+        Log.logger.debug("args is %s" % str(mongodb))
         db_username = mongodb.get('mongodb_username', '')
         db_password = mongodb.get('mongodb_password', '')
         mongodb_username = mongodb.get('db_username', '')
