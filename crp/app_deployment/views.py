@@ -791,18 +791,15 @@ class AppDeploy(Resource):
         headers = {'Content-Type': 'application/json'}
         network_check_cmd="ping -c 4 %s -w 4" %ip
         res_dict = {True: "success", False: "failed"}
+        res=False
         if health_check == 1:
             msg_str="app health check %s"
             try:
-                res = requests.get(check_url, headers=headers,timeout=3)
-                res = json.loads(res.content)
-                app_status=res["status"]
-                if app_status == "UP":
-                    res=True
-                    return  res,msg_str % res_dict[res]
-                else:
-                    res = False
-                    return res,msg_str % res_dict[res]
+                result = requests.get(check_url, headers=headers,timeout=3)
+                result = json.loads(result.content)
+                app_status=result["status"]
+                if app_status == "UP":res=True
+                return res,msg_str % res_dict[res]
             except Exception as e:
                 res = False
                 return res,msg_str % res_dict[res]
@@ -810,12 +807,8 @@ class AppDeploy(Resource):
             msg_str = "app network check %s"
             try:
                 res=os.popen(network_check_cmd).read().strip().split('\n')[-2].split()
-                if int(res[3]) > 0:
-                    res=True
-                    return res,msg_str % res_dict[res]
-                else:
-                    res=False
-                    return res,msg_str % res_dict[res]
+                if int(res[3]) > 0:res=True
+                return res,msg_str % res_dict[res]
             except Exception as e:
                 res=False
                 return res,msg_str % res_dict[res]
