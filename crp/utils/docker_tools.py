@@ -208,7 +208,7 @@ def _glance_img_reservation(glance_cli, current_image_id, reservation_quantity):
         Log.logger.debug(img_info_to_be_delete)
         for img in img_info_to_be_delete:
             img_id = img.get('id')
-            glance_cli.images.delete(img_id)
+            #glance_cli.images.delete(img_id)
             Log.logger.debug(" glance Image ID " + img_id + " is deleting.")
 
 #def image_update(image_id):
