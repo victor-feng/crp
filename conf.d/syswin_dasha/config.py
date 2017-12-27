@@ -81,7 +81,8 @@ class TestingConfig(BaseConfig):
     AVAILABILITY_ZONE = {
         "dev": 'AZ_UOP',
         "test": 'AZ_SIT',
-        "prod": 'AZ_UOP',
+        "prep": 'AZ-UOP',
+        "prod": 'AZ-UOP',
         }
     DEV_NETWORK_ID = 'c3d17e45-ea99-4441-a745-275e803dff67'
     OS_EXT_PHYSICAL_SERVER_ATTR = 'OS-EXT-SRV-ATTR:host'
@@ -148,7 +149,13 @@ class TestingConfig(BaseConfig):
         'username': 'root',
         'password': '123456'
         }
-    NAMEDMANAGER_URL = 'http://172.28.50.141/namedmanager/dnsapi.php'
+    #NAMEDMANAGER_URL = 'http://172.28.50.141/namedmanager/dnsapi.php'
+    NAMEDMANAGER_URL={
+        "dev":"http://172.28.4.228/namedmanager/index.php",
+        "test":"http://172.28.18.82/namedmanager/index.php",
+        "prep":"http://10.253.68.85/api/dnsapi.php",
+        "prod":"http://10.253.68.85/api/dnsapi.php",
+    }
     IS_OPEN_AFFINITY_SCHEDULING = False
 
 configs = {

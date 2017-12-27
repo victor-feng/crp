@@ -158,7 +158,13 @@ class TestingConfig(BaseConfig):
         'username': 'root',
         'password': '123456'
         }
-    NAMEDMANAGER_URL = 'http://172.28.50.141/namedmanager/dnsapi.php'
+    #NAMEDMANAGER_URL = 'http://172.28.50.141/namedmanager/dnsapi.php'
+    NAMEDMANAGER_URL = {
+        "dev": "http://172.28.50.141/namedmanager/dnsapi.php",
+        "test": "http://172.28.50.141/namedmanager/dnsapi.php",
+        "prep": "http://10.253.68.85/api/dnsapi.php",
+        "prod": "http://10.253.68.85/api/dnsapi.php",
+    }
     IS_OPEN_AFFINITY_SCHEDULING = False
 
 configs = {

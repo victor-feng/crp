@@ -260,7 +260,7 @@ class AppDeploy(Resource):
                 domain_ip = item.get('domain_ip','')
                 Log.logger.debug('domain_name:%s,domain_ip:%s' % (domain_name,domain_ip))
                 if len(domain_name.strip()) != 0 and len(domain_ip.strip()) != 0:
-                    dns_api = NamedManagerApi()
+                    dns_api = NamedManagerApi(environment)
                     msg = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=domain_ip)
                     Log.logger.debug('The dns add result: %s' % msg)
                 else:

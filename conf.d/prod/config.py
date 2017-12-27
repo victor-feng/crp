@@ -145,7 +145,13 @@ class ProdConfig(BaseConfig):
     'username': 'root',
     'password': '123456'
     }
-    NAMEDMANAGER_URL = 'http://10.253.68.85/api/dnsapi.php'   #已经找吴兆远确认 namedmanager 信息
+    #NAMEDMANAGER_URL = 'http://10.253.68.85/api/dnsapi.php'   #已经找吴兆远确认 namedmanager 信息
+    NAMEDMANAGER_URL = {
+        "dev": "http://172.28.4.228/namedmanager/index.php",
+        "test": "http://172.28.18.82/namedmanager/index.php",
+        "prep": "http://10.253.68.85/api/dnsapi.php",
+        "prod": "http://10.253.68.85/api/dnsapi.php",
+    }
     IS_OPEN_AFFINITY_SCHEDULING = False
 
 

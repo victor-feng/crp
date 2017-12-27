@@ -262,8 +262,8 @@ class DnsApi(DnsConfig):
 
 
 class NamedManagerApi(object):
-    def __init(self):
-        pass
+    def __init(self,env):
+        self.env=env
 
     def named_zone_query(self,zone_name):
         """
@@ -274,7 +274,8 @@ class NamedManagerApi(object):
         """
         try:
             data = {"method":"getdomains"}
-            rep = requests.post(NAMEDMANAGER_URL, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS)
+            url=NAMEDMANAGER_URL.get(self.env)
+            rep = requests.post(url, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS)
             ret_json = json.loads(rep.text)
             result = ret_json.get('zone')
             if (result is not None) and (len(result) != 0):
