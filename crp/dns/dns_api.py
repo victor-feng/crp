@@ -262,7 +262,7 @@ class DnsApi(DnsConfig):
 
 
 class NamedManagerApi(object):
-    def __init(self,env):
+    def __init__(self,env):
         self.env=env
 
     def named_zone_query(self,zone_name):
