@@ -37,7 +37,7 @@ class VMOperation(Resource):
                 return self._response_msg(500, "vm operation receive invalid operation: " + str(args.get("operation"))), 500
         except Exception as e:
             code = 500
-            msg = e.args
+            msg = str(e.args)
             Log.logger.error("vm operation receive exception. message is " + msg + " vm_uuid: " + args.get("vm_uuid"))
 
         return self._response_msg(code,msg), code
