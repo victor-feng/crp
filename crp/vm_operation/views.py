@@ -19,22 +19,28 @@ class VMOperation(Resource):
         parser.add_argument('reboot_type', type=str)
         args = parser.parse_args()
         Log.logger.debug("vm operation receive restart request. args is " + str(args))
-        if not args.get("vm_uuid") or not args.get("operation"):
-            return self._response_msg(500, "vm operation receive invalid request"), 500
-        inst = None
+        if not args.vm_uuid or not args.operation:
+            code = 500
+            ret = {
+                "code": code,
+                "result": {
+                    "msg": "vm operation receive invalid request",
+                }
+            }
+            return ret, code
         try:
             nova_client = OpenStack.nova_client
-            if args.get("operation") == "restart":
-                reboot_type = args.get("reboot_type") if args.get("reboot_type") else "SOFT"
+            if args.operation == "restart":
+                reboot_type = args.reboot_type if args.reboot_type else "SOFT"
                 Log.logger.debug("1111111111111111111111111111111111")
                 Log.logger.debug(reboot_type)
-                inst = nova_client.servers.reboot(args.get("vm_uuid"),reboot_type=reboot_type)
-            elif args.get("operation") == "stop":
-                inst = nova_client.servers.stop(args.get("vm_uuid"))
-            elif args.get("operation") == "delete":
-                inst = nova_client.servers.delete(args.get("vm_uuid"))
-            elif args.get("operation") == "start":
-                inst = nova_client.servers.start(args.get("vm_uuid"))
+                inst = nova_client.servers.reboot(args.vm_uuid,reboot_type=reboot_type)
+            elif args.operation == "stop":
+                inst = nova_client.servers.stop(args.vm_uuid)
+            elif args.operation == "delete":
+                inst = nova_client.servers.delete(args.vm_uuid)
+            elif args.operation == "start":
+                inst = nova_client.servers.start(args.vm_uuid)
             else:
                 code = 500
                 ret = {
