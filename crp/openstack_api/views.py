@@ -108,7 +108,7 @@ class NovaVMAPI(Resource):
             nova_cli = OpenStack.nova_client
             vm = nova_cli.servers.get(os_inst_id)
             Log.logger.info("#####vm:{}".format(vm))
-            vm_state = getattr(vm, 'OS-EXT-STS:vm_state')
+            vm_state = vm.status.lower()
         except Exception as e:
             Log.logger.error('get vm status err: %s' % e.args)
             res = {
@@ -152,7 +152,7 @@ class NovaVMAPIAll(Resource):
             res = {
                 "code": 400,
                 "result": {
-                    "msg": e.args,
+                    "msg": str(e.args),
                     "vm_info_dict":{}
                 }
             }
