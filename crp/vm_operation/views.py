@@ -50,7 +50,7 @@ class VMOperation(Resource):
                 return ret, code
         except Exception as e:
             code = 500
-            msg=''
+            msg=str(e)
             ret = {
                 "code": code,
                 "result": {
