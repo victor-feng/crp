@@ -34,20 +34,32 @@ class VMOperation(Resource):
             elif args.get("operation") == "start":
                 inst = nova_client.servers.start(args.get("vm_uuid"))
             else:
-                return self._response_msg(500, "vm operation receive invalid operation: " + str(args.get("operation"))), 500
+                code = 500
+                ret = {
+                    "code": code,
+                    "result": {
+                        "msg": "vm operation receive invalid operation",
+                    }
+                }
+                return ret, code
         except Exception as e:
             code = 500
             msg=''
-        return self._response_msg(code,msg), code
-
-    def _response_msg(self, code, msg=None):
-        res = {
+            ret = {
+                "code": code,
+                "result": {
+                    "msg": msg,
+                }
+            }
+            return ret,code
+        ret = {
             "code": code,
             "result": {
                 "msg": msg,
             }
         }
-        return res
+        return ret,code
+
 
 
 class VMStartOrStop(VMOperation):
