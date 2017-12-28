@@ -26,6 +26,8 @@ class VMOperation(Resource):
             nova_client = OpenStack.nova_client
             if args.get("operation") == "restart":
                 reboot_type = args.get("reboot_type") if args.get("reboot_type") else "SOFT"
+                Log.logger.debug("1111111111111111111111111111111111")
+                Log.logger.debug(reboot_type)
                 inst = nova_client.servers.reboot(args.get("vm_uuid"),reboot_type=reboot_type)
             elif args.get("operation") == "stop":
                 inst = nova_client.servers.stop(args.get("vm_uuid"))
