@@ -44,7 +44,7 @@ class VMOperation(Resource):
         res = {
             "code": code,
             "result": {
-                "msg": str(msg)
+                "msg": msg,
             }
         }
         return res
