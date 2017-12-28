@@ -38,7 +38,7 @@ class VMOperation(Resource):
         except Exception as e:
             code = 500
             msg = str(e)
-            Log.logger.error("vm operation receive exception. message is %s"  % msg )
+            Log.logger.error("vm operation receive exception. message is " , msg )
 
         return self._response_msg(code,msg), code
 
