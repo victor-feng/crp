@@ -267,8 +267,9 @@ def image_transit(_image_url):
             cur_img = docker_cli.images.get(_image_url)
             docker_cli.images.remove(cur_img.id, force=True)
         except Exception as e:
-            err_msg = "docker remove images at crp node,err_msg is %s,cur_img is %s" % (str(e),str(cur_img))
-            return err_msg, None
+            #err_msg = "docker remove images at crp node,err_msg is %s,cur_img is %s" % (str(e),str(cur_img))
+            #return err_msg, None
+            cur_img=None
         try:
             docker_cli.images.pull(_image_url)
             cur_img = docker_cli.images.get(_image_url)
