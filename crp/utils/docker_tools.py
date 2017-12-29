@@ -269,8 +269,11 @@ def image_transit(_image_url):
         try:
             cur_img = docker_cli.images.get(_image_url)
             docker_cli.images.remove(cur_img.id, force=True)
-        except docker.errors.ImageNotFound, e:
+        except Exception as e:
+        #except docker.errors.ImageNotFound, e:
             cur_img = None
+            err_msg = "docker remove images at crp node,err_msg is %s" % str(e)
+            return err_msg, None
 
 
         try:
