@@ -257,31 +257,22 @@ def delete_query_glance(glance_cli,image_id,properties):
 
 
 def image_transit(_image_url):
-    # return None, 'd9645ca0-f771-4d90-8a18-0bd44c26abd7'
     try:
         img_tag = _image_url.split(':', 2)
         Log.logger.debug("Docker image url split list is:")
         Log.logger.debug(img_tag)
         glance_cli = _glance_cli()
-        #repository_hash = hashlib.sha224(img_tag[0]).hexdigest()
-        #_image_url_hash = repository_hash + ':' + img_tag[1]
         docker_cli = _dk_py_cli()
         try:
             cur_img = docker_cli.images.get(_image_url)
             docker_cli.images.remove(cur_img.id, force=True)
         except Exception as e:
-        #except docker.errors.ImageNotFound, e:
-            cur_img = None
-            err_msg = "docker remove images at crp node,err_msg is %s" % str(e)
+            err_msg = "docker remove images at crp node,err_msg is %s,cur_img is %s" % (str(e),str(cur_img))
             return err_msg, None
-
-
         try:
             docker_cli.images.pull(_image_url)
             cur_img = docker_cli.images.get(_image_url)
         except Exception as e:
-        #except docker.errors.ImageNotFound, e:
-            cur_img = None
             err_msg="docker pull images from harbor to crp node,err_msg is %s" % str(e)
             return err_msg, None
         if cur_img:
