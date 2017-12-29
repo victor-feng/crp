@@ -271,13 +271,16 @@ def image_transit(_image_url):
             docker_cli.images.remove(cur_img.id, force=True)
         except docker.errors.ImageNotFound, e:
             cur_img = None
-        
-        docker_cli.images.pull(_image_url)
+
+
         try:
+            docker_cli.images.pull(_image_url)
             cur_img = docker_cli.images.get(_image_url)
-        except docker.errors.ImageNotFound, e:
+        except Exception as e:
+        #except docker.errors.ImageNotFound, e:
             cur_img = None
-            return 'image pull error', 0
+            err_msg="docker pull images from harbor to crp node,err_msg is %s" % str(e)
+            return err_msg, None
         if cur_img:
             img_id = cur_img.attrs.get('ContainerConfig').get('Image')
             _image_url_hash = img_id.replace(':', '') + ':' + img_tag[1]
