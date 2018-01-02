@@ -7,6 +7,7 @@ from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 from tornado.options import define, options
 import os
+import tornado.log
 
 
 define('port', type=int, default=8001)
@@ -28,6 +29,7 @@ os.system('> /etc/ansible/hosts')
 
 from crp import create_app
 from config import APP_ENV
+from crp.log import logger_setting
 
 def main():
 
@@ -49,6 +51,13 @@ def main():
     MPC_URL = app.config['MPC_URL']
 
     instance_status_sync(mpc_sync=options.mpc_sync)
+    #set app log
+    logger = logger_setting(app)
+    fm = tornado.log.LogFormatter(
+    fmt='[%(asctime)s]%(color)s[%(levelname)s]%(end_color)s[%(pathname)s %(lineno)d] %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S')
+    tornado.log.enable_pretty_logging(logger=logger)
+    logger.handlers[0].setFormatter(fm)
 
     IOLoop.instance().start()
 

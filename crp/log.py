@@ -48,6 +48,7 @@ def logger_setting(app):
 
     # set Log logger
     Log.logger = app.logger
+    return Log.logger
 
 
 class Log(object):
