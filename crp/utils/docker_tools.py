@@ -33,7 +33,8 @@ def _dk_py_cli():
 
     client = docker.DockerClient(
         base_url=DK_SOCK_URL,
-        version=DK_CLI_VERSION)
+        version=DK_CLI_VERSION,
+        timeout=120)
     return client
 
 
@@ -295,9 +296,6 @@ def image_transit(_image_url):
         images = glance_cli.images.list(filters=properties)
         Log.logger.debug("FILTER IMAGE IS %s" ,images)
         for image in images:
-            # 如果是  部署就 直接返回镜像
-            #if action=='deploy':
-            #    return None, image.id
             res=delete_query_glance(glance_cli,image.id,properties)
             if res == "success":
                 Log.logger.debug("GLANCE IMAGE id is " +image.id + " IS DELETED " + " image_url " + _image_url)
@@ -309,7 +307,6 @@ def image_transit(_image_url):
         return err_msg, None
     dk_cli = _dk_py_cli()
     Log.logger.debug("Docker image pull from harbor url \'" + _image_url + "\' is started.")
-    #err_msg = _dk_img_pull(dk_cli, _image_url, repository_hash, img_tag[1])
     Log.logger.debug("Docker image pull from harbor url \'" + _image_url + "\' is done.")
     if err_msg:
         return err_msg, None
