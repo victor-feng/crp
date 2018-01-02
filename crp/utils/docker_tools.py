@@ -327,8 +327,8 @@ def image_transit(_image_url):
             if err_msg:
                 return err_msg, None
             else:
-                #GLANCE_RESERVATION_QUANTITY = current_app.config['GLANCE_RESERVATION_QUANTITY']
-                _glance_img_reservation(glance_cli, image.id, GLANCE_RESERVATION_QUANTITY)
+                #删除openstack中超过阈值GLANCE_RESERVATION_QUANTITY 的image
+                #_glance_img_reservation(glance_cli, image.id, GLANCE_RESERVATION_QUANTITY)
                 Log.logger.debug("SUCCESS IMAGE ID IS" + image.id + "URL is"+ _image_url)
                 return None, image.id
 
