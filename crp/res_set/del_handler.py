@@ -211,7 +211,7 @@ def delete_instance_and_query(task_id, result, resource):
         elif current_status == QUERY_VM:
             query_instance(task_id, result, resource)
     except Exception as e:
-        Log.logger.error("Query Task ID " + str(task_id) +" [CRP] delete_instance_and_query failed, Exception:%s" %e)
+        Log.logger.error("Query Task ID " + str(task_id) +" [CRP] delete_instance_and_query failed, Exception:%s" % str(e))
         TaskManager.task_exit(task_id)
 
 
