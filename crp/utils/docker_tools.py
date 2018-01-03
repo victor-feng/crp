@@ -300,7 +300,7 @@ def image_transit(_image_url):
             if res == "success":
                 Log.logger.debug("GLANCE IMAGE id is " +image.id + " IS DELETED " + " image_url " + _image_url)
             else:
-                err_msg="delete glance images five time error"
+                err_msg="delete glance images five time error,image id is %s" % image.id
                 return err_msg,None
     except Exception as e:
         err_msg= "delete or pull images error ,error msg is : %s" % str(e.args)
