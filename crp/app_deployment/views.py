@@ -247,6 +247,7 @@ class AppDeploy(Resource):
             msg = "ok"
             mongodb_res = True
             sql_ret = True
+            unique_flag = str(uuid.uuid1())
             if not appinfo:
                 Log.logger.info("No nginx ip information, no need to push nginx something")
             for app in appinfo:
@@ -300,7 +301,7 @@ class AppDeploy(Resource):
                     if mongodb_res:
                         _dep_detail_callback(deploy_id,"deploy_mongodb","res")
                     else:
-                        _dep_callback(deploy_id, "ip", "mongodb", err_msg, "active", False, "mongodb", True,'deploy')
+                        _dep_callback(deploy_id, "ip", "mongodb", err_msg, "active", False, "mongodb", True,'deploy',unique_flag)
                         code = 500
                         return code,err_msg
             if mysql:
@@ -311,7 +312,7 @@ class AppDeploy(Resource):
                     if sql_ret:
                         _dep_detail_callback(deploy_id,"deploy_mysql","res")
                     else:
-                        _dep_callback(deploy_id, "ip", "mysql", err_msg, "active", False,"mysql", True,'deploy')
+                        _dep_callback(deploy_id, "ip", "mysql", err_msg, "active", False,"mysql", True,'deploy',unique_flag)
                         code=500
                         return code,err_msg
 
@@ -344,7 +345,7 @@ class AppDeploy(Resource):
                         end_flag=False
                         if len(docker) == (docker.index(i)+1):
                             end_flag=True
-                        _dep_callback(deploy_id, ip, "docker", err_msg, "None", False, cluster_name, end_flag, 'deploy')
+                        _dep_callback(deploy_id, ip, "docker", err_msg, "None", False, cluster_name, end_flag, 'deploy',unique_flag)
             #如果有集群拉取镜像失败，将这个集群从docker中删除
             for err_docker in err_dockers:
                 docker.remove(err_docker)
@@ -357,7 +358,7 @@ class AppDeploy(Resource):
             self.all_ips = all_ips
             #部署docker
             for info in docker:
-                self._image_transit(deploy_id, info,appinfo,deploy_type)
+                self._image_transit(deploy_id, info,appinfo,deploy_type,unique_flag)
             lock.release()
         except Exception as e:
             code = 500
@@ -612,7 +613,7 @@ class AppDeploy(Resource):
             file_object.write(ip)
         return myhosts_path
 
-    def _deploy_docker(self, info,deploy_id, image_uuid,appinfo,deploy_type):
+    def _deploy_docker(self, info,deploy_id, image_uuid,appinfo,deploy_type,unique_flag):
         deploy_flag=True
         end_flag=False
         first_error_flag=False
@@ -640,7 +641,7 @@ class AppDeploy(Resource):
                         msg=u"应用健康检查正常"
                     else:
                         msg=u"docker网络检查正常"
-                    _dep_callback(deploy_id, ip, "docker", msg, vm_state, True, cluster_name,end_flag,deploy_type)
+                    _dep_callback(deploy_id, ip, "docker", msg, vm_state, True, cluster_name,end_flag,deploy_type,unique_flag)
                     Log.logger.debug(
                         "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
                 else:
@@ -657,7 +658,7 @@ class AppDeploy(Resource):
                     if len(self.all_ips) == 0:
                         end_flag=True
                         deploy_flag = False
-                    _dep_callback(deploy_id, ip, "docker", err_msg, vm_state, False,cluster_name,end_flag,deploy_type)
+                    _dep_callback(deploy_id, ip, "docker", err_msg, vm_state, False,cluster_name,end_flag,deploy_type,unique_flag)
                     Log.logger.debug(
                         "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
                     if first_error_flag:break
@@ -735,15 +736,15 @@ class AppDeploy(Resource):
             return os_flag,None,err_msg
 
 
-    def _image_transit(self,deploy_id, info,appinfo,deploy_type):
+    def _image_transit(self,deploy_id, info,appinfo,deploy_type,unique_flag):
         result_list = []
         timeout = 10000
-        TaskManager.task_start(SLEEP_TIME, timeout, result_list, self._image_transit_task, deploy_id, info, appinfo,deploy_type)
+        TaskManager.task_start(SLEEP_TIME, timeout, result_list, self._image_transit_task, deploy_id, info, appinfo,deploy_type,unique_flag)
 
-    def _image_transit_task(self,task_id=None, result_list=None, deploy_id=None, info=None, appinfo=[],deploy_type=None):
+    def _image_transit_task(self,task_id=None, result_list=None, deploy_id=None, info=None, appinfo=[],deploy_type=None,unique_flag=None):
         image_uuid = info.get("image_uuid")
         if self._check_image_status(image_uuid):
-            deploy_flag = self._deploy_docker(info, deploy_id, image_uuid, appinfo, deploy_type)
+            deploy_flag = self._deploy_docker(info, deploy_id, image_uuid, appinfo, deploy_type,unique_flag)
             if not deploy_flag:
                 TaskManager.task_exit(task_id)
         else:
@@ -759,7 +760,7 @@ class AppDeploy(Resource):
             if len(self.all_ips) == 0:
                 end_flag=True
             msg = "check image five times,image status not active,image url is:%s,Image id is %s" % (image_url,image_uuid)
-            _dep_callback(deploy_id, ip, "docker", msg, "None", False, cluster_name, end_flag, 'deploy')
+            _dep_callback(deploy_id, ip, "docker", msg, "None", False, cluster_name, end_flag, 'deploy',unique_flag)
         TaskManager.task_exit(task_id)
 
     def _check_image_status(self,image_uuid):
