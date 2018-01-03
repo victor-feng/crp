@@ -34,7 +34,7 @@ def _dk_py_cli():
     client = docker.DockerClient(
         base_url=DK_SOCK_URL,
         version=DK_CLI_VERSION,
-        timeout=120)
+        timeout=3600)
     return client
 
 
