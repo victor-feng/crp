@@ -83,12 +83,12 @@ class OpenStack(object):
     def auth_info(self, value):
         if value is not None:
             OpenStack.auth_i = value
-    '''
+
     @property
     def nova_client(self):
         if OpenStack.nova_c is not None:
             return OpenStack.nova_c
-
+    '''
     @nova_client.setter
     def nova_client(self, value):
         if value is not None:
