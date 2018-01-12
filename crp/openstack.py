@@ -167,7 +167,7 @@ class OpenStack(object):
                 OpenStack.auth_info.user_password,
                 OpenStack.auth_info.tenant_name)
 
-            OpenStack.glance_c = glance_client.Client('1.0',
+            OpenStack.glance_c = glance_client.Client('1',
                 endpoint=glance_endpoint, token=token)
 
         if OpenStack.glance_c is not None:
