@@ -24,7 +24,7 @@ def openstack_client_setting():
     auth = v2.Password(auth_url=info.auth_url,
                        username=info.user_name,
                        password=info.user_password,
-                       project_id=info.tenant_name, )
+                       tenant_name=info.tenant_name, )
     sess = session.Session(auth=auth)
     OpenStack.nova_client = nova_client.Client("2.0", session=sess)
     # OpenStack.keystone_client = keystone_client.Client(username=info.user_name, password=info.user_password,
