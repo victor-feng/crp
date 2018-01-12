@@ -90,13 +90,11 @@ class OpenStack(object):
             return OpenStack.nova_c
 
     @nova_client.setter
-    def nova_client(self, values):
-        if OpenStack.auth_info is not None:
-            auth = v2.Password(**values)
+    def nova_client(self, value):
+        if value is not None:
+            auth = v2.Password(value)
             sess = session.Session(auth=auth)
             OpenStack.nova_c = nova_client.Client("2.0", session=sess)
-        if OpenStack.nova_c is not None:
-            return OpenStack.nova_c
     '''
     @nova_client.setter
     def nova_client(self, value):
