@@ -768,7 +768,7 @@ class AppDeploy(Resource):
         check_times = 5
         check_interval = 5
         for i in range(check_times):
-            img = nova_client.images.get(image_uuid)
+            img = nova_client.glance.find_image(image_uuid)
             Log.logger.debug(
                 "check image status " + str(i) + " times, status: " + img.status.lower() + " image_uuid:" + image_uuid)
             if (img.status.lower() != "active"):
