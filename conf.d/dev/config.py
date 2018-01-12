@@ -157,6 +157,9 @@ class DevelopmentConfig(BaseConfig):
     }
     IS_OPEN_AFFINITY_SCHEDULING = False
 
+    #cloud2.0相关
+    OPENRC2_PATH = "/root/openrc2"
+
 configs = {
     'development': DevelopmentConfig,
 }

@@ -43,10 +43,13 @@ def main():
     logging.warn("[CRP] CRP is running on: localhost:%d", options.port)
 
     from crp.openstack import openstack_client_setting
+    from crp.openstack2 import openstack2_client_setting
     from crp.mpc_resource import instance_status_sync
 
     OPENRC_PATH = app.config['OPENRC_PATH']
+    OPENRC2_PATH = app.config['OPENRC2_PATH']
     openstack_client_setting()
+    openstack2_client_setting()
     logging.warn("[CRP] Openstack client is inited")
     MPC_URL = app.config['MPC_URL']
 
