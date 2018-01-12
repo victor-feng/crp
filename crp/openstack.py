@@ -21,8 +21,12 @@ def openstack_client_setting():
     info = AuthInfo(OPENRC_PATH)
     info.get_env(info.rc)
     OpenStack.auth_info = info
-    OpenStack.nova_client = nova_client.Client(username=info.user_name, password=info.user_password,
-                                               project_id=info.tenant_name, auth_url=info.auth_url)
+    auth = v2.Password(auth_url=info.auth_url,
+                       username=info.user_name,
+                       password=info.user_password,
+                       tenant_name=info.tenant_name, )
+    sess = session.Session(auth=auth)
+    OpenStack.nova_client = nova_client.Client("2.0", session=sess)
     # OpenStack.keystone_client = keystone_client.Client(username=info.user_name, password=info.user_password,
     #                                                    tenant_name=info.tenant_name, auth_url=info.auth_url)
     OpenStack.neutron_client = neutron_client.Client('2.0', username=info.user_name, password=info.user_password,
@@ -92,15 +96,7 @@ class OpenStack(object):
     @nova_client.setter
     def nova_client(self, value):
         if value is not None:
-            auth = v2.Password(value)
-            sess = session.Session(auth=auth)
-            OpenStack.nova_c = nova_client.Client("2.0", session=sess)
-    '''
-    @nova_client.setter
-    def nova_client(self, value):
-        if value is not None:
             OpenStack.nova_c = value
-    '''
     @property
     def neutron_client(self):
         if OpenStack.neutron_c is not None:
