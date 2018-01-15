@@ -167,6 +167,10 @@ class TestingConfig(BaseConfig):
     }
     IS_OPEN_AFFINITY_SCHEDULING = False
 
+    # cloud2.0相关
+    OPENRC2_PATH = "/root/openrc2"
+    K8S_CONF_PATH="/root/k8s.config"
+
 configs = {
     'testing': TestingConfig,
 }
