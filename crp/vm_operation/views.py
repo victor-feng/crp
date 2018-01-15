@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 from flask_restful import reqparse, Api, Resource
 from flask import request
-
-from crp.app_deployment.handler import closed_nginx_conf, open_nginx_conf
 from crp.vm_operation import vm_operation_blueprint
 from crp.vm_operation.errors import vm_operation_errors
 from crp.log import Log
 from crp.openstack import OpenStack
+from crp.openstack2 import OpenStack as OpenStack2
 vm_operation_api = Api(vm_operation_blueprint, errors=vm_operation_errors)
+
+OpenStack_info={
+    "1":OpenStack,
+    "2":OpenStack2
+}
 
 class VMOperation(Resource):
     def post(self):
@@ -17,6 +21,7 @@ class VMOperation(Resource):
         parser.add_argument('vm_uuid', type=str)
         parser.add_argument('operation', type=str)
         parser.add_argument('reboot_type', type=str)
+        parser.add_argument('cloud', type=str)
         args = parser.parse_args()
         Log.logger.debug("vm operation receive restart request. args is " + str(args))
         if not args.vm_uuid or not args.operation:
