@@ -4,7 +4,7 @@ import os
 from flask_restful import reqparse, Api, Resource
 from crp.openstack_api import openstack_blueprint
 from crp.openstack_api.errors import az_errors
-from crp.openstack import OpenStack
+from handler import OpenStack_Api,OpenStack2_Api
 from crp.log import Log
 from config import configs, APP_ENV
 
@@ -22,10 +22,10 @@ class NetworkAPI(Resource):
         name2id = {}
         try:
             subnet_info={}
-            net_cli = OpenStack.neutron_client
-            networks = net_cli.list_networks()
-            networks = networks.get('networks', '')
-            subnets=net_cli.list_subnets()["subnets"]
+            network1s,subnet1s=OpenStack_Api.get_network_info()
+            network2s, subnet2s = OpenStack2_Api.get_network_info()
+            subnets=subnet1s + subnet2s
+            networks=network1s + network2s
             for subnet in subnets:
                 network_id = subnet["network_id"]
                 sub_vlan=subnet["cidr"]
@@ -36,18 +36,18 @@ class NetworkAPI(Resource):
             for network in networks:
                 name = network.get('name')
                 id_ = network.get('id')
-                status = network.get('status')
                 for network_id in subnet_info.keys():
                     if network_id == id_:
                         sub_vlans=subnet_info[network_id]
                         name2id[name] = [id_,sub_vlans]
         except Exception as e:
-            Log.logger.error('get networks err: %s' % e.args)
+            err_msg=str(e)
+            Log.logger.error('get networks err: %s' % err_msg)
             res = {
                 "code": 400,
                 "result": {
                     "res": "failed",
-                    "msg": e.message
+                    "msg": err_msg
                 }
             }
             return res, 400
@@ -68,13 +68,12 @@ class PortAPI(Resource):
         parser.add_argument('network_id', type=str)
         args = parser.parse_args()
         network_id = args.network_id
-        os_inst_id2state = {}
         count = 0
         try:
-            net_cli = OpenStack.neutron_client
             if network_id:
-                ports = net_cli.list_ports(**{'network_id':network_id})
-                ports = ports.get('ports')
+                port1s=OpenStack_Api.get_ports(network_id)
+                port2s =OpenStack2_Api.get_ports(network_id)
+                ports=port1s + port2s
                 count = len(ports)
         except Exception as e:
             Log.logger.error('get port err: %s' % e.args)
@@ -105,10 +104,12 @@ class NovaVMAPI(Resource):
         args = parser.parse_args()
         os_inst_id = args.os_inst_id
         try:
-            nova_cli = OpenStack.nova_client
-            vm = nova_cli.servers.get(os_inst_id)
-            Log.logger.info("#####vm:{}".format(vm))
-            vm_state = vm.status.lower()
+            vm_state1 = OpenStack_Api.get_vm_status(os_inst_id)
+            vm_state2 = OpenStack2_Api.get_vm_status(os_inst_id)
+            if vm_state1:
+                vm_state = vm_state1
+            if vm_state2:
+                vm_state = vm_state2
         except Exception as e:
             Log.logger.error('get vm status err: %s' % e.args)
             res = {
@@ -134,26 +135,18 @@ class NovaVMAPI(Resource):
 class NovaVMAPIAll(Resource):
 
     def get(self):
+        vm_info_dict = {}
         try:
-            vm_info_dict={}
-            nova_cli = OpenStack.nova_client
-            vms = nova_cli.servers.list()
-            for vm in vms:
-                os_inst_id=vm.id
-                ips = vm.networks
-                if ips:
-                    ip = vm.networks.values()[0][0]
-                else:
-                    ip = "127.0.0.1"
-                status=vm.status.lower()
-                vm_info_dict[os_inst_id]=[ip,status]
+            vm_info_dict1=OpenStack_Api.get_all_vm_status()
+            vm_info_dict2=OpenStack2_Api.get_all_vm_status()
+            vm_info_dict= dict(vm_info_dict1,**vm_info_dict2)
         except Exception as e:
             Log.logger.error('get vm status err: %s' % str(e.args))
             res = {
                 "code": 400,
                 "result": {
                     "msg": str(e.args),
-                    "vm_info_dict":{}
+                    "vm_info_dict":vm_info_dict
                 }
             }
             return res, 400
