@@ -102,7 +102,7 @@ class ResourceSet(Resource):
             parser.add_argument('username', type=str)
             parser.add_argument('department', type=str)
             parser.add_argument('created_time', type=str)
-
+            parser.add_argument('project_id', type=str)
             parser.add_argument('resource_id', type=str)
             parser.add_argument('resource_name', type=str)
             parser.add_argument('env', type=str)
@@ -139,6 +139,7 @@ class ResourceSet(Resource):
             redis_network_id = args.redis_network_id
             mongodb_network_id = args.mongodb_network_id
             set_flag = args.set_flag
+            project_id = args.project_id
 
             Log.logger.debug(resource_list)
             Log.logger.debug(compute_list)
@@ -161,6 +162,7 @@ class ResourceSet(Resource):
             req_dict["redis_network_id"] = redis_network_id
             req_dict["mongodb_network_id"] = mongodb_network_id
             req_dict["set_flag"] = set_flag
+            req_dict["project_id"] = project_id
 
             # init default data
             Log.logger.debug('req_dict\'s object id is :')
