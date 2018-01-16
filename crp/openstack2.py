@@ -56,7 +56,7 @@ class AuthInfo(object):
 
     @classmethod
     def _value_inline(cls,line):
-        return line.split('=')[1].split('\'')[1]
+        return line.split('=')[1]
 
     def get_env(self, rc):
         for line in rc:
