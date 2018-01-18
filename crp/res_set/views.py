@@ -117,6 +117,7 @@ class ResourceSet(Resource):
             parser.add_argument('redis_network_id', type=str, location='json')
             parser.add_argument('mongodb_network_id', type=str, location='json')
             parser.add_argument('set_flag', type=str, location='json')
+            parser.add_argument('cloud', type=str, location='json')
             args = parser.parse_args()
 
             req_dict = {}
@@ -168,8 +169,12 @@ class ResourceSet(Resource):
             Log.logger.debug('req_dict\'s object id is :')
             Log.logger.debug(id(req_dict))
             # 创建资源集合定时任务，成功或失败后调用UOP资源预留CallBack（目前仅允许全部成功或全部失败，不允许部分成功）
-            res_provider = ResourceProviderTransitions(
-                resource_id, property_mappers_list, req_dict)
+            if args.cloud == '2':
+                res_provider = ResourceProviderTransitions2(
+                    resource_id, property_mappers_list, req_dict)
+            else:
+                res_provider = ResourceProviderTransitions(
+                    resource_id, property_mappers_list, req_dict)
             res_provider_list = [res_provider]
             TaskManager.task_start(
                 SLEEP_TIME,
@@ -210,21 +215,36 @@ class ResourceDelete(Resource):
             vid_list=request_data.get('vid_list',[])
             del_os_ins_ip_list=request_data.get("os_ins_ip_list",[])
             set_flag = request_data.get('set_flag')
+            cloud = request_data.get('cloud')
             resources = deal_del_request_data(resources_id,del_os_ins_ip_list)
             resources = resources.get('resources')
             unique_flag=str(uuid.uuid1())
             #删除虚机和卷
-            for resource in resources:
-                TaskManager.task_start(
-                    SLEEP_TIME, TIMEOUT,
-                    {'current_status': QUERY_VOLUME,
-                     "unique_flag":unique_flag,
-                     "del_os_ins_ip_list":del_os_ins_ip_list,
-                     "set_flag":set_flag},
-                    delete_instance_and_query, resource)
-            #删除虚IP
-            for port_id in vid_list:
-                delete_vip(port_id)
+            if cloud == '2':
+                for resource in resources:
+                    TaskManager.task_start(
+                        SLEEP_TIME, TIMEOUT,
+                        {'current_status': QUERY_VOLUME,
+                         "unique_flag":unique_flag,
+                         "del_os_ins_ip_list":del_os_ins_ip_list,
+                         "set_flag":set_flag},
+                         delete_instance_and_query, resource)
+                #删除虚IP
+                for port_id in vid_list:
+                    delete_vip(port_id)
+            else:
+                for resource in resources:
+                    TaskManager.task_start(
+                        SLEEP_TIME, TIMEOUT,
+                        {'current_status': QUERY_VOLUME,
+                         "unique_flag":unique_flag,
+                         "del_os_ins_ip_list":del_os_ins_ip_list,
+                         "set_flag":set_flag},
+                         delete_instance_and_query2, resource)
+                #删除虚IP
+                for port_id in vid_list:
+                    delete_vip2(port_id)
+
                 
         except Exception as e:
             err_msg=str(e.args)
