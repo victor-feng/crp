@@ -18,7 +18,7 @@ from del_handler2 import delete_instance_and_query2,QUERY_VOLUME
 
 TIMEOUT = 5000
 SLEEP_TIME = 3
-cluster_type_image_port_mappers = configs[APP_ENV].cluster_type_image_port_mappers
+cluster_type_image_port_mappers2 = configs[APP_ENV].cluster_type_image_port_mappers2
 KVM_FLAVOR = configs[APP_ENV].KVM_FLAVOR
 DOCKER_FLAVOR = configs[APP_ENV].DOCKER_FLAVOR
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
@@ -297,7 +297,7 @@ class ResourceProviderTransitions2(object):
 
     # 依据资源类型创建资源
     def _create_instance_by_type(self, ins_type, name, flavor,network_id, server_group=None):
-        image = cluster_type_image_port_mappers.get(ins_type)
+        image = cluster_type_image_port_mappers2.get(ins_type)
         image_uuid = image.get('uuid')
         availability_zone = AVAILABILITY_ZONE.get(self.env, "AZ_UOP")
         Log.logger.debug(
@@ -414,7 +414,7 @@ class ResourceProviderTransitions2(object):
             network_id=self.mongodb_network_id
 
         if quantity >= 1:
-            cluster_type_image_port_mapper = cluster_type_image_port_mappers.get(
+            cluster_type_image_port_mapper = cluster_type_image_port_mappers2.get(
                 cluster_type)
             if cluster_type_image_port_mapper is not None:
                 port = cluster_type_image_port_mapper.get('port')

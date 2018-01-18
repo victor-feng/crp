@@ -91,7 +91,8 @@ class TestingConfig(BaseConfig):
     AVAILABILITY_ZONE = {
         "dev": 'AZ_UOP',
         "test": 'AZ_UOP',
-        "prod": 'AZ_UOP',
+        "prep": 'AZ-UOP',
+        "prod": 'AZ-UOP',
     }
     DEV_NETWORK_ID = '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'
     OS_EXT_PHYSICAL_SERVER_ATTR = 'OS-EXT-SRV-ATTR:host'
@@ -167,9 +168,39 @@ class TestingConfig(BaseConfig):
     }
     IS_OPEN_AFFINITY_SCHEDULING = False
 
-    # cloud2.0相关
+    #####################cloud2.0相关####################
     OPENRC2_PATH = "/root/openrc2"
     K8S_CONF_PATH="/root/k8s.config"
+    #可用域
+    AVAILABILITY_ZONE2 = {
+        "dev": 'AZ_UOP',
+        "test": 'AZ_UOP',
+        "prep": 'AZ-UOP',
+        "prod": 'AZ-UOP',
+    }
+    cluster_type_image_port_mappers2 = {
+        'mysql': {
+            'uuid': '817d3140-0b82-4722-9816-3cee734f22b6',
+            'name': 'mysqluop-80G-20170426',
+            'port': '3316'
+        },
+        'redis': {
+            'uuid': '3da55e5b-814c-4935-abf0-1469ae606286',
+            'name': 'redis-50G-20170428',
+            'port': '6379'
+        },
+        'mongodb': {
+            'uuid': '95863650-6816-4588-846a-c0423b5baae0',
+            'name': 'mongosas-50G-20170428',
+            'port': '27017'
+        },
+        'mycat': {
+            'uuid': '59a5022b-3c46-47ec-8e97-b63edc4b7be0',
+            'name': 'mycat-50G-20170628',
+            'port': '3316'
+        }
+    }
+
 
 configs = {
     'testing': TestingConfig,
