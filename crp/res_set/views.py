@@ -228,10 +228,10 @@ class ResourceDelete(Resource):
                          "unique_flag":unique_flag,
                          "del_os_ins_ip_list":del_os_ins_ip_list,
                          "set_flag":set_flag},
-                         delete_instance_and_query, resource)
+                         delete_instance_and_query2, resource)
                 #删除虚IP
                 for port_id in vid_list:
-                    delete_vip(port_id)
+                    delete_vip2(port_id)
             else:
                 for resource in resources:
                     TaskManager.task_start(
@@ -240,10 +240,10 @@ class ResourceDelete(Resource):
                          "unique_flag":unique_flag,
                          "del_os_ins_ip_list":del_os_ins_ip_list,
                          "set_flag":set_flag},
-                         delete_instance_and_query2, resource)
+                         delete_instance_and_query, resource)
                 #删除虚IP
                 for port_id in vid_list:
-                    delete_vip2(port_id)
+                    delete_vip(port_id)
 
                 
         except Exception as e:
