@@ -31,7 +31,7 @@ RES_STATUS_DEFAULT = configs[APP_ENV].RES_STATUS_DEFAULT
 DEFAULT_USERNAME = configs[APP_ENV].DEFAULT_USERNAME
 DEFAULT_PASSWORD = configs[APP_ENV].DEFAULT_PASSWORD
 SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
-AVAILABILITY_ZONE = configs[APP_ENV].AVAILABILITY_ZONE
+AVAILABILITY_ZONE2 = configs[APP_ENV].AVAILABILITY_ZONE2
 IS_OPEN_AFFINITY_SCHEDULING = configs[APP_ENV].IS_OPEN_AFFINITY_SCHEDULING
 
 # Transition state Log debug decorator
@@ -289,7 +289,7 @@ class ResourceProviderTransitions2(object):
     def _create_docker_by_url(self, name, image_uuid, flavor, meta,network_id, server_group=None):
         #err_msg, image_uuid = image_transit(image_url)
         if image_uuid:
-            availability_zone=AVAILABILITY_ZONE.get(self.env,"AZ_UOP")
+            availability_zone=AVAILABILITY_ZONE2.get(self.env,"AZ_UOP")
             return None, self._create_instance(
                 name, image_uuid, flavor, availability_zone, network_id, meta, server_group)
         else:
@@ -299,7 +299,7 @@ class ResourceProviderTransitions2(object):
     def _create_instance_by_type(self, ins_type, name, flavor,network_id, server_group=None):
         image = cluster_type_image_port_mappers2.get(ins_type)
         image_uuid = image.get('uuid')
-        availability_zone = AVAILABILITY_ZONE.get(self.env, "AZ_UOP")
+        availability_zone = AVAILABILITY_ZONE2.get(self.env, "AZ_UOP")
         Log.logger.debug(
             "Task ID " +
             self.task_id.__str__() +

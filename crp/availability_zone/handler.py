@@ -6,6 +6,7 @@ from crp.log import Log
 from config import configs, APP_ENV
 
 AVAILABILITY_ZONE = configs[APP_ENV].AVAILABILITY_ZONE
+AVAILABILITY_ZONE2 = configs[APP_ENV].AVAILABILITY_ZONE2
 
 
 
@@ -67,7 +68,7 @@ class OpenStack2_Api(object):
             availability_zones = nova_cli.availability_zones.list()
             hypervisors = nova_cli.hypervisors.list()
             for zone in availability_zones:
-                if AVAILABILITY_ZONE[env] == zone.zoneName:
+                if AVAILABILITY_ZONE2[env] == zone.zoneName:
                     target_zone = zone
                     break
             hosts = []
