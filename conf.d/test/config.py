@@ -173,29 +173,29 @@ class TestingConfig(BaseConfig):
     K8S_CONF_PATH="/root/k8s.config"
     #可用域
     AVAILABILITY_ZONE2 = {
-        "dev": 'AZ_UOP',
-        "test": 'AZ_UOP',
-        "prep": 'AZ-UOP',
-        "prod": 'AZ-UOP',
+        "dev": 'AZ_GENERAL',
+        "test": 'AZ_GENERAL',
+        "prep": 'AZ_GENERAL',
+        "prod": 'AZ_GENERAL',
     }
     cluster_type_image_port_mappers2 = {
         'mysql': {
-            'uuid': '817d3140-0b82-4722-9816-3cee734f22b6',
+            'uuid': '615d4763-172b-498d-b5c0-bff7b654611d',
             'name': 'mysqluop-80G-20170426',
             'port': '3316'
         },
         'redis': {
-            'uuid': '3da55e5b-814c-4935-abf0-1469ae606286',
+            'uuid': '615d4763-172b-498d-b5c0-bff7b654611d',
             'name': 'redis-50G-20170428',
             'port': '6379'
         },
         'mongodb': {
-            'uuid': '95863650-6816-4588-846a-c0423b5baae0',
+            'uuid': '615d4763-172b-498d-b5c0-bff7b654611d',
             'name': 'mongosas-50G-20170428',
             'port': '27017'
         },
         'mycat': {
-            'uuid': '59a5022b-3c46-47ec-8e97-b63edc4b7be0',
+            'uuid': '615d4763-172b-498d-b5c0-bff7b654611d',
             'name': 'mycat-50G-20170628',
             'port': '3316'
         }
