@@ -202,7 +202,7 @@ class TestingConfig(BaseConfig):
     }
     KVM_FLAVOR = {
         '24': '7cd5c203-38b7-45b9-804a-4af9409f99af',  # tst-pc-2C4G50G
-        'mysql': '20f28b8b-7adb-48c4-a7d0-d562007123b6',  # mysql_2C4G80G
+        'mysql': '7cd5c203-38b7-45b9-804a-4af9409f99af',  # mysql_2C4G80G
         # '4': 'uop-4C8G80G',
         '48': '00d92209-b17e-45cb-991c-d79600e68969',  # xiaojian_sas_4C8G50G
         # "8": 'xiaojian_sas_4C8G50G',
