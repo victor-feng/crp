@@ -41,7 +41,7 @@ FILEBEAT_NAME = configs[APP_ENV].FILEBEAT_NAME
 FILEBEAT_IMAGE_URL = configs[APP_ENV].FILEBEAT_IMAGE_URL
 FILEBEAT_REQUESTS = configs[APP_ENV].FILEBEAT_REQUESTS
 FILEBEAT_LIMITS = configs[APP_ENV].FILEBEAT_LIMITS
-APP_REQUESTS = configs[APP_ENV]. APP_REQUESTS
+APP_REQUESTS = configs[APP_ENV].APP_REQUESTS
 APP_LIMITS = configs[APP_ENV].APP_LIMITS
 HOSTNAMES = configs[APP_ENV].HOSTNAMES
 IP = configs[APP_ENV].IP
@@ -409,7 +409,6 @@ class ResourceProviderTransitions2(object):
     def _create_app_cluster(self, property_mapper):
         is_rollback = False
         uop_os_inst_id_list = []
-        docker_tag = time.time().__str__()[6:10]
         propertys = property_mapper.get('app_cluster')
         cluster_name = propertys.get('cluster_name')
         cluster_id = propertys.get('cluster_id')
@@ -417,7 +416,12 @@ class ResourceProviderTransitions2(object):
         port = propertys.get('port')
         image_url = propertys.get('image_url')
         replicas = propertys.get('quantity')
-
+        cpu = propertys.get('cpu','2')
+        mem = propertys.get('mem', '2')
+        app_requests_flavor='11'
+        app_limits_flavor=cpu+mem
+        filebeat_requests_flavor = '05002'
+        filebeat_limits_flavor = '101'
         if replicas >= 1:
             propertys['ins_id'] = cluster_id
             cluster_type = 'app_cluster'
@@ -442,16 +446,20 @@ class ResourceProviderTransitions2(object):
                 K8sIngressApi.create_ingress(extensions_v1, ingress,NAMESPACE)
             #创建应用集群
             deployment_name=self.req_dict["resource_name"]
+            app_requests=APP_REQUESTS.get(app_requests_flavor)
+            app_limits=APP_LIMITS.get(app_limits_flavor)
+            filebeat_requests = FILEBEAT_REQUESTS.get(filebeat_requests_flavor)
+            filebeat_limits = FILEBEAT_LIMITS.get(filebeat_limits_flavor)
             deployment=K8sDeploymentApi.create_deployment_object(deployment_name,
                                  FILEBEAT_NAME,
                                  FILEBEAT_IMAGE_URL,
-                                 FILEBEAT_REQUESTS,
-                                 FILEBEAT_LIMITS,
+                                 filebeat_requests,
+                                 filebeat_limits,
                                  cluster_name,
                                  image_url,
                                  port,
-                                 APP_REQUESTS,
-                                 APP_LIMITS,
+                                 app_requests,
+                                 app_limits,
                                  cluster_name,
                                  NETWORKNAME,
                                  TENANTNAME,
