@@ -74,8 +74,8 @@ class K8sDeploymentApi(object):
         :param app_requests:{"cpu": 1, "memory": "1Gi"}
         :param app_limits:{"cpu": 2, "memory": "2Gi"}
         :param labels_name:"filebeat-test"
-        :param networkName:"tenant-vlan651"
-        :param tenantName:"contiv-vlan651"
+        :param networkName:"contiv-vlan651"
+        :param tenantName:"tenant-vlan651"
         :param hostnames:["www.baidu.com"]
         :param ip:"127.0.0.1"
         :param replicas:3
@@ -231,6 +231,32 @@ class K8sDeploymentApi(object):
         else:
             return 'unavailable'
 
+    @classmethod
+    def get_deployment_pod_info(cls, api_instance, namespace, deployment_name):
+        """
+        获取deployment pod的ip和宿主机主机名，pod名字
+        :param api_instance:CoreV1Api
+        :param namespace:
+        :param deployment_name:
+        :return:
+        """
+        deployment_info_list = []
+        api_response = api_instance.list_namespaced_pod(namespace, async=True)
+        result = api_response.get().items
+        for res in result:
+            deployment_dict = {}
+            pod_name = res.metadata.name
+            pod_deployment_name = pod_name.split('-')[0]
+            node_name = res.spec.node_name
+            pod_ip = res.status.pod_ip
+            if pod_deployment_name == deployment_name:
+                deployment_dict['deployment_name'] = deployment_name
+                deployment_dict['pod_ip'] = pod_ip
+                deployment_dict['node_name'] = node_name
+                deployment_dict['pod_name'] = pod_name
+                deployment_info_list.append(deployment_dict)
+        return deployment_info_list
+
 
 class K8sServiceApi(object):
 
@@ -238,9 +264,9 @@ class K8sServiceApi(object):
     def create_service_object(cls,service_name,namespace,sercice_port):
         """
 
-        :param service_name:
-        :param namespace:
-        :param sercice_port:
+        :param service_name:"filebeat-test"
+        :param namespace:"test-uop"
+        :param sercice_port:8081
         :return:
         """
         spec = client.V1ServiceSpec(
@@ -273,6 +299,13 @@ class K8sServiceApi(object):
 
     @classmethod
     def create_service(cls,api_instance, service,namespace):
+        """
+        创建service
+        :param api_instance:CoreV1Api
+        :param service:
+        :param namespace:
+        :return:
+        """
         api_response = api_instance.create_namespaced_service(
             body=service,
             namespace=namespace)
@@ -280,9 +313,91 @@ class K8sServiceApi(object):
 
     @classmethod
     def delete_service(cls,api_instance,service_name,namespace):
+        """
+        删除service
+        :param api_instance:CoreV1Api
+        :param service_name:
+        :param namespace:
+        :return:
+        """
         api_response = api_instance.delete_namespaced_service(
             name=service_name,
             namespace=namespace,
+        )
+        return str(api_response.status)
+
+class K8sIngressApi(object):
+
+    @classmethod
+    def create_ingress_object(cls,ingress_name,namespace,service_name,service_port,host):
+        """
+
+        :param ingress_name:"tomcat-cssapi-ingress"
+        :param namespace:"test-uop"
+        :param service_name:"filebeat-test"
+        :param service_port:8081
+        :param host:"tomcat.k8s.me"
+        :return:
+        """
+        spec = client.V1beta1IngressSpec(
+            rules=[
+                client.V1beta1IngressRule(
+                    host=host,
+                    http=client.V1beta1HTTPIngressRuleValue(
+                        paths=[
+                            client.V1beta1HTTPIngressPath(
+                                backend=client.V1beta1IngressBackend(
+                                    service_name=service_name,
+                                    service_port=service_port,
+                                )
+                            )
+                        ]
+                    )
+                )
+            ]
+        )
+        ingress = client.V1beta1Ingress(
+            api_version="extensions/v1beta1",
+            kind="Ingress",
+            metadata=client.V1ObjectMeta(
+                name=ingress_name,
+                namespace=namespace
+            ),
+            spec=spec
+        )
+
+        return ingress
+
+    @classmethod
+    def create_ingress(cls,api_instance, ingress,namespace):
+        """
+        创建ingress
+        :param api_instance:ExtensionsV1beta1Api()
+        :param ingress:
+        :param namespace:
+        :return:
+        """
+        api_response = api_instance.create_namespaced_ingress(
+            body=ingress,
+            namespace=namespace)
+        return str(api_response.status)
+
+    @classmethod
+    def delete_ingress(cls,api_instance,ingress_name,namespace):
+        """
+        删除ingress
+        :param api_instance:ExtensionsV1beta1Api()
+        :param ingress_name:
+        :param namespace:
+        :return:
+        """
+        api_response = api_instance.delete_namespaced_ingress(
+            name=ingress_name,
+            namespace=namespace,
+            body=client.V1DeleteOptions(
+                propagation_policy='Foreground',
+                grace_period_seconds=5
+            )
         )
         return str(api_response.status)
 

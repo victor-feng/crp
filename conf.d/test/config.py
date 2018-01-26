@@ -213,10 +213,30 @@ class TestingConfig(BaseConfig):
         # 'uop-8C8180G': 'uop-8C8G180G',
         # 'uop-8C32G180G': 'uop-8C32G180G',
     }
-    DOCKER_FLAVOR = {
-        "2": "83c52038-3cc1-4865-958a-a85cfde96bc0",
-        # "4": "uop-docker-4C4G30G"
+    #k8s配置相关
+    NAMESPACE="test-uop"
+    FILEBEAT_NAME="filebeat"
+    FILEBEAT_IMAGE_URL="dkreg-wj.syswin.com/base/filebeat:5.4.0"
+    FILEBEAT_REQUESTS={
+        "05002":{"cpu": 0.5, "memory": "20Mi"}
     }
+    FILEBEAT_LIMITS={
+        "101": {"cpu": 1, "memory": "100Mi"}
+
+    }
+    APP_REQUESTS={
+        "11":{"cpu": 1, "memory": "1Gi"}
+    }
+    APP_LIMITS={
+        "22":{"cpu": 2, "memory": "2Gi"}
+    }
+    HOSTNAMES=["uop-k8s.syswin.com"]
+    IP="127.0.0.1"
+    HOST="tomcat.k8s.me"
+    NETWORKNAME="contiv-vlan651"
+    TENANTNAME="tenant-vlan651"
+
+
 
 
 configs = {

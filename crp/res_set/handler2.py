@@ -15,6 +15,7 @@ from config import configs, APP_ENV
 from crp.utils.aio import exec_cmd_ten_times,exec_cmd_one_times
 from crp.app_deployment.handler import start_write_log
 from del_handler2 import delete_instance_and_query2,QUERY_VOLUME
+from crp.k8s_api import K8sDeploymentApi,K8sIngressApi,K8sServiceApi,K8S
 
 TIMEOUT = 5000
 SLEEP_TIME = 3
@@ -33,6 +34,23 @@ DEFAULT_PASSWORD = configs[APP_ENV].DEFAULT_PASSWORD
 SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
 AVAILABILITY_ZONE2 = configs[APP_ENV].AVAILABILITY_ZONE2
 IS_OPEN_AFFINITY_SCHEDULING = configs[APP_ENV].IS_OPEN_AFFINITY_SCHEDULING
+
+#k8s相关
+NAMESPACE = configs[APP_ENV].NAMESPACE
+FILEBEAT_NAME = configs[APP_ENV].FILEBEAT_NAME
+FILEBEAT_IMAGE_URL = configs[APP_ENV].FILEBEAT_IMAGE_URL
+FILEBEAT_REQUESTS = configs[APP_ENV].FILEBEAT_REQUESTS
+FILEBEAT_LIMITS = configs[APP_ENV].FILEBEAT_LIMITS
+APP_REQUESTS = configs[APP_ENV]. APP_REQUESTS
+APP_LIMITS = configs[APP_ENV].APP_LIMITS
+HOSTNAMES = configs[APP_ENV].HOSTNAMES
+IP = configs[APP_ENV].IP
+HOST = configs[APP_ENV].HOST
+NETWORKNAME = configs[APP_ENV].NETWORKNAME
+TENANTNAME = configs[APP_ENV].TENANTNAME
+
+
+
 
 # Transition state Log debug decorator
 
@@ -315,7 +333,7 @@ class ResourceProviderTransitions2(object):
             network_id, server_group)
 
     # 申请应用集群docker资源
-    def _create_app_cluster(self, property_mapper):
+    def __create_app_cluster(self, property_mapper):
         is_rollback = False
         uop_os_inst_id_list = []
         docker_tag = time.time().__str__()[6:10]
@@ -386,6 +404,80 @@ class ResourceProviderTransitions2(object):
                     self.error_type = 'notfound'
                     self.error_msg="the image is not found"
         return is_rollback, uop_os_inst_id_list
+
+
+    def _create_app_cluster(self, property_mapper):
+        is_rollback = False
+        uop_os_inst_id_list = []
+        docker_tag = time.time().__str__()[6:10]
+        propertys = property_mapper.get('app_cluster')
+        cluster_name = propertys.get('cluster_name')
+        cluster_id = propertys.get('cluster_id')
+        domain = propertys.get('domain')
+        port = propertys.get('port')
+        image_url = propertys.get('image_url')
+        replicas = propertys.get('quantity')
+
+        if replicas >= 1:
+            propertys['ins_id'] = cluster_id
+            cluster_type = 'app_cluster'
+            propertys['cluster_type'] = cluster_type
+            propertys['username'] = DEFAULT_USERNAME
+            propertys['password'] = DEFAULT_PASSWORD
+            propertys['port'] = port
+            propertys['instance'] = []
+            # 针对servers_group 亲和调度操作 , 需要创建亲和调度
+            core_v1=K8S.core_v1
+            extensions_v1=K8S.extensions_v1
+            #--------------
+            service_name=cluster_name+"service"
+            service_port=port
+            ingress_name=cluster_name+"ingress"
+            if domain:
+                #如果有域名创建service和ingress
+                service=K8sServiceApi.create_service(service_name,NAMESPACE,service_port)
+                K8sServiceApi.create_service(core_v1, service,NAMESPACE)
+                #创建ingress
+                ingress=K8sIngressApi.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,HOST)
+                K8sIngressApi.create_ingress(extensions_v1, ingress,NAMESPACE)
+            #创建应用集群
+            deployment_name=self.req_dict["resource_name"]
+            deployment=K8sDeploymentApi.create_deployment_object(deployment_name,
+                                 FILEBEAT_NAME,
+                                 FILEBEAT_IMAGE_URL,
+                                 FILEBEAT_REQUESTS,
+                                 FILEBEAT_LIMITS,
+                                 cluster_name,
+                                 image_url,
+                                 port,
+                                 APP_REQUESTS,
+                                 APP_LIMITS,
+                                 cluster_name,
+                                 NETWORKNAME,
+                                 TENANTNAME,
+                                 HOSTNAMES,
+                                 IP,
+                                 replicas
+                                 )
+            K8sDeploymentApi.create_deployment(extensions_v1, deployment,NAMESPACE)
+            for i in range(0, replicas, 1):
+                uopinst_info = {
+                    'uop_inst_id': cluster_id,
+                    'os_inst_id': deployment_name,
+                    'cluster_type':cluster_type
+                }
+                uop_os_inst_id_list.append(uopinst_info)
+                propertys['instance'].append(
+                    {
+                        'instance_type': cluster_type,
+                        'instance_name': cluster_name,
+                        'username': DEFAULT_USERNAME,
+                        'password': DEFAULT_PASSWORD,
+                        'domain': domain,
+                        'port': port,
+                        'os_inst_id': deployment_name})
+        return is_rollback, uop_os_inst_id_list
+
 
     # 申请资源集群kvm资源
     def _create_resource_cluster(self, property_mapper):
@@ -516,28 +608,50 @@ class ResourceProviderTransitions2(object):
             ", Content is " +
             result_inst_id_list[:].__str__())
         nova_client = OpenStack.nova_client
+        core_v1 = K8S.core_v1
+        extensions_v1 = K8S.extensions_v1
         for uop_os_inst_id in uop_os_inst_id_wait_query:
-            inst = nova_client.servers.get(uop_os_inst_id['os_inst_id'])
-            Log.logger.debug(
-                "Query Task ID " +
-                self.task_id.__str__() +
-                " query Instance ID " +
-                uop_os_inst_id['os_inst_id'] +
-                " Status is " +
-                inst.status)
-            if inst.status == 'ACTIVE':
-                _ips = self._get_ip_from_instance(inst)
-                _ip = _ips.pop() if _ips.__len__() >= 1 else ''
-                #扩容时获取docker启动日志
-                if self.set_flag == "increase":
-                    start_write_log(_ip)
-                physical_server = getattr(inst, OS_EXT_PHYSICAL_SERVER_ATTR)
-                for mapper in result_mappers_list:
-                    value = mapper.values()[0]
-                    quantity = value.get('quantity', 0)
-                    instances = value.get('instance')
-                    if instances is not None:
-                        for instance in value.get('instance'):
+            cluster_type = uop_os_inst_id.get('cluster_type')
+            if cluster_type == "app_cluster":
+                #k8s 应用
+                deployment_name=uop_os_inst_id['os_inst_id']
+                deployment_status=K8sDeploymentApi.get_deployment_status(extensions_v1, NAMESPACE, deployment_name)
+                if deployment_status == "available":
+                    deployment_info_list=K8sDeploymentApi.get_deployment_pod_info(core_v1, NAMESPACE, deployment_name)
+                    for mapper in result_mappers_list:
+                        value = mapper.values()[0]
+                        quantity = value.get('quantity', 0)
+                        instances = value.get('instance',[])
+                        for deployment_info in deployment_info_list:
+                            for instance in instances:
+                                if instance.get(
+                                        'os_inst_id') == deployment_info['deployment_name']:
+                                    instance['ip'] = deployment_info["pod_ip"]
+                                    instance['physical_server'] = deployment_info["node_name"]
+                                res_instance_push_callback(self.task_id, self.req_dict, quantity, instance, {},
+                                                           self.set_flag)
+            else:
+                #openstack 虚机
+                inst = nova_client.servers.get(uop_os_inst_id['os_inst_id'])
+                Log.logger.debug(
+                    "Query Task ID " +
+                    self.task_id.__str__() +
+                    " query Instance ID " +
+                    uop_os_inst_id['os_inst_id'] +
+                    " Status is " +
+                    inst.status)
+                if inst.status == 'ACTIVE':
+                    _ips = self._get_ip_from_instance(inst)
+                    _ip = _ips.pop() if _ips.__len__() >= 1 else ''
+                    #扩容时获取docker启动日志
+                    if self.set_flag == "increase":
+                        start_write_log(_ip)
+                    physical_server = getattr(inst, OS_EXT_PHYSICAL_SERVER_ATTR)
+                    for mapper in result_mappers_list:
+                        value = mapper.values()[0]
+                        quantity = value.get('quantity', 0)
+                        instances = value.get('instance',[])
+                        for instance in instances:
                             if instance.get(
                                     'os_inst_id') == uop_os_inst_id['os_inst_id']:
                                 instance['ip'] = _ip
@@ -549,16 +663,16 @@ class ResourceProviderTransitions2(object):
                                     mapper.__str__())
                                 res_instance_push_callback(self.task_id, self.req_dict, quantity, instance, {},
                                                            self.set_flag)
-                result_inst_id_list.append(uop_os_inst_id)
-            if inst.status == 'ERROR':
-                # 置回滚标志位
-                Log.logger.debug(
-                    "Query Task ID " +
-                    self.task_id.__str__() +
-                    " ERROR Instance Info: " +
-                    inst.to_dict().__str__())
-                self.error_msg = inst.to_dict().__str__()
-                is_rollback = True
+                    result_inst_id_list.append(uop_os_inst_id)
+                if inst.status == 'ERROR':
+                    # 置回滚标志位
+                    Log.logger.debug(
+                        "Query Task ID " +
+                        self.task_id.__str__() +
+                        " ERROR Instance Info: " +
+                        inst.to_dict().__str__())
+                    self.error_msg = inst.to_dict().__str__()
+                    is_rollback = True
 
         if result_inst_id_list.__len__() == uop_os_inst_id_list.__len__():
             is_finish = True
