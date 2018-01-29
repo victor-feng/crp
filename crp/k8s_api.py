@@ -92,21 +92,36 @@ class K8sDeploymentApi(object):
             ],
             image_pull_policy="IfNotPresent"
         )
-        app_container = client.V1Container(
-            name='app',
-            image=app_image_url,
-            ports=[
-                client.V1ContainerPort(container_port=app_container_port)
-            ],
-            resources=client.V1ResourceRequirements(
-                requests=app_requests,
-                limits=app_limits,
-            ),
-            volume_mounts=[
-                client.V1VolumeMount(name="app-logs", mount_path="/home/logs"),
-            ],
-            image_pull_policy="Always",
-        )
+        if app_container_port:
+            app_container = client.V1Container(
+                name='app',
+                image=app_image_url,
+                ports=[
+                    client.V1ContainerPort(container_port=app_container_port)
+                ],
+                resources=client.V1ResourceRequirements(
+                    requests=app_requests,
+                    limits=app_limits,
+                ),
+                volume_mounts=[
+                    client.V1VolumeMount(name="app-logs", mount_path="/home/logs"),
+                ],
+                image_pull_policy="Always",
+            )
+        else:
+            app_container = client.V1Container(
+                name='app',
+                image=app_image_url,
+                resources=client.V1ResourceRequirements(
+                    requests=app_requests,
+                    limits=app_limits,
+                ),
+                volume_mounts=[
+                    client.V1VolumeMount(name="app-logs", mount_path="/home/logs"),
+                ],
+                image_pull_policy="Always",
+            )
+
         template = client.V1PodTemplateSpec(
             metadata=client.V1ObjectMeta(
                 labels={

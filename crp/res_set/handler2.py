@@ -414,6 +414,8 @@ class ResourceProviderTransitions2(object):
         cluster_id = propertys.get('cluster_id')
         domain = propertys.get('domain')
         port = propertys.get('port')
+        if port:
+            port = int(port)
         image_url = propertys.get('image_url')
         replicas = propertys.get('quantity')
         cpu = propertys.get('cpu','2')
