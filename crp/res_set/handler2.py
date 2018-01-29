@@ -655,7 +655,7 @@ class ResourceProviderTransitions2(object):
                                     Log.logger.info('--------instance----------%s', instance)
                             res_instance_push_callback(self.task_id, self.req_dict, quantity, instance, {},
                                                           self.set_flag)
-                    result_inst_id_list.append(uop_os_inst_id)
+                            result_inst_id_list.append(uop_os_inst_id)
             else:
                 #openstack 虚机
                 inst = nova_client.servers.get(uop_os_inst_id['os_inst_id'])
