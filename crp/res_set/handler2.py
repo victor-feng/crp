@@ -471,7 +471,7 @@ class ResourceProviderTransitions2(object):
             Log.logger.info('--------deployment----------%s', deployment)
             K8sDeploymentApi.create_deployment(extensions_v1, deployment,NAMESPACE)
             for i in range(0, replicas, 1):
-                os_inst_id=deployment_name
+                os_inst_id=deployment_name+'@@'+str(i)
                 uopinst_info = {
                     'uop_inst_id': cluster_id,
                     'os_inst_id': os_inst_id,
@@ -645,7 +645,7 @@ class ResourceProviderTransitions2(object):
                         for instance in instances:
                             for deployment_info in deployment_info_list:
                                 deployment_name=instance.get(
-                                        'os_inst_id')
+                                        'os_inst_id').split('@@')[0]
                                 Log.logger.info('--------deployment_name----------%s', deployment_name)
                                 Log.logger.info('--------deployment_info_name----------%s', deployment_info['deployment_name'])
                                 if deployment_name == deployment_info['deployment_name']:
