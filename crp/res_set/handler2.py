@@ -444,18 +444,18 @@ class ResourceProviderTransitions2(object):
             core_v1=K8S.core_v1
             extensions_v1=K8S.extensions_v1
             #--------------
-            service_name=cluster_name+"service"
+            deployment_name = self.req_dict["resource_name"]
+            service_name=deployment_name + "_" + "service"
             service_port=port
-            ingress_name=cluster_name+"ingress"
+            ingress_name=deployment_name + "_" +"ingress"
             if domain:
                 #如果有域名创建service和ingress
-                service=K8sServiceApi.create_service(extensions_v1,service_name,NAMESPACE,service_port)
+                service=K8sServiceApi.create_service_object(extensions_v1,service_name,NAMESPACE,service_port)
                 K8sServiceApi.create_service(core_v1, service,NAMESPACE)
                 #创建ingress
                 ingress=K8sIngressApi.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,HOST)
                 K8sIngressApi.create_ingress(extensions_v1, ingress,NAMESPACE)
             #创建应用集群
-            deployment_name=self.req_dict["resource_name"]
             app_requests=APP_REQUESTS.get(app_requests_flavor)
             app_limits=APP_LIMITS.get(app_limits_flavor)
             filebeat_requests = FILEBEAT_REQUESTS.get(filebeat_requests_flavor)
