@@ -270,6 +270,17 @@ class K8sDeploymentApi(object):
                 deployment_info_list.append(deployment_dict)
         return deployment_info_list
 
+    @classmethod
+    def get_deployment(cls, api_instance, namespace, deployment_name):
+        """
+        获取deployment
+        :param api_instance:ExtensionsV1beta1Api()
+        :param namespace:
+        :param deployment_name:
+        :return:
+        """
+        api_response = api_instance.read_namespaced_deployment(deployment_name, namespace)
+        return api_response
 
 class K8sServiceApi(object):
 

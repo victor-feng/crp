@@ -241,20 +241,28 @@ class ResourceProviderTransitions2(object):
             fail_list[:].__str__())
         # 删除全部，完成rollback
         for uop_os_inst_id in uop_os_inst_id_list:
+            #回滚删除的时候判断是中间件集群，还是应用集群
+            resource_type="middleware"
+            cluster_type = uop_os_inst_id.get('cluster_type')
             resource={}
             os_inst_id=uop_os_inst_id['os_inst_id']
             os_vol_id = uop_os_inst_id.get('os_vol_id')
             resource["resource_id"]=resource_id
             resource["os_inst_id"]=os_inst_id
             resource["os_vol_id"] = os_vol_id
+            if cluster_type == "app_cluster":
+                resource_type="app"
             #调用删除虚机和卷的接口进行回滚操作
             TaskManager.task_start(
-                SLEEP_TIME, TIMEOUT,
+                    SLEEP_TIME, TIMEOUT,
                 {'current_status': QUERY_VOLUME,
                  "unique_flag": "",
                  "del_os_ins_ip_list": [],
-                 "sef_flag": "rollback"},
+                 "sef_flag": "rollback",
+                 "resource_type":resource_type,
+                 "resource_name":self.req_dict["resource_name"],},
                 delete_instance_and_query2, resource)
+            if cluster_type == "app_cluster":break
         Log.logger.debug(
             "Task ID " +
             self.task_id.__str__() +
@@ -468,7 +476,6 @@ class ResourceProviderTransitions2(object):
                                  IP,
                                  replicas
                                  )
-            Log.logger.info('--------deployment----------%s', deployment)
             K8sDeploymentApi.create_deployment(extensions_v1, deployment,NAMESPACE)
             for i in range(0, replicas, 1):
                 os_inst_id=deployment_name+'@@'+str(i)

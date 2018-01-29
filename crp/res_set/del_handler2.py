@@ -9,6 +9,7 @@ from crp.openstack2 import OpenStack
 from crp.k8s_api import K8S,K8sDeploymentApi
 from crp.taskmgr import *
 from config import APP_ENV, configs
+NAMESPACE = configs[APP_ENV].NAMESPACE
 
 QUERY_VOLUME = 0
 DETACH_VOLUME = 1
@@ -39,11 +40,14 @@ def query_instance(task_id, result, resource):
     resource_type=result.get('resource_type')
     resource_name = result.get('resource_name')
     nova_client = OpenStack.nova_client
-    core_v1 = K8S.core_v1
     extensions_v1 = K8S.extensions_v1
     try:
         if resource_type == "app":
-            pass
+            deployment_ret=K8sDeploymentApi.get_deployment(extensions_v1,NAMESPACE,resource_name)
+            result['inst_state'] = 1
+            if deployment_ret.status.available_replicas:
+                result['current_status'] = DELETE_VM
+                result['msg'] = 'instance is exist  begin delete Deployment'
         else:
             inst = nova_client.servers.get(os_inst_id)
             task_state=getattr(inst,'OS-EXT-STS:task_state')
@@ -58,13 +62,13 @@ def query_instance(task_id, result, resource):
     except Exception as e:
         inst_state=result.get('inst_state',0)
         if inst_state == 1:
-            result['msg']='delete instance success'
+            result['msg']='delete instance or deployment success'
             Log.logger.debug(
                 "Query Task ID " + str(task_id) +
                 " query Instance ID " + os_inst_id +
                 " result " + result.__str__())
         elif inst_state == 0: 
-            result['msg'] = 'instance is not exist'
+            result['msg'] = 'instance or deployment is not exist'
             result['code'] = 404
             result['inst_state']=0
             Log.logger.debug(
@@ -83,8 +87,14 @@ def delete_instance(task_id, result):
     """
     os_inst_id = result.get('os_inst_id', '')
     nova_client = OpenStack.nova_client
+    extensions_v1 = K8S.extensions_v1
+    resource_type = result.get('resource_type')
+    resource_name = result.get('resource_name')
     try:
-        nova_client.servers.delete(os_inst_id)
+        if resource_type == "app":
+            K8sDeploymentApi.delete_deployment(extensions_v1,resource_name,NAMESPACE)
+        else:
+            nova_client.servers.delete(os_inst_id)
         result['current_status'] = QUERY_VM
         result['msg']='delete instance begin query Instance status'
         result['code'] = 200
@@ -92,7 +102,6 @@ def delete_instance(task_id, result):
               "Query Task ID " + str(task_id) +
               " query Instance ID " + os_inst_id +
               " result " + result.__str__())
-
     except Exception as e:
         result['msg'] = 'delete instance failed'
         result['code'] = 400

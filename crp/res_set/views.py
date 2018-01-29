@@ -97,19 +97,19 @@ class ResourceSet(Resource):
                 property_mappers_list)
             Log.logger.debug("RES_SET request_data is:" + request_data.__str__())
             parser = reqparse.RequestParser()
-            parser.add_argument('unit_name', type=str)
-            parser.add_argument('unit_id', type=str)
-            parser.add_argument('unit_des', type=str)
-            parser.add_argument('user_id', type=str)
-            parser.add_argument('username', type=str)
-            parser.add_argument('department', type=str)
-            parser.add_argument('created_time', type=str)
+            parser.add_argument('unit_name', type=str, location='json')
+            parser.add_argument('unit_id', type=str, location='json')
+            parser.add_argument('unit_des', type=str, location='json')
+            parser.add_argument('user_id', type=str, location='json')
+            parser.add_argument('username', type=str, location='json')
+            parser.add_argument('department', type=str, location='json')
+            parser.add_argument('created_time', type=str, location='json')
 
-            parser.add_argument('resource_id', type=str)
-            parser.add_argument('resource_name', type=str)
-            parser.add_argument('env', type=str)
-            parser.add_argument('domain', type=str)
-            parser.add_argument('cmdb_repo_id', type=str)
+            parser.add_argument('resource_id', type=str, location='json')
+            parser.add_argument('resource_name', type=str, location='json')
+            parser.add_argument('env', type=str, location='json')
+            parser.add_argument('domain', type=str, location='json')
+            parser.add_argument('cmdb_repo_id', type=str, location='json')
             parser.add_argument('resource_list', type=list, location='json')
             parser.add_argument('compute_list', type=list, location='json')
             parser.add_argument('docker_network_id', type=str, location='json')
@@ -118,6 +118,7 @@ class ResourceSet(Resource):
             parser.add_argument('mongodb_network_id', type=str, location='json')
             parser.add_argument('set_flag', type=str, location='json')
             parser.add_argument('cloud', type=str, location='json')
+            parser.add_argument('resource_type', type=str, location='json')
             args = parser.parse_args()
 
             req_dict = {}
@@ -142,6 +143,8 @@ class ResourceSet(Resource):
             redis_network_id = args.redis_network_id
             mongodb_network_id = args.mongodb_network_id
             set_flag = args.set_flag
+            cloud = args.cloud
+            resource_type = args.resource_type
 
             Log.logger.debug(resource_list)
             Log.logger.debug(compute_list)
@@ -164,12 +167,14 @@ class ResourceSet(Resource):
             req_dict["redis_network_id"] = redis_network_id
             req_dict["mongodb_network_id"] = mongodb_network_id
             req_dict["set_flag"] = set_flag
+            req_dict["cloud"] = cloud
+            req_dict["resource_type"] = resource_type
 
             # init default data
             Log.logger.debug('req_dict\'s object id is :')
             Log.logger.debug(id(req_dict))
             # 创建资源集合定时任务，成功或失败后调用UOP资源预留CallBack（目前仅允许全部成功或全部失败，不允许部分成功）
-            if args.cloud == '2':
+            if cloud == '2':
                 res_provider = ResourceProviderTransitions2(
                     resource_id, property_mappers_list, req_dict)
             else:
@@ -223,14 +228,28 @@ class ResourceDelete(Resource):
             unique_flag=str(uuid.uuid1())
             #删除虚机和卷
             if cloud == '2':
-                for resource in resources:
+                #cloud2.0分为删除k8s上的应用和删除openstack上的虚机
+                if resources_type == "app":
                     TaskManager.task_start(
                         SLEEP_TIME, TIMEOUT,
                         {'current_status': QUERY_VOLUME,
-                         "unique_flag":unique_flag,
-                         "del_os_ins_ip_list":del_os_ins_ip_list,
-                         "set_flag":set_flag},
-                         delete_instance_and_query2, resource)
+                         "unique_flag": unique_flag,
+                         "del_os_ins_ip_list": del_os_ins_ip_list,
+                         "set_flag": set_flag,
+                         "resource_name": resources_name,
+                         "resource_type": resources_type,
+                         },
+                        delete_instance_and_query2, {})
+                else:
+                    for resource in resources:
+                        TaskManager.task_start(
+                            SLEEP_TIME, TIMEOUT,
+                            {'current_status': QUERY_VOLUME,
+                             "unique_flag":unique_flag,
+                             "del_os_ins_ip_list":del_os_ins_ip_list,
+                             "set_flag":set_flag,
+                             },
+                             delete_instance_and_query2, resource)
                 #删除虚IP
                 for port_id in vid_list:
                     delete_vip2(port_id)
@@ -241,8 +260,6 @@ class ResourceDelete(Resource):
                         {'current_status': QUERY_VOLUME,
                          "unique_flag":unique_flag,
                          "del_os_ins_ip_list":del_os_ins_ip_list,
-                         "resource_name":resources_name,
-                         "resource_type": resources_type,
                          "set_flag":set_flag},
                          delete_instance_and_query, resource)
                 #删除虚IP
