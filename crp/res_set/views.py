@@ -217,8 +217,8 @@ class ResourceDelete(Resource):
             request_data=json.loads(request.data)
             Log.logger.debug("Delete resource data is:" + request_data.__str__())
             resources_id=request_data.get('resources_id')
-            resource_name = request_data.get('resources_name')
-            resource_type = request_data.get('resources_type')
+            resource_name = request_data.get('resource_name')
+            resource_type = request_data.get('resource_type')
             vid_list=request_data.get('vid_list',[])
             del_os_ins_ip_list=request_data.get("os_ins_ip_list",[])
             set_flag = request_data.get('set_flag')
@@ -229,10 +229,7 @@ class ResourceDelete(Resource):
             #删除虚机和卷
             if cloud == '2':
                 #cloud2.0分为删除k8s上的应用和删除openstack上的虚机
-                Log.logger.info("---------cloud---------%s",cloud)
-                Log.logger.info("---------resource_type---------%s", resource_type)
                 if resource_type == "app":
-                    Log.logger.info("---------resource_type---------%s", resource_type)
                     TaskManager.task_start(
                         SLEEP_TIME, TIMEOUT,
                         {'current_status': QUERY_VM,
