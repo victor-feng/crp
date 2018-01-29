@@ -6,6 +6,7 @@ import json
 import requests
 from crp.log import Log
 from crp.openstack2 import OpenStack
+from crp.k8s_api import K8S,K8sDeploymentApi
 from crp.taskmgr import *
 from config import APP_ENV, configs
 
@@ -35,18 +36,25 @@ def query_instance(task_id, result, resource):
     resource_id =resource.get('resources_id', '')
     result['os_inst_id'] = os_inst_id
     result['resources_id'] = resource_id
+    resource_type=result.get('resource_type')
+    resource_name = result.get('resource_name')
     nova_client = OpenStack.nova_client
+    core_v1 = K8S.core_v1
+    extensions_v1 = K8S.extensions_v1
     try:
-        inst = nova_client.servers.get(os_inst_id)
-        task_state=getattr(inst,'OS-EXT-STS:task_state')
-        result['inst_state']=1
-        Log.logger.debug(
-        "Query Task ID " + str(task_id) +
-        " query Instance ID " + os_inst_id +
-        " Status is " + inst.status + " Instance task state is " + str(task_state)) 
-        if  task_state != 'deleting' and inst.status != 'DELETED':
-            result['current_status'] = DELETE_VM
-            result['msg']='instance is exist  begin delete Instance'
+        if resource_type == "app":
+            pass
+        else:
+            inst = nova_client.servers.get(os_inst_id)
+            task_state=getattr(inst,'OS-EXT-STS:task_state')
+            result['inst_state']=1
+            Log.logger.debug(
+            "Query Task ID " + str(task_id) +
+            " query Instance ID " + os_inst_id +
+            " Status is " + inst.status + " Instance task state is " + str(task_state))
+            if  task_state != 'deleting' and inst.status != 'DELETED':
+                result['current_status'] = DELETE_VM
+                result['msg']='instance is exist  begin delete Instance'
     except Exception as e:
         inst_state=result.get('inst_state',0)
         if inst_state == 1:

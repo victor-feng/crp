@@ -212,6 +212,8 @@ class ResourceDelete(Resource):
             request_data=json.loads(request.data)
             Log.logger.debug("Delete resource data is:" + request_data.__str__())
             resources_id=request_data.get('resources_id')
+            resources_name = request_data.get('resources_name')
+            resources_type = request_data.get('resources_type')
             vid_list=request_data.get('vid_list',[])
             del_os_ins_ip_list=request_data.get("os_ins_ip_list",[])
             set_flag = request_data.get('set_flag')
@@ -239,6 +241,8 @@ class ResourceDelete(Resource):
                         {'current_status': QUERY_VOLUME,
                          "unique_flag":unique_flag,
                          "del_os_ins_ip_list":del_os_ins_ip_list,
+                         "resource_name":resources_name,
+                         "resource_type": resources_type,
                          "set_flag":set_flag},
                          delete_instance_and_query, resource)
                 #删除虚IP
