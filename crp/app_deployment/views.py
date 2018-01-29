@@ -28,6 +28,7 @@ import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
 from config import APP_ENV, configs
+from crp.k8s_api import K8S,K8sDeploymentApi
 
 
 app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
@@ -208,20 +209,20 @@ class AppDeploy(Resource):
             parser.add_argument('disconf_server_info', type=list, location='json')
             parser.add_argument('deploy_type', type=str)
             parser.add_argument('environment', type=str)
+            parser.add_argument('cloud', type=str)
             args = parser.parse_args()
             Log.logger.debug("AppDeploy receive post request. args is " + str(args))
             deploy_id = args.deploy_id
             deploy_type = args.deploy_type
             Log.logger.debug("deploy_id is " + str(deploy_id))
             docker = args.docker
-            mongodb = args.mongodb
-            mysql = args.mysql
             dns = args.dns
             disconf_server_info = args.disconf_server_info
             appinfo = args.appinfo
             environment=args.environment
+            cloud = args.cloud
             Log.logger.debug("Thread exec start")
-            t = threading.Thread(target=self.deploy_anything, args=(mongodb, mysql, docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment))
+            t = threading.Thread(target=self.deploy_anything, args=(docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud))
             t.start()
             Log.logger.debug("Thread exec done")
 
@@ -239,14 +240,12 @@ class AppDeploy(Resource):
         }
         return res, code
 
-    def deploy_anything(self, mongodb, mysql, docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment):
+    def deploy_anything(self,docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud):
         try:
             lock = threading.RLock()
             lock.acquire()
             code = 200
             msg = "ok"
-            mongodb_res = True
-            sql_ret = True
             unique_flag = str(uuid.uuid1())
             if not appinfo:
                 Log.logger.info("No nginx ip information, no need to push nginx something")
@@ -293,54 +292,58 @@ class AppDeploy(Resource):
             if disconf_server_info:
                 _dep_detail_callback(deploy_id,"deploy_disconf","res")
             #部署docker
-            Log.logger.debug("All Docker is " + str(docker))
-            #pull docker images
-            id2name = {}
-            err_dockers=[]
-            for i in docker:
-                image_url = i.get('url','')
-                cluster_name = i.get("ins_name", "")
-                ip=i.get('ip',[])
-                ip=','.join(ip)
-                if image_url in id2name.keys():
-                    image_uuid = id2name.get(image_url)
-                    i["image_uuid"] = image_uuid
-                else:
-                    err_msg, image_uuid = image_transit(image_url)
-                    id2name[image_url] = image_uuid
-                    i["image_uuid"] = image_uuid
-                    if err_msg is None:
-                        Log.logger.debug(
-                            "Transit harbor docker image success. The result glance image UUID is " + str(image_uuid))
+            if cloud == "2":
+                pass
+            else:
+                Log.logger.debug("All Docker is " + str(docker))
+                #pull docker images
+                id2name = {}
+                err_dockers=[]
+                for i in docker:
+                    image_url = i.get('url','')
+                    cluster_name = i.get("ins_name", "")
+                    ip=i.get('ip',[])
+                    ip=','.join(ip)
+                    if image_url in id2name.keys():
+                        image_uuid = id2name.get(image_url)
+                        i["image_uuid"] = image_uuid
                     else:
-                        Log.logger.error(
-                             "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + str(err_msg))
-                        err_msg="image get error image url is: %s, err_msg is: %s " % (str(image_url),str(err_msg))
-                        #将错误信息返回给uop
-                        err_dockers.append(i)
-                        end_flag=False
-                        if len(docker) == (docker.index(i)+1):
-                            end_flag=True
-                        _dep_callback(deploy_id, ip, "docker", err_msg, "None", False, cluster_name, end_flag, 'deploy',unique_flag)
-            #如果有集群拉取镜像失败，将这个集群从docker中删除
-            for err_docker in err_dockers:
-                docker.remove(err_docker)
-                Log.logger.debug("The Latest Docker is " + str(docker))
-            #获取所有集群的ip
-            all_ips = []
-            for info in docker:
-                ips = info.get('ip')
-                all_ips.extend(ips)
-            self.all_ips = all_ips
-            #部署docker
-            for info in docker:
-                self._image_transit(deploy_id, info,appinfo,deploy_type,unique_flag)
+                        err_msg, image_uuid = image_transit(image_url)
+                        id2name[image_url] = image_uuid
+                        i["image_uuid"] = image_uuid
+                        if err_msg is None:
+                            Log.logger.debug(
+                                "Transit harbor docker image success. The result glance image UUID is " + str(image_uuid))
+                        else:
+                            Log.logger.error(
+                                 "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + str(err_msg))
+                            err_msg="image get error image url is: %s, err_msg is: %s " % (str(image_url),str(err_msg))
+                            #将错误信息返回给uop
+                            err_dockers.append(i)
+                            end_flag=False
+                            if len(docker) == (docker.index(i)+1):
+                                end_flag=True
+                            _dep_callback(deploy_id, ip, "docker", err_msg, "None", False, cluster_name, end_flag, 'deploy',unique_flag)
+                #如果有集群拉取镜像失败，将这个集群从docker中删除
+                for err_docker in err_dockers:
+                    docker.remove(err_docker)
+                    Log.logger.debug("The Latest Docker is " + str(docker))
+                #获取所有集群的ip
+                all_ips = []
+                for info in docker:
+                    ips = info.get('ip')
+                    all_ips.extend(ips)
+                self.all_ips = all_ips
+                #部署docker
+                for info in docker:
+                    self._image_transit(deploy_id, info,appinfo,deploy_type,unique_flag)
             lock.release()
         except Exception as e:
             code = 500
             msg = "internal server error: " + str(e.args)
             Log.logger.error(msg)
         return code, msg
+
     def _deploy_docker(self, info,deploy_id, image_uuid,appinfo,deploy_type,unique_flag):
         deploy_flag=True
         end_flag=False
