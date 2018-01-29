@@ -617,7 +617,8 @@ class ResourceProviderTransitions2(object):
             " Test Task Scheduler Class result_inst_id_list object id is " +
             id(result_inst_id_list).__str__() +
             ", Content is " +
-            result_inst_id_list[:].__str__())
+            result_inst_id_list[:].__str__() +
+            "uop_os_inst_id_list" + uop_os_inst_id_list.__str__())
         nova_client = OpenStack.nova_client
         core_v1 = K8S.core_v1
         extensions_v1 = K8S.extensions_v1
@@ -641,6 +642,7 @@ class ResourceProviderTransitions2(object):
                                 Log.logger.info('--------deployment_name----------%s', deployment_name)
                                 Log.logger.info('--------deployment_info----------%s', deployment_info)
                                 if deployment_name == deployment_info['deployment_name']:
+                                    Log.logger.info('--------instance----------%s', instance)
                                     instance['ip'] = deployment_info["pod_ip"]
                                     instance['physical_server'] = deployment_info["node_name"]
                                     instance['os_inst_id'] = deployment_info["pod_name"]
