@@ -627,6 +627,7 @@ class ResourceProviderTransitions2(object):
                 deployment_status=K8sDeploymentApi.get_deployment_status(extensions_v1, NAMESPACE, deployment_name)
                 if deployment_status == "available":
                     deployment_info_list=K8sDeploymentApi.get_deployment_pod_info(core_v1, NAMESPACE, deployment_name)
+                    Log.logger.info('--------deployment_info_list----------%s', deployment_info_list)
                     for mapper in result_mappers_list:
                         value = mapper.values()[0]
                         quantity = value.get('quantity', 0)
@@ -641,6 +642,7 @@ class ResourceProviderTransitions2(object):
                                     instance['os_inst_id'] = deployment_info["pod_name"]
                                 res_instance_push_callback(self.task_id, self.req_dict, quantity, instance, {},
                                                           self.set_flag)
+                    result_inst_id_list.append(uop_os_inst_id)
             else:
                 #openstack 虚机
                 inst = nova_client.servers.get(uop_os_inst_id['os_inst_id'])
