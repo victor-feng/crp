@@ -445,7 +445,8 @@ class ResourceProviderTransitions2(object):
             extensions_v1=K8S.extensions_v1
             #--------------
             deployment_name = self.req_dict["resource_name"]
-            service_name=deployment_name + "_" + "service"
+            #service_name=deployment_name + "_" + "service"
+            service_name = deployment_name
             service_port=port
             ingress_name=deployment_name + "_" +"ingress"
             if domain:
