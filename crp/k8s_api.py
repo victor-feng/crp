@@ -240,8 +240,6 @@ class K8sDeploymentApi(object):
         api_response = api_instance.read_namespaced_deployment_status(deployment_name, namespace)
         ready_replicas=api_response.status.ready_replicas
         replicas=api_response.status.replicas
-        Log.logger.info("----------------status------------------------------%s" ,api_response.status)
-        Log.logger.info("-------------------ready_replicas---------------------------%s", ready_replicas)
         if replicas == ready_replicas:
             return 'available'
         else:
