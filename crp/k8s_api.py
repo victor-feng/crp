@@ -4,6 +4,7 @@
 from kubernetes import client
 from kubernetes import  config
 from config import APP_ENV, configs
+from crp.log import Log
 
 
 
@@ -239,6 +240,7 @@ class K8sDeploymentApi(object):
         api_response = api_instance.read_namespaced_deployment_status(deployment_name, namespace, async=True)
         ready_replicas=api_response.get().status.ready_replicas
         replicas=api_response.get().status.replicas
+        Log.logger.info("----------------status------------------------------%s" ,api_response.get().status)
         if replicas == ready_replicas:
             return 'available'
         else:
