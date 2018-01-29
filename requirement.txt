@@ -13,11 +13,11 @@ mongoengine==0.10.6
 requests==2.10.0
 transitions==0.5.3
 
-python-novaclient==2.20.0
-python-keystoneclient==0.11.1
-python-neutronclient == 2.3.9
-python-cinderclient == 1.1.1
-python-glanceclient == 0.14.2
+python-novaclient==9.1.1
+python-keystoneclient==3.14.0
+python-neutronclient == 6.6.0
+python-cinderclient == 3.3.0
+python-glanceclient == 2.8.0
 
 oslo.config==1.4.0
 oslo.utils==1.0.0
@@ -25,3 +25,5 @@ oslo.i18n==1.0.0
 
 ansible==2.3.0.0
 docker==2.3.0
+
+kubernetes==4.0.0
