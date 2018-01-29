@@ -637,7 +637,7 @@ class ResourceProviderTransitions2(object):
                         for instance in instances:
                             for deployment_info in deployment_info_list:
                                 deployment_name=instance.get(
-                                        'os_inst_id').split('-')[0]
+                                        'os_inst_id')
                                 Log.logger.info('--------deployment_name----------%s', deployment_name)
                                 Log.logger.info('--------deployment_info----------%s', deployment_info)
                                 if deployment_name == deployment_info['deployment_name']:
