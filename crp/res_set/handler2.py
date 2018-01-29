@@ -449,7 +449,7 @@ class ResourceProviderTransitions2(object):
             ingress_name=cluster_name+"ingress"
             if domain:
                 #如果有域名创建service和ingress
-                service=K8sServiceApi.create_service(service_name,NAMESPACE,service_port)
+                service=K8sServiceApi.create_service(extensions_v1,service_name,NAMESPACE,service_port)
                 K8sServiceApi.create_service(core_v1, service,NAMESPACE)
                 #创建ingress
                 ingress=K8sIngressApi.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,HOST)
