@@ -49,7 +49,6 @@ class K8sDeploymentApi(object):
                                  filebeat_image_url,
                                  filebeat_requests,
                                  filebeat_limits,
-                                 app_name,
                                  app_image_url,
                                  app_container_port,
                                  app_requests,
@@ -68,7 +67,6 @@ class K8sDeploymentApi(object):
         :param filebeat_image_url:"dkreg-wj.syswin.com/base/filebeat:5.4.0"
         :param filebeat_requests:{"cpu": 0.5, "memory": "20Mi"}
         :param filebeat_limits:{"cpu": 1, "memory": "100Mi"}
-        :param app_name:"app"
         :param app_image_url:"reg1.syswin.com/sit/tomcat-cssapi:v0.1"
         :param app_container_port:8081
         :param app_requests:{"cpu": 1, "memory": "1Gi"}
@@ -105,7 +103,7 @@ class K8sDeploymentApi(object):
                 limits=app_limits,
             ),
             volume_mounts=[
-                client.V1VolumeMount(name="app-logs" % app_name, mount_path="/home/logs"),
+                client.V1VolumeMount(name="app-logs", mount_path="/home/logs"),
             ],
             image_pull_policy="Always",
         )
@@ -126,7 +124,7 @@ class K8sDeploymentApi(object):
                     app_container,
                 ],
                 volumes=[
-                    client.V1Volume(name="%s-logs" %app_name, empty_dir={}),
+                    client.V1Volume(name="app-logs", empty_dir={}),
                     client.V1Volume(
                         name="%s-config" % filebeat_name,
                         config_map=client.V1ConfigMapVolumeSource(name="%s-config" % filebeat_name)

@@ -455,7 +455,6 @@ class ResourceProviderTransitions2(object):
                                  FILEBEAT_IMAGE_URL,
                                  filebeat_requests,
                                  filebeat_limits,
-                                 cluster_name,
                                  image_url,
                                  port,
                                  app_requests,
