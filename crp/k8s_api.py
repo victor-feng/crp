@@ -237,10 +237,10 @@ class K8sDeploymentApi(object):
         :param deployment_name:
         :return:
         """
-        api_response = api_instance.read_namespaced_deployment_status(deployment_name, namespace, async=True)
-        ready_replicas=api_response.get().status.ready_replicas
-        replicas=api_response.get().status.replicas
-        Log.logger.info("----------------status------------------------------%s" ,api_response.get().status)
+        api_response = api_instance.read_namespaced_deployment_status(deployment_name, namespace)
+        ready_replicas=api_response.status.ready_replicas
+        replicas=api_response.status.replicas
+        Log.logger.info("----------------status------------------------------%s" ,api_response.status)
         if replicas == ready_replicas:
             return 'available'
         else:
@@ -256,8 +256,8 @@ class K8sDeploymentApi(object):
         :return:
         """
         deployment_info_list = []
-        api_response = api_instance.list_namespaced_pod(namespace, async=True)
-        result = api_response.get().items
+        api_response = api_instance.list_namespaced_pod(namespace)
+        result = api_response.items
         for res in result:
             deployment_dict = {}
             pod_name = res.metadata.name
