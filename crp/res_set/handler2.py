@@ -634,15 +634,17 @@ class ResourceProviderTransitions2(object):
                         value = mapper.values()[0]
                         quantity = value.get('quantity', 0)
                         instances = value.get('instance',[])
-                        for deployment_info in deployment_info_list:
-                            for instance in instances:
+                        for instance in instances:
+                            for deployment_info in deployment_info_list:
                                 deployment_name=instance.get(
                                         'os_inst_id').split('-')[0]
+                                Log.logger.info('--------deployment_name----------%s', deployment_name)
+                                Log.logger.info('--------deployment_info----------%s', deployment_info)
                                 if deployment_name == deployment_info['deployment_name']:
                                     instance['ip'] = deployment_info["pod_ip"]
                                     instance['physical_server'] = deployment_info["node_name"]
                                     instance['os_inst_id'] = deployment_info["pod_name"]
-                                res_instance_push_callback(self.task_id, self.req_dict, quantity, instance, {},
+                            res_instance_push_callback(self.task_id, self.req_dict, quantity, instance, {},
                                                           self.set_flag)
                     result_inst_id_list.append(uop_os_inst_id)
             else:
