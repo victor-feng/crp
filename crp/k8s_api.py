@@ -12,7 +12,7 @@ K8S_CONF_PATH = configs[APP_ENV].K8S_CONF_PATH
 
 
 def k8s_client_setting(k8s_conf_path):
-    config.load_kube_config(k8s_conf_path)
+    config.load_kube_config(config_file=k8s_conf_path)
     K8S.core_v1=client.CoreV1Api()
     K8S.extensions_v1 = client.ExtensionsV1beta1Api()
 
