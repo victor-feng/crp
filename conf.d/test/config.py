@@ -180,7 +180,7 @@ class TestingConfig(BaseConfig):
     }
     cluster_type_image_port_mappers2 = {
         'mysql': {
-            'uuid': '615d4763-172b-498d-b5c0-bff7b654611d',
+            'uuid': 'b7905078-02fd-4918-b183-f27bd4ec3809',
             'name': 'mysqluop-80G-20170426',
             'port': '3316'
         },
