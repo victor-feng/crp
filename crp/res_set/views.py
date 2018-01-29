@@ -229,7 +229,9 @@ class ResourceDelete(Resource):
             #删除虚机和卷
             if cloud == '2':
                 #cloud2.0分为删除k8s上的应用和删除openstack上的虚机
+                Log.logger.info("---------cloud---------%s",cloud)
                 if resource_type == "app":
+                    Log.logger.info("---------resource_type---------%s", resource_type)
                     TaskManager.task_start(
                         SLEEP_TIME, TIMEOUT,
                         {'current_status': QUERY_VM,
