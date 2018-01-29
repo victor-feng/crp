@@ -95,7 +95,7 @@ class K8sDeploymentApi(object):
             image_pull_policy="IfNotPresent"
         )
         app_container = client.V1Container(
-            name=app_name,
+            name='app',
             image=app_image_url,
             ports=[
                 client.V1ContainerPort(container_port=app_container_port)
@@ -105,7 +105,7 @@ class K8sDeploymentApi(object):
                 limits=app_limits,
             ),
             volume_mounts=[
-                client.V1VolumeMount(name="%s-logs" % app_name, mount_path="/home/logs"),
+                client.V1VolumeMount(name="app-logs" % app_name, mount_path="/home/logs"),
             ],
             image_pull_policy="Always",
         )
