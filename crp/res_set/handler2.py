@@ -448,7 +448,7 @@ class ResourceProviderTransitions2(object):
             #service_name=deployment_name + "_" + "service"
             service_name = deployment_name
             service_port=port
-            ingress_name=deployment_name + "_" +"ingress"
+            ingress_name=deployment_name + "-" +"ingress"
             if domain:
                 #如果有域名创建service和ingress
                 service=K8sServiceApi.create_service_object(service_name,NAMESPACE,service_port)
