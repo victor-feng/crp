@@ -157,8 +157,73 @@ class DevelopmentConfig(BaseConfig):
     }
     IS_OPEN_AFFINITY_SCHEDULING = False
 
-    #cloud2.0相关
+    #####################cloud2.0相关####################
     OPENRC2_PATH = "/root/openrc2"
+    K8S_CONF_PATH = "/root/k8s.config"
+    # 可用域
+    AVAILABILITY_ZONE2 = {
+        "dev": 'AZ_GENERAL',
+        "test": 'AZ_GENERAL',
+        "prep": 'AZ_GENERAL',
+        "prod": 'AZ_GENERAL',
+    }
+    cluster_type_image_port_mappers2 = {
+        'mysql': {
+            'uuid': '615d4763-172b-498d-b5c0-bff7b654611d',
+            'name': 'mysqluop-80G-20170426',
+            'port': '3316'
+        },
+        'redis': {
+            'uuid': '615d4763-172b-498d-b5c0-bff7b654611d',
+            'name': 'redis-50G-20170428',
+            'port': '6379'
+        },
+        'mongodb': {
+            'uuid': '615d4763-172b-498d-b5c0-bff7b654611d',
+            'name': 'mongosas-50G-20170428',
+            'port': '27017'
+        },
+        'mycat': {
+            'uuid': '615d4763-172b-498d-b5c0-bff7b654611d',
+            'name': 'mycat-50G-20170628',
+            'port': '3316'
+        }
+    }
+    KVM_FLAVOR = {
+        '24': '7cd5c203-38b7-45b9-804a-4af9409f99af',  # tst-pc-2C4G50G
+        'mysql': '7cd5c203-38b7-45b9-804a-4af9409f99af',  # mysql_2C4G80G
+        # '4': 'uop-4C8G80G',
+        '48': '00d92209-b17e-45cb-991c-d79600e68969',  # xiaojian_sas_4C8G50G
+        # "8": 'xiaojian_sas_4C8G50G',
+        "mycat": "135154ad-a637-4d29-ac2d-b4f63a2183b5",  # tst-dns-2C2G50G
+        "816": '105deffb-dff9-4a16-8757-92a9d44e9b91',  # K8S-8C16G50G
+        "832": '8257eac4-c9cb-48f0-b5d4-183e3e08137f',  # pret-mysql-8C32G80G
+        # 'uop-4C16G180G': 'uop-4C16G180G',
+        # 'uop-8C8180G': 'uop-8C8G180G',
+        # 'uop-8C32G180G': 'uop-8C32G180G',
+    }
+    # k8s配置相关
+    NAMESPACE = "test-uop"
+    FILEBEAT_NAME = "filebeat"
+    FILEBEAT_IMAGE_URL = "dkreg-wj.syswin.com/base/filebeat:5.4.0"
+    FILEBEAT_REQUESTS = {
+        "05002": {"cpu": 0.5, "memory": "20Mi"}
+    }
+    FILEBEAT_LIMITS = {
+        "101": {"cpu": 1, "memory": "100Mi"}
+
+    }
+    APP_REQUESTS = {
+        "11": {"cpu": 1, "memory": "1Gi"}
+    }
+    APP_LIMITS = {
+        "22": {"cpu": 2, "memory": "2Gi"}
+    }
+    HOSTNAMES = ["uop-k8s.syswin.com"]
+    IP = "127.0.0.1"
+    HOST = "tomcat.k8s.me"
+    NETWORKNAME = "contiv-vlan651"
+    TENANTNAME = "tenant-vlan651"
 
 configs = {
     'development': DevelopmentConfig,
