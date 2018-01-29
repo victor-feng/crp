@@ -469,9 +469,10 @@ class ResourceProviderTransitions2(object):
                                  )
             K8sDeploymentApi.create_deployment(extensions_v1, deployment,NAMESPACE)
             for i in range(0, replicas, 1):
+                os_inst_id=deployment_name + '_' + str(i)
                 uopinst_info = {
                     'uop_inst_id': cluster_id,
-                    'os_inst_id': deployment_name,
+                    'os_inst_id': os_inst_id,
                     'cluster_type':cluster_type
                 }
                 uop_os_inst_id_list.append(uopinst_info)
@@ -483,7 +484,7 @@ class ResourceProviderTransitions2(object):
                         'password': DEFAULT_PASSWORD,
                         'domain': domain,
                         'port': port,
-                        'os_inst_id': deployment_name})
+                        'os_inst_id': os_inst_id})
         return is_rollback, uop_os_inst_id_list
 
 
@@ -622,7 +623,7 @@ class ResourceProviderTransitions2(object):
             cluster_type = uop_os_inst_id.get('cluster_type')
             if cluster_type == "app_cluster":
                 #k8s 应用
-                deployment_name=uop_os_inst_id['os_inst_id']
+                deployment_name=self.req_dict["resource_name"]
                 deployment_status=K8sDeploymentApi.get_deployment_status(extensions_v1, NAMESPACE, deployment_name)
                 if deployment_status == "available":
                     deployment_info_list=K8sDeploymentApi.get_deployment_pod_info(core_v1, NAMESPACE, deployment_name)
@@ -632,12 +633,14 @@ class ResourceProviderTransitions2(object):
                         instances = value.get('instance',[])
                         for deployment_info in deployment_info_list:
                             for instance in instances:
-                                if instance.get(
-                                        'os_inst_id') == deployment_info['deployment_name']:
+                                deployment_name=instance.get(
+                                        'os_inst_id').split('-')[0]
+                                if deployment_name == deployment_info['deployment_name']:
                                     instance['ip'] = deployment_info["pod_ip"]
                                     instance['physical_server'] = deployment_info["node_name"]
+                                    instance['os_inst_id'] = deployment_info["pod_name"]
                                 res_instance_push_callback(self.task_id, self.req_dict, quantity, instance, {},
-                                                           self.set_flag)
+                                                          self.set_flag)
             else:
                 #openstack 虚机
                 inst = nova_client.servers.get(uop_os_inst_id['os_inst_id'])
