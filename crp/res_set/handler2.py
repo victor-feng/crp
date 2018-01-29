@@ -467,8 +467,8 @@ class ResourceProviderTransitions2(object):
                                  IP,
                                  replicas
                                  )
+            Log.logger.info('--------deployment----------%s', deployment)
             K8sDeploymentApi.create_deployment(extensions_v1, deployment,NAMESPACE)
-            Log.logger.info('--------deployment----------%s',deployment)
             for i in range(0, replicas, 1):
                 os_inst_id=deployment_name + '_' + str(i)
                 uopinst_info = {
