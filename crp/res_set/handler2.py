@@ -430,7 +430,7 @@ class ResourceProviderTransitions2(object):
             propertys['password'] = DEFAULT_PASSWORD
             propertys['port'] = port
             propertys['instance'] = []
-            # 针对servers_group 亲和调度操作 , 需要创建亲和调度
+            #实例化k8s
             core_v1=K8S.core_v1
             extensions_v1=K8S.extensions_v1
             #--------------
@@ -468,6 +468,7 @@ class ResourceProviderTransitions2(object):
                                  replicas
                                  )
             K8sDeploymentApi.create_deployment(extensions_v1, deployment,NAMESPACE)
+            Log.logger.info('--------deployment----------%s',deployment)
             for i in range(0, replicas, 1):
                 os_inst_id=deployment_name + '_' + str(i)
                 uopinst_info = {
