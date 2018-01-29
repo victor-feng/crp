@@ -9,7 +9,7 @@ from crp.res_set import resource_set_blueprint
 from crp.res_set.errors import resource_set_errors
 from crp.log import Log
 from config import configs, APP_ENV
-from del_handler import delete_instance_and_query,QUERY_VOLUME,delete_vip
+from del_handler import delete_instance_and_query,QUERY_VOLUME,delete_vip,QUERY_VM
 from handler import ResourceProviderTransitions
 from del_handler2 import delete_instance_and_query2,QUERY_VOLUME,delete_vip2
 from handler2 import ResourceProviderTransitions2,tick_announce,deal_del_request_data,do_transit_repo_items
@@ -232,7 +232,7 @@ class ResourceDelete(Resource):
                 if resource_type == "app":
                     TaskManager.task_start(
                         SLEEP_TIME, TIMEOUT,
-                        {'current_status': QUERY_VOLUME,
+                        {'current_status': QUERY_VM,
                          "unique_flag": unique_flag,
                          "del_os_ins_ip_list": del_os_ins_ip_list,
                          "set_flag": set_flag,
