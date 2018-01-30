@@ -353,7 +353,7 @@ class K8sServiceApi(object):
 class K8sIngressApi(object):
 
     @classmethod
-    def create_ingress_object(cls,ingress_name,namespace,service_name,service_port,host):
+    def create_ingress_object(cls,ingress_name,namespace,service_name,service_port,domain):
         """
 
         :param ingress_name:"tomcat-cssapi-ingress"
@@ -366,7 +366,7 @@ class K8sIngressApi(object):
         spec = client.V1beta1IngressSpec(
             rules=[
                 client.V1beta1IngressRule(
-                    host=host,
+                    host=domain,
                     http=client.V1beta1HTTPIngressRuleValue(
                         paths=[
                             client.V1beta1HTTPIngressPath(

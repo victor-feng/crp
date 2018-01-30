@@ -45,7 +45,6 @@ APP_REQUESTS = configs[APP_ENV].APP_REQUESTS
 APP_LIMITS = configs[APP_ENV].APP_LIMITS
 HOSTNAMES = configs[APP_ENV].HOSTNAMES
 IP = configs[APP_ENV].IP
-HOST = configs[APP_ENV].HOST
 NETWORKNAME = configs[APP_ENV].NETWORKNAME
 TENANTNAME = configs[APP_ENV].TENANTNAME
 
@@ -454,7 +453,7 @@ class ResourceProviderTransitions2(object):
                 service=K8sServiceApi.create_service_object(service_name,NAMESPACE,service_port)
                 K8sServiceApi.create_service(core_v1, service,NAMESPACE)
                 #创建ingress
-                ingress=K8sIngressApi.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,HOST)
+                ingress=K8sIngressApi.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,domain)
                 K8sIngressApi.create_ingress(extensions_v1, ingress,NAMESPACE)
             #创建应用集群
             app_requests=APP_REQUESTS.get(app_requests_flavor)
