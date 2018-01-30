@@ -449,46 +449,54 @@ class ResourceProviderTransitions2(object):
                 service_name = deployment_name + "-" + "service"
                 service_port=port
                 ingress_name=deployment_name + "-" +"ingress"
-                if domain:
-                    #如果有域名创建service和ingress
-                    service=K8sServiceApi.create_service_object(service_name,NAMESPACE,service_port)
-                    err_msg=K8sServiceApi.create_service(core_v1, service,NAMESPACE)
-                    if err_msg is None:
-                        #创建ingress
-                        ingress=K8sIngressApi.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,domain)
-                        err_msg=K8sIngressApi.create_ingress(extensions_v1, ingress,NAMESPACE)
-                        if err_msg:
-                            is_rollback = True
-                            self.error_msg = err_msg
-                    else:
-                        is_rollback =True
-                        self.error_msg = err_msg
-                #创建应用集群
-                app_requests=APP_REQUESTS.get(app_requests_flavor)
-                app_limits=APP_LIMITS.get(app_limits_flavor)
+                app_requests = APP_REQUESTS.get(app_requests_flavor)
+                app_limits = APP_LIMITS.get(app_limits_flavor)
                 filebeat_requests = FILEBEAT_REQUESTS.get(filebeat_requests_flavor)
                 filebeat_limits = FILEBEAT_LIMITS.get(filebeat_limits_flavor)
                 #创建应用集群模板
-                deployment=K8sDeploymentApi.create_deployment_object(deployment_name,
-                                     FILEBEAT_NAME,
-                                     FILEBEAT_IMAGE_URL,
-                                     filebeat_requests,
-                                     filebeat_limits,
-                                     image_url,
-                                     port,
-                                     app_requests,
-                                     app_limits,
-                                     cluster_name,
-                                     NETWORKNAME,
-                                     TENANTNAME,
-                                     HOSTNAMES,
-                                     IP,
-                                     replicas
-                                     )
-                err_msg=K8sDeploymentApi.create_deployment(extensions_v1, deployment,NAMESPACE)
-                if err_msg:
-                    is_rollback = True
-                    self.error_msg = err_msg
+                deployment = K8sDeploymentApi.create_deployment_object(deployment_name,
+                                                                       FILEBEAT_NAME,
+                                                                       FILEBEAT_IMAGE_URL,
+                                                                       filebeat_requests,
+                                                                       filebeat_limits,
+                                                                       image_url,
+                                                                       port,
+                                                                       app_requests,
+                                                                       app_limits,
+                                                                       cluster_name,
+                                                                       NETWORKNAME,
+                                                                       TENANTNAME,
+                                                                       HOSTNAMES,
+                                                                       IP,
+                                                                       replicas
+                                                                       )
+                if domain:
+                    #如果有域名创建service和ingress
+                    service=K8sServiceApi.create_service_object(service_name,NAMESPACE,service_port)
+                    service_err_msg=K8sServiceApi.create_service(core_v1, service,NAMESPACE)
+                    if service_err_msg is None:
+                        #创建ingress
+                        ingress=K8sIngressApi.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,domain)
+                        ingress_err_msg=K8sIngressApi.create_ingress(extensions_v1, ingress,NAMESPACE)
+                        if ingress_err_msg is None:
+                            #创建应用集群
+                            deployment_err_msg = K8sDeploymentApi.create_deployment(extensions_v1, deployment,
+                                                                                    NAMESPACE)
+                            if deployment_err_msg:
+                                is_rollback = True
+                                self.error_msg = deployment_err_msg
+                        else:
+                            is_rollback = True
+                            self.error_msg = ingress_err_msg
+                    else:
+                        is_rollback =True
+                        self.error_msg = service_err_msg
+                else:
+                    #没有域名直接创建应用集群
+                    deployment_err_msg=K8sDeploymentApi.create_deployment(extensions_v1, deployment,NAMESPACE)
+                    if deployment_err_msg:
+                        is_rollback = True
+                        self.error_msg = deployment_err_msg
             elif self.set_flag == "increase" or self.set_flag == "reduce":
                 #应用集群扩缩容
                 pass
