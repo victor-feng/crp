@@ -472,29 +472,32 @@ class ResourceProviderTransitions2(object):
                                                                        )
                 if domain:
                     #如果有域名创建service和ingress
+                    #code=409 资源已经存在
                     service=K8sServiceApi.create_service_object(service_name,NAMESPACE,service_port)
-                    service_err_msg=K8sServiceApi.create_service(core_v1, service,NAMESPACE)
+                    service_err_msg,service_err_code=K8sServiceApi.create_service(core_v1, service,NAMESPACE)
                     if service_err_msg is None:
                         #创建ingress
                         ingress=K8sIngressApi.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,domain)
-                        ingress_err_msg=K8sIngressApi.create_ingress(extensions_v1, ingress,NAMESPACE)
+                        ingress_err_msg,ingress_err_code=K8sIngressApi.create_ingress(extensions_v1, ingress,NAMESPACE)
                         if ingress_err_msg is None:
                             #创建应用集群
-                            deployment_err_msg = K8sDeploymentApi.create_deployment(extensions_v1, deployment,
+                            deployment_err_msg,deployment_err_code = K8sDeploymentApi.create_deployment(extensions_v1, deployment,
                                                                                     NAMESPACE)
-                            if deployment_err_msg:
+                            if deployment_err_msg and deployment_err_code !=409:
                                 is_rollback = True
                                 self.error_msg = deployment_err_msg
                         else:
-                            is_rollback = True
-                            self.error_msg = ingress_err_msg
+                            if ingress_err_code != 409:
+                                is_rollback = True
+                                self.error_msg = ingress_err_msg
                     else:
-                        is_rollback =True
-                        self.error_msg = service_err_msg
+                        if service_err_code != 409:
+                            is_rollback =True
+                            self.error_msg = service_err_msg
                 else:
                     #没有域名直接创建应用集群
-                    deployment_err_msg=K8sDeploymentApi.create_deployment(extensions_v1, deployment,NAMESPACE)
-                    if deployment_err_msg:
+                    deployment_err_msg,deployment_err_code=K8sDeploymentApi.create_deployment(extensions_v1, deployment,NAMESPACE)
+                    if deployment_err_msg and deployment_err_code !=409:
                         is_rollback = True
                         self.error_msg = deployment_err_msg
             elif self.set_flag == "increase" or self.set_flag == "reduce":

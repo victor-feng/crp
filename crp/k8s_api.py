@@ -5,6 +5,7 @@ from kubernetes import client
 from kubernetes import  config
 from config import APP_ENV, configs
 from crp.log import Log
+import json
 
 
 
@@ -172,13 +173,15 @@ class K8sDeploymentApi(object):
         """
         # Create deployement
         err_msg = None
+        code=200
         try:
             api_response = api_instance.create_namespaced_deployment(
                 body=deployment,
                 namespace=namespace)
         except Exception as e:
             err_msg = "create deployment error %s" % str(e)
-        return err_msg
+            code = json.loads(e.body).get("code")
+        return err_msg,code
     @classmethod
     def update_deployment(cls,api_instance, deployment, deployment_name, new_image_url, namespace):
         """
@@ -191,6 +194,7 @@ class K8sDeploymentApi(object):
         """
         # Update container image
         err_msg = None
+        code=200
         try:
             deployment.spec.template.spec.containers[1].image.image = new_image_url
             # Update the deployment
@@ -200,7 +204,8 @@ class K8sDeploymentApi(object):
                 body=deployment)
         except Exception as e:
             err_msg = "update deployment error %s" % str(e)
-        return err_msg
+            code = json.loads(e.body).get("code")
+        return err_msg,code
 
     @classmethod
     def delete_deployment(cls,api_instance, deployment_name, namespace):
@@ -212,6 +217,7 @@ class K8sDeploymentApi(object):
         """
         # Delete deployment
         err_msg = None
+        code=200
         try:
             api_response = api_instance.delete_namespaced_deployment(
                 name=deployment_name,
@@ -221,7 +227,8 @@ class K8sDeploymentApi(object):
                     grace_period_seconds=5))
         except Exception as e:
             err_msg = "delete deployment error %s" %str(e)
-        return err_msg
+            code = json.loads(e.body).get("code")
+        return err_msg,code
 
     @classmethod
     def update_deployment_scale(cls,api_instance, deployment, deployment_name, namespace, new_replicas):
@@ -343,13 +350,15 @@ class K8sServiceApi(object):
         :return:
         """
         err_msg = None
+        code = 200
         try:
             api_response = api_instance.create_namespaced_service(
                 body=service,
                 namespace=namespace)
         except Exception as e:
             err_msg = "create service error %s" % str(e)
-        return err_msg
+            code = json.loads(e.body).get("code")
+        return err_msg,code
 
     @classmethod
     def delete_service(cls,api_instance,service_name,namespace):
@@ -361,6 +370,7 @@ class K8sServiceApi(object):
         :return:
         """
         err_msg = None
+        code=200
         try:
             api_response = api_instance.delete_namespaced_service(
                 name=service_name,
@@ -368,6 +378,7 @@ class K8sServiceApi(object):
             )
         except Exception as e:
             err_msg = "delete service error %s" % str(e)
+            code = json.loads(e.body).get("code")
         return err_msg
     @classmethod
     def get_service(cls,api_instance,service_name,namespace):
@@ -380,10 +391,11 @@ class K8sServiceApi(object):
         """
         try:
             api_response = api_instance.read_namespaced_service(service_name, namespace)
-            return  api_response,True
+            return  api_response,200
         except Exception as e:
             err_mgs = "get service error %s" % str(e)
-            return err_mgs,False
+            code = json.loads(e.body).get("code")
+            return err_mgs,code
 
 
 class K8sIngressApi(object):
@@ -438,13 +450,15 @@ class K8sIngressApi(object):
         :return:
         """
         err_msg=None
+        code=200
         try:
             api_response = api_instance.create_namespaced_ingress(
                 body=ingress,
                 namespace=namespace)
         except Exception as e:
             err_msg = "create ingress error %s" % str(e)
-        return err_msg
+            code = json.loads(e.body).get("code")
+        return err_msg,code
 
     @classmethod
     def delete_ingress(cls,api_instance,ingress_name,namespace):
@@ -456,6 +470,7 @@ class K8sIngressApi(object):
         :return:
         """
         err_msg=None
+        code=200
         try:
             api_response = api_instance.delete_namespaced_ingress(
                 name=ingress_name,
@@ -467,15 +482,17 @@ class K8sIngressApi(object):
             )
         except Exception as e:
             err_msg = "delete ingress error %s" % str(e)
-        return err_msg
+            code = json.loads(e.body).get("code")
+        return err_msg,code
     @classmethod
     def get_ingress(cls,api_instance, ingress_name, namespace):
         try:
             api_response = api_instance.read_namespaced_ingress(ingress_name, namespace)
-            return api_response,True
+            return api_response,200
         except Exception as e:
             err_msg= "get ingress error %s" % str(e)
-            return  err_msg,False
+            code=json.loads(e.body).get("code")
+            return  err_msg,code
 
 
 
