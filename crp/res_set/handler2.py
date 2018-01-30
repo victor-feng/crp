@@ -487,21 +487,21 @@ class ResourceProviderTransitions2(object):
                                                                                     NAMESPACE)
                             if deployment_err_msg and deployment_err_code !=409:
                                 is_rollback = True
-                                self.error_msg = deployment_err_msg
+                            self.error_msg = deployment_err_msg
                         else:
                             if ingress_err_code != 409:
                                 is_rollback = True
-                                self.error_msg = ingress_err_msg
+                            self.error_msg = ingress_err_msg
                     else:
                         if service_err_code != 409:
-                            is_rollback =True
-                            self.error_msg = service_err_msg
+                            is_rollback = True
+                        self.error_msg = service_err_msg
                 else:
                     #没有域名直接创建应用集群
                     deployment_err_msg,deployment_err_code=K8sDeploymentApi.create_deployment(extensions_v1, deployment,NAMESPACE)
                     if deployment_err_msg and deployment_err_code !=409:
                         is_rollback = True
-                        self.error_msg = deployment_err_msg
+                    self.error_msg = deployment_err_msg
             elif self.set_flag == "increase" or self.set_flag == "reduce":
                 #应用集群扩缩容
                 pass
