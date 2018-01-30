@@ -477,8 +477,6 @@ class ResourceProviderTransitions2(object):
                     #code=409 资源已经存在
                     service=K8sServiceApi.create_service_object(service_name,NAMESPACE,service_port)
                     service_err_msg,service_err_code=K8sServiceApi.create_service(core_v1, service,NAMESPACE)
-                    Log.logger.info("--------------ingress_err_code----------------%s", service_err_code)
-                    Log.logger.info("--------------ingress_err_code type----------------%s", type(service_err_code))
                     if service_err_msg is None:
                         #创建ingress
                         ingress=K8sIngressApi.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,domain)
