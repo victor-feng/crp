@@ -445,38 +445,44 @@ class ResourceProviderTransitions2(object):
             #--------------
             deployment_name = self.req_dict["resource_name"]
             #service_name=deployment_name + "_" + "service"
-            service_name = deployment_name
-            service_port=port
-            ingress_name=deployment_name + "-" +"ingress"
-            if domain:
-                #如果有域名创建service和ingress
-                service=K8sServiceApi.create_service_object(service_name,NAMESPACE,service_port)
-                K8sServiceApi.create_service(core_v1, service,NAMESPACE)
-                #创建ingress
-                ingress=K8sIngressApi.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,domain)
-                K8sIngressApi.create_ingress(extensions_v1, ingress,NAMESPACE)
             #创建应用集群
-            app_requests=APP_REQUESTS.get(app_requests_flavor)
-            app_limits=APP_LIMITS.get(app_limits_flavor)
-            filebeat_requests = FILEBEAT_REQUESTS.get(filebeat_requests_flavor)
-            filebeat_limits = FILEBEAT_LIMITS.get(filebeat_limits_flavor)
-            deployment=K8sDeploymentApi.create_deployment_object(deployment_name,
-                                 FILEBEAT_NAME,
-                                 FILEBEAT_IMAGE_URL,
-                                 filebeat_requests,
-                                 filebeat_limits,
-                                 image_url,
-                                 port,
-                                 app_requests,
-                                 app_limits,
-                                 cluster_name,
-                                 NETWORKNAME,
-                                 TENANTNAME,
-                                 HOSTNAMES,
-                                 IP,
-                                 replicas
-                                 )
-            K8sDeploymentApi.create_deployment(extensions_v1, deployment,NAMESPACE)
+            if self.set_flag == "res":
+                service_name = deployment_name
+                service_port=port
+                ingress_name=deployment_name + "-" +"ingress"
+                if domain:
+                    #如果有域名创建service和ingress
+                    service=K8sServiceApi.create_service_object(service_name,NAMESPACE,service_port)
+                    K8sServiceApi.create_service(core_v1, service,NAMESPACE)
+                    #创建ingress
+                    ingress=K8sIngressApi.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,domain)
+                    K8sIngressApi.create_ingress(extensions_v1, ingress,NAMESPACE)
+                #创建应用集群
+                app_requests=APP_REQUESTS.get(app_requests_flavor)
+                app_limits=APP_LIMITS.get(app_limits_flavor)
+                filebeat_requests = FILEBEAT_REQUESTS.get(filebeat_requests_flavor)
+                filebeat_limits = FILEBEAT_LIMITS.get(filebeat_limits_flavor)
+                #创建应用集群模板
+                deployment=K8sDeploymentApi.create_deployment_object(deployment_name,
+                                     FILEBEAT_NAME,
+                                     FILEBEAT_IMAGE_URL,
+                                     filebeat_requests,
+                                     filebeat_limits,
+                                     image_url,
+                                     port,
+                                     app_requests,
+                                     app_limits,
+                                     cluster_name,
+                                     NETWORKNAME,
+                                     TENANTNAME,
+                                     HOSTNAMES,
+                                     IP,
+                                     replicas
+                                     )
+                K8sDeploymentApi.create_deployment(extensions_v1, deployment,NAMESPACE)
+            elif self.set_flag == "increase" or self.set_flag == "reduce":
+                #应用集群扩缩容
+                pass
             for i in range(0, replicas, 1):
                 os_inst_id=deployment_name+'@@'+str(i)
                 uopinst_info = {
