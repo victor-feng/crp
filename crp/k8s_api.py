@@ -369,6 +369,22 @@ class K8sServiceApi(object):
         except Exception as e:
             err_msg = "delete service error %s" % str(e)
         return err_msg
+    @classmethod
+    def get_service(cls,api_instance,service_name,namespace):
+        """
+
+        :param api_instance:CoreV1Api
+        :param service_name:
+        :param namespace:
+        :return:
+        """
+        try:
+            api_response = api_instance.read_namespaced_service(service_name, namespace)
+            return  api_response,True
+        except Exception as e:
+            err_mgs = "get service error %s" % str(e)
+            return err_mgs,False
+
 
 class K8sIngressApi(object):
 
@@ -452,7 +468,14 @@ class K8sIngressApi(object):
         except Exception as e:
             err_msg = "delete ingress error %s" % str(e)
         return err_msg
-
+    @classmethod
+    def get_ingress(cls,api_instance, ingress_name, namespace):
+        try:
+            api_response = api_instance.read_namespaced_ingress(ingress_name, namespace)
+            return api_response,True
+        except Exception as e:
+            err_msg= "get ingress error %s" % str(e)
+            return  err_msg,False
 
 
 

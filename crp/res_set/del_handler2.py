@@ -95,10 +95,14 @@ def delete_instance(task_id, result):
     ingress_name = resource_name + "-" + "ingress"
     try:
         if resource_type == "app":
-            #删除deployment 的时候 不管 有没有 service 和 ingress 都删除一遍
+            #删除deployment 的时候 同时删除service 和 ingress
+            service_res,service_flag=K8sServiceApi.get_service(core_v1, service_name, NAMESPACE)
+            if service_flag:
+                K8sServiceApi.delete_service(core_v1, service_name, NAMESPACE)
+            ingress_res,ingress_flag=K8sIngressApi.get_ingress(extensions_v1, ingress_name, NAMESPACE)
+            if ingress_flag:
+                K8sIngressApi.delete_ingress(extensions_v1, ingress_name, NAMESPACE)
             K8sDeploymentApi.delete_deployment(extensions_v1,resource_name,NAMESPACE)
-            K8sServiceApi.delete_service(core_v1,service_name,NAMESPACE)
-            K8sIngressApi.delete_ingress(extensions_v1,ingress_name,NAMESPACE)
         else:
             nova_client.servers.delete(os_inst_id)
         result['current_status'] = QUERY_VM
