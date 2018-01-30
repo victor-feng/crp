@@ -6,7 +6,7 @@ import json
 import requests
 from crp.log import Log
 from crp.openstack2 import OpenStack
-from crp.k8s_api import K8S,K8sDeploymentApi
+from crp.k8s_api import K8S,K8sDeploymentApi,K8sServiceApi,K8sIngressApi
 from crp.taskmgr import *
 from config import APP_ENV, configs
 NAMESPACE = configs[APP_ENV].NAMESPACE
@@ -88,11 +88,17 @@ def delete_instance(task_id, result):
     os_inst_id = result.get('os_inst_id', '')
     nova_client = OpenStack.nova_client
     extensions_v1 = K8S.extensions_v1
+    core_v1 = K8S.core_v1
     resource_type = result.get('resource_type')
     resource_name = result.get('resource_name')
+    service_name = resource_name + "-" + "service"
+    ingress_name = resource_name + "-" + "ingress"
     try:
         if resource_type == "app":
+            #删除deployment 的时候 不管 有没有 service 和 ingress 都删除一遍
             K8sDeploymentApi.delete_deployment(extensions_v1,resource_name,NAMESPACE)
+            K8sServiceApi.delete_service(core_v1,service_name,NAMESPACE)
+            K8sIngressApi.delete_ingress(extensions_v1,ingress_name,NAMESPACE)
         else:
             nova_client.servers.delete(os_inst_id)
         result['current_status'] = QUERY_VM
