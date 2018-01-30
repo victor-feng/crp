@@ -132,6 +132,7 @@ class ResourceProviderTransitions2(object):
         self.error_msg = None
         self.set_flag=req_dict["set_flag"]
         self.env=req_dict["env"]
+        self.code=None
         # Initialize the state machine
         self.machine = Machine(
             model=self,
@@ -239,35 +240,36 @@ class ResourceProviderTransitions2(object):
             " Failed instance id set is " +
             fail_list[:].__str__())
         # 删除全部，完成rollback
-        for uop_os_inst_id in uop_os_inst_id_list:
-            #回滚删除的时候判断是中间件集群，还是应用集群
-            resource_type="middleware"
-            cluster_type = uop_os_inst_id.get('cluster_type')
-            resource={}
-            os_inst_id=uop_os_inst_id['os_inst_id']
-            os_vol_id = uop_os_inst_id.get('os_vol_id')
-            resource["resource_id"]=resource_id
-            resource["os_inst_id"]=os_inst_id
-            resource["os_vol_id"] = os_vol_id
-            if cluster_type == "app_cluster":
-                resource_type="app"
-            #调用删除虚机和卷的接口进行回滚操作
-            TaskManager.task_start(
-                    SLEEP_TIME, TIMEOUT,
-                {'current_status': QUERY_VOLUME,
-                 "unique_flag": "",
-                 "del_os_ins_ip_list": [],
-                 "sef_flag": "rollback",
-                 "resource_type":resource_type,
-                 "resource_name":self.req_dict["resource_name"],},
-                delete_instance_and_query2, resource)
-            if cluster_type == "app_cluster":break
-        Log.logger.debug(
-            "Task ID " +
-            self.task_id.__str__() +
-            " Resource ID " +
-            resource_id.__str__() +
-            " rollback done.")
+        if self.code != 409:
+            for uop_os_inst_id in uop_os_inst_id_list:
+                #回滚删除的时候判断是中间件集群，还是应用集群
+                resource_type="middleware"
+                cluster_type = uop_os_inst_id.get('cluster_type')
+                resource={}
+                os_inst_id=uop_os_inst_id['os_inst_id']
+                os_vol_id = uop_os_inst_id.get('os_vol_id')
+                resource["resource_id"]=resource_id
+                resource["os_inst_id"]=os_inst_id
+                resource["os_vol_id"] = os_vol_id
+                if cluster_type == "app_cluster":
+                    resource_type="app"
+                #调用删除虚机和卷的接口进行回滚操作
+                TaskManager.task_start(
+                        SLEEP_TIME, TIMEOUT,
+                    {'current_status': QUERY_VOLUME,
+                     "unique_flag": "",
+                     "del_os_ins_ip_list": [],
+                     "sef_flag": "rollback",
+                     "resource_type":resource_type,
+                     "resource_name":self.req_dict["resource_name"],},
+                    delete_instance_and_query2, resource)
+                if cluster_type == "app_cluster":break
+            Log.logger.debug(
+                "Task ID " +
+                self.task_id.__str__() +
+                " Resource ID " +
+                resource_id.__str__() +
+                " rollback done.")
 
     # 向OpenStack申请资源
     def _create_instance(
@@ -485,23 +487,25 @@ class ResourceProviderTransitions2(object):
                             #创建应用集群
                             deployment_err_msg,deployment_err_code = K8sDeploymentApi.create_deployment(extensions_v1, deployment,
                                                                                     NAMESPACE)
-                            if deployment_err_msg and deployment_err_code !=409:
+                            if deployment_err_msg:
                                 is_rollback = True
-                            self.error_msg = deployment_err_msg
+                                self.error_msg = deployment_err_msg
+                                self.code = deployment_err_code
                         else:
-                            if ingress_err_code != 409:
-                                is_rollback = True
-                            self.error_msg = ingress_err_msg
-                    else:
-                        if service_err_code != 409:
                             is_rollback = True
+                            self.error_msg = ingress_err_msg
+                            self.code = ingress_err_code
+                    else:
+                        is_rollback = True
                         self.error_msg = service_err_msg
+                        self.code = service_err_code
                 else:
                     #没有域名直接创建应用集群
                     deployment_err_msg,deployment_err_code=K8sDeploymentApi.create_deployment(extensions_v1, deployment,NAMESPACE)
-                    if deployment_err_msg and deployment_err_code !=409:
+                    if deployment_err_msg:
                         is_rollback = True
-                    self.error_msg = deployment_err_msg
+                        self.error_msg = deployment_err_msg
+                        self.code = deployment_err_code
             elif self.set_flag == "increase" or self.set_flag == "reduce":
                 #应用集群扩缩容
                 pass
