@@ -444,19 +444,25 @@ class ResourceProviderTransitions2(object):
             extensions_v1=K8S.extensions_v1
             #--------------
             deployment_name = self.req_dict["resource_name"]
-            #service_name=deployment_name + "_" + "service"
             #创建应用集群
             if self.set_flag == "res":
-                service_name = deployment_name
+                service_name = deployment_name + "-" + "service"
                 service_port=port
                 ingress_name=deployment_name + "-" +"ingress"
                 if domain:
                     #如果有域名创建service和ingress
                     service=K8sServiceApi.create_service_object(service_name,NAMESPACE,service_port)
-                    K8sServiceApi.create_service(core_v1, service,NAMESPACE)
-                    #创建ingress
-                    ingress=K8sIngressApi.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,domain)
-                    K8sIngressApi.create_ingress(extensions_v1, ingress,NAMESPACE)
+                    err_msg=K8sServiceApi.create_service(core_v1, service,NAMESPACE)
+                    if err_msg is None:
+                        #创建ingress
+                        ingress=K8sIngressApi.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,domain)
+                        err_msg=K8sIngressApi.create_ingress(extensions_v1, ingress,NAMESPACE)
+                        if err_msg:
+                            is_rollback = True
+                            self.error_msg = err_msg
+                    else:
+                        is_rollback =True
+                        self.error_msg = err_msg
                 #创建应用集群
                 app_requests=APP_REQUESTS.get(app_requests_flavor)
                 app_limits=APP_LIMITS.get(app_limits_flavor)
@@ -479,7 +485,10 @@ class ResourceProviderTransitions2(object):
                                      IP,
                                      replicas
                                      )
-                K8sDeploymentApi.create_deployment(extensions_v1, deployment,NAMESPACE)
+                err_msg=K8sDeploymentApi.create_deployment(extensions_v1, deployment,NAMESPACE)
+                if err_msg:
+                    is_rollback = True
+                    self.error_msg = err_msg
             elif self.set_flag == "increase" or self.set_flag == "reduce":
                 #应用集群扩缩容
                 pass

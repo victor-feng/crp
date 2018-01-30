@@ -171,10 +171,14 @@ class K8sDeploymentApi(object):
         :return:
         """
         # Create deployement
-        api_response = api_instance.create_namespaced_deployment(
-            body=deployment,
-            namespace=namespace)
-        return str(api_response.status)
+        err_msg = None
+        try:
+            api_response = api_instance.create_namespaced_deployment(
+                body=deployment,
+                namespace=namespace)
+        except Exception as e:
+            err_msg = "create deployment error %s" % str(e)
+        return err_msg
     @classmethod
     def update_deployment(cls,api_instance, deployment, deployment_name, new_image_url, namespace):
         """
@@ -186,13 +190,17 @@ class K8sDeploymentApi(object):
         :return:
         """
         # Update container image
-        deployment.spec.template.spec.containers[1].image.image = new_image_url
-        # Update the deployment
-        api_response = api_instance.patch_namespaced_deployment(
-            name=deployment_name,
-            namespace=namespace,
-            body=deployment)
-        return str(api_response.status)
+        err_msg = None
+        try:
+            deployment.spec.template.spec.containers[1].image.image = new_image_url
+            # Update the deployment
+            api_response = api_instance.patch_namespaced_deployment(
+                name=deployment_name,
+                namespace=namespace,
+                body=deployment)
+        except Exception as e:
+            err_msg = "update deployment error %s" % str(e)
+        return err_msg
 
     @classmethod
     def delete_deployment(cls,api_instance, deployment_name, namespace):
@@ -203,13 +211,17 @@ class K8sDeploymentApi(object):
         :return:
         """
         # Delete deployment
-        api_response = api_instance.delete_namespaced_deployment(
-            name=deployment_name,
-            namespace=namespace,
-            body=client.V1DeleteOptions(
-                propagation_policy='Foreground',
-                grace_period_seconds=5))
-        return str(api_response.status)
+        err_msg = None
+        try:
+            api_response = api_instance.delete_namespaced_deployment(
+                name=deployment_name,
+                namespace=namespace,
+                body=client.V1DeleteOptions(
+                    propagation_policy='Foreground',
+                    grace_period_seconds=5))
+        except Exception as e:
+            err_msg = "delete deployment error %s" %str(e)
+        return err_msg
 
     @classmethod
     def update_deployment_scale(cls,api_instance, deployment, deployment_name, namespace, new_replicas):
@@ -330,10 +342,14 @@ class K8sServiceApi(object):
         :param namespace:
         :return:
         """
-        api_response = api_instance.create_namespaced_service(
-            body=service,
-            namespace=namespace)
-        return str(api_response.status)
+        err_msg = None
+        try:
+            api_response = api_instance.create_namespaced_service(
+                body=service,
+                namespace=namespace)
+        except Exception as e:
+            err_msg = "create service error %s" % str(e)
+        return err_msg
 
     @classmethod
     def delete_service(cls,api_instance,service_name,namespace):
@@ -344,11 +360,15 @@ class K8sServiceApi(object):
         :param namespace:
         :return:
         """
-        api_response = api_instance.delete_namespaced_service(
-            name=service_name,
-            namespace=namespace,
-        )
-        return str(api_response.status)
+        err_msg = None
+        try:
+            api_response = api_instance.delete_namespaced_service(
+                name=service_name,
+                namespace=namespace,
+            )
+        except Exception as e:
+            err_msg = "delete service error %s" % str(e)
+        return err_msg
 
 class K8sIngressApi(object):
 
@@ -401,10 +421,14 @@ class K8sIngressApi(object):
         :param namespace:
         :return:
         """
-        api_response = api_instance.create_namespaced_ingress(
-            body=ingress,
-            namespace=namespace)
-        return str(api_response.status)
+        err_msg=None
+        try:
+            api_response = api_instance.create_namespaced_ingress(
+                body=ingress,
+                namespace=namespace)
+        except Exception as e:
+            err_msg = "create ingress error %s" % str(e)
+        return err_msg
 
     @classmethod
     def delete_ingress(cls,api_instance,ingress_name,namespace):
@@ -415,15 +439,19 @@ class K8sIngressApi(object):
         :param namespace:
         :return:
         """
-        api_response = api_instance.delete_namespaced_ingress(
-            name=ingress_name,
-            namespace=namespace,
-            body=client.V1DeleteOptions(
-                propagation_policy='Foreground',
-                grace_period_seconds=5
+        err_msg=None
+        try:
+            api_response = api_instance.delete_namespaced_ingress(
+                name=ingress_name,
+                namespace=namespace,
+                body=client.V1DeleteOptions(
+                    propagation_policy='Foreground',
+                    grace_period_seconds=5
+                )
             )
-        )
-        return str(api_response.status)
+        except Exception as e:
+            err_msg = "delete ingress error %s" % str(e)
+        return err_msg
 
 
 
