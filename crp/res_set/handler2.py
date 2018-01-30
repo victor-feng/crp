@@ -479,6 +479,8 @@ class ResourceProviderTransitions2(object):
                         #创建ingress
                         ingress=K8sIngressApi.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,domain)
                         ingress_err_msg,ingress_err_code=K8sIngressApi.create_ingress(extensions_v1, ingress,NAMESPACE)
+                        Log.logger.info("--------------ingress_err_code----------------%s",ingress_err_code)
+                        Log.logger.info("--------------ingress_err_code type----------------%s", type(ingress_err_code))
                         if ingress_err_msg is None:
                             #创建应用集群
                             deployment_err_msg,deployment_err_code = K8sDeploymentApi.create_deployment(extensions_v1, deployment,
