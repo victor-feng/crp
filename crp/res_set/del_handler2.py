@@ -47,7 +47,7 @@ def query_instance(task_id, result, resource):
             result['inst_state'] = 1
             if deployment_ret.status.available_replicas:
                 result['current_status'] = DELETE_VM
-                result['msg'] = 'instance is exist  begin delete Deployment'
+                result['msg'] = 'deployment is exist  begin delete Deployment'
         else:
             inst = nova_client.servers.get(os_inst_id)
             task_state=getattr(inst,'OS-EXT-STS:task_state')
