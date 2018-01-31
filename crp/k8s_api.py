@@ -219,7 +219,7 @@ class K8sDeploymentApi(object):
         return update_image_deployment
 
     @classmethod
-    def update_deployment(cls,api_instance, update_image_deployment, deployment_name, new_image_url, namespace):
+    def update_deployment_image(cls,api_instance, update_image_deployment, deployment_name, new_image_url, namespace):
         """
         更新deployment
         :param api_instance:

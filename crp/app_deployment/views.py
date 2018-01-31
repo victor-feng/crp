@@ -36,6 +36,8 @@ app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 HEALTH_CHECK_PORT = configs[APP_ENV].HEALTH_CHECK_PORT
 HEALTH_CHECK_PATH = configs[APP_ENV].HEALTH_CHECK_PATH
+NAMESPACE = configs[APP_ENV].NAMESPACE
+FILEBEAT_NAME = configs[APP_ENV].FILEBEAT_NAME
 
 
 class AppDeploy(Resource):
@@ -210,6 +212,7 @@ class AppDeploy(Resource):
             parser.add_argument('deploy_type', type=str)
             parser.add_argument('environment', type=str)
             parser.add_argument('cloud', type=str)
+            parser.add_argument('resource_name', type=str)
             args = parser.parse_args()
             Log.logger.debug("AppDeploy receive post request. args is " + str(args))
             deploy_id = args.deploy_id
@@ -221,8 +224,9 @@ class AppDeploy(Resource):
             appinfo = args.appinfo
             environment=args.environment
             cloud = args.cloud
+            resource_name = args.resource_name
             Log.logger.debug("Thread exec start")
-            t = threading.Thread(target=self.deploy_anything, args=(docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud))
+            t = threading.Thread(target=self.deploy_anything, args=(docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud,resource_name))
             t.start()
             Log.logger.debug("Thread exec done")
 
@@ -240,7 +244,7 @@ class AppDeploy(Resource):
         }
         return res, code
 
-    def deploy_anything(self,docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud):
+    def deploy_anything(self,docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud,resource_name):
         try:
             lock = threading.RLock()
             lock.acquire()
@@ -293,7 +297,23 @@ class AppDeploy(Resource):
                 _dep_detail_callback(deploy_id,"deploy_disconf","res")
             #部署docker
             if cloud == "2":
-                pass
+                extensions_v1 = K8S.extensions_v1
+                deployment_name=resource_name
+                update_image_deployment=K8sDeploymentApi.update_deployment_image_object(deployment_name,FILEBEAT_NAME)
+                for i in docker:
+                    image_url = i.get('url', '')
+                    cluster_name = i.get("ins_name", "")
+                    update_deployment_err_msg, update_deployment_err_code = K8sDeploymentApi.update_deployment_image(
+                        extensions_v1, update_image_deployment, deployment_name, image_url, NAMESPACE)
+                    end_flag = True
+                    if update_deployment_err_msg is None:
+                        _dep_callback(deploy_id, '127.0.0.1', "docker", "None", "None", False, cluster_name, end_flag, 'deploy',
+                                      unique_flag)
+                    else:
+                        _dep_callback(deploy_id, '127.0.0.1', "docker", update_deployment_err_msg, "None", False, cluster_name, end_flag, 'deploy',
+                                      unique_flag)
+
+
             else:
                 Log.logger.debug("All Docker is " + str(docker))
                 #pull docker images

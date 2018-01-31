@@ -240,7 +240,7 @@ class ResourceProviderTransitions2(object):
             " Failed instance id set is " +
             fail_list[:].__str__())
         # 删除全部，完成rollback
-        if self.code != 409:
+        if self.code != 409 and self.set_flag == "res":
             for uop_os_inst_id in uop_os_inst_id_list:
                 #回滚删除的时候判断是中间件集群，还是应用集群
                 resource_type="middleware"
@@ -506,7 +506,13 @@ class ResourceProviderTransitions2(object):
                         self.code = deployment_err_code
             elif self.set_flag == "increase" or self.set_flag == "reduce":
                 #应用集群扩缩容
-                pass
+                update_replicas_deployment=K8sDeploymentApi.update_deployment_replicas_object(deployment_name)
+                update_deployment_err_msg, update_deployment_err_code = K8sDeploymentApi.update_deployment_scale(
+                    extensions_v1, update_replicas_deployment, deployment_name, NAMESPACE, replicas)
+                if update_deployment_err_msg:
+                    is_rollback = True
+                    self.error_msg = update_deployment_err_msg
+                    self.code = update_deployment_err_code
             for i in range(0, replicas, 1):
                 os_inst_id=deployment_name+'@@'+str(i)
                 uopinst_info = {
