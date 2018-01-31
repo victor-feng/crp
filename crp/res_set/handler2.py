@@ -513,14 +513,14 @@ class ResourceProviderTransitions2(object):
                     is_rollback = True
                     self.error_msg = update_deployment_err_msg
                     self.code = update_deployment_err_code
+            uopinst_info = {
+                'uop_inst_id': cluster_id,
+                'os_inst_id': deployment_name,
+                'cluster_type': cluster_type
+            }
+            uop_os_inst_id_list.append(uopinst_info)
             for i in range(0, replicas, 1):
                 os_inst_id=deployment_name+'@@'+str(i)
-                uopinst_info = {
-                    'uop_inst_id': cluster_id,
-                    'os_inst_id': os_inst_id,
-                    'cluster_type':cluster_type
-                }
-                uop_os_inst_id_list.append(uopinst_info)
                 propertys['instance'].append(
                     {
                         'instance_type': cluster_type,
@@ -681,6 +681,7 @@ class ResourceProviderTransitions2(object):
                 if deployment_status == "available":
                     deployment_info_list=K8sDeploymentApi.get_deployment_pod_info(core_v1, NAMESPACE, deployment_name)
                     for mapper in result_mappers_list:
+                        add_ip_list=[]
                         value = mapper.values()[0]
                         quantity = value.get('quantity', 0)
                         instances = value.get('instance',[])
@@ -689,11 +690,11 @@ class ResourceProviderTransitions2(object):
                                 deployment_name = instance.get(
                                 'os_inst_id').split('@@')[0]
                                 ip = instance.get('ip')
-                                if deployment_name == deployment_info['deployment_name'] and ip != deployment_info["pod_ip"]:
+                                if deployment_name == deployment_info['deployment_name'] and ip not in add_ip_list:
                                     instance['ip'] = deployment_info["pod_ip"]
                                     instance['physical_server'] = deployment_info["node_name"]
                                     instance['os_inst_id'] = deployment_info["pod_name"]
-                                    break
+                                    add_ip_list.append(ip)
                     res_instance_push_callback(self.task_id, self.req_dict, quantity, instance, {},
                                                           self.set_flag)
                     result_inst_id_list.append(uop_os_inst_id)
