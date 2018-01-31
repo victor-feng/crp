@@ -3,7 +3,7 @@ import threading
 import subprocess
 import os
 import time
-
+import json
 from crp.log import Log
 
 
@@ -76,3 +76,10 @@ def exec_cmd_one_times(ip,cmd):
     except Exception as e:
         err_msg=str(e.args)
         Log.logger.error("CRP exec_db_service error ,error msg is:%s" %err_msg)
+
+def get_k8s_err_code(err):
+    try:
+        code = json.loads(err.body).get("code")
+        return code
+    except Exception as e:
+        return 4444

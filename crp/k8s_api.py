@@ -4,8 +4,7 @@
 from kubernetes import client
 from kubernetes import  config
 from config import APP_ENV, configs
-from crp.log import Log
-import json
+from crp.utils.aio import get_k8s_err_code
 
 
 
@@ -180,10 +179,47 @@ class K8sDeploymentApi(object):
                 namespace=namespace)
         except Exception as e:
             err_msg = "create deployment error %s" % str(e)
-            code = json.loads(e.body).get("code")
+            code = get_k8s_err_code(e)
         return err_msg,code
+
     @classmethod
-    def update_deployment(cls,api_instance, deployment, deployment_name, new_image_url, namespace):
+    def update_deployment_image_object(cls,deployment_name,filebeat_name):
+        """
+        deployment image 更新镜像时创建模板
+        :param deployment_name:
+        :return:
+        """
+        filebeat_container = client.V1Container(
+            name=filebeat_name,
+        )
+        app_container = client.V1Container(
+            name="app",
+            image="",
+        )
+        template = client.V1PodTemplateSpec(
+            spec=client.V1PodSpec(
+                containers=[
+                    filebeat_container,
+                    app_container,
+                ],
+            ),
+        )
+        spec = client.ExtensionsV1beta1DeploymentSpec(
+            template=template,
+        )
+
+        # Instantiate the deployment object
+        update_image_deployment = client.ExtensionsV1beta1Deployment(
+            api_version="extensions/v1beta1",
+            kind="Deployment",
+            metadata=client.V1ObjectMeta(name=deployment_name),
+            spec=spec,
+        )
+
+        return update_image_deployment
+
+    @classmethod
+    def update_deployment(cls,api_instance, update_image_deployment, deployment_name, new_image_url, namespace):
         """
         更新deployment
         :param api_instance:
@@ -196,15 +232,15 @@ class K8sDeploymentApi(object):
         err_msg = None
         code=200
         try:
-            deployment.spec.template.spec.containers[1].image.image = new_image_url
+            update_image_deployment.spec.template.spec.containers[1].image.image = new_image_url
             # Update the deployment
             api_response = api_instance.patch_namespaced_deployment(
                 name=deployment_name,
                 namespace=namespace,
-                body=deployment)
+                body=update_image_deployment)
         except Exception as e:
-            err_msg = "update deployment error %s" % str(e)
-            code = json.loads(e.body).get("code")
+            err_msg = "update deployment image error %s" % str(e)
+            code = get_k8s_err_code(e)
         return err_msg,code
 
     @classmethod
@@ -227,11 +263,33 @@ class K8sDeploymentApi(object):
                     grace_period_seconds=5))
         except Exception as e:
             err_msg = "delete deployment error %s" %str(e)
-            code = json.loads(e.body).get("code")
+            code = get_k8s_err_code(e)
         return err_msg,code
 
     @classmethod
-    def update_deployment_scale(cls,api_instance, deployment, deployment_name, namespace, new_replicas):
+    def update_deployment_replicas_object(cls,deployment_name):
+        """
+        deployment 扩缩容时创建的模板
+        :param deployment_name:
+        :return:
+        """
+        spec = client.ExtensionsV1beta1DeploymentSpec(
+            replicas=3,
+            template=client.V1PodTemplateSpec(),
+        )
+
+        # Instantiate the deployment object
+        update_replicas_deployment = client.ExtensionsV1beta1Deployment(
+            api_version="extensions/v1beta1",
+            kind="Deployment",
+            metadata=client.V1ObjectMeta(name=deployment_name),
+            spec=spec,
+        )
+
+        return update_replicas_deployment
+
+    @classmethod
+    def update_deployment_scale(cls,api_instance, update_replicas_deployment, deployment_name, namespace, new_replicas):
         """
         deployment扩缩容
         :param api_instance:ExtensionsV1beta1Api()
@@ -240,12 +298,18 @@ class K8sDeploymentApi(object):
         :param namespace:
         :return:
         """
-        deployment.spec.replicas = new_replicas
-        api_response = api_instance.patch_namespaced_deployment_scale(
-            name=deployment_name,
-            namespace=namespace,
-            body=deployment)
-        return  str(api_response.status)
+        err_msg = None
+        code = 200
+        try:
+            update_replicas_deployment.spec.replicas = new_replicas
+            api_response = api_instance.patch_namespaced_deployment_scale(
+                name=deployment_name,
+                namespace=namespace,
+                body=update_replicas_deployment)
+        except Exception as e:
+            err_msg = "update deployment scale error %s" % str(e)
+            code = get_k8s_err_code(e)
+        return err_msg, code
 
     @classmethod
     def get_deployment_status(cls,api_instance, namespace, deployment_name):
@@ -357,7 +421,7 @@ class K8sServiceApi(object):
                 namespace=namespace)
         except Exception as e:
             err_msg = "create service error %s" % str(e)
-            code = json.loads(e.body).get("code")
+            code = get_k8s_err_code(e)
         return err_msg,code
 
     @classmethod
@@ -378,7 +442,7 @@ class K8sServiceApi(object):
             )
         except Exception as e:
             err_msg = "delete service error %s" % str(e)
-            code = json.loads(e.body).get("code")
+            code = get_k8s_err_code(e)
         return err_msg
     @classmethod
     def get_service(cls,api_instance,service_name,namespace):
@@ -389,13 +453,15 @@ class K8sServiceApi(object):
         :param namespace:
         :return:
         """
+        code = 200
+        msg = None
         try:
             api_response = api_instance.read_namespaced_service(service_name, namespace)
-            return  api_response,200
+            msg=api_response
         except Exception as e:
-            err_mgs = "get service error %s" % str(e)
-            code = json.loads(e.body).get("code")
-            return err_mgs,code
+            msg = "get service error %s" % str(e)
+            code = get_k8s_err_code(e)
+        return msg,code
 
 
 class K8sIngressApi(object):
@@ -457,7 +523,7 @@ class K8sIngressApi(object):
                 namespace=namespace)
         except Exception as e:
             err_msg = "create ingress error %s" % str(e)
-            code = json.loads(e.body).get("code")
+            code = get_k8s_err_code(e)
         return err_msg,code
 
     @classmethod
@@ -482,17 +548,20 @@ class K8sIngressApi(object):
             )
         except Exception as e:
             err_msg = "delete ingress error %s" % str(e)
-            code = json.loads(e.body).get("code")
+            code = get_k8s_err_code(e)
         return err_msg,code
+
     @classmethod
     def get_ingress(cls,api_instance, ingress_name, namespace):
+        msg = None
+        code = 200
         try:
             api_response = api_instance.read_namespaced_ingress(ingress_name, namespace)
-            return api_response,200
+            msg = api_response
         except Exception as e:
-            err_msg= "get ingress error %s" % str(e)
-            code=json.loads(e.body).get("code")
-            return  err_msg,code
+            msg= "get ingress error %s" % str(e)
+            code=get_k8s_err_code(e)
+        return  msg,code
 
 
 
