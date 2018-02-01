@@ -681,6 +681,8 @@ class ResourceProviderTransitions2(object):
                 if deployment_status == "available":
                     deployment_info_list=K8sDeploymentApi.get_deployment_pod_info(core_v1, NAMESPACE, deployment_name)
                     Log.logger.info("---------deployment_info_list------------%s", deployment_info_list)
+                    time.sleep(10)
+                    Log.logger.info("---------deployment_info_list------------%s", deployment_info_list)
                     for i in range(len(deployment_info_list)):
                         deployment_info_list[i]["deployment_name"] = deployment_info_list[i][
                                                                          "deployment_name"] + "@@" + str(i)
@@ -692,9 +694,9 @@ class ResourceProviderTransitions2(object):
                         for instance in instances:
                             for deployment_info in deployment_info_list:
                                 if instance.get('os_inst_id') == deployment_info['deployment_name']:
-                                    instance['ip'] = deployment_info["pod_ip"]
-                                    instance['physical_server'] = deployment_info["node_name"]
-                                    instance['os_inst_id'] = deployment_info["pod_name"]
+                                    instance['ip'] = deployment_info.get("pod_ip","127.0.0.1")
+                                    instance['physical_server'] = deployment_info.get("node_name","")
+                                    instance['os_inst_id'] = deployment_info("pod_name","")
                     result_inst_id_list.append(uop_os_inst_id)
             else:
                 #openstack 虚机
