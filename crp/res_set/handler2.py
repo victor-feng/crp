@@ -689,6 +689,8 @@ class ResourceProviderTransitions2(object):
                                 deployment_name = instance.get(
                                 'os_inst_id').split('@@')[0]
                                 ip = instance.get('ip')
+                                Log.logger.info("------------ip--------------%s", ip)
+                                Log.logger.info("------------add_ip_list--------------%s", add_ip_list)
                                 if deployment_name == deployment_info['deployment_name'] and ip not in add_ip_list:
                                     instance['ip'] = deployment_info["pod_ip"]
                                     instance['physical_server'] = deployment_info["node_name"]
