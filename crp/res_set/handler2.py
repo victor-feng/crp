@@ -516,7 +516,8 @@ class ResourceProviderTransitions2(object):
             uopinst_info = {
                 'uop_inst_id': cluster_id,
                 'os_inst_id': deployment_name,
-                'cluster_type': cluster_type
+                'cluster_type': cluster_type,
+                'replicas':replicas
             }
             uop_os_inst_id_list.append(uopinst_info)
             for i in range(0, replicas, 1):
@@ -669,6 +670,7 @@ class ResourceProviderTransitions2(object):
             cluster_type = uop_os_inst_id.get('cluster_type')
             if cluster_type == "app_cluster":
                 #k8s 应用
+                replicas=uop_os_inst_id.get('replicas',0)
                 deployment_name=self.req_dict["resource_name"]
                 deployment_status=K8sDeploymentApi.get_deployment_status(extensions_v1, NAMESPACE, deployment_name)
                 Log.logger.debug(
@@ -679,19 +681,17 @@ class ResourceProviderTransitions2(object):
                     " Status is " +
                     deployment_status)
                 if deployment_status == "available":
-                    deployment_info_list=K8sDeploymentApi.get_deployment_pod_info(core_v1, NAMESPACE, deployment_name)
-                    Log.logger.info("---------deployment_info_list------------%s", deployment_info_list)
-                    time.sleep(10)
-                    deployment_info_list = K8sDeploymentApi.get_deployment_pod_info(core_v1, NAMESPACE, deployment_name)
-                    Log.logger.info("---------deployment_info_list------------%s", deployment_info_list)
+                    for i in range(10):
+                        #获取deployment 的pod 信息10次
+                        time.sleep(1)
+                        deployment_info_list=K8sDeploymentApi.get_deployment_pod_info(core_v1, NAMESPACE, deployment_name)
+                        if len(deployment_info_list) == replicas:break
                     for i in range(len(deployment_info_list)):
                         deployment_info_list[i]["deployment_name"] = deployment_info_list[i][
                                                                          "deployment_name"] + "@@" + str(i)
-                    Log.logger.info("---------deployment_info_list------------%s",deployment_info_list)
                     for mapper in result_mappers_list:
                         value = mapper.values()[0]
                         instances = value.get('instance',[])
-                        Log.logger.info("---------instances------------%s", instances)
                         for instance in instances:
                             for deployment_info in deployment_info_list:
                                 if instance.get('os_inst_id') == deployment_info['deployment_name']:
