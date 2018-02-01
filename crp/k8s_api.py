@@ -5,6 +5,7 @@ from kubernetes import client
 from kubernetes import  config
 from config import APP_ENV, configs
 from crp.utils.aio import get_k8s_err_code
+import datetime
 
 
 
@@ -232,7 +233,7 @@ class K8sDeploymentApi(object):
         err_msg = None
         code=200
         try:
-            update_image_deployment.spec.template.spec.containers[1].image.image = new_image_url
+            update_image_deployment.spec.template.spec.containers[1].image = new_image_url
             # Update the deployment
             api_response = api_instance.patch_namespaced_deployment(
                 name=deployment_name,
@@ -364,6 +365,46 @@ class K8sDeploymentApi(object):
         """
         api_response = api_instance.read_namespaced_deployment(deployment_name, namespace)
         return api_response
+
+    # 重启deployment下的全部pod
+    @classmethod
+    def restart_deployment_pod_object(cls,deployment_name):
+        template = client.V1PodTemplateSpec(
+            metadata=client.V1ObjectMeta(
+                labels={}
+            ),
+        )
+        spec = client.ExtensionsV1beta1DeploymentSpec(
+            template=template,
+        )
+
+        # Instantiate the deployment object
+        restart_deployment = client.ExtensionsV1beta1Deployment(
+            api_version="extensions/v1beta1",
+            kind="Deployment",
+            metadata=client.V1ObjectMeta(name=deployment_name),
+            spec=spec,
+        )
+
+        return restart_deployment
+    @classmethod
+    def restart_deployment_pod(cls,api_instance, restart_deployment,deployment_name,namespace):
+        # restart pod label
+        restart_deployment.spec.template.metadata.labels["restartLatestTime"] = \
+            datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        # reatart  the deployment
+        err_msg = None
+        code = 200
+        try:
+            api_response = api_instance.patch_namespaced_deployment(
+                name=deployment_name,
+                namespace=namespace,
+                body=restart_deployment)
+        except Exception as e:
+            err_msg = "restart deployment error %s" % str(e)
+            code = get_k8s_err_code(e)
+        return err_msg, code
+
 
 class K8sServiceApi(object):
 
