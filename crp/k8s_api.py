@@ -405,6 +405,31 @@ class K8sDeploymentApi(object):
             code = get_k8s_err_code(e)
         return err_msg, code
 
+    @classmethod
+    def get_namespace_deployment_info(cls,api_instance,namespace):
+        deployment_info=[]
+        deploy_ret = api_instance.list_namespaced_deployment(namespace, watch=False)
+        for i in deploy_ret.items:
+            deployment_dict={}
+            deployment_dict["namespace"] = i.metadata.namespace
+            deployment_dict["deployment_name"] = i.metadata.name
+            deployment_dict["replicas"] = i.status.replicas
+            deployment_dict["available_replicas"] = i.status.available_replicas
+            deployment_info.append(deployment_dict)
+        return deployment_info
+
+    @classmethod
+    def get_deployment_info(cls, api_instance, namespace,deployment_name):
+        deployment_info = []
+        deployment_dict = {}
+        deploy_ret = api_instance.read_namespaced_deployment(namespace,deployment_name,watch=False)
+        deployment_dict["namespace"] = deploy_ret.metadata.namespace
+        deployment_dict["deployment_name"] = deploy_ret.metadata.name
+        deployment_dict["replicas"] = deploy_ret.status.replicas
+        deployment_dict["available_replicas"] = deploy_ret.status.available_replicas
+        deployment_info.append(deployment_dict)
+        return deployment_info
+
 
 class K8sServiceApi(object):
 

@@ -83,3 +83,13 @@ def get_k8s_err_code(err):
         return code
     except Exception as e:
         return 4444
+
+def response_data(code, msg, data):
+    ret = {
+        'code': code,
+        'result': {
+            'msg': msg,
+            'data': data,
+        }
+    }
+    return re

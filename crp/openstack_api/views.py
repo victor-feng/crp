@@ -6,12 +6,15 @@ from crp.openstack_api import openstack_blueprint
 from crp.openstack_api.errors import az_errors
 from handler import OpenStack_Api,OpenStack2_Api
 from crp.log import Log
+from crp.k8s_api import K8sDeploymentApi,K8S
 from config import configs, APP_ENV
+from crp.utils.aio import response_data
 
 
 # 配置可用域
 AVAILABILITY_ZONE = configs[APP_ENV].AVAILABILITY_ZONE
 OS_DOCKER_LOGS = configs[APP_ENV].OS_DOCKER_LOGS
+NAMESPACE = configs[APP_ENV].NAMESPACE
 
 openstack_api = Api(openstack_blueprint, errors=az_errors)
 
@@ -198,9 +201,43 @@ class Dockerlogs(Resource):
             }
             return res, 200
 
+class K8sDeployment(Resource):
+
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument("deployment_name", type=str, location='args')
+        args = parser.parse_args()
+        deployment_name = args.deployment_name
+        extensions_v1 = K8S.extensions_v1
+        data={}
+        res_list=[]
+        try:
+            if deployment_name:
+                #如果传deployment_name,获取单个deployment状态
+                res_list=K8sDeploymentApi.get_deployment_info(extensions_v1,NAMESPACE,deployment_name)
+
+            else:
+                #获取namespace下所有deployment状态
+                res_list = K8sDeploymentApi.get_namespace_deployment_info(extensions_v1, NAMESPACE)
+            data["res_list"] = res_list
+            code = 200
+            msg = "Get deployment info success"
+        except Exception as e:
+            code=500
+            data = "Error"
+            msg= "Get deployment info error %s" % str(e)
+            Log.logger.error(msg)
+        ret = response_data(code, msg, data)
+        return ret, code
+
+
+
+
+
 
 openstack_api.add_resource(NovaVMAPIAll, '/nova/states')
 openstack_api.add_resource(NovaVMAPI, '/nova/state')
 openstack_api.add_resource(PortAPI, '/port/count')
 openstack_api.add_resource(NetworkAPI, '/network/list')
 openstack_api.add_resource(Dockerlogs, '/docker/logs/')
+openstack_api.add_resource(K8sDeployment, '/k8s/deployment')
