@@ -104,7 +104,7 @@ class ResourceSet(Resource):
             parser.add_argument('username', type=str, location='json')
             parser.add_argument('department', type=str, location='json')
             parser.add_argument('created_time', type=str, location='json')
-
+            parser.add_argument('project_id', type=str)
             parser.add_argument('resource_id', type=str, location='json')
             parser.add_argument('resource_name', type=str, location='json')
             parser.add_argument('env', type=str, location='json')
@@ -143,6 +143,7 @@ class ResourceSet(Resource):
             redis_network_id = args.redis_network_id
             mongodb_network_id = args.mongodb_network_id
             set_flag = args.set_flag
+            project_id = args.project_id
             cloud = args.cloud
             resource_type = args.resource_type
 
@@ -167,6 +168,7 @@ class ResourceSet(Resource):
             req_dict["redis_network_id"] = redis_network_id
             req_dict["mongodb_network_id"] = mongodb_network_id
             req_dict["set_flag"] = set_flag
+            req_dict["project_id"] = project_id
             req_dict["cloud"] = cloud
             req_dict["resource_type"] = resource_type
 
