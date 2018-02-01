@@ -1480,6 +1480,9 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list,error_ms
     data["status"] = status
     data["set_flag"] = req_dict["set_flag"]
     data["error_msg"] = error_msg
+    data["project_id"] = req_dict["project_id"]
+    data["resource_type"] = req_dict["resource_type"]
+    data["cloud"] = req_dict["cloud"]
 
     container = []
     db_info = {}
