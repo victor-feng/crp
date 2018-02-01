@@ -671,6 +671,7 @@ class ResourceProviderTransitions2(object):
             if cluster_type == "app_cluster":
                 #k8s 应用
                 replicas=uop_os_inst_id.get('replicas',0)
+                Log.logger.info("----------------replicas---------%s",replicas)
                 deployment_name=self.req_dict["resource_name"]
                 deployment_status=K8sDeploymentApi.get_deployment_status(extensions_v1, NAMESPACE, deployment_name)
                 Log.logger.debug(
@@ -686,6 +687,8 @@ class ResourceProviderTransitions2(object):
                         time.sleep(1)
                         deployment_info_list=K8sDeploymentApi.get_deployment_pod_info(core_v1, NAMESPACE, deployment_name)
                         if len(deployment_info_list) == replicas:break
+
+                    Log.logger.info("----------------deployment_info_list---------%s", deployment_info_list)
                     for i in range(len(deployment_info_list)):
                         deployment_info_list[i]["deployment_name"] = deployment_info_list[i][
                                                                          "deployment_name"] + "@@" + str(i)
