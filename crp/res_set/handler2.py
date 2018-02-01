@@ -681,16 +681,8 @@ class ResourceProviderTransitions2(object):
                     " Status is " +
                     deployment_status)
                 if deployment_status == "available":
-                    for i in range(10):
-                        #获取deployment 的pod 信息10次
-                        time.sleep(1)
-                        deployment_info_list=K8sDeploymentApi.get_deployment_pod_info(core_v1, NAMESPACE, deployment_name)
-                        if len(deployment_info_list) == replicas and deployment_info_list[-1].get(
-                            "pod_ip") is not None: break
+                    deployment_info_list=self.get_ready_deployment_info(core_v1,deployment_name,NAMESPACE,replicas)
                     Log.logger.info("----------------deployment_info_list---------%s", deployment_info_list)
-                    for i in range(len(deployment_info_list)):
-                        deployment_info_list[i]["deployment_name"] = deployment_info_list[i][
-                                                                         "deployment_name"] + "@@" + str(i)
                     for mapper in result_mappers_list:
                         value = mapper.values()[0]
                         instances = value.get('instance',[])
@@ -1170,6 +1162,20 @@ class ResourceProviderTransitions2(object):
         Log.logger.debug('Port id: ' + response.get('port').get('id') +
                          'Port ip: ' + ip)
         return id, ip
+    def get_ready_deployment_info(self,core_v1,deployment_name,namespace,replicas):
+        for i in range(10):
+            time.sleep(1)
+            deployment_info_list = K8sDeploymentApi.get_deployment_pod_info(core_v1, namespace, deployment_name)
+            if len(deployment_info_list) == replicas:
+                ip_list=[]
+                for deployment_info in deployment_info_list:
+                    ip = deployment_info.get("pod_ip")
+                    ip_list.append(ip)
+                if None not in ip_list:break
+        for i in range(len(deployment_info_list)):
+            deployment_info_list[i]["deployment_name"] = deployment_info_list[i][
+                                                                 "deployment_name"] + "@@" + str(i)
+        return deployment_info_list
 
 
 # Transit request_data from the JSON nest structure to the chain structure
