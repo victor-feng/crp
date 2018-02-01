@@ -680,6 +680,7 @@ class ResourceProviderTransitions2(object):
                     deployment_status)
                 if deployment_status == "available":
                     deployment_info_list=K8sDeploymentApi.get_deployment_pod_info(core_v1, NAMESPACE, deployment_name)
+                    Log.logger.info("---------deployment_info_list------------%s", deployment_info_list)
                     for i in range(len(deployment_info_list)):
                         deployment_info_list[i]["deployment_name"] = deployment_info_list[i][
                                                                          "deployment_name"] + "@@" + str(i)
@@ -690,8 +691,7 @@ class ResourceProviderTransitions2(object):
                         Log.logger.info("---------instances------------%s", instances)
                         for instance in instances:
                             for deployment_info in deployment_info_list:
-                                deployment_name = instance.get('os_inst_id')
-                                if deployment_name == deployment_info['deployment_name']:
+                                if instance.get('os_inst_id') == deployment_info['deployment_name']:
                                     instance['ip'] = deployment_info["pod_ip"]
                                     instance['physical_server'] = deployment_info["node_name"]
                                     instance['os_inst_id'] = deployment_info["pod_name"]
