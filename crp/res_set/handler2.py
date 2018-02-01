@@ -686,10 +686,9 @@ class ResourceProviderTransitions2(object):
                     for mapper in result_mappers_list:
                         value = mapper.values()[0]
                         instances = value.get('instance',[])
-                        for deployment_info in deployment_info_list:
-                            for instance in instances:
-                                deployment_name = instance.get(
-                                'os_inst_id')
+                        for instance in instances:
+                            for deployment_info in deployment_info_list:
+                                deployment_name = instance.get('os_inst_id')
                                 if deployment_name == deployment_info['deployment_name']:
                                     instance['ip'] = deployment_info["pod_ip"]
                                     instance['physical_server'] = deployment_info["node_name"]
