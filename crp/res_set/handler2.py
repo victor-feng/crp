@@ -683,7 +683,6 @@ class ResourceProviderTransitions2(object):
                     for mapper in result_mappers_list:
                         add_ip_list=[]
                         value = mapper.values()[0]
-                        quantity = value.get('quantity', 0)
                         instances = value.get('instance',[])
                         for deployment_info in deployment_info_list:
                             for instance in instances:
@@ -696,8 +695,6 @@ class ResourceProviderTransitions2(object):
                                     instance['os_inst_id'] = deployment_info["pod_name"]
                                     add_ip_list.append(ip)
                                     break
-                        res_instance_push_callback(self.task_id, self.req_dict, quantity, instance, {},
-                                                          self.set_flag)
                     result_inst_id_list.append(uop_os_inst_id)
             else:
                 #openstack 虚机
