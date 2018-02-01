@@ -695,6 +695,7 @@ class ResourceProviderTransitions2(object):
                                     instance['physical_server'] = deployment_info["node_name"]
                                     instance['os_inst_id'] = deployment_info["pod_name"]
                                     add_ip_list.append(ip)
+                                    break
                     res_instance_push_callback(self.task_id, self.req_dict, quantity, instance, {},
                                                           self.set_flag)
                     result_inst_id_list.append(uop_os_inst_id)
