@@ -303,15 +303,16 @@ class AppDeploy(Resource):
                 for i in docker:
                     image_url = i.get('url', '')
                     cluster_name = i.get("ins_name", "")
+                    Log.logger.info("------Image Url------------%s",image_url)
                     update_deployment_err_msg, update_deployment_err_code = K8sDeploymentApi.update_deployment_image(
                         extensions_v1, update_image_deployment, deployment_name, image_url, NAMESPACE)
                     end_flag = True
                     if update_deployment_err_msg is None:
                         _dep_callback(deploy_id, '127.0.0.1', "docker", "None", "None", True, cluster_name, end_flag, 'deploy',
-                                      unique_flag)
+                                      unique_flag,cloud)
                     else:
                         _dep_callback(deploy_id, '127.0.0.1', "docker", update_deployment_err_msg, "None", False, cluster_name, end_flag, 'deploy',
-                                      unique_flag)
+                                      unique_flag,cloud)
 
 
             else:
