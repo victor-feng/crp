@@ -211,6 +211,7 @@ class K8sDeployment(Resource):
         extensions_v1 = K8S.extensions_v1
         data={}
         res_list=[]
+        Log.logger.info("--------deployment_name-----------%s",deployment_name)
         try:
             if deployment_name:
                 #如果传deployment_name,获取单个deployment状态
