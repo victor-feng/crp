@@ -680,25 +680,20 @@ class ResourceProviderTransitions2(object):
                     deployment_status)
                 if deployment_status == "available":
                     deployment_info_list=K8sDeploymentApi.get_deployment_pod_info(core_v1, NAMESPACE, deployment_name)
-                    Log.logger.info("-----------deployment_info_list---------------%s", deployment_info_list)
+                    for i in range(len(deployment_info_list)):
+                        deployment_info_list[i]["deployment_name"] = deployment_info_list[i][
+                                                                         "deployment_name"] + "@@" + str(i)
                     for mapper in result_mappers_list:
-                        Log.logger.info("-----------result_mappers_list---------------%s", result_mappers_list)
-                        add_ip_list=[]
                         value = mapper.values()[0]
                         instances = value.get('instance',[])
                         for deployment_info in deployment_info_list:
                             for instance in instances:
                                 deployment_name = instance.get(
-                                'os_inst_id').split('@@')[0]
-                                ip = instance.get('ip')
-                                Log.logger.info("------------ip--------------%s", ip)
-                                Log.logger.info("------------add_ip_list--------------%s", add_ip_list)
-                                if deployment_name == deployment_info['deployment_name'] and ip not in add_ip_list:
+                                'os_inst_id')
+                                if deployment_name == deployment_info['deployment_name']:
                                     instance['ip'] = deployment_info["pod_ip"]
                                     instance['physical_server'] = deployment_info["node_name"]
                                     instance['os_inst_id'] = deployment_info["pod_name"]
-                                    add_ip_list.append(ip)
-                                    break
                     result_inst_id_list.append(uop_os_inst_id)
             else:
                 #openstack 虚机
