@@ -49,6 +49,25 @@ class OpenStack_Api(object):
             Log.logger.error("CRP OpenStack get hypervisors statistics error %s",err_msg)
         return vcpus, vcpus_used, memory_mb, memory_mb_used, local_gb, local_gb_used, running_vms
 
+    @classmethod
+    def get_availability_zones(cls):
+        azs = []
+        nova_cli = OpenStack.nova_client
+        try:
+            for az_item in nova_cli.availability_zones.list():
+                if az_item.zoneName != 'internal':
+                    Log.logger.debug("az_item.hosts: %s, az_item.zoneName: %s, az_item.zoneState: %s",
+                                  az_item.hosts, az_item.zoneName, az_item.zoneState)
+                    azs.append({
+                        "pool_name": az_item.zoneName,
+                        "hosts": az_item.hosts.keys()
+                    })
+            return azs 
+        except Exception as e:
+            err_msg=str(e)
+            Log.logger.error("CRP OpenStack get availability zones error %s",err_msg)
+            return None
+            
 
 class OpenStack2_Api(object):
 
@@ -88,3 +107,22 @@ class OpenStack2_Api(object):
             err_msg=str(e)
             Log.logger.error("CRP OpenStack2 get hypervisors statistics error %s",err_msg)
         return vcpus, vcpus_used, memory_mb, memory_mb_used, local_gb, local_gb_used, running_vms
+
+    @classmethod
+    def get_availability_zones(cls):
+        azs = []
+        nova_cli = OpenStack2.nova_client
+        try:
+            for az_item in nova_cli.availability_zones.list():
+                if az_item.zoneName != 'internal':
+                    Log.logger.debug("az_item.hosts: %s, az_item.zoneName: %s, az_item.zoneState: %s",
+                                  az_item.hosts, az_item.zoneName, az_item.zoneState)
+                    azs.append({
+                        "pool_name": az_item.zoneName,
+                        "hosts": az_item.hosts.keys()
+                    })
+            return azs 
+        except Exception as e:
+            err_msg=str(e)
+            Log.logger.error("CRP OpenStack get availability zones error %s",err_msg)
+            return None
