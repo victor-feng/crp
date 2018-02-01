@@ -422,7 +422,7 @@ class K8sDeploymentApi(object):
     def get_deployment_info(cls, api_instance, namespace,deployment_name):
         deployment_info = []
         deployment_dict = {}
-        deploy_ret = api_instance.read_namespaced_deployment(namespace,deployment_name,watch=False)
+        deploy_ret = api_instance.read_namespaced_deployment(namespace,deployment_name)
         deployment_dict["namespace"] = deploy_ret.metadata.namespace
         deployment_dict["deployment_name"] = deploy_ret.metadata.name
         deployment_dict["replicas"] = deploy_ret.status.replicas

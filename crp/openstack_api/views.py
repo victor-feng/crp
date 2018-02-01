@@ -215,7 +215,6 @@ class K8sDeployment(Resource):
             if deployment_name:
                 #如果传deployment_name,获取单个deployment状态
                 res_list=K8sDeploymentApi.get_deployment_info(extensions_v1,NAMESPACE,deployment_name)
-
             else:
                 #获取namespace下所有deployment状态
                 res_list = K8sDeploymentApi.get_namespace_deployment_info(extensions_v1, NAMESPACE)
