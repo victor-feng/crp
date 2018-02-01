@@ -682,7 +682,6 @@ class ResourceProviderTransitions2(object):
                     deployment_status)
                 if deployment_status == "available":
                     deployment_info_list=self.get_ready_deployment_info(core_v1,deployment_name,NAMESPACE,replicas)
-                    Log.logger.info("----------------deployment_info_list---------%s", deployment_info_list)
                     for mapper in result_mappers_list:
                         value = mapper.values()[0]
                         instances = value.get('instance',[])
