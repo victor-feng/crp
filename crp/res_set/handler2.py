@@ -683,9 +683,11 @@ class ResourceProviderTransitions2(object):
                     for i in range(len(deployment_info_list)):
                         deployment_info_list[i]["deployment_name"] = deployment_info_list[i][
                                                                          "deployment_name"] + "@@" + str(i)
+                    Log.logger.info("---------deployment_info_list------------%s",deployment_info_list)
                     for mapper in result_mappers_list:
                         value = mapper.values()[0]
                         instances = value.get('instance',[])
+                        Log.logger.info("---------instances------------%s", instances)
                         for instance in instances:
                             for deployment_info in deployment_info_list:
                                 deployment_name = instance.get('os_inst_id')
