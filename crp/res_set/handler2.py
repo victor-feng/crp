@@ -680,7 +680,9 @@ class ResourceProviderTransitions2(object):
                     deployment_status)
                 if deployment_status == "available":
                     deployment_info_list=K8sDeploymentApi.get_deployment_pod_info(core_v1, NAMESPACE, deployment_name)
+                    Log.logger.info("-----------deployment_info_list---------------%s", deployment_info_list)
                     for mapper in result_mappers_list:
+                        Log.logger.info("-----------result_mappers_list---------------%s", result_mappers_list)
                         add_ip_list=[]
                         value = mapper.values()[0]
                         instances = value.get('instance',[])
