@@ -448,7 +448,7 @@ class ResourceProviderTransitions2(object):
             deployment_name = self.req_dict["resource_name"]
             #创建应用集群
             if self.set_flag == "res":
-                service_name = deployment_name + "-" + "service"
+                service_name = deployment_name
                 service_port=port
                 ingress_name=deployment_name + "-" +"ingress"
                 app_requests = APP_REQUESTS.get(app_requests_flavor)

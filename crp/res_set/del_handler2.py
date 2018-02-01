@@ -91,7 +91,7 @@ def delete_instance(task_id, result):
     core_v1 = K8S.core_v1
     resource_type = result.get('resource_type')
     resource_name = result.get('resource_name')
-    service_name = resource_name + "-" + "service"
+    service_name = resource_name
     ingress_name = resource_name + "-" + "ingress"
     try:
         if resource_type == "app":
