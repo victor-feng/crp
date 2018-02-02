@@ -198,11 +198,17 @@ class TestingConfig(BaseConfig):
             'uuid': 'd67a2e33-cbb7-43f6-85da-8e3ca2873b2a',
             'name': 'mycat-50G-20170628',
             'port': '3316'
+        },
+        'kvm': {
+            'uuid': 'd67a2e33-cbb7-43f6-85da-8e3ca2873b2a',
+            'name': 'kvm-50G-20170628',
+            'port': '8081'
         }
     }
     KVM_FLAVOR = {
         '24': '905e3a5f-6b27-46ab-8cb2-2bb26ffbea58',  # tst-pc-2C4G50G
         'mysql': '905e3a5f-6b27-46ab-8cb2-2bb26ffbea58',  # mysql_2C4G80G
+        'kvm': '905e3a5f-6b27-46ab-8cb2-2bb26ffbea58',  # mysql_2C4G80G
         # '4': 'uop-4C8G80G',
         '48': '00d92209-b17e-45cb-991c-d79600e68969',  # xiaojian_sas_4C8G50G
         # "8": 'xiaojian_sas_4C8G50G',
