@@ -634,7 +634,7 @@ class K8sLogApi(object):
     def get_namespace_pod_log(cls,api_instance,pod_name,namespace,container):
         code=200
         try:
-            api_response = api_instance.read_namespaced_pod_log(pod_name, namespace,container=container,previous=True,limit_bytes = 1024*1024)
+            api_response = api_instance.read_namespaced_pod_log(pod_name, namespace,container=container,previous=False,limit_bytes = 1024*1024)
             msg=api_response
         except Exception as e:
             code=get_k8s_err_code(e)
