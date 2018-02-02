@@ -222,6 +222,7 @@ class ResourceDelete(Resource):
             resource_name = request_data.get('resource_name')
             resource_type = request_data.get('resource_type')
             del_os_ins_ip_list=request_data.get("os_ins_ip_list",[])
+            vid_list = request_data.get("vid_list", [])
             set_flag = request_data.get('set_flag')
             cloud = request_data.get('cloud')
             resources = deal_del_request_data(resources_id,del_os_ins_ip_list)
