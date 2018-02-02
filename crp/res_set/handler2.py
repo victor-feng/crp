@@ -661,6 +661,7 @@ class ResourceProviderTransitions2(object):
         nova_client = OpenStack.nova_client
         core_v1 = K8S.core_v1
         extensions_v1 = K8S.extensions_v1
+        Log.logger.info("---------------result_mappers_list----------------%s",result_mappers_list)
         for uop_os_inst_id in uop_os_inst_id_wait_query:
             cluster_type = uop_os_inst_id.get('cluster_type')
             if cluster_type == "app_cluster":
