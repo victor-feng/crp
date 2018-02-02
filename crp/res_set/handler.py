@@ -160,7 +160,7 @@ class ResourceProviderTransitions(object):
         elif self.phase == 'push':
             self.preload_property_mapper(self.push_mappers_list)
 
-        if len(self.property_mapper) != 0 and self.property_mapper.keys()[0] != "app" :
+        if len(self.property_mapper) != 0 and self.property_mapper.keys()[0] not in ["app","kvm"] :
             item_id = self.property_mapper.keys()[0]
             if self.phase == 'create':
                 func = getattr(self, item_id, None)
@@ -324,6 +324,7 @@ class ResourceProviderTransitions(object):
         cluster_id = propertys.get('cluster_id')
         domain = propertys.get('domain')
         port = propertys.get('port')
+        network_id=propertys.get('network_id')
         image_url = propertys.get('image_url')
         cpu = propertys.get('cpu')
         flavor = DOCKER_FLAVOR.get(str(cpu), 'uop-docker-2C4G50G')
@@ -356,7 +357,7 @@ class ResourceProviderTransitions(object):
                 for i in range(0, quantity, 1):
                     instance_name = '%s_%s_%s' % (cluster_name,docker_tag, i.__str__())
                     err_msg, osint_id = self._create_docker_by_url(
-                        instance_name, image_uuid, flavor, meta, self.docker_network_id,server_group)
+                        instance_name, image_uuid, flavor, meta,network_id,server_group)
                     if err_msg is None:
                         uopinst_info = {
                             'uop_inst_id': cluster_id,
@@ -396,6 +397,7 @@ class ResourceProviderTransitions(object):
         cluster_name = propertys.get('cluster_name')
         cluster_id = propertys.get('cluster_id')
         cluster_type = propertys.get('cluster_type')
+        network_id = propertys.get('network_id')
         version = propertys.get('version')
         cpu = propertys.get('cpu')
         mem = propertys.get('mem')
@@ -406,13 +408,14 @@ class ResourceProviderTransitions(object):
         #volume_size 默认为0
         if cluster_type == "mysql" and str(cpu) == "2": # dev\test 环境
             flavor = KVM_FLAVOR.get("mysql", 'uop-2C4G50G')
+        """    
         if cluster_type == "mysql" or cluster_type == "mycat":
             network_id=self.mysql_network_id
         elif cluster_type == "redis":
             network_id=self.redis_network_id
         elif cluster_type == "mongodb":
             network_id=self.mongodb_network_id
-
+        """
         if quantity >= 1:
             cluster_type_image_port_mapper = cluster_type_image_port_mappers.get(
                 cluster_type)

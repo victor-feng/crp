@@ -178,7 +178,7 @@ class ResourceProviderTransitions2(object):
         elif self.phase == 'push':
             self.preload_property_mapper(self.push_mappers_list)
 
-        if len(self.property_mapper) != 0 and self.property_mapper.keys()[0] != "app" and self.property_mapper.keys()[0] != "kvm":
+        if len(self.property_mapper) != 0 and self.property_mapper.keys()[0] not in ["app","kvm"]:
             item_id = self.property_mapper.keys()[0]
             if self.phase == 'create':
                 func = getattr(self, item_id, None)
