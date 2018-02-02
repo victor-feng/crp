@@ -137,7 +137,10 @@ class TestingConfig(BaseConfig):
             'domain_ip': 'domain_ip',
             'port': 'port',
             'meta': 'meta',
-            'quantity': 'quantity'
+            'quantity': 'quantity',
+            'network_id':'network_id',
+            'networkName':'networkName',
+            'tenantName':'tenantName',
         },
         'resource_cluster': {
             'cluster_name': 'instance_name',
@@ -149,6 +152,7 @@ class TestingConfig(BaseConfig):
             'disk': 'disk',
             'quantity': 'quantity',
             'volume_size': 'volume_size',
+            'network_id': 'network_id',
         }
     }
     SCRIPTPATH = r'crp/res_set/playbook-0830/'

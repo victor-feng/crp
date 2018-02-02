@@ -419,6 +419,9 @@ class ResourceProviderTransitions2(object):
         cluster_id = propertys.get('cluster_id')
         domain = propertys.get('domain')
         port = propertys.get('port')
+        network_id = propertys.get('network_id')
+        networkName = propertys.get('networkName')
+        tenantName = propertys.get('tenantName')
         if port:
             port = int(port)
         image_url = propertys.get('image_url')
@@ -461,8 +464,8 @@ class ResourceProviderTransitions2(object):
                                                                        port,
                                                                        app_requests,
                                                                        app_limits,
-                                                                       NETWORKNAME,
-                                                                       TENANTNAME,
+                                                                       networkName,
+                                                                       tenantName,
                                                                        HOSTNAMES,
                                                                        IP,
                                                                        replicas
@@ -545,9 +548,11 @@ class ResourceProviderTransitions2(object):
         disk = propertys.get('disk')
         quantity = propertys.get('quantity')
         volume_size=propertys.get('volume_size',0)
+        network_id = propertys.get('network_id')
         #volume_size 默认为0
         if cluster_type == "mysql" and str(cpu) == "2": # dev\test 环境
             flavor = KVM_FLAVOR.get("mysql", 'uop-2C4G50G')
+        """   
         if cluster_type == "mysql" or cluster_type == "mycat":
             network_id=self.mysql_network_id
         elif cluster_type == "redis":
@@ -556,6 +561,7 @@ class ResourceProviderTransitions2(object):
             network_id=self.mongodb_network_id
         elif cluster_type == "kvm":
             network_id=self.docker_network_id
+        """
 
         if quantity >= 1:
             cluster_type_image_port_mapper = cluster_type_image_port_mappers2.get(
