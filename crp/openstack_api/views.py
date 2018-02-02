@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import logging
+import requests
 import os
 from flask_restful import reqparse, Api, Resource
 from crp.openstack_api import openstack_blueprint
@@ -15,6 +15,7 @@ from crp.utils.aio import response_data
 AVAILABILITY_ZONE = configs[APP_ENV].AVAILABILITY_ZONE
 OS_DOCKER_LOGS = configs[APP_ENV].OS_DOCKER_LOGS
 NAMESPACE = configs[APP_ENV].NAMESPACE
+K8S_NETWORK_URL=configs[APP_ENV].K8S_NETWORK_URL
 
 openstack_api = Api(openstack_blueprint, errors=az_errors)
 
@@ -239,6 +240,32 @@ class K8sDeployment(Resource):
         return ret, code
 
 
+class K8sNetwork(Resource):
+
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument("env", type=str)
+        args = parser.parse_args()
+        env = args.env
+        data = {}
+        res_list = []
+        try:
+            url=K8S_NETWORK_URL[env]
+            res=requests.get(url)
+            res_list=res.json()
+            data["res_list"] = res_list
+            code = 200
+            msg = "Get k8s network info success"
+        except Exception as e:
+            code = 500
+            data = "Error"
+            msg = "Get k8s network info error %s" % str(e)
+            Log.logger.error(msg)
+        ret = response_data(code, msg, data)
+        return ret, code
+
+
+
 
 
 
@@ -249,3 +276,4 @@ openstack_api.add_resource(PortAPI, '/port/count')
 openstack_api.add_resource(NetworkAPI, '/network/list')
 openstack_api.add_resource(Dockerlogs, '/docker/logs/')
 openstack_api.add_resource(K8sDeployment, '/k8s/deployment')
+openstack_api.add_resource(K8sNetwork, '/k8s/network')
