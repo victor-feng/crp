@@ -1493,6 +1493,7 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list,error_ms
     mysql = {}
     redis = {}
     mongodb = {}
+    kvm={}
     
     if status == RES_STATUS_OK:
         for result_mapper in result_mappers_list:
