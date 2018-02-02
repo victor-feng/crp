@@ -119,6 +119,9 @@ class ResourceSet(Resource):
             parser.add_argument('set_flag', type=str, location='json')
             parser.add_argument('cloud', type=str, location='json')
             parser.add_argument('resource_type', type=str, location='json')
+            parser.add_argument('syswin_project', type=str, location='json')
+            parser.add_argument('project', type=str, location='json')
+            parser.add_argument('department_id', type=str, location='json')
             args = parser.parse_args()
 
             req_dict = {}
@@ -146,6 +149,10 @@ class ResourceSet(Resource):
             project_id = args.project_id
             cloud = args.cloud
             resource_type = args.resource_type
+            syswin_project = args.syswin_project
+            project = args.project
+            department_id=args.department_id
+
 
             Log.logger.debug(resource_list)
             Log.logger.debug(compute_list)
@@ -171,6 +178,9 @@ class ResourceSet(Resource):
             req_dict["project_id"] = project_id
             req_dict["cloud"] = cloud
             req_dict["resource_type"] = resource_type
+            req_dict["syswin_project"] = syswin_project
+            req_dict["project"] = project
+            req_dict["department_id"] = department_id
 
             # init default data
             Log.logger.debug('req_dict\'s object id is :')
@@ -225,6 +235,7 @@ class ResourceDelete(Resource):
             vid_list = request_data.get("vid_list", [])
             set_flag = request_data.get('set_flag')
             cloud = request_data.get('cloud')
+            syswin_project = request_data.get('syswin_project')
             resources = deal_del_request_data(resources_id,del_os_ins_ip_list)
             resources = resources.get('resources')
             unique_flag=str(uuid.uuid1())
@@ -240,6 +251,7 @@ class ResourceDelete(Resource):
                          "set_flag": set_flag,
                          "resource_name": resource_name,
                          "resource_type": resource_type,
+                         'syswin_project':syswin_project,
                          },
                         delete_instance_and_query2, {})
                 else:
@@ -250,6 +262,7 @@ class ResourceDelete(Resource):
                              "unique_flag":unique_flag,
                              "del_os_ins_ip_list":del_os_ins_ip_list,
                              "set_flag":set_flag,
+                             'syswin_project': syswin_project,
                              },
                              delete_instance_and_query2, resource)
                 #删除虚IP
@@ -262,7 +275,9 @@ class ResourceDelete(Resource):
                         {'current_status': QUERY_VOLUME,
                          "unique_flag":unique_flag,
                          "del_os_ins_ip_list":del_os_ins_ip_list,
-                         "set_flag":set_flag},
+                         "set_flag":set_flag,
+                         'syswin_project': syswin_project,
+                         },
                          delete_instance_and_query, resource)
                 #删除虚IP
                 for port_id in vid_list:

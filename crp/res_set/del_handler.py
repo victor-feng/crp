@@ -17,7 +17,7 @@ DELETE_VM=4
 
 
 UOP_URL = configs[APP_ENV].UOP_URL
-
+RES_DELETE_CALL_BACK = configs[APP_ENV].RES_DELETE_CALL_BACK
 
 class CrpException(Exception):
     pass
@@ -250,9 +250,11 @@ def delete_request_callback(task_id, result):
             'unique_flag': result.get('unique_flag',''),
             'del_os_ins_ip_list': result.get('del_os_ins_ip_list', []),
             "set_flag":result.get('set_flag',''),
+            "syswin_project": result.get('syswin_project', '')
         }
     headers = {'Content-Type': 'application/json'}
-    DELETE_CALL_BACK=configs[APP_ENV].UOP_URL + 'api/res_callback/delete'
+    syswin_project=result.get('syswin_project', '')
+    DELETE_CALL_BACK=RES_DELETE_CALL_BACK[syswin_project]
     try:
         data_str=json.dumps(data)
         res=requests.post(DELETE_CALL_BACK,data=data_str,headers=headers)

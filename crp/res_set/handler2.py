@@ -1487,6 +1487,10 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list,error_ms
     data["project_id"] = req_dict["project_id"]
     data["resource_type"] = req_dict["resource_type"]
     data["cloud"] = req_dict["cloud"]
+    data["project"] = req_dict["project"]
+    data["syswin_project"] = req_dict["syswin_project"]
+    data["department_id"] = req_dict["department_id"]
+
 
     container = []
     db_info = {}
@@ -1529,7 +1533,9 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list,error_ms
         " UOP res_callback Request Body is: " +
         data_str)
     headers = {'Content-Type': 'application/json'}
-    res = requests.post(RES_CALLBACK, data=data_str,headers=headers)
+    syswin_project = req_dict["syswin_project"]
+    callback_url=RES_CALLBACK[syswin_project]
+    res = requests.post(callback_url, data=data_str,headers=headers)
     Log.logger.debug(res.status_code)
     Log.logger.debug(res.content)
     nova_client = OpenStack.nova_client
