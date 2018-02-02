@@ -55,7 +55,6 @@ class K8sDeploymentApi(object):
                                  app_container_port,
                                  app_requests,
                                  app_limits,
-                                 labels_name,
                                  networkName,
                                  tenantName,
                                  hostnames,
@@ -127,7 +126,7 @@ class K8sDeploymentApi(object):
         template = client.V1PodTemplateSpec(
             metadata=client.V1ObjectMeta(
                 labels={
-                    "app": labels_name,
+                    "app": deployment_name,
                     "io.contiv.tenant":tenantName ,
                     "io.contiv.network": networkName,
                 }
@@ -632,26 +631,30 @@ class K8sIngressApi(object):
 class K8sLogApi(object):
 
     @classmethod
-    def get_namespace_pod_log(cls,api_instance,pod_name,namespace):
+    def get_namespace_pod_log(cls,api_instance,pod_name,namespace,container):
         code=200
         try:
-            api_response = api_instance.read_namespaced_pod_log(pod_name, namespace,previous=True,limit_bytes = 1024*1024)
+            api_response = api_instance.read_namespaced_pod_log(pod_name, namespace,container=container,previous=True,limit_bytes = 1024*1024)
             msg=api_response
         except Exception as e:
             code=get_k8s_err_code(e)
-            msg = "get pod log error %s" % str(2)
+            msg = "get pod log error %s" % str(e)
         return msg,code
 
     @classmethod
-    def get_deployment_log(cls, api_instance_core_v1,api_instance_exten_v1, deployment_name, namespace):
+    def get_deployment_log(cls, api_instance, deployment_name, namespace):
         code = 200
         try:
-            deployment_info_list=K8sDeploymentApi.get_deployment_pod_info(api_instance_exten_v1,namespace,deployment_name)
-            pod_name = deployment_info_list[0]["pod_name"]
-            msg = cls.get_namespace_pod_log(api_instance_core_v1,pod_name,namespace)
+            deployment_info_list=K8sDeploymentApi.get_deployment_pod_info(api_instance,namespace,deployment_name)
+            if deployment_info_list:
+                pod_name = deployment_info_list[0]["pod_name"]
+                container="app"
+                msg = cls.get_namespace_pod_log(api_instance,pod_name,namespace,container)
+            else:
+                msg=""
         except Exception as e:
             code = get_k8s_err_code(e)
-            msg = "get pod log error %s" % str(2)
+            msg = "get deployment log error %s" % str(e)
         return msg, code
 
 

@@ -461,7 +461,6 @@ class ResourceProviderTransitions2(object):
                                                                        port,
                                                                        app_requests,
                                                                        app_limits,
-                                                                       cluster_name,
                                                                        NETWORKNAME,
                                                                        TENANTNAME,
                                                                        HOSTNAMES,
