@@ -23,7 +23,7 @@ class OpenStack_Api(object):
         return networks,subnets
 
     @classmethod
-    def get_posts(cls,network_id):
+    def get_ports(cls,network_id):
         ports=[]
         try:
             net_cli = OpenStack.neutron_client
@@ -85,7 +85,7 @@ class OpenStack2_Api(object):
         return networks,subnets
 
     @classmethod
-    def get_posts(cls,network_id):
+    def get_ports(cls,network_id):
         ports=[]
         try:
             net_cli = OpenStack2.neutron_client
