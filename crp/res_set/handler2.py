@@ -554,6 +554,8 @@ class ResourceProviderTransitions2(object):
             network_id=self.redis_network_id
         elif cluster_type == "mongodb":
             network_id=self.mongodb_network_id
+        elif cluster_type == "kvm":
+            network_id=self.docker_network_id
 
         if quantity >= 1:
             cluster_type_image_port_mapper = cluster_type_image_port_mappers2.get(
@@ -1498,6 +1500,8 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list,error_ms
                 redis = result_mapper.get('redis')
             elif result_mapper.keys()[0] == 'mongodb':
                 mongodb = result_mapper.get('mongodb')
+            elif result_mapper.keys()[0] == 'kvm':
+                kvm=result_mapper.get('kvm')
 
     data["container"] = container
 
@@ -1507,6 +1511,8 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list,error_ms
         db_info["redis"] = redis
     if mongodb is not None and mongodb.get('quantity') > 0:
         db_info["mongodb"] = mongodb
+    if kvm is not None and kvm.get('quantity') > 0:
+        db_info["kvm"] = kvm
 
     data["db_info"] = db_info
     data_str = json.dumps(data)
