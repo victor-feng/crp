@@ -40,7 +40,7 @@ class VMOperation(Resource):
             }
             return ret, code
         try:
-            if args.cloud == 2:
+            if args.cloud == "2":
                 extensions_v1 = K8S.extensions_v1
                 #k8s目前只支持应用重启功能
                 if args.operation == "restart":
