@@ -6,7 +6,12 @@ from crp.vm_operation.errors import vm_operation_errors
 from crp.log import Log
 from crp.openstack import OpenStack
 from crp.openstack2 import OpenStack as OpenStack2
+from crp.k8s_api import K8sDeploymentApi,K8S
+from config import configs, APP_ENV
+
+
 vm_operation_api = Api(vm_operation_blueprint, errors=vm_operation_errors)
+NAMESPACE = configs[APP_ENV].NAMESPACE
 
 OpenStack_info={
     "1":OpenStack,
@@ -22,6 +27,7 @@ class VMOperation(Resource):
         parser.add_argument('operation', type=str)
         parser.add_argument('reboot_type', type=str)
         parser.add_argument('cloud', type=str)
+        parser.add_argument('resource_name', type=str)
         args = parser.parse_args()
         Log.logger.debug("vm operation receive restart request. args is " + str(args))
         if not args.vm_uuid or not args.operation:
@@ -34,25 +40,42 @@ class VMOperation(Resource):
             }
             return ret, code
         try:
-            nova_client = OpenStack.nova_client
-            if args.operation == "restart":
-                reboot_type = args.reboot_type if args.reboot_type else "SOFT"
-                inst = nova_client.servers.reboot(args.vm_uuid,reboot_type=reboot_type)
-            elif args.operation == "stop":
-                inst = nova_client.servers.stop(args.vm_uuid)
-            elif args.operation == "delete":
-                inst = nova_client.servers.delete(args.vm_uuid)
-            elif args.operation == "start":
-                inst = nova_client.servers.start(args.vm_uuid)
+            if args.cloud == 2:
+                extensions_v1 = K8S.extensions_v1
+                #k8s目前只支持应用重启功能
+                if args.operation == "restart":
+                    deployment_name = args.resource_name
+                    restart_deployment = K8sDeploymentApi.restart_deployment_pod_object(deployment_name)
+                    msg,code = K8sDeploymentApi.restart_deployment_pod(
+                        extensions_v1, restart_deployment, deployment_name, NAMESPACE)
+                    if msg:
+                        ret = {
+                            "code": code,
+                            "result": {
+                                "msg": msg,
+                            }
+                        }
+                        return ret, code
             else:
-                code = 500
-                ret = {
-                    "code": code,
-                    "result": {
-                        "msg": "vm operation receive invalid operation",
+                nova_client = OpenStack.nova_client
+                if args.operation == "restart":
+                    reboot_type = args.reboot_type if args.reboot_type else "SOFT"
+                    inst = nova_client.servers.reboot(args.vm_uuid,reboot_type=reboot_type)
+                elif args.operation == "stop":
+                    inst = nova_client.servers.stop(args.vm_uuid)
+                elif args.operation == "delete":
+                    inst = nova_client.servers.delete(args.vm_uuid)
+                elif args.operation == "start":
+                    inst = nova_client.servers.start(args.vm_uuid)
+                else:
+                    code = 500
+                    ret = {
+                        "code": code,
+                        "result": {
+                            "msg": "vm operation receive invalid operation",
+                        }
                     }
-                }
-                return ret, code
+                    return ret, code
         except Exception as e:
             code = 500
             msg=str(e)

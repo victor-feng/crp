@@ -205,7 +205,7 @@ class K8sDeployment(Resource):
 
     def get(self):
         parser = reqparse.RequestParser()
-        parser.add_argument("deployment_name", type=str, location='args')
+        parser.add_argument("deployment_name", type=str)
         args = parser.parse_args()
         deployment_name = args.deployment_name
         extensions_v1 = K8S.extensions_v1
