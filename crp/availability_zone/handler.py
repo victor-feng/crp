@@ -72,7 +72,7 @@ class OpenStack_Api(object):
 class OpenStack2_Api(object):
 
     @classmethod
-    def get_hypervisors_statistics(cls,env):
+    def get_hypervisors_statistics(cls, env):
 
         vcpus = 0
         vcpus_used = 0
@@ -125,4 +125,52 @@ class OpenStack2_Api(object):
         except Exception as e:
             err_msg=str(e)
             Log.logger.error("CRP OpenStack get availability zones error %s",err_msg)
+            return None
+
+    @classmethod
+    def get_hypervisor_hosts(cls, host_set):
+
+        hosts = []
+        try:
+            nova_cli = OpenStack2.nova_client
+            rst = nova_cli.hypervisors.list(detailed=True)
+            for host_item in rst:
+                if host_set is None or \
+                                host_item.hypervisor_hostname in host_set:
+                    hosts.append({
+                        "host_name": host_item.hypervisor_hostname,
+                        "host_ip": host_item.host_ip,
+                        "running_vms": host_item.running_vms,
+                        "vcpu_total": host_item.vcpus,
+                        "vcpu_use": host_item.vcpus_used,
+                        "memory_mb_total": host_item.memory_mb,
+                        "memory_mb_use": host_item.memory_mb_used,
+                        "storage_gb_total": host_item.local_gb,
+                        "storage_gb_use": host_item.local_gb_used,
+                    })
+            return hosts
+        except Exception as e:
+            err_msg = str(e)
+            Log.logger.error("CRP OpenStack get hypervisor hosts error %s", err_msg)
+            return None
+
+    @classmethod
+    def get_hypervisor_statistics(cls):
+
+        hypervisors_statistics = {}
+        try:
+            nova_cli = OpenStack2.nova_client
+            statistics = nova_cli.hypervisors.statistics()
+            if statistics:
+                hypervisors_statistics["running_vms"] = statistics.running_vms
+                hypervisors_statistics["vcpu_total"] = statistics.vcpus
+                hypervisors_statistics["vcpu_use"] = statistics.vcpus_used
+                hypervisors_statistics["memory_mb_total"] = statistics.memory_mb
+                hypervisors_statistics["memory_mb_use"] = statistics.memory_mb_used
+                hypervisors_statistics["storage_gb_total"] = statistics.local_gb
+                hypervisors_statistics["storage_gb_use"] = statistics.local_gb_used
+            return hypervisors_statistics
+        except Exception as e:
+            err_msg = str(e)
+            Log.logger.error("CRP OpenStack get hypervisor statistics error %s", err_msg)
             return None

@@ -37,98 +37,67 @@ class AZListAPI(Resource):
             return res, 200
 
 
-#class HostsListAPI(Resource):
-#
-#    def get(self):
-#        parser = reqparse.RequestParser()
-#        parser.add_argument('host', type=str, location='args', action='append')
-#
-#        args = parser.parse_args()
-#        host_set = None
-#        if args.host:
-#            # Log.logger.debug(type(args.host))
-#            Log.logger.debug(type(args.host))
-#            host_set = set(args.host)
-#        Log.logger.debug('HostsListAPI: query %s' % host_set)
-#
-#        hosts = []
-#        try:
-#            nova_cli = OpenStack.nova_client
-#            rst = nova_cli.hypervisors.list(detailed=True)
-#            Log.logger.debug(len(rst))
-#            for host_item in rst:
-#                Log.logger.debug(dir(host_item))
-#                if host_set is None or\
-#                                host_item.hypervisor_hostname in host_set:
-#                    hosts.append({
-#                        "host_name": host_item.hypervisor_hostname,
-#                        "host_ip": host_item.host_ip,
-#                        "running_vms": host_item.running_vms,
-#                        "vcpu_total": host_item.vcpus,
-#                        "vcpu_use": host_item.vcpus_used,
-#                        "memory_mb_total": host_item.memory_mb,
-#                        "memory_mb_use": host_item.memory_mb_used,
-#                        "storage_gb_total": host_item.local_gb,
-#                        "storage_gb_use": host_item.local_gb_used,
-#                    })
-#        except Exception as e:
-#            Log.logger.error('get hosts err: %s' % e.args)
-#            res = {
-#                "code": 400,
-#                "result": {
-#                    "res": "failed",
-#                    "msg": e.message
-#                }
-#            }
-#            return res, 400
-#        else:
-#            res = {
-#                "code": 200,
-#                "result": {
-#                    "msg": "请求成功",
-#                    "res": hosts
-#                }
-#            }
-#            return res, 200
-#
-#
-#class StatisticAPI(Resource):
-#
-#    def get(self):
-#        hypervisors_statistics = {}
-#        try:
-#            nova_cli = OpenStack.nova_client
-#            statistics = nova_cli.hypervisors.statistics()
-#            Log.logger.debug(dir(statistics))
-#            if statistics:
-#                hypervisors_statistics["running_vms"]= statistics.running_vms
-#                hypervisors_statistics["vcpu_total"]= statistics.vcpus
-#                hypervisors_statistics["vcpu_use"]= statistics.vcpus_used
-#                hypervisors_statistics["memory_mb_total"]= statistics.memory_mb
-#                hypervisors_statistics["memory_mb_use"]= statistics.memory_mb_used
-#                hypervisors_statistics["storage_gb_total"]= statistics.local_gb
-#                hypervisors_statistics["storage_gb_use"]= statistics.local_gb_used
-#        except Exception as e:
-#            Log.logger.error('get hypervisors_statistics err: %s' % e.args)
-#            res = {
-#                "code": 400,
-#                "result": {
-#                    "res": "failed",
-#                    "msg": e.args
-#                }
-#            }
-#            return res, 400
-#        else:
-#            res = {
-#                "code": 200,
-#                "result": {
-#                    "msg": "请求成功",
-#                    "res": hypervisors_statistics
-#                }
-#            }
-#            return res, 200
+class HostsListAPI(Resource):
+
+   def get(self):
+       parser = reqparse.RequestParser()
+       parser.add_argument('host', type=str, location='args', action='append')
+
+       args = parser.parse_args()
+       host_set = None
+       if args.host:
+           Log.logger.debug(type(args.host))
+           host_set = set(args.host)
+       Log.logger.debug('HostsListAPI: query %s' % host_set)
+
+       try:
+           hosts = OpenStack2_Api.get_hypervisor_hosts(host_set)
+       except Exception as e:
+           Log.logger.error('get hosts err: %s' % e.args)
+           res = {
+               "code": 400,
+               "result": {
+                   "res": "failed",
+                   "msg": e.message
+               }
+           }
+           return res, 400
+       else:
+           res = {
+               "code": 200,
+               "result": {
+                   "msg": "请求成功",
+                   "res": hosts
+               }
+           }
+           return res, 200
 
 
+class StatisticAPI(Resource):
+
+   def get(self):
+
+       try:
+           hypervisors_statistics = OpenStack2_Api.get_hypervisor_statistics()
+       except Exception as e:
+           Log.logger.error('get hypervisors_statistics err: %s' % e.args)
+           res = {
+               "code": 400,
+               "result": {
+                   "res": "failed",
+                   "msg": e.args
+               }
+           }
+           return res, 400
+       else:
+           res = {
+               "code": 200,
+               "result": {
+                   "msg": "请求成功",
+                   "res": hypervisors_statistics
+               }
+           }
+           return res, 200
 
 
 class UOPStatisticAPI(Resource):
@@ -179,7 +148,8 @@ class UOPStatisticAPI(Resource):
             }
             return res, 200
 
+
 az_api.add_resource(AZListAPI, '/azs')
-#az_api.add_resource(HostsListAPI, '/getHosts')
-#az_api.add_resource(StatisticAPI, '/statistics')
+az_api.add_resource(HostsListAPI, '/getHosts')
+az_api.add_resource(StatisticAPI, '/statistics')
 az_api.add_resource(UOPStatisticAPI, '/uopStatistics')
