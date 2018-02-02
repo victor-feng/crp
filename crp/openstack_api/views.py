@@ -6,7 +6,7 @@ from crp.openstack_api import openstack_blueprint
 from crp.openstack_api.errors import az_errors
 from handler import OpenStack_Api,OpenStack2_Api
 from crp.log import Log
-from crp.k8s_api import K8sDeploymentApi,K8S
+from crp.k8s_api import K8sDeploymentApi,K8S,K8sLogApi
 from config import configs, APP_ENV
 from crp.utils.aio import response_data
 
@@ -167,20 +167,30 @@ class Dockerlogs(Resource):
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument("osid", type=str, location='json')
+        parser.add_argument("cloud", type=str, location='json')
+        parser.add_argument("resource_name", type=str, location='json')
         args = parser.parse_args()
         osid = args.osid
+        cloud = args.cloud
+        resource_name = args.resource_name
         try:
-            #nova_cli = OpenStack.nova_client
-            Log.logger.info("#####osid:{}".format(osid))
-            #vm = nova_cli.servers.get(osid)
-            #Log.logger.info("#####vm:{}".format(vm))
-            os_log_dir = os.path.join(OS_DOCKER_LOGS, osid)
-            os_log_file = os.path.join(os_log_dir, "docker_start.log")
-            if os.path.exists(os_log_file):
-                with open(os_log_file,'r') as f:
-                    logs = f.read().strip()
+            if cloud == "2":
+                core_v1 = K8S.core_v1
+                extensions_v1 = K8S.extensions_v1
+                deployment_name = resource_name
+                logs,code=K8sLogApi.get_deployment_log(core_v1,extensions_v1,deployment_name,NAMESPACE)
             else:
-                logs=''
+                #nova_cli = OpenStack.nova_client
+                Log.logger.info("#####osid:{}".format(osid))
+                #vm = nova_cli.servers.get(osid)
+                #Log.logger.info("#####vm:{}".format(vm))
+                os_log_dir = os.path.join(OS_DOCKER_LOGS, osid)
+                os_log_file = os.path.join(os_log_dir, "docker_start.log")
+                if os.path.exists(os_log_file):
+                    with open(os_log_file,'r') as f:
+                        logs = f.read().strip()
+                else:
+                    logs=''
         except Exception as e:
             Log.logger.error('get vm logs err: %s' % e.args)
             res = {
