@@ -243,16 +243,13 @@ class ResourceProviderTransitions2(object):
         if self.code != 409 and self.set_flag == "res":
             for uop_os_inst_id in uop_os_inst_id_list:
                 #回滚删除的时候判断是中间件集群，还是应用集群
-                resource_type="middleware"
-                cluster_type = uop_os_inst_id.get('cluster_type')
+                resource_type=self.req_dict["resource_type"]
                 resource={}
                 os_inst_id=uop_os_inst_id['os_inst_id']
                 os_vol_id = uop_os_inst_id.get('os_vol_id')
                 resource["resource_id"]=resource_id
                 resource["os_inst_id"]=os_inst_id
                 resource["os_vol_id"] = os_vol_id
-                if cluster_type == "app_cluster":
-                    resource_type="app"
                 #调用删除虚机和卷的接口进行回滚操作
                 TaskManager.task_start(
                         SLEEP_TIME, TIMEOUT,
@@ -263,7 +260,6 @@ class ResourceProviderTransitions2(object):
                      "resource_type":resource_type,
                      "resource_name":self.req_dict["resource_name"],},
                     delete_instance_and_query2, resource)
-                if cluster_type == "app_cluster":break
             Log.logger.debug(
                 "Task ID " +
                 self.task_id.__str__() +
