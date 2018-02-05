@@ -319,9 +319,11 @@ class ResourceProviderTransitions2(object):
             return None, None
 
     # 依据资源类型创建资源
-    def _create_instance_by_type(self, ins_type, name, flavor,network_id, server_group=None):
-        image = cluster_type_image_port_mappers2.get(ins_type)
-        image_uuid = image.get('uuid')
+    def _create_instance_by_type(self, ins_type, name, flavor,network_id,image_id, server_group=None):
+        image_uuid = image_id
+        if not image_id:
+            image = cluster_type_image_port_mappers2.get(ins_type)
+            image_uuid = image.get('uuid')
         availability_zone = AVAILABILITY_ZONE2.get(self.env, "AZ_UOP")
         Log.logger.debug(
             "Task ID " +
@@ -541,6 +543,7 @@ class ResourceProviderTransitions2(object):
         cluster_name = propertys.get('cluster_name')
         cluster_id = propertys.get('cluster_id')
         cluster_type = propertys.get('cluster_type')
+        image_id = propertys.get('image_id')
         version = propertys.get('version')
         cpu = propertys.get('cpu')
         mem = propertys.get('mem')
@@ -588,7 +591,7 @@ class ResourceProviderTransitions2(object):
                 if cluster_type == "mycat":
                     flavor = KVM_FLAVOR.get("mycat", 'uop-2C4G50G')
                 osint_id = self._create_instance_by_type(
-                    cluster_type, instance_name, flavor, network_id, server_group)
+                    cluster_type, instance_name, flavor, network_id, image_id, server_group)
                 if (cluster_type == 'mysql' or cluster_type == 'mongodb') and volume_size != 0:
                     #如果cluster_type是mysql 和 mongodb 就挂卷 或者 volume_size 不为0时
                     vm = {
@@ -669,7 +672,6 @@ class ResourceProviderTransitions2(object):
         nova_client = OpenStack.nova_client
         core_v1 = K8S.core_v1
         extensions_v1 = K8S.extensions_v1
-        Log.logger.info("---------------result_mappers_list----------------%s",result_mappers_list)
         for uop_os_inst_id in uop_os_inst_id_wait_query:
             cluster_type = uop_os_inst_id.get('cluster_type')
             if cluster_type == "app_cluster":
