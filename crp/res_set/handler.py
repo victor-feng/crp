@@ -296,9 +296,11 @@ class ResourceProviderTransitions(object):
             return None, None
 
     # 依据资源类型创建资源
-    def _create_instance_by_type(self, ins_type, name, flavor,network_id, server_group=None):
-        image = cluster_type_image_port_mappers.get(ins_type)
-        image_uuid = image.get('uuid')
+    def _create_instance_by_type(self, ins_type, name, flavor,network_id, image_id,server_group=None):
+        image_uuid = image_id
+        if not image_id:
+            image = cluster_type_image_port_mappers.get(ins_type)
+            image_uuid = image.get('uuid')
         availability_zone = AVAILABILITY_ZONE.get(self.env, "AZ_UOP")
         Log.logger.debug(
             "Task ID " +
@@ -398,6 +400,7 @@ class ResourceProviderTransitions(object):
         cluster_id = propertys.get('cluster_id')
         cluster_type = propertys.get('cluster_type')
         network_id = propertys.get('network_id')
+        image_id = propertys.get('image_id')
         version = propertys.get('version')
         cpu = propertys.get('cpu')
         mem = propertys.get('mem')
@@ -441,7 +444,7 @@ class ResourceProviderTransitions(object):
                 if cluster_type == "mycat":
                     flavor = KVM_FLAVOR.get("mycat", 'uop-2C4G50G')
                 osint_id = self._create_instance_by_type(
-                    cluster_type, instance_name, flavor, network_id, server_group)
+                    cluster_type, instance_name, flavor, network_id,image_id,server_group)
                 if (cluster_type == 'mysql' or cluster_type == 'mongodb') and volume_size != 0:
                     #如果cluster_type是mysql 和 mongodb 就挂卷 或者 volume_size 不为0时
                     vm = {
