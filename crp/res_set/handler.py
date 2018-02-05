@@ -107,10 +107,6 @@ class ResourceProviderTransitions(object):
         # 待处理的节点
         self.property_mapper = {}
         self.req_dict = req_dict
-        self.docker_network_id=req_dict["docker_network_id"]
-        self.mysql_network_id = req_dict["mysql_network_id"]
-        self.redis_network_id = req_dict["redis_network_id"]
-        self.mongodb_network_id = req_dict["mongodb_network_id"]
         self.error_type = RES_STATUS_FAIL
         self.error_msg = None
         self.set_flag=req_dict["set_flag"]
