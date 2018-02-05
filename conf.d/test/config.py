@@ -160,6 +160,7 @@ class TestingConfig(BaseConfig):
             'quantity': 'quantity',
             'volume_size': 'volume_size',
             'network_id': 'network_id',
+            'image_url': 'image_url',
         }
     }
     SCRIPTPATH = r'crp/res_set/playbook-0830/'
