@@ -112,10 +112,6 @@ class ResourceSet(Resource):
             parser.add_argument('cmdb_repo_id', type=str, location='json')
             parser.add_argument('resource_list', type=list, location='json')
             parser.add_argument('compute_list', type=list, location='json')
-            parser.add_argument('docker_network_id', type=str, location='json')
-            parser.add_argument('mysql_network_id', type=str, location='json')
-            parser.add_argument('redis_network_id', type=str, location='json')
-            parser.add_argument('mongodb_network_id', type=str, location='json')
             parser.add_argument('set_flag', type=str, location='json')
             parser.add_argument('cloud', type=str, location='json')
             parser.add_argument('resource_type', type=str, location='json')
@@ -141,10 +137,6 @@ class ResourceSet(Resource):
             cmdb_repo_id = args.cmdb_repo_id
             resource_list = args.resource_list
             compute_list = args.compute_list
-            docker_network_id=args.docker_network_id
-            mysql_network_id = args.mysql_network_id
-            redis_network_id = args.redis_network_id
-            mongodb_network_id = args.mongodb_network_id
             set_flag = args.set_flag
             project_id = args.project_id
             cloud = args.cloud
@@ -170,10 +162,6 @@ class ResourceSet(Resource):
             req_dict["domain"] = domain
             req_dict["cmdb_repo_id"] = cmdb_repo_id
             req_dict["status"] = RES_STATUS_DEFAULT
-            req_dict["docker_network_id"] = docker_network_id
-            req_dict["mysql_network_id"] = mysql_network_id
-            req_dict["redis_network_id"] = redis_network_id
-            req_dict["mongodb_network_id"] = mongodb_network_id
             req_dict["set_flag"] = set_flag
             req_dict["project_id"] = project_id
             req_dict["cloud"] = cloud
