@@ -83,8 +83,8 @@ class TestingConfig(BaseConfig):
         # 'uop-8C32G180G': 'uop-8C32G180G',
     }
     DOCKER_FLAVOR = {
-        "2": "83c52038-3cc1-4865-958a-a85cfde96bc0",
-        # "4": "uop-docker-4C4G30G"
+        "22": "83c52038-3cc1-4865-958a-a85cfde96bc0",
+        # "24": "uop-docker-4C4G30G"
     }
     # AVAILABILITY_ZONE
     #AVAILABILITY_ZONE_AZ_UOP = 'AZ_UOP'

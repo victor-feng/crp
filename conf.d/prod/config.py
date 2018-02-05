@@ -68,8 +68,8 @@ class ProdConfig(BaseConfig):
         "832": '762d5741-6b98-4ba1-b853-1807fd8a7506', # prodsas-mysql-8C32G80G
     }
     DOCKER_FLAVOR = {
-        # "2": "uop-docker-2C4G50G",
-        "4": "96f98a7f-ab4e-4e1c-a597-ccac02306df9" #prod-docker-tomcat-4C4G30G
+        # "22": "uop-docker-2C4G50G",
+        "24": "96f98a7f-ab4e-4e1c-a597-ccac02306df9" #prod-docker-tomcat-4C4G30G
     }
 
     # AVAILABILITY_ZONE
