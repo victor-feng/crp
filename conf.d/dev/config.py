@@ -86,7 +86,14 @@ class DevelopmentConfig(BaseConfig):
     OS_EXT_PHYSICAL_SERVER_ATTR = 'OS-EXT-SRV-ATTR:host'
 
     # res_callback
-    RES_CALLBACK = 'http://uop-dev.syswin.com/api/res_callback/res'
+    RES_CALLBACK = {
+        "uop": 'http://uop-test.syswin.com/api/res_callback/res',
+        "cloud2-backend": 'http://172.28.50.18:5001/api/res_callback/callback'
+    }
+    RES_DELETE_CALL_BACK = {
+        "uop": "http://uop-test.syswin.com/api/res_callback/delete",
+        "cloud2-backend": "http://172.28.50.18:5001/api/res_callback/callback"
+    }
     RES_STATUS_CALLBACK = 'http://uop-dev.syswin.com/api/res_callback/status'
     DEP_STATUS_CALLBACK = 'http://uop-dev.syswin.com/api/dep_result/status'
 
@@ -120,13 +127,16 @@ class DevelopmentConfig(BaseConfig):
             'cluster_name': 'instance_name',
             'cluster_id': 'instance_id',
             'domain': 'domain',
-            'domain_ip': 'domain_ip',
             'image_url': 'image_url',
             'cpu': 'cpu',
             'mem': 'mem',
+            'domain_ip': 'domain_ip',
             'port': 'port',
             'meta': 'meta',
-            'quantity': 'quantity'
+            'quantity': 'quantity',
+            'network_id': 'network_id',
+            'networkName': 'networkName',
+            'tenantName': 'tenantName',
         },
         'resource_cluster': {
             'cluster_name': 'instance_name',
@@ -137,7 +147,9 @@ class DevelopmentConfig(BaseConfig):
             'mem': 'mem',
             'disk': 'disk',
             'quantity': 'quantity',
-            'volume_size':'volume_size'
+            'volume_size': 'volume_size',
+            'network_id': 'network_id',
+            'image_id': 'image_id',
         }
     }
     SCRIPTPATH = r'crp/res_set/playbook-0830/'
