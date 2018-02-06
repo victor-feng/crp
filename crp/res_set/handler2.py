@@ -548,6 +548,7 @@ class ResourceProviderTransitions2(object):
         quantity = propertys.get('quantity')
         volume_size=propertys.get('volume_size',0)
         network_id = propertys.get('network_id')
+        port = ''
         #volume_size 默认为0
         if cluster_type == "mysql" and str(cpu) == "2": # dev\test 环境
             flavor = KVM_FLAVOR2.get("mysql", 'uop-2C4G50G')
