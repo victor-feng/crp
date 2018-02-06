@@ -20,7 +20,7 @@ from crp.k8s_api import K8sDeploymentApi,K8sIngressApi,K8sServiceApi,K8S
 TIMEOUT = 5000
 SLEEP_TIME = 3
 cluster_type_image_port_mappers2 = configs[APP_ENV].cluster_type_image_port_mappers2
-KVM_FLAVOR = configs[APP_ENV].KVM_FLAVOR
+KVM_FLAVOR2 = configs[APP_ENV].KVM_FLAVOR2
 DOCKER_FLAVOR = configs[APP_ENV].DOCKER_FLAVOR
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 OS_EXT_PHYSICAL_SERVER_ATTR = configs[APP_ENV].OS_EXT_PHYSICAL_SERVER_ATTR
@@ -543,14 +543,14 @@ class ResourceProviderTransitions2(object):
         version = propertys.get('version')
         cpu = propertys.get('cpu')
         mem = propertys.get('mem')
-        flavor = KVM_FLAVOR.get(str(cpu) + str(mem), 'uop-2C4G50G')
+        flavor = KVM_FLAVOR2.get(str(cpu) + str(mem), 'uop-2C4G50G')
         disk = propertys.get('disk')
         quantity = propertys.get('quantity')
         volume_size=propertys.get('volume_size',0)
         network_id = propertys.get('network_id')
         #volume_size 默认为0
         if cluster_type == "mysql" and str(cpu) == "2": # dev\test 环境
-            flavor = KVM_FLAVOR.get("mysql", 'uop-2C4G50G')
+            flavor = KVM_FLAVOR2.get("mysql", 'uop-2C4G50G')
         """   
         if cluster_type == "mysql" or cluster_type == "mycat":
             network_id=self.mysql_network_id
