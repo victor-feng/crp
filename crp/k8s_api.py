@@ -80,6 +80,7 @@ class K8sDeploymentApi(object):
         :param replicas:3
         :return:
         """
+        deployment_name=deployment_name.lower()
         filebeat_container = client.V1Container(
             name=filebeat_name,
             image=filebeat_image_url,
@@ -174,6 +175,7 @@ class K8sDeploymentApi(object):
         err_msg = None
         code=200
         try:
+            deployment_name = deployment_name.lower()
             api_response = api_instance.create_namespaced_deployment(
                 body=deployment,
                 namespace=namespace)
@@ -189,6 +191,7 @@ class K8sDeploymentApi(object):
         :param deployment_name:
         :return:
         """
+        deployment_name = deployment_name.lower()
         filebeat_container = client.V1Container(
             name=filebeat_name,
         )
@@ -232,6 +235,7 @@ class K8sDeploymentApi(object):
         err_msg = None
         code=200
         try:
+            deployment_name = deployment_name.lower()
             update_image_deployment.spec.template.spec.containers[1].image = new_image_url
             # Update the deployment
             api_response = api_instance.patch_namespaced_deployment(
@@ -255,6 +259,7 @@ class K8sDeploymentApi(object):
         err_msg = None
         code=200
         try:
+            deployment_name = deployment_name.lower()
             api_response = api_instance.delete_namespaced_deployment(
                 name=deployment_name,
                 namespace=namespace,
@@ -273,6 +278,7 @@ class K8sDeploymentApi(object):
         :param deployment_name:
         :return:
         """
+        deployment_name = deployment_name.lower()
         spec = client.ExtensionsV1beta1DeploymentSpec(
             replicas=3,
             template=client.V1PodTemplateSpec(),
@@ -301,6 +307,7 @@ class K8sDeploymentApi(object):
         err_msg = None
         code = 200
         try:
+            deployment_name = deployment_name.lower()
             update_replicas_deployment.spec.replicas = new_replicas
             api_response = api_instance.patch_namespaced_deployment_scale(
                 name=deployment_name,
@@ -320,6 +327,7 @@ class K8sDeploymentApi(object):
         :param deployment_name:
         :return:
         """
+        deployment_name = deployment_name.lower()
         api_response = api_instance.read_namespaced_deployment_status(deployment_name, namespace)
         ready_replicas=api_response.status.ready_replicas
         replicas=api_response.status.replicas
@@ -337,6 +345,7 @@ class K8sDeploymentApi(object):
         :param deployment_name:
         :return:
         """
+        deployment_name = deployment_name.lower()
         deployment_info_list = []
         api_response = api_instance.list_namespaced_pod(namespace)
         result = api_response.items
@@ -362,12 +371,14 @@ class K8sDeploymentApi(object):
         :param deployment_name:
         :return:
         """
+        deployment_name = deployment_name.lower()
         api_response = api_instance.read_namespaced_deployment(deployment_name, namespace)
         return api_response
 
     # 重启deployment下的全部pod
     @classmethod
     def restart_deployment_pod_object(cls,deployment_name):
+        deployment_name = deployment_name.lower()
         template = client.V1PodTemplateSpec(
             metadata=client.V1ObjectMeta(
                 labels={}
@@ -389,6 +400,7 @@ class K8sDeploymentApi(object):
     @classmethod
     def restart_deployment_pod(cls,api_instance, restart_deployment,deployment_name,namespace):
         # restart pod label
+        deployment_name = deployment_name.lower()
         restart_deployment.spec.template.metadata.labels["restartLatestTime"] = \
             datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         # reatart  the deployment
@@ -406,6 +418,7 @@ class K8sDeploymentApi(object):
 
     @classmethod
     def get_namespace_deployment_info(cls,api_instance,namespace):
+        deployment_name = deployment_name.lower()
         deployment_info=[]
         deploy_ret = api_instance.list_namespaced_deployment(namespace, watch=False)
         for i in deploy_ret.items:
@@ -419,6 +432,7 @@ class K8sDeploymentApi(object):
 
     @classmethod
     def get_deployment_info(cls, api_instance, namespace,deployment_name):
+        deployment_name = deployment_name.lower()
         deployment_info = []
         deployment_dict = {}
         deploy_ret = api_instance.read_namespaced_deployment(deployment_name,namespace)
@@ -645,6 +659,7 @@ class K8sLogApi(object):
     def get_deployment_log(cls, api_instance, deployment_name, namespace):
         code = 200
         try:
+            deployment_name = deployment_name.lower()
             deployment_info_list=K8sDeploymentApi.get_deployment_pod_info(api_instance,namespace,deployment_name)
             if deployment_info_list:
                 pod_name = deployment_info_list[0]["pod_name"]
