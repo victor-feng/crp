@@ -217,7 +217,7 @@ class TestingConfig(BaseConfig):
             'port': '8081'
         }
     }
-    KVM_FLAVOR = {
+    KVM_FLAVOR2 = {
         '24': '905e3a5f-6b27-46ab-8cb2-2bb26ffbea58',  # tst-pc-2C4G50G
         'mysql': '905e3a5f-6b27-46ab-8cb2-2bb26ffbea58',  # mysql_2C4G80G
         'kvm': '905e3a5f-6b27-46ab-8cb2-2bb26ffbea58',  # mysql_2C4G80G
