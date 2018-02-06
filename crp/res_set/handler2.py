@@ -1172,6 +1172,7 @@ class ResourceProviderTransitions2(object):
                 for deployment_info in deployment_info_list:
                     ip = deployment_info.get("pod_ip")
                     ip_list.append(ip)
+                    Log.logger.debug("---------ip_list-------%s",ip_list )
                 if None not in ip_list:break
         for i in range(len(deployment_info_list)):
             deployment_info_list[i]["deployment_name"] = deployment_info_list[i][
