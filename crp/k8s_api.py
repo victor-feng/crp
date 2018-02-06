@@ -453,6 +453,7 @@ class K8sServiceApi(object):
         :param sercice_port:8081
         :return:
         """
+        service_name = service_name.lower()
         spec = client.V1ServiceSpec(
             cluster_ip="None",
             ports=[
@@ -513,6 +514,7 @@ class K8sServiceApi(object):
         err_msg = None
         code=200
         try:
+            service_name = service_name.lower()
             api_response = api_instance.delete_namespaced_service(
                 name=service_name,
                 namespace=namespace,
@@ -533,6 +535,7 @@ class K8sServiceApi(object):
         code = 200
         msg = None
         try:
+            service_name = service_name.lower()
             api_response = api_instance.read_namespaced_service(service_name, namespace)
             msg=api_response
         except Exception as e:
@@ -554,6 +557,8 @@ class K8sIngressApi(object):
         :param host:"tomcat.k8s.me"
         :return:
         """
+        service_name = service_name.lower()
+        ingress_name = ingress_name.lower()
         spec = client.V1beta1IngressSpec(
             rules=[
                 client.V1beta1IngressRule(
@@ -615,6 +620,7 @@ class K8sIngressApi(object):
         err_msg=None
         code=200
         try:
+            ingress_name = ingress_name.lower()
             api_response = api_instance.delete_namespaced_ingress(
                 name=ingress_name,
                 namespace=namespace,
@@ -633,6 +639,7 @@ class K8sIngressApi(object):
         msg = None
         code = 200
         try:
+            ingress_name = ingress_name.lower()
             api_response = api_instance.read_namespaced_ingress(ingress_name, namespace)
             msg = api_response
         except Exception as e:
