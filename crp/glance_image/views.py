@@ -7,7 +7,7 @@ from flask_restful import reqparse, Api, Resource
 from crp.taskmgr import *
 from crp.glance_image import glance_image_blueprint
 from crp.glance_image.errors import user_errors
-from crp.openstack import OpenStack
+from crp.openstack2 import OpenStack as OpenStack2
 from crp.log import Log
 
 glance_image_api = Api(glance_image_blueprint, errors=user_errors)
@@ -27,7 +27,7 @@ class ImageListAPI(Resource):
             filters['disk_format'] = args.image_format
         res_images = []
         try:
-            glance_cli = OpenStack.glance_client()
+            glance_cli = OpenStack2.glance_client()
             kwargs = {'filters': filters}
             images = glance_cli.images.list(**kwargs)
             for item in images:
