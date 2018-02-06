@@ -418,7 +418,6 @@ class K8sDeploymentApi(object):
 
     @classmethod
     def get_namespace_deployment_info(cls,api_instance,namespace):
-        deployment_name = deployment_name.lower()
         deployment_info=[]
         deploy_ret = api_instance.list_namespaced_deployment(namespace, watch=False)
         for i in deploy_ret.items:
