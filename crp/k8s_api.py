@@ -354,7 +354,7 @@ class K8sDeploymentApi(object):
             node_name = res.spec.node_name
             pod_ip = res.status.pod_ip
             if deployment_name in pod_name:
-                deployment_dict['deployment_name'] = deployment_name
+                deployment_dict['deployment_name'] = deployment_name.low()
                 deployment_dict['pod_ip'] = pod_ip
                 deployment_dict['node_name'] = node_name
                 deployment_dict['pod_name'] = pod_name

@@ -689,7 +689,7 @@ class ResourceProviderTransitions2(object):
                         instances = value.get('instance',[])
                         for instance in instances:
                             for deployment_info in deployment_info_list:
-                                if instance.get('os_inst_id') == deployment_info['deployment_name']:
+                                if instance.get('os_inst_id').lower() == deployment_info['deployment_name']:
                                     instance['ip'] = deployment_info.get("pod_ip","127.0.0.1")
                                     instance['physical_server'] = deployment_info.get("node_name","")
                                     instance['os_inst_id'] = deployment_info.get("pod_name","")
