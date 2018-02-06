@@ -1165,7 +1165,7 @@ class ResourceProviderTransitions2(object):
         return id, ip
     def get_ready_deployment_info(self,core_v1,deployment_name,namespace,replicas):
         for i in range(10):
-            time.sleep(1)
+            time.sleep(3)
             deployment_info_list = K8sDeploymentApi.get_deployment_pod_info(core_v1, namespace, deployment_name)
             if len(deployment_info_list) == replicas:
                 ip_list=[]
