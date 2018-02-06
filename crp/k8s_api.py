@@ -175,7 +175,6 @@ class K8sDeploymentApi(object):
         err_msg = None
         code=200
         try:
-            deployment_name = deployment_name.lower()
             api_response = api_instance.create_namespaced_deployment(
                 body=deployment,
                 namespace=namespace)
