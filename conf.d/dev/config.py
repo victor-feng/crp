@@ -183,7 +183,7 @@ class DevelopmentConfig(BaseConfig):
     }
     cluster_type_image_port_mappers2 = {
         'mysql': {
-            'uuid': '1325f04e-2efd-4b1d-bd18-2648437eeaf8',
+            'uuid': 'fa2e3ebe-4c80-404f-94bb-caa9ec11789c',
             'name': 'mysql_sas_80G_20180130',
             'port': '3316'
         },
