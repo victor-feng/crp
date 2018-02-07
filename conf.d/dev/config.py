@@ -205,8 +205,8 @@ class DevelopmentConfig(BaseConfig):
     }
     KVM_FLAVOR2 = {
         '22': '905e3a5f-6b27-46ab-8cb2-2bb26ffbea58',
-        '24': '905e3a5f-6b27-46ab-8cb2-2bb26ffbea58',  # tst-pc-2C4G50G
-        'mysql': '905e3a5f-6b27-46ab-8cb2-2bb26ffbea58',  # mysql_2C4G80G
+        '24': '4faa9926-462c-456f-bb71-3e6cecdec252',  # tst-pc-2C4G50G
+        'mysql': '6ef6287c-f4d4-4d08-9b33-901f47542a69',  # mysql_2C4G80G
         # '4': 'uop-4C8G80G',
         '48': '00d92209-b17e-45cb-991c-d79600e68969',  # xiaojian_sas_4C8G50G
         # "8": 'xiaojian_sas_4C8G50G',
