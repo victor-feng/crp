@@ -286,10 +286,10 @@ class AppDeploy(Resource):
                         extensions_v1, update_image_deployment, deployment_name, image_url, NAMESPACE)
                     end_flag = True
                     if update_deployment_err_msg is None:
-                        _dep_callback(deploy_id, '127.0.0.1', "docker", "None", "None", True, cluster_name, end_flag, 'deploy',
+                        _dep_callback(deploy_id, '127.0.0.1', "docker", "None", "None", True, cluster_name, end_flag,deploy_type,
                                       unique_flag,cloud)
                     else:
-                        _dep_callback(deploy_id, '127.0.0.1', "docker", update_deployment_err_msg, "None", False, cluster_name, end_flag, 'deploy',
+                        _dep_callback(deploy_id, '127.0.0.1', "docker", update_deployment_err_msg, "None", False, cluster_name, end_flag, deploy_type,
                                       unique_flag,cloud)
             else:
                 if not appinfo:
