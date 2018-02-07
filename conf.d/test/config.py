@@ -100,11 +100,11 @@ class TestingConfig(BaseConfig):
     # res_callback
     RES_CALLBACK = {
         "uop":'http://uop-test.syswin.com/api/res_callback/res',
-        "cloud2-backend":'http://172.28.50.18:5001/api/res_callback/callback'
+        "cloud":'http://172.28.50.18:5001/api/res_callback/callback'
     }
     RES_DELETE_CALL_BACK={
         "uop":"http://uop-test.syswin.com/api/res_callback/delete",
-        "cloud2-backend":"http://172.28.50.18:5001/api/res_callback/callback"
+        "cloud":"http://172.28.50.18:5001/api/res_callback/callback"
     }
     RES_STATUS_CALLBACK = 'http://uop-test.syswin.com/api/res_callback/status'
     DEP_STATUS_CALLBACK = 'http://uop-test.syswin.com/api/dep_result/status'
