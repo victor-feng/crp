@@ -251,27 +251,6 @@ class AppDeploy(Resource):
             code = 200
             msg = "ok"
             unique_flag = str(uuid.uuid1())
-            if not appinfo:
-                Log.logger.info("No nginx ip information, no need to push nginx something")
-            for app in appinfo:
-                self.do_app_push(app)
-            if appinfo:
-                _dep_detail_callback(deploy_id,"deploy_nginx","res")
-
-            #添加dns解析
-            for item in dns:
-                domain_name = item.get('domain','')
-                domain_ip = item.get('domain_ip','')
-                Log.logger.debug('domain_name:%s,domain_ip:%s' % (domain_name,domain_ip))
-                if len(domain_name.strip()) != 0 and len(domain_ip.strip()) != 0:
-                    dns_api = NamedManagerApi(environment)
-                    msg = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=domain_ip)
-                    Log.logger.debug('The dns add result: %s' % msg)
-                else:
-                    Log.logger.debug('domain_name:{domain_name},domain_ip:{domain_ip} is null'.format(domain_name=domain_name,domain_ip=domain_ip))
-            if dns:
-                _dep_detail_callback(deploy_id,"deploy_dns","res")
-
             #添加disconf配置
             for disconf_info in disconf_server_info:
                 Log.logger.debug('The disconf_info: %s' % disconf_info)
@@ -303,7 +282,6 @@ class AppDeploy(Resource):
                 for i in docker:
                     image_url = i.get('url', '')
                     cluster_name = i.get("ins_name", "")
-                    Log.logger.info("------Image Url------------%s",image_url)
                     update_deployment_err_msg, update_deployment_err_code = K8sDeploymentApi.update_deployment_image(
                         extensions_v1, update_image_deployment, deployment_name, image_url, NAMESPACE)
                     end_flag = True
@@ -313,9 +291,29 @@ class AppDeploy(Resource):
                     else:
                         _dep_callback(deploy_id, '127.0.0.1', "docker", update_deployment_err_msg, "None", False, cluster_name, end_flag, 'deploy',
                                       unique_flag,cloud)
-
-
             else:
+                if not appinfo:
+                    Log.logger.info("No nginx ip information, no need to push nginx something")
+                for app in appinfo:
+                    self.do_app_push(app)
+                if appinfo:
+                    _dep_detail_callback(deploy_id, "deploy_nginx", "res")
+
+                # 添加dns解析
+                for item in dns:
+                    domain_name = item.get('domain', '')
+                    domain_ip = item.get('domain_ip', '')
+                    Log.logger.debug('domain_name:%s,domain_ip:%s' % (domain_name, domain_ip))
+                    if len(domain_name.strip()) != 0 and len(domain_ip.strip()) != 0:
+                        dns_api = NamedManagerApi(environment)
+                        msg = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=domain_ip)
+                        Log.logger.debug('The dns add result: %s' % msg)
+                    else:
+                        Log.logger.debug(
+                            'domain_name:{domain_name},domain_ip:{domain_ip} is null'.format(domain_name=domain_name,
+                                                                                             domain_ip=domain_ip))
+                if dns:
+                    _dep_detail_callback(deploy_id, "deploy_dns", "res")
                 Log.logger.debug("All Docker is " + str(docker))
                 #pull docker images
                 id2name = {}
