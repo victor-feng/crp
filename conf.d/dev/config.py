@@ -204,6 +204,7 @@ class DevelopmentConfig(BaseConfig):
         }
     }
     KVM_FLAVOR2 = {
+        '22': '905e3a5f-6b27-46ab-8cb2-2bb26ffbea58',
         '24': '905e3a5f-6b27-46ab-8cb2-2bb26ffbea58',  # tst-pc-2C4G50G
         'mysql': '905e3a5f-6b27-46ab-8cb2-2bb26ffbea58',  # mysql_2C4G80G
         # '4': 'uop-4C8G80G',
@@ -231,7 +232,8 @@ class DevelopmentConfig(BaseConfig):
         "11": {"cpu": 1, "memory": "1Gi"}
     }
     APP_LIMITS = {
-        "22": {"cpu": 2, "memory": "2Gi"}
+        "22": {"cpu": 2, "memory": "2Gi"},
+        "24": {"cpu": 2, "memory": "4Gi"}
     }
     HOSTNAMES = ["uop-k8s.syswin.com"]
     IP = "127.0.0.1"
