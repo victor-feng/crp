@@ -282,22 +282,24 @@ class ResourceProviderTransitions(object):
         return int_.id
 
     # 依据镜像URL创建NovaDocker容器
-    def _create_docker_by_url(self, name, image_uuid, flavor, meta,network_id, server_group=None):
+    def _create_docker_by_url(self, name, image_uuid, flavor, meta,network_id,availability_zone, server_group=None):
         #err_msg, image_uuid = image_transit(image_url)
         if image_uuid:
-            availability_zone=AVAILABILITY_ZONE.get(self.env,"AZ_UOP")
+            if not availability_zone:
+                availability_zone=AVAILABILITY_ZONE.get(self.env,"AZ_UOP")
             return None, self._create_instance(
                 name, image_uuid, flavor, availability_zone, network_id, meta, server_group)
         else:
             return None, None
 
     # 依据资源类型创建资源
-    def _create_instance_by_type(self, ins_type, name, flavor,network_id, image_id,server_group=None):
+    def _create_instance_by_type(self, ins_type, name, flavor,network_id, image_id,availability_zone,server_group=None):
         image_uuid = image_id
         if not image_id:
             image = cluster_type_image_port_mappers.get(ins_type)
             image_uuid = image.get('uuid')
-        availability_zone = AVAILABILITY_ZONE.get(self.env, "AZ_UOP")
+        if not availability_zone:
+            availability_zone = AVAILABILITY_ZONE.get(self.env, "AZ_UOP")
         Log.logger.debug(
             "Task ID " +
             self.task_id.__str__() +
@@ -323,11 +325,11 @@ class ResourceProviderTransitions(object):
         domain = propertys.get('domain')
         port = propertys.get('port')
         network_id=propertys.get('network_id')
+        availability_zone=property.get('availability_zone')
         image_url = propertys.get('image_url')
         cpu = propertys.get('cpu','2')
         mem = propertys.get('men','2')
         flavor = DOCKER_FLAVOR.get(str(cpu)+str(mem), 'uop-docker-2C4G50G')
-        mem = propertys.get('mem')
         quantity = propertys.get('quantity')
         meta = propertys.get('meta')
 
@@ -356,7 +358,7 @@ class ResourceProviderTransitions(object):
                 for i in range(0, quantity, 1):
                     instance_name = '%s_%s_%s' % (cluster_name,docker_tag, i.__str__())
                     err_msg, osint_id = self._create_docker_by_url(
-                        instance_name, image_uuid, flavor, meta,network_id,server_group)
+                        instance_name, image_uuid, flavor, meta,network_id,availability_zone,server_group)
                     if err_msg is None:
                         uopinst_info = {
                             'uop_inst_id': cluster_id,
@@ -397,6 +399,7 @@ class ResourceProviderTransitions(object):
         cluster_id = propertys.get('cluster_id')
         cluster_type = propertys.get('cluster_type')
         network_id = propertys.get('network_id')
+        availability_zone = property.get('availability_zone')
         image_id = propertys.get('image_id')
         version = propertys.get('version')
         cpu = propertys.get('cpu')
@@ -408,14 +411,6 @@ class ResourceProviderTransitions(object):
         #volume_size 默认为0
         if cluster_type == "mysql" and str(cpu) == "2": # dev\test 环境
             flavor = KVM_FLAVOR.get("mysql", 'uop-2C4G50G')
-        """    
-        if cluster_type == "mysql" or cluster_type == "mycat":
-            network_id=self.mysql_network_id
-        elif cluster_type == "redis":
-            network_id=self.redis_network_id
-        elif cluster_type == "mongodb":
-            network_id=self.mongodb_network_id
-        """
         if quantity >= 1:
             cluster_type_image_port_mapper = cluster_type_image_port_mappers.get(
                 cluster_type)
@@ -441,7 +436,7 @@ class ResourceProviderTransitions(object):
                 if cluster_type == "mycat":
                     flavor = KVM_FLAVOR.get("mycat", 'uop-2C4G50G')
                 osint_id = self._create_instance_by_type(
-                    cluster_type, instance_name, flavor, network_id,image_id,server_group)
+                    cluster_type, instance_name, flavor, network_id,image_id,availability_zone,server_group)
                 if (cluster_type == 'mysql' or cluster_type == 'mongodb') and volume_size != 0:
                     #如果cluster_type是mysql 和 mongodb 就挂卷 或者 volume_size 不为0时
                     vm = {

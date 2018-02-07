@@ -305,22 +305,24 @@ class ResourceProviderTransitions2(object):
         return int_.id
 
     # 依据镜像URL创建NovaDocker容器
-    def _create_docker_by_url(self, name, image_uuid, flavor, meta,network_id, server_group=None):
+    def _create_docker_by_url(self, name, image_uuid, flavor,meta,network_id,availability_zone ,server_group=None):
         #err_msg, image_uuid = image_transit(image_url)
         if image_uuid:
-            availability_zone=AVAILABILITY_ZONE2.get(self.env,"AZ_UOP")
+            if not availability_zone:
+                availability_zone=AVAILABILITY_ZONE2.get(self.env,"AZ_UOP")
             return None, self._create_instance(
                 name, image_uuid, flavor, availability_zone, network_id, meta, server_group)
         else:
             return None, None
 
     # 依据资源类型创建资源
-    def _create_instance_by_type(self, ins_type, name, flavor,network_id,image_id, server_group=None):
+    def _create_instance_by_type(self, ins_type, name, flavor,network_id,image_id,availability_zone, server_group=None):
         image_uuid = image_id
         if not image_id:
             image = cluster_type_image_port_mappers2.get(ins_type)
             image_uuid = image.get('uuid')
-        availability_zone = AVAILABILITY_ZONE2.get(self.env, "AZ_UOP")
+        if not availability_zone:
+            availability_zone = AVAILABILITY_ZONE2.get(self.env, "AZ_UOP")
         Log.logger.debug(
             "Task ID " +
             self.task_id.__str__() +
@@ -335,79 +337,6 @@ class ResourceProviderTransitions2(object):
             availability_zone,
             network_id, server_group)
 
-    # 申请应用集群docker资源
-    def __create_app_cluster(self, property_mapper):
-        is_rollback = False
-        uop_os_inst_id_list = []
-        docker_tag = time.time().__str__()[6:10]
-        propertys = property_mapper.get('app_cluster')
-        cluster_name = propertys.get('cluster_name')
-        cluster_id = propertys.get('cluster_id')
-        domain = propertys.get('domain')
-        port = propertys.get('port')
-        image_url = propertys.get('image_url')
-        cpu = propertys.get('cpu')
-        flavor = DOCKER_FLAVOR.get(str(cpu), 'uop-docker-2C4G50G')
-        mem = propertys.get('mem')
-        quantity = propertys.get('quantity')
-        meta = propertys.get('meta')
-
-        if quantity >= 1:
-            propertys['ins_id'] = cluster_id
-            cluster_type = 'app_cluster'
-            propertys['cluster_type'] = cluster_type
-            propertys['username'] = DEFAULT_USERNAME
-            propertys['password'] = DEFAULT_PASSWORD
-            propertys['port'] = port
-            propertys['instance'] = []
-            # 针对servers_group 亲和调度操作 , 需要创建亲和调度
-            nova_client = OpenStack.nova_client
-            server_group = None
-
-            if IS_OPEN_AFFINITY_SCHEDULING:
-                server_group = nova_client.server_groups.create(**{'name': 'create_app_cluster_server_group', 'policies': ['anti-affinity']})
-            
-            err_msg, image_uuid = image_transit(image_url)
-            if err_msg is None:
-                Log.logger.debug(
-                         "Task ID " +
-                          self.task_id.__str__() +
-                          " Transit harbor docker image success. The result glance image UUID is " +
-                          image_uuid)
-                for i in range(0, quantity, 1):
-                    instance_name = '%s_%s_%s' % (cluster_name,docker_tag, i.__str__())
-                    err_msg, osint_id = self._create_docker_by_url(
-                        instance_name, image_uuid, flavor, meta, self.docker_network_id,server_group)
-                    if err_msg is None:
-                        uopinst_info = {
-                            'uop_inst_id': cluster_id,
-                            'os_inst_id': osint_id
-                        }
-                        uop_os_inst_id_list.append(uopinst_info)
-                        propertys['instance'].append(
-                            {
-                                'instance_type': cluster_type,
-                                'instance_name': instance_name,
-                                'username': DEFAULT_USERNAME,
-                                'password': DEFAULT_PASSWORD,
-                                'domain': domain,
-                                'port': port,
-                                'os_inst_id': osint_id})
-            else:
-                Log.logger.error(
-                    "Task ID " +
-                    self.task_id.__str__() +
-                    " ERROR. Error Message is:")
-                Log.logger.error(err_msg)
-                self.error_msg="pull image or create image error,error msg is:" +err_msg.__str__()
-                # 删除全部
-                is_rollback = True
-                uop_os_inst_id_list = []
-                if err_msg == -1:
-                    self.error_type = 'notfound'
-                    self.error_msg="the image is not found"
-        return is_rollback, uop_os_inst_id_list
-
 
     def _create_app_cluster(self, property_mapper):
         is_rollback = False
@@ -417,7 +346,6 @@ class ResourceProviderTransitions2(object):
         cluster_id = propertys.get('cluster_id')
         domain = propertys.get('domain')
         port = propertys.get('port')
-        network_id = propertys.get('network_id')
         networkName = propertys.get('networkName')
         tenantName = propertys.get('tenantName')
         if port:
@@ -548,6 +476,7 @@ class ResourceProviderTransitions2(object):
         quantity = propertys.get('quantity')
         volume_size=propertys.get('volume_size',0)
         network_id = propertys.get('network_id')
+        availability_zone = property.get('availability_zone')
         port = ''
         #volume_size 默认为0
         if cluster_type == "mysql" and str(cpu) == "2": # dev\test 环境
@@ -588,7 +517,7 @@ class ResourceProviderTransitions2(object):
                 if cluster_type == "mycat":
                     flavor = KVM_FLAVOR2.get("mycat", 'uop-2C4G50G')
                 osint_id = self._create_instance_by_type(
-                    cluster_type, instance_name, flavor, network_id, image_id, server_group)
+                    cluster_type, instance_name, flavor, network_id, image_id, availability_zone,server_group)
                 if (cluster_type == 'mysql' or cluster_type == 'mongodb') and volume_size != 0:
                     #如果cluster_type是mysql 和 mongodb 就挂卷 或者 volume_size 不为0时
                     vm = {
