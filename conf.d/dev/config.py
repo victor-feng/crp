@@ -210,7 +210,7 @@ class DevelopmentConfig(BaseConfig):
         # '4': 'uop-4C8G80G',
         '48': '00d92209-b17e-45cb-991c-d79600e68969',  # xiaojian_sas_4C8G50G
         # "8": 'xiaojian_sas_4C8G50G',
-        "mycat": "135154ad-a637-4d29-ac2d-b4f63a2183b5",  # tst-dns-2C2G50G
+        "mycat": "905e3a5f-6b27-46ab-8cb2-2bb26ffbea58",  # tst-dns-2C2G50G
         "816": '105deffb-dff9-4a16-8757-92a9d44e9b91',  # K8S-8C16G50G
         "832": '8257eac4-c9cb-48f0-b5d4-183e3e08137f',  # pret-mysql-8C32G80G
         # 'uop-4C16G180G': 'uop-4C16G180G',
