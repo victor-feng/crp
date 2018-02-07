@@ -50,9 +50,12 @@ def main():
     OPENRC_PATH = app.config['OPENRC_PATH']
     OPENRC2_PATH = app.config['OPENRC2_PATH']
     K8S_CONF_PATH = app.config['K8S_CONF_PATH']
-    openstack_client_setting()
-    openstack2_client_setting()
-    k8s_client_setting(K8S_CONF_PATH)
+    if OPENRC_PATH:
+        openstack_client_setting()
+    if OPENRC2_PATH:
+        openstack2_client_setting()
+    if K8S_CONF_PATH:
+        k8s_client_setting(K8S_CONF_PATH)
     logging.warn("[CRP] Openstack client is inited")
     MPC_URL = app.config['MPC_URL']
 
