@@ -330,7 +330,6 @@ class ResourceProviderTransitions2(object):
             image_uuid +
             " by Instance Type " +
             ins_type)
-        Log.logger.info("----------------availability_zone--6666------------%s", availability_zone)
         return self._create_instance(
             name,
             image_uuid,
@@ -478,7 +477,6 @@ class ResourceProviderTransitions2(object):
         volume_size=propertys.get('volume_size',0)
         network_id = propertys.get('network_id')
         availability_zone = propertys.get('availability_zone')
-        Log.logger.info("----------------availability_zone--222------------%s",availability_zone)
         port = ''
         #volume_size 默认为0
         if cluster_type == "mysql" and str(cpu) == "2": # dev\test 环境
