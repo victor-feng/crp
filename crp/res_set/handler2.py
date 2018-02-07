@@ -476,22 +476,11 @@ class ResourceProviderTransitions2(object):
         quantity = propertys.get('quantity')
         volume_size=propertys.get('volume_size',0)
         network_id = propertys.get('network_id')
-        availability_zone = property.get('availability_zone')
+        availability_zone = propertys.get('availability_zone')
         port = ''
         #volume_size 默认为0
         if cluster_type == "mysql" and str(cpu) == "2": # dev\test 环境
             flavor = KVM_FLAVOR2.get("mysql", 'uop-2C4G50G')
-        """   
-        if cluster_type == "mysql" or cluster_type == "mycat":
-            network_id=self.mysql_network_id
-        elif cluster_type == "redis":
-            network_id=self.redis_network_id
-        elif cluster_type == "mongodb":
-            network_id=self.mongodb_network_id
-        elif cluster_type == "kvm":
-            network_id=self.docker_network_id
-        """
-
         if quantity >= 1:
             cluster_type_image_port_mapper = cluster_type_image_port_mappers2.get(
                 cluster_type)
