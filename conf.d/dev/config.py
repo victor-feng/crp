@@ -33,17 +33,17 @@ class DevelopmentConfig(BaseConfig):
             'port': '3316'
         },
         'redis': {
-            'uuid': '3da55e5b-814c-4935-abf0-1469ae606286',
+            'uuid': '12f260fd-1196-4b68-8d37-d9f1d322c842',
             'name': 'redis-50G-20170428',
             'port': '6379'
         },
         'mongodb': {
-            'uuid': '95863650-6816-4588-846a-c0423b5baae0',
+            'uuid': 'ccc48185-961a-405e-95b5-136c4ed77c69',
             'name': 'mongosas-50G-20170428',
             'port': '27017'
         },
         'mycat': {
-            'uuid': '59a5022b-3c46-47ec-8e97-b63edc4b7be0',
+            'uuid': 'ef2f955f-647e-4c27-94b8-25b56e8b1f36',
             'name': 'mycat-50G-20170628',
             'port': '3316'
         }
@@ -183,8 +183,8 @@ class DevelopmentConfig(BaseConfig):
     }
     cluster_type_image_port_mappers2 = {
         'mysql': {
-            'uuid': 'd67a2e33-cbb7-43f6-85da-8e3ca2873b2a',
-            'name': 'mysqluop-80G-20170426',
+            'uuid': '1325f04e-2efd-4b1d-bd18-2648437eeaf8',
+            'name': 'mysql_sas_80G_20180130',
             'port': '3316'
         },
         'redis': {
