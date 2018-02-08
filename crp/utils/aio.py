@@ -35,7 +35,7 @@ def exec_cmd_ten_times(ip,cmd,sleep):
         for i in range(10):
             time.sleep(sleep)
             flag=check_remote_host(ip)
-            if not flag:break
+            if not flag:continue
             p = subprocess.Popen(
                     cmd,
                     shell=True,
@@ -107,8 +107,10 @@ def check_remote_host(ip):
             stderr=subprocess.STDOUT)
         res=p.stdout.read()
         if "open" in res:
-            return True
+            flag=True
         else:
-            return False
+            flag=False
     except Exception as e:
-        return False
+        flag=False
+    Log.logger.debug("Check remote host %s is %s" % (ip,str(flag)))
+    return flag
