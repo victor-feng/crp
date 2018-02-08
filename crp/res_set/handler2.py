@@ -19,8 +19,10 @@ from crp.k8s_api import K8sDeploymentApi,K8sIngressApi,K8sServiceApi,K8S
 
 TIMEOUT = 5000
 SLEEP_TIME = 3
-cluster_type_image_port_mappers2 = configs[APP_ENV].cluster_type_image_port_mappers2
-KVM_FLAVOR2 = configs[APP_ENV].KVM_FLAVOR2
+cluster_type_image_port_mappers = configs[APP_ENV].cluster_type_image_port_mappers2
+AVAILABILITY_ZONE = configs[APP_ENV].AVAILABILITY_ZONE2
+KVM_FLAVOR = configs[APP_ENV].KVM_FLAVOR2
+#-----
 DOCKER_FLAVOR = configs[APP_ENV].DOCKER_FLAVOR
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 OS_EXT_PHYSICAL_SERVER_ATTR = configs[APP_ENV].OS_EXT_PHYSICAL_SERVER_ATTR
@@ -32,7 +34,6 @@ RES_STATUS_DEFAULT = configs[APP_ENV].RES_STATUS_DEFAULT
 DEFAULT_USERNAME = configs[APP_ENV].DEFAULT_USERNAME
 DEFAULT_PASSWORD = configs[APP_ENV].DEFAULT_PASSWORD
 SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
-AVAILABILITY_ZONE2 = configs[APP_ENV].AVAILABILITY_ZONE2
 IS_OPEN_AFFINITY_SCHEDULING = configs[APP_ENV].IS_OPEN_AFFINITY_SCHEDULING
 
 #k8s相关
@@ -309,7 +310,7 @@ class ResourceProviderTransitions2(object):
         #err_msg, image_uuid = image_transit(image_url)
         if image_uuid:
             if not availability_zone:
-                availability_zone=AVAILABILITY_ZONE2.get(self.env,"AZ_UOP")
+                availability_zone=AVAILABILITY_ZONE.get(self.env,"AZ_UOP")
             return None, self._create_instance(
                 name, image_uuid, flavor, availability_zone, network_id, meta, server_group)
         else:
@@ -319,10 +320,10 @@ class ResourceProviderTransitions2(object):
     def _create_instance_by_type(self, ins_type, name, flavor,network_id,image_id,availability_zone, server_group=None):
         image_uuid = image_id
         if not image_id:
-            image = cluster_type_image_port_mappers2.get(ins_type)
+            image = cluster_type_image_port_mappers.get(ins_type)
             image_uuid = image.get('uuid')
         if not availability_zone:
-            availability_zone = AVAILABILITY_ZONE2.get(self.env, "AZ_UOP")
+            availability_zone = AVAILABILITY_ZONE.get(self.env, "AZ_UOP")
         Log.logger.debug(
             "Task ID " +
             self.task_id.__str__() +
@@ -471,7 +472,7 @@ class ResourceProviderTransitions2(object):
         version = propertys.get('version')
         cpu = propertys.get('cpu')
         mem = propertys.get('mem')
-        flavor = KVM_FLAVOR2.get(str(cpu) + str(mem), 'uop-2C4G50G')
+        flavor = KVM_FLAVOR.get(str(cpu) + str(mem), 'uop-2C4G50G')
         disk = propertys.get('disk')
         quantity = propertys.get('quantity')
         volume_size=propertys.get('volume_size',0)
@@ -480,9 +481,9 @@ class ResourceProviderTransitions2(object):
         port = ''
         #volume_size 默认为0
         if cluster_type == "mysql" and str(cpu) == "2": # dev\test 环境
-            flavor = KVM_FLAVOR2.get("mysql", 'uop-2C4G50G')
+            flavor = KVM_FLAVOR.get("mysql", 'uop-2C4G50G')
         if quantity >= 1:
-            cluster_type_image_port_mapper = cluster_type_image_port_mappers2.get(
+            cluster_type_image_port_mapper = cluster_type_image_port_mappers.get(
                 cluster_type)
             if cluster_type_image_port_mapper is not None:
                 port = cluster_type_image_port_mapper.get('port')
@@ -504,7 +505,7 @@ class ResourceProviderTransitions2(object):
                     cluster_type = 'mycat'
                 instance_name = '%s_%s' % (cluster_name, i.__str__())
                 if cluster_type == "mycat":
-                    flavor = KVM_FLAVOR2.get("mycat", 'uop-2C4G50G')
+                    flavor = KVM_FLAVOR.get("mycat", 'uop-2C4G50G')
                 osint_id = self._create_instance_by_type(
                     cluster_type, instance_name, flavor, network_id, image_id, availability_zone,server_group)
                 if (cluster_type == 'mysql' or cluster_type == 'mongodb') and volume_size != 0:
