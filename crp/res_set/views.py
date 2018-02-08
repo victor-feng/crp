@@ -270,7 +270,7 @@ class ResourceDelete(Resource):
 
 
         except Exception as e:
-            err_msg=str(e.args)
+            err_msg=str(e)
             Log.logger.error(
                 "[CRP] Resource delete failed, Exception:%s" % err_msg)
             code=400

@@ -89,7 +89,7 @@ def delete_instance(task_id, result):
         result['msg'] = 'delete instance failed'
         result['code'] = 400
         Log.logger.error(
-            "Query Task ID " + str(task_id) + " result " + result.__str__() + " [CRP] delete_instance failed, Exception:%s" %e.args)
+            "Query Task ID " + str(task_id) + " result " + result.__str__() + " [CRP] delete_instance failed, Exception:%s" %str(e))
         TaskManager.task_exit(task_id)
 
 
@@ -115,7 +115,7 @@ def detach_volume(task_id, result, resource):
             #如果volume不存在直接删除虚机
             result['current_status'] = QUERY_VM
     except Exception as e:
-        err_msg=str(e.args)
+        err_msg=str(e)
         Log.logger.error('Task ID %s,detach_volume error, os_inst_id is %s, os_vol_id is %s.error msg is %s'% (task_id, os_inst_id, os_vol_id,err_msg))
         raise CrpException(err_msg)
     else:
@@ -154,7 +154,7 @@ def query_volume_status(task_id, result, resource):
             #volume 不存在 直接删除虚机
             result['current_status']=QUERY_VM
     except Exception as e:
-        err_msg=str(e.args)
+        err_msg=str(e)
         Log.logger.error('Task ID %s,query_volume_status error.error msg is %s' % (task_id, err_msg))
         raise CrpException(err_msg)
 
@@ -178,9 +178,9 @@ def delete_volume(task_id,result,resource):
             "Task ID %s, delete volume , vol_id is %s" % (task_id,os_vol_id))
     except Exception as e:
         Log.logger.error(
-            "[CRP] _delete_volume failed, Exception:%s" %e.args)
+            "[CRP] _delete_volume failed, Exception:%s" %str(e))
         result['current_status'] = QUERY_VM
-        raise CrpException(str(e.args))
+        raise CrpException(str(e))
 
 
 def delete_instance_and_query(task_id, result, resource):
@@ -228,8 +228,8 @@ def delete_vip(port_id):
         neutron_client.delete_port(port_id)
         Log.logger.debug('vip delete success port_id:%s' % port_id)
     except Exception as e:
-        Log.logger.error(" delete vip  error, Exception:%s" % e)
-        raise CrpException(str(e.args))
+        Log.logger.error(" delete vip  error, Exception:%s" % str(e))
+        raise CrpException(str(e))
 
 
     
@@ -261,7 +261,7 @@ def delete_request_callback(task_id, result):
         res=json.dumps(res.json())
         Log.logger.debug(res)
     except BaseException as e:
-        err_msg = str(e.args)
+        err_msg = str(e)
         Log.logger.error(
                 "Callback Task ID " + str(task_id) + '\r\n' +
                 'delete_request_callback err_msg ' + str(err_msg))
