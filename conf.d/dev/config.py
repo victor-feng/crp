@@ -188,17 +188,17 @@ class DevelopmentConfig(BaseConfig):
             'port': '3316'
         },
         'redis': {
-            'uuid': 'd67a2e33-cbb7-43f6-85da-8e3ca2873b2a',
+            'uuid': '12f260fd-1196-4b68-8d37-d9f1d322c842',
             'name': 'redis-50G-20170428',
             'port': '6379'
         },
         'mongodb': {
-            'uuid': 'd67a2e33-cbb7-43f6-85da-8e3ca2873b2a',
+            'uuid': 'ccc48185-961a-405e-95b5-136c4ed77c69',
             'name': 'mongosas-50G-20170428',
             'port': '27017'
         },
         'mycat': {
-            'uuid': 'd67a2e33-cbb7-43f6-85da-8e3ca2873b2a',
+            'uuid': 'ef2f955f-647e-4c27-94b8-25b56e8b1f36',
             'name': 'mycat-50G-20170628',
             'port': '3316'
         }
