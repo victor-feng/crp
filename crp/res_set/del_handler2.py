@@ -38,8 +38,8 @@ def query_instance(task_id, result, resource):
     resource_id =resource.get('resources_id', '')
     result['os_inst_id'] = os_inst_id
     result['resources_id'] = resource_id
-    resource_type=result.get('resource_type')
-    resource_name = result.get('resource_name')
+    resource_type=result.get('resource_type','')
+    resource_name = result.get('resource_name','')
     nova_client = OpenStack.nova_client
     extensions_v1 = K8S.extensions_v1
     try:
@@ -90,8 +90,8 @@ def delete_instance(task_id, result):
     nova_client = OpenStack.nova_client
     extensions_v1 = K8S.extensions_v1
     core_v1 = K8S.core_v1
-    resource_type = result.get('resource_type')
-    resource_name = result.get('resource_name')
+    resource_type = result.get('resource_type','')
+    resource_name = result.get('resource_name','')
     service_name = resource_name
     ingress_name = resource_name + "-" + "ingress"
     try:
@@ -111,7 +111,7 @@ def delete_instance(task_id, result):
         result['code'] = 200
         Log.logger.debug(
               "Query Task ID " + str(task_id) +
-              " query Instance ID " + os_inst_id +
+              " query Instance ID " + str(os_inst_id) +
               " result " + result.__str__())
     except Exception as e:
         result['msg'] = 'delete instance failed'

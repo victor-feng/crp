@@ -82,7 +82,7 @@ def delete_instance(task_id, result):
         result['code'] = 200
         Log.logger.debug(
               "Query Task ID " + str(task_id) +
-              " query Instance ID " + os_inst_id +
+              " query Instance ID " + str(os_inst_id) +
               " result " + result.__str__())
 
     except Exception as e:
