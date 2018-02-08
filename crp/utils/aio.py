@@ -34,6 +34,8 @@ def exec_cmd_ten_times(ip,cmd,sleep):
                 f.write('%s\n' % ip)
         for i in range(10):
             time.sleep(sleep)
+            flag=check_remote_host(ip)
+            if not flag:break
             p = subprocess.Popen(
                     cmd,
                     shell=True,
@@ -93,3 +95,20 @@ def response_data(code, msg, data):
         }
     }
     return ret
+
+
+def check_remote_host(ip):
+    try:
+        cmd = "nmap %s -p 22" % ip
+        p = subprocess.Popen(
+            cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
+        res=p.stdout.read()
+        if "open" in res:
+            return True
+        else:
+            return False
+    except Exception as e:
+        return False
