@@ -738,6 +738,7 @@ class ResourceProviderTransitions(object):
         mysql = self.property_mapper.get('mysql', {})
         volume_size=mysql.get("volume_size",0)
         instance = mysql.get('instance')
+        network_id = mysql.get("network_id", 0)
         if mysql.get('quantity') == 5:
             mysql_ip_info = []
             mycat_ip_info = []
@@ -753,8 +754,8 @@ class ResourceProviderTransitions(object):
                     mycat_ip_info.append(tup)
                     _instance['dbtype'] = lvs.pop()
 
-            vid1, vip1 = self.create_vip_port(mysql_ip_info[0][0],self.mysql_network_id)
-            vid2, vip2 = self.create_vip_port(mysql_ip_info[0][0],self.mysql_network_id)
+            vid1, vip1 = self.create_vip_port(mysql_ip_info[0][0],network_id)
+            vid2, vip2 = self.create_vip_port(mysql_ip_info[0][0],network_id)
             ip_info = mysql_ip_info + mycat_ip_info
             ip_info.append(('vip1', vip1))
             ip_info.append(('vip2', vip2))
@@ -875,12 +876,13 @@ class ResourceProviderTransitions(object):
     def do_redis_push(self):
         redis = self.property_mapper.get('redis', {})
         instance = redis.get('instance')
+        network_id = redis.get('network_id')
         ip1 = instance[0]['ip']
         instance[0]['dbtype'] = 'master'
         # 当redis为单例时  将实IP当虚IP使用
         redis['vip'] = ip1
         if redis.get('quantity') == 2:
-            vid, vip = self.create_vip_port(instance[0]['instance_name'],self.redis_network_id)
+            vid, vip = self.create_vip_port(instance[0]['instance_name'],self.network_id)
             ip2 = instance[1]['ip']
             instance[1]['dbtype'] = 'slave'
             redis['vip'] = vip
