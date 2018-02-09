@@ -355,10 +355,11 @@ class ResourceProviderTransitions2(object):
         replicas = propertys.get('quantity')
         cpu = propertys.get('cpu','2')
         mem = propertys.get('mem', '2')
-        app_requests_flavor='11'
-        app_limits_flavor=cpu+mem
+        #flavor={"cpu": 2, "memory": "2Gi"}
+        app_limits_flavor = propertys.get('flavor')
         filebeat_requests_flavor = '05002'
         filebeat_limits_flavor = '101'
+        app_requests_flavor = '11'
         if replicas >= 1:
             propertys['ins_id'] = cluster_id
             cluster_type = 'app_cluster'
@@ -377,10 +378,15 @@ class ResourceProviderTransitions2(object):
                 service_name = deployment_name
                 service_port=port
                 ingress_name=deployment_name + "-" +"ingress"
+                #deployment规格
                 app_requests = APP_REQUESTS.get(app_requests_flavor)
-                app_limits = APP_LIMITS.get(app_limits_flavor)
                 filebeat_requests = FILEBEAT_REQUESTS.get(filebeat_requests_flavor)
                 filebeat_limits = FILEBEAT_LIMITS.get(filebeat_limits_flavor)
+                if not app_limits_flavor:
+                    app_limits_flavor = str(cpu) + str(mem)
+                    app_limits = APP_LIMITS.get(app_limits_flavor)
+                else:
+                    app_limits = app_limits_flavor
                 #创建应用集群模板
                 deployment = K8sDeploymentApi.create_deployment_object(deployment_name,
                                                                        FILEBEAT_NAME,
@@ -472,7 +478,7 @@ class ResourceProviderTransitions2(object):
         version = propertys.get('version')
         cpu = propertys.get('cpu')
         mem = propertys.get('mem')
-        flavor = KVM_FLAVOR.get(str(cpu) + str(mem), 'uop-2C4G50G')
+        flavor = propertys.get('flavor')
         disk = propertys.get('disk')
         quantity = propertys.get('quantity')
         volume_size=propertys.get('volume_size',0)
@@ -480,6 +486,8 @@ class ResourceProviderTransitions2(object):
         availability_zone = propertys.get('availability_zone')
         port = ''
         #volume_size 默认为0
+        if not flavor:
+            flavor = KVM_FLAVOR.get(str(cpu) + str(mem))
         if cluster_type == "mysql" and str(cpu) == "2": # dev\test 环境
             flavor = KVM_FLAVOR.get("mysql", 'uop-2C4G50G')
         if quantity >= 1:

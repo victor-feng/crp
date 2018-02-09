@@ -149,6 +149,7 @@ class TestingConfig(BaseConfig):
             'networkName':'networkName',
             'tenantName':'tenantName',
             'availability_zone': 'availability_zone',
+            'flavor': 'flavor',
         },
         'resource_cluster': {
             'cluster_name': 'instance_name',
@@ -163,6 +164,7 @@ class TestingConfig(BaseConfig):
             'network_id': 'network_id',
             'image_id': 'image_id',
             'availability_zone': 'availability_zone',
+            'flavor': 'flavor',
         }
     }
     SCRIPTPATH = r'crp/res_set/playbook-0830/'
