@@ -611,17 +611,22 @@ class ResourceProviderTransitions2(object):
                     " Status is " +
                     deployment_status)
                 if deployment_status == "available":
-                    deployment_info_list=self.get_ready_deployment_info(core_v1,deployment_name,NAMESPACE,replicas)
-                    for mapper in result_mappers_list:
-                        value = mapper.values()[0]
-                        instances = value.get('instance',[])
-                        for instance in instances:
-                            for deployment_info in deployment_info_list:
-                                if instance.get('os_inst_id').lower() == deployment_info['deployment_name']:
-                                    instance['ip'] = deployment_info.get("pod_ip","127.0.0.1")
-                                    instance['physical_server'] = deployment_info.get("node_name","")
-                                    instance['os_inst_id'] = deployment_info.get("pod_name","")
-                    result_inst_id_list.append(uop_os_inst_id)
+                    s_flag, err_msg = K8sDeploymentApi.get_deployment_pod_status(core_v1, NAMESPACE, deployment_name)
+                    if s_flag is not True:
+                        self.error_msg = err_msg
+                        is_rollback = True
+                    else:
+                        deployment_info_list=self.get_ready_deployment_info(core_v1,deployment_name,NAMESPACE,replicas)
+                        for mapper in result_mappers_list:
+                            value = mapper.values()[0]
+                            instances = value.get('instance',[])
+                            for instance in instances:
+                                for deployment_info in deployment_info_list:
+                                    if instance.get('os_inst_id').lower() == deployment_info['deployment_name']:
+                                        instance['ip'] = deployment_info.get("pod_ip","127.0.0.1")
+                                        instance['physical_server'] = deployment_info.get("node_name","")
+                                        instance['os_inst_id'] = deployment_info.get("pod_name","")
+                        result_inst_id_list.append(uop_os_inst_id)
                 else:
                     s_flag,err_msg = K8sDeploymentApi.get_deployment_pod_status(core_v1,NAMESPACE,deployment_name)
                     if s_flag is not True:
