@@ -73,7 +73,7 @@ class DevelopmentConfig(BaseConfig):
     }
     DOCKER_FLAVOR = {
         "2": "83c52038-3cc1-4865-958a-a85cfde96bc0",
-        # "4": "uop-docker-4C4G30G"
+        "4": "6a744178-8d52-4577-b549-4b6ab364aff6"
     }
     # AVAILABILITY_ZONE
     #AVAILABILITY_ZONE_AZ_UOP = 'AZ_UOP'
