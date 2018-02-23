@@ -441,6 +441,37 @@ class K8sDeploymentApi(object):
         deployment_info.append(deployment_dict)
         return deployment_info
 
+    @classmethod
+    def get_deployment_pod_status(cls,api_instance, namespace, deployment_name):
+        """
+        获取deployment pod的状态和信息
+        :param api_instance:CoreV1Api
+        :param namespace:
+        :param deployment_name:
+        :return:
+        """
+        err_msg = None
+        s_flag = True
+        try:
+            api_response = api_instance.list_namespaced_pod(namespace)
+            result = api_response.items
+            for res in result:
+                pod_name = res.metadata.name
+                if deployment_name in pod_name:
+                    res = api_instance.read_namespaced_pod(pod_name, namespace)
+                    phase = res.status.phase
+                    waiting = res.status.container_statuses[0].state.waiting
+                    if phase is not None and waiting is not None:
+                        message = waiting.message
+                        if message is not None:
+                            err_msg = waiting.message
+                            s_flag = False
+                            return s_flag, err_msg
+        except Exception as e:
+            err_msg = "get deployment's pod status error: %s" % str(e)
+            s_flag = False
+        return s_flag, err_msg
+
 
 class K8sServiceApi(object):
 

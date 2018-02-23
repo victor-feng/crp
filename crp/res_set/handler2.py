@@ -622,6 +622,11 @@ class ResourceProviderTransitions2(object):
                                     instance['physical_server'] = deployment_info.get("node_name","")
                                     instance['os_inst_id'] = deployment_info.get("pod_name","")
                     result_inst_id_list.append(uop_os_inst_id)
+                else:
+                    s_flag,err_msg = K8sDeploymentApi.get_deployment_pod_status(core_v1,NAMESPACE,deployment_name)
+                    if s_flag is not True:
+                        self.error_msg = err_msg
+                        is_rollback = True
             else:
                 #openstack 虚机
                 inst = nova_client.servers.get(uop_os_inst_id['os_inst_id'])
