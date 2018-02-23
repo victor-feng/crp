@@ -46,7 +46,9 @@ def query_instance(task_id, result, resource):
         if resource_type == "app":
             deployment_ret=K8sDeploymentApi.get_deployment(extensions_v1,NAMESPACE,resource_name)
             result['inst_state'] = 1
-            if deployment_ret.status.available_replicas:
+            available_replicas = deployment_ret.status.available_replicas
+            unavailable_replicas =deployment_ret.status.unavailable_replicas
+            if available_replicas or unavailable_replicas:
                 result['current_status'] = DELETE_VM
                 result['msg'] = 'deployment is exist  begin delete Deployment'
         else:
