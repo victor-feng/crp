@@ -453,12 +453,14 @@ class K8sDeploymentApi(object):
         err_msg = None
         s_flag = True
         deployment_name = deployment_name.lower()
+        count = 0
         try:
             api_response = api_instance.list_namespaced_pod(namespace)
             result = api_response.items
             for res in result:
                 pod_name = res.metadata.name
                 if deployment_name in pod_name:
+                    count = count + 1
                     res = api_instance.read_namespaced_pod(pod_name, namespace)
                     phase = res.status.phase
                     waiting = res.status.container_statuses[0].state.waiting
@@ -468,6 +470,10 @@ class K8sDeploymentApi(object):
                             err_msg = waiting.message
                             s_flag = False
                             return s_flag, err_msg
+            if count == 0:
+                err_msg = "The pod is not found"
+                s_flag = False
+                return s_flag, err_msg
         except Exception as e:
             err_msg = "get deployment's pod status error: %s" % str(e)
             s_flag = False
