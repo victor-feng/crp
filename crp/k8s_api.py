@@ -328,9 +328,9 @@ class K8sDeploymentApi(object):
         """
         deployment_name = deployment_name.lower()
         api_response = api_instance.read_namespaced_deployment_status(deployment_name, namespace)
-        ready_replicas=api_response.status.ready_replicas
+        available_replicas=api_response.status.available_replicas
         replicas=api_response.status.replicas
-        if replicas == ready_replicas:
+        if replicas == available_replicas:
             return 'available'
         else:
             return 'unavailable'
