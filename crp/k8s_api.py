@@ -452,6 +452,7 @@ class K8sDeploymentApi(object):
         """
         err_msg = None
         s_flag = True
+        deployment_name = deployment_name.lower()
         try:
             api_response = api_instance.list_namespaced_pod(namespace)
             result = api_response.items

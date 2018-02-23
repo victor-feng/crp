@@ -623,7 +623,6 @@ class ResourceProviderTransitions2(object):
                                     instance['os_inst_id'] = deployment_info.get("pod_name","")
                     result_inst_id_list.append(uop_os_inst_id)
                 else:
-                    deployment_name=deployment_name.lower()
                     s_flag,err_msg = K8sDeploymentApi.get_deployment_pod_status(core_v1,NAMESPACE,deployment_name)
                     if s_flag is not True:
                         self.error_msg = err_msg
