@@ -567,7 +567,7 @@ class AppDeploy(Resource):
                 res=False
                 return res,msg_str % res_dict[res]
 
-    def _check_deployment_status(self,task_id=None,extensions_v1=None,core_v1=None, deployment_name=None, deploy_id=None, cluster_name=None, end_flag=None, deploy_type=None,
+    def _check_deployment_status(self,task_id=None,result_list=None,extensions_v1=None,core_v1=None, deployment_name=None, deploy_id=None, cluster_name=None, end_flag=None, deploy_type=None,
                                 unique_flag=None, cloud=None):
         try:
             deployment_status = K8sDeploymentApi.get_deployment_status(extensions_v1, NAMESPACE, deployment_name)
