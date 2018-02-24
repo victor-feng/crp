@@ -1346,8 +1346,11 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list,error_ms
     res = requests.post(callback_url, data=data_str,headers=headers)
     Log.logger.debug(res.status_code)
     Log.logger.debug(res.content)
-    nova_client = OpenStack.nova_client
-    server_groups = nova_client.server_groups.list()
+    try:
+        nova_client = OpenStack.nova_client
+        server_groups = nova_client.server_groups.list()
+    except Exception as e:
+        server_groups = []
     server_group_names = ['create_app_cluster_server_group', 'create_resource_cluster_server_group'] 
     server_group = [ sg for sg in server_groups if sg.name in server_group_names ]
     for sg in server_group:
