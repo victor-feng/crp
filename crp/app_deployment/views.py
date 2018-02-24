@@ -588,6 +588,12 @@ class AppDeploy(Resource):
                                       cluster_name, end_flag, deploy_type,
                                       unique_flag, cloud,deploy_name)
                         break
+            else:
+                err_msg = "deploy deployment failed"
+                _dep_callback(deploy_id, '127.0.0.1', "docker", err_msg, "None", False,
+                              cluster_name, end_flag, deploy_type,
+                              unique_flag, cloud, deploy_name)
+
         except Exception as e:
             err_msg = "check deployment status error %s" % str(e)
             Log.logger.error(err_msg)
