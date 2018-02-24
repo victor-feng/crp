@@ -290,7 +290,7 @@ class AppDeploy(Resource):
                     end_flag = True
                     if update_deployment_err_msg is None:
                         #不报错开始检查应用和pod的状态
-                        self._check_deployment_task(extensions_v1, core_v1, deployment_name, deploy_id, cluster_name,
+                        self._check_deployment_status(extensions_v1, core_v1, deployment_name, deploy_id, cluster_name,
                                                end_flag, deploy_type,
                                                unique_flag, cloud,deploy_name)
                     else:
@@ -570,34 +570,26 @@ class AppDeploy(Resource):
                 res=False
                 return res,msg_str % res_dict[res]
 
-    def _check_deployment_status(self,task_id=None,result_list=None,extensions_v1=None,core_v1=None, deployment_name=None, deploy_id=None, cluster_name=None, end_flag=None, deploy_type=None,
+    def _check_deployment_status(self,extensions_v1=None,core_v1=None, deployment_name=None, deploy_id=None, cluster_name=None, end_flag=None, deploy_type=None,
                                 unique_flag=None, cloud=None,deploy_name=None):
         try:
-            deployment_status = K8sDeploymentApi.get_deployment_status(extensions_v1, NAMESPACE, deployment_name)
-            if deployment_status == "available":
-                _dep_callback(deploy_id, '127.0.0.1', "docker", "None", "None", True, cluster_name, end_flag,
-                              deploy_type,
-                              unique_flag, cloud,deploy_name)
-                TaskManager.task_exit(task_id)
-            else:
-                time.sleep(60)
-                s_flag, err_msg = K8sDeploymentApi.get_deployment_pod_status(core_v1, NAMESPACE, deployment_name)
-                if s_flag is not True:
-                    _dep_callback(deploy_id, '127.0.0.1', "docker", err_msg, "None", False,
-                                  cluster_name, end_flag, deploy_type,
+            for i in range(10):
+                time.sleep(30)
+                deployment_status = K8sDeploymentApi.get_deployment_status(extensions_v1, NAMESPACE, deployment_name)
+                if deployment_status == "available":
+                    _dep_callback(deploy_id, '127.0.0.1', "docker", "None", "None", True, cluster_name, end_flag,
+                                  deploy_type,
                                   unique_flag, cloud,deploy_name)
-                    TaskManager.task_exit(task_id)
+                else:
+                    s_flag, err_msg = K8sDeploymentApi.get_deployment_pod_status(core_v1, NAMESPACE, deployment_name)
+                    if s_flag is not True:
+                        _dep_callback(deploy_id, '127.0.0.1', "docker", err_msg, "None", False,
+                                      cluster_name, end_flag, deploy_type,
+                                      unique_flag, cloud,deploy_name)
         except Exception as e:
             err_msg = "check deployment status error %s" % str(e)
             Log.logger.error(err_msg)
-            TaskManager.task_exit(task_id)
 
-    def _check_deployment_task(self,extensions_v1,core_v1, deployment_name, deploy_id, cluster_name, end_flag, deploy_type,
-                                unique_flag, cloud,deploy_name):
-        result_list = []
-        timeout = 10000
-        TaskManager.task_start(SLEEP_TIME, timeout, result_list, self._check_deployment_status,extensions_v1, core_v1,deployment_name,deploy_id, cluster_name, end_flag,
-                               deploy_type, unique_flag,cloud,deploy_name)
 
 
 
