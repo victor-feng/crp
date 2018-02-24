@@ -580,12 +580,14 @@ class AppDeploy(Resource):
                     _dep_callback(deploy_id, '127.0.0.1', "docker", "None", "None", True, cluster_name, end_flag,
                                   deploy_type,
                                   unique_flag, cloud,deploy_name)
+                    break
                 else:
                     s_flag, err_msg = K8sDeploymentApi.get_deployment_pod_status(core_v1, NAMESPACE, deployment_name)
                     if s_flag is not True:
                         _dep_callback(deploy_id, '127.0.0.1', "docker", err_msg, "None", False,
                                       cluster_name, end_flag, deploy_type,
                                       unique_flag, cloud,deploy_name)
+                        break
         except Exception as e:
             err_msg = "check deployment status error %s" % str(e)
             Log.logger.error(err_msg)
