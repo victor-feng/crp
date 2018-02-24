@@ -213,6 +213,7 @@ class AppDeploy(Resource):
             parser.add_argument('environment', type=str)
             parser.add_argument('cloud', type=str)
             parser.add_argument('resource_name', type=str)
+            parser.add_argument('deploy_name', type=str)
             args = parser.parse_args()
             Log.logger.debug("AppDeploy receive post request. args is " + str(args))
             deploy_id = args.deploy_id
@@ -225,8 +226,9 @@ class AppDeploy(Resource):
             environment=args.environment
             cloud = args.cloud
             resource_name = args.resource_name
+            deploy_name=args.deploy_name
             Log.logger.debug("Thread exec start")
-            t = threading.Thread(target=self.deploy_anything, args=(docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud,resource_name))
+            t = threading.Thread(target=self.deploy_anything, args=(docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud,resource_name,deploy_name))
             t.start()
             Log.logger.debug("Thread exec done")
 
@@ -244,7 +246,7 @@ class AppDeploy(Resource):
         }
         return res, code
 
-    def deploy_anything(self,docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud,resource_name):
+    def deploy_anything(self,docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud,resource_name,deploy_name):
         try:
             lock = threading.RLock()
             lock.acquire()
@@ -290,10 +292,10 @@ class AppDeploy(Resource):
                         #不报错开始检查应用和pod的状态
                         self._check_deployment_task(extensions_v1, core_v1, deployment_name, deploy_id, cluster_name,
                                                end_flag, deploy_type,
-                                               unique_flag, cloud)
+                                               unique_flag, cloud,deploy_name)
                     else:
                         _dep_callback(deploy_id, '127.0.0.1', "docker", update_deployment_err_msg, "None", False, cluster_name, end_flag, deploy_type,
-                                      unique_flag,cloud)
+                                      unique_flag,cloud,deploy_name)
             else:
                 if not appinfo:
                     Log.logger.info("No nginx ip information, no need to push nginx something")
@@ -357,8 +359,9 @@ class AppDeploy(Resource):
                     all_ips.extend(ips)
                 self.all_ips = all_ips
                 #部署docker
+                cloud = '1'
                 for info in docker:
-                    self._image_transit(deploy_id, info,appinfo,deploy_type,unique_flag)
+                    self._image_transit(deploy_id, info,appinfo,deploy_type,unique_flag,cloud,deploy_name)
             lock.release()
         except Exception as e:
             code = 500
@@ -366,7 +369,7 @@ class AppDeploy(Resource):
             Log.logger.error(msg)
         return code, msg
 
-    def _deploy_docker(self, info,deploy_id, image_uuid,appinfo,deploy_type,unique_flag):
+    def _deploy_docker(self, info,deploy_id, image_uuid,appinfo,deploy_type,unique_flag,cloud,deploy_name):
         deploy_flag=True
         end_flag=False
         first_error_flag=False
@@ -394,7 +397,7 @@ class AppDeploy(Resource):
                         msg=u"应用健康检查正常"
                     else:
                         msg=u"docker网络检查正常"
-                    _dep_callback(deploy_id, ip, "docker", msg, vm_state, True, cluster_name,end_flag,deploy_type,unique_flag)
+                    _dep_callback(deploy_id, ip, "docker", msg, vm_state, True, cluster_name,end_flag,deploy_type,unique_flag,cloud,deploy_name)
                     Log.logger.debug(
                         "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
                 else:
@@ -411,7 +414,7 @@ class AppDeploy(Resource):
                     if len(self.all_ips) == 0:
                         end_flag=True
                         deploy_flag = False
-                    _dep_callback(deploy_id, ip, "docker", err_msg, vm_state, False,cluster_name,end_flag,deploy_type,unique_flag)
+                    _dep_callback(deploy_id, ip, "docker", err_msg, vm_state, False,cluster_name,end_flag,deploy_type,unique_flag,cloud,deploy_name)
                     Log.logger.debug(
                         "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
                     if first_error_flag:break
@@ -489,15 +492,15 @@ class AppDeploy(Resource):
             return os_flag,None,err_msg
 
 
-    def _image_transit(self,deploy_id, info,appinfo,deploy_type,unique_flag):
+    def _image_transit(self,deploy_id, info,appinfo,deploy_type,unique_flag,cloud,deploy_name):
         result_list = []
         timeout = 10000
-        TaskManager.task_start(SLEEP_TIME, timeout, result_list, self._image_transit_task, deploy_id, info, appinfo,deploy_type,unique_flag)
+        TaskManager.task_start(SLEEP_TIME, timeout, result_list, self._image_transit_task, deploy_id, info, appinfo,deploy_type,unique_flag,cloud,deploy_name)
 
-    def _image_transit_task(self,task_id=None, result_list=None, deploy_id=None, info=None, appinfo=[],deploy_type=None,unique_flag=None):
+    def _image_transit_task(self,task_id=None, result_list=None, deploy_id=None, info=None, appinfo=[],deploy_type=None,unique_flag=None,cloud=None,deploy_name=None):
         image_uuid = info.get("image_uuid")
         if self._check_image_status(image_uuid):
-            deploy_flag = self._deploy_docker(info, deploy_id, image_uuid, appinfo, deploy_type,unique_flag)
+            deploy_flag = self._deploy_docker(info, deploy_id, image_uuid, appinfo, deploy_type,unique_flag,cloud,deploy_name)
             if not deploy_flag:
                 TaskManager.task_exit(task_id)
         else:
@@ -513,7 +516,7 @@ class AppDeploy(Resource):
             if len(self.all_ips) == 0:
                 end_flag=True
             msg = "check image five times,image status not active,image url is:%s,Image id is %s" % (image_url,image_uuid)
-            _dep_callback(deploy_id, ip, "docker", msg, "None", False, cluster_name, end_flag, 'deploy',unique_flag)
+            _dep_callback(deploy_id, ip, "docker", msg, "None", False, cluster_name, end_flag, 'deploy',unique_flag,cloud,deploy_name)
         TaskManager.task_exit(task_id)
 
     def _check_image_status(self,image_uuid):
@@ -568,13 +571,13 @@ class AppDeploy(Resource):
                 return res,msg_str % res_dict[res]
 
     def _check_deployment_status(self,task_id=None,result_list=None,extensions_v1=None,core_v1=None, deployment_name=None, deploy_id=None, cluster_name=None, end_flag=None, deploy_type=None,
-                                unique_flag=None, cloud=None):
+                                unique_flag=None, cloud=None,deploy_name=None):
         try:
             deployment_status = K8sDeploymentApi.get_deployment_status(extensions_v1, NAMESPACE, deployment_name)
             if deployment_status == "available":
                 _dep_callback(deploy_id, '127.0.0.1', "docker", "None", "None", True, cluster_name, end_flag,
                               deploy_type,
-                              unique_flag, cloud)
+                              unique_flag, cloud,deploy_name)
                 TaskManager.task_exit(task_id)
             else:
                 time.sleep(60)
@@ -582,7 +585,7 @@ class AppDeploy(Resource):
                 if s_flag is not True:
                     _dep_callback(deploy_id, '127.0.0.1', "docker", err_msg, "None", False,
                                   cluster_name, end_flag, deploy_type,
-                                  unique_flag, cloud)
+                                  unique_flag, cloud,deploy_name)
                     TaskManager.task_exit(task_id)
         except Exception as e:
             err_msg = "check deployment status error %s" % str(e)
@@ -590,11 +593,11 @@ class AppDeploy(Resource):
             TaskManager.task_exit(task_id)
 
     def _check_deployment_task(self,extensions_v1,core_v1, deployment_name, deploy_id, cluster_name, end_flag, deploy_type,
-                                unique_flag, cloud):
+                                unique_flag, cloud,deploy_name):
         result_list = []
         timeout = 10000
         TaskManager.task_start(SLEEP_TIME, timeout, result_list, self._check_deployment_status,extensions_v1, core_v1,deployment_name,deploy_id, cluster_name, end_flag,
-                               deploy_type, unique_flag,cloud)
+                               deploy_type, unique_flag,cloud,deploy_name)
 
 
 
