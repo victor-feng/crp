@@ -5,6 +5,7 @@ from kubernetes import client
 from kubernetes import  config
 from config import APP_ENV, configs
 from crp.utils.aio import get_k8s_err_code
+from crp.log import Log
 import datetime
 
 
@@ -469,8 +470,7 @@ class K8sDeploymentApi(object):
                             s_flag = False
                             return s_flag, err_msg
         except Exception as e:
-            err_msg = "get deployment's pod status error: %s" % str(e)
-            s_flag = False
+            Log.logger.error("get deployment's pod status error: %s" ,str(e))
         return s_flag, err_msg
 
 

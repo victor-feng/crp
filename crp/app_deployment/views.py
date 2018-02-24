@@ -577,6 +577,7 @@ class AppDeploy(Resource):
                               unique_flag, cloud)
                 TaskManager.task_exit(task_id)
             else:
+                time.sleep(60)
                 s_flag, err_msg = K8sDeploymentApi.get_deployment_pod_status(core_v1, NAMESPACE, deployment_name)
                 if s_flag is not True:
                     _dep_callback(deploy_id, '127.0.0.1', "docker", err_msg, "None", False,
