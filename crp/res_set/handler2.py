@@ -15,7 +15,7 @@ from config import configs, APP_ENV
 from crp.utils.aio import exec_cmd_ten_times,exec_cmd_one_times
 from crp.app_deployment.handler import start_write_log
 from del_handler2 import delete_instance_and_query2,QUERY_VOLUME
-from crp.k8s_api import K8sDeploymentApi,K8sIngressApi,K8sServiceApi,K8S
+from crp.k8s_api import K8sDeploymentApi,K8sIngressApi,K8sServiceApi
 
 TIMEOUT = 5000
 SLEEP_TIME = 3
@@ -369,8 +369,6 @@ class ResourceProviderTransitions2(object):
             propertys['port'] = port
             propertys['instance'] = []
             #实例化k8s
-            core_v1=K8S.core_v1
-            extensions_v1=K8S.extensions_v1
             #--------------
             deployment_name = self.req_dict["resource_name"]
             #创建应用集群
@@ -407,14 +405,14 @@ class ResourceProviderTransitions2(object):
                     #如果有域名创建service和ingress
                     #code=409 资源已经存在
                     service=K8sServiceApi.create_service_object(service_name,NAMESPACE,service_port)
-                    service_err_msg,service_err_code=K8sServiceApi.create_service(core_v1, service,NAMESPACE)
+                    service_err_msg,service_err_code=K8sServiceApi.create_service(service,NAMESPACE)
                     if service_err_msg is None:
                         #创建ingress
                         ingress=K8sIngressApi.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,domain)
-                        ingress_err_msg,ingress_err_code=K8sIngressApi.create_ingress(extensions_v1, ingress,NAMESPACE)
+                        ingress_err_msg,ingress_err_code=K8sIngressApi.create_ingress(ingress,NAMESPACE)
                         if ingress_err_msg is None:
                             #创建应用集群
-                            deployment_err_msg,deployment_err_code = K8sDeploymentApi.create_deployment(extensions_v1, deployment,
+                            deployment_err_msg,deployment_err_code = K8sDeploymentApi.create_deployment(deployment,
                                                                                     NAMESPACE)
                             if deployment_err_msg:
                                 is_rollback = True
@@ -430,7 +428,7 @@ class ResourceProviderTransitions2(object):
                         self.code = service_err_code
                 else:
                     #没有域名直接创建应用集群
-                    deployment_err_msg,deployment_err_code=K8sDeploymentApi.create_deployment(extensions_v1, deployment,NAMESPACE)
+                    deployment_err_msg,deployment_err_code=K8sDeploymentApi.create_deployment(deployment,NAMESPACE)
                     if deployment_err_msg:
                         is_rollback = True
                         self.error_msg = deployment_err_msg
@@ -439,7 +437,7 @@ class ResourceProviderTransitions2(object):
                 #应用集群扩缩容
                 update_replicas_deployment=K8sDeploymentApi.update_deployment_replicas_object(deployment_name)
                 update_deployment_err_msg, update_deployment_err_code = K8sDeploymentApi.update_deployment_scale(
-                    extensions_v1, update_replicas_deployment, deployment_name, NAMESPACE, replicas)
+                    update_replicas_deployment, deployment_name, NAMESPACE, replicas)
                 if update_deployment_err_msg:
                     is_rollback = True
                     self.error_msg = update_deployment_err_msg
@@ -594,15 +592,13 @@ class ResourceProviderTransitions2(object):
             result_inst_id_list[:].__str__() +
             " uop_os_inst_id_list " + uop_os_inst_id_list.__str__())
         nova_client = OpenStack.nova_client
-        core_v1 = K8S.core_v1
-        extensions_v1 = K8S.extensions_v1
         for uop_os_inst_id in uop_os_inst_id_wait_query:
             cluster_type = uop_os_inst_id.get('cluster_type')
             if cluster_type == "app_cluster":
                 #k8s 应用
                 replicas=uop_os_inst_id.get('replicas',0)
                 deployment_name=self.req_dict["resource_name"]
-                deployment_status=K8sDeploymentApi.get_deployment_status(extensions_v1, NAMESPACE, deployment_name)
+                deployment_status=K8sDeploymentApi.get_deployment_status(NAMESPACE, deployment_name)
                 Log.logger.debug(
                     "Query Task ID " +
                     self.task_id.__str__() +
@@ -611,7 +607,7 @@ class ResourceProviderTransitions2(object):
                     " Status is " +
                     deployment_status)
                 if deployment_status == "available":
-                    deployment_info_list=self.get_ready_deployment_info(core_v1,deployment_name,NAMESPACE,replicas)
+                    deployment_info_list=self.get_ready_deployment_info(deployment_name,NAMESPACE,replicas)
                     for mapper in result_mappers_list:
                         value = mapper.values()[0]
                         instances = value.get('instance',[])
@@ -623,7 +619,7 @@ class ResourceProviderTransitions2(object):
                                     instance['os_inst_id'] = deployment_info.get("pod_name","")
                     result_inst_id_list.append(uop_os_inst_id)
                 else:
-                    s_flag,err_msg = K8sDeploymentApi.get_deployment_pod_status(core_v1,NAMESPACE,deployment_name)
+                    s_flag,err_msg = K8sDeploymentApi.get_deployment_pod_status(NAMESPACE,deployment_name)
                     if s_flag is not True:
                         self.error_msg = err_msg
                         is_rollback = True
@@ -1098,10 +1094,10 @@ class ResourceProviderTransitions2(object):
         Log.logger.debug('Port id: ' + response.get('port').get('id') +
                          'Port ip: ' + ip)
         return id, ip
-    def get_ready_deployment_info(self,core_v1,deployment_name,namespace,replicas):
+    def get_ready_deployment_info(self,deployment_name,namespace,replicas):
         for i in range(10):
             time.sleep(3)
-            deployment_info_list = K8sDeploymentApi.get_deployment_pod_info(core_v1, namespace, deployment_name)
+            deployment_info_list = K8sDeploymentApi.get_deployment_pod_info(namespace, deployment_name)
             if len(deployment_info_list) == replicas:
                 ip_list=[]
                 for deployment_info in deployment_info_list:

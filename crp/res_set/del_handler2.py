@@ -41,10 +41,9 @@ def query_instance(task_id, result, resource):
     resource_type=result.get('resource_type','')
     resource_name = result.get('resource_name','')
     nova_client = OpenStack.nova_client
-    extensions_v1 = K8S.extensions_v1
     try:
         if resource_type == "app":
-            deployment_ret=K8sDeploymentApi.get_deployment(extensions_v1,NAMESPACE,resource_name)
+            deployment_ret=K8sDeploymentApi.get_deployment(NAMESPACE,resource_name)
             result['inst_state'] = 1
             available_replicas = deployment_ret.status.available_replicas
             unavailable_replicas =deployment_ret.status.unavailable_replicas
@@ -90,8 +89,6 @@ def delete_instance(task_id, result):
     """
     os_inst_id = result.get('os_inst_id', '')
     nova_client = OpenStack.nova_client
-    extensions_v1 = K8S.extensions_v1
-    core_v1 = K8S.core_v1
     resource_type = result.get('resource_type','')
     resource_name = result.get('resource_name','')
     service_name = resource_name
@@ -99,13 +96,13 @@ def delete_instance(task_id, result):
     try:
         if resource_type == "app":
             #删除deployment 的时候 同时删除service 和 ingress
-            service_res,service_flag=K8sServiceApi.get_service(core_v1, service_name, NAMESPACE)
+            service_res,service_flag=K8sServiceApi.get_service(service_name, NAMESPACE)
             if service_flag:
-                K8sServiceApi.delete_service(core_v1, service_name, NAMESPACE)
-            ingress_res,ingress_flag=K8sIngressApi.get_ingress(extensions_v1, ingress_name, NAMESPACE)
+                K8sServiceApi.delete_service(service_name, NAMESPACE)
+            ingress_res,ingress_flag=K8sIngressApi.get_ingress(ingress_name, NAMESPACE)
             if ingress_flag:
-                K8sIngressApi.delete_ingress(extensions_v1, ingress_name, NAMESPACE)
-            K8sDeploymentApi.delete_deployment(extensions_v1,resource_name,NAMESPACE)
+                K8sIngressApi.delete_ingress(ingress_name, NAMESPACE)
+            K8sDeploymentApi.delete_deployment(resource_name,NAMESPACE)
         else:
             nova_client.servers.delete(os_inst_id)
         result['current_status'] = QUERY_VM
