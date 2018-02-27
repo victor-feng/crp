@@ -45,17 +45,13 @@ def main():
     from crp.openstack import openstack_client_setting
     from crp.openstack2 import openstack2_client_setting
     from crp.mpc_resource import instance_status_sync
-    from crp.k8s_api import k8s_client_setting
 
     OPENRC_PATH = app.config['OPENRC_PATH']
     OPENRC2_PATH = app.config['OPENRC2_PATH']
-    K8S_CONF_PATH = app.config['K8S_CONF_PATH']
     if OPENRC_PATH:
         openstack_client_setting()
     if OPENRC2_PATH:
         openstack2_client_setting()
-    if K8S_CONF_PATH:
-        k8s_client_setting(K8S_CONF_PATH)
     logging.warn("[CRP] Openstack client is inited")
     MPC_URL = app.config['MPC_URL']
 
