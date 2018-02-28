@@ -177,8 +177,8 @@ class Dockerlogs(Resource):
         try:
             if cloud == "2":
                 deployment_name = resource_name
-                #logs,code=K8sLogApi.get_deployment_log(deployment_name,NAMESPACE)
-                logs,code=K8sLogApi.get_namespace_pod_log(osid,NAMESPACE,"app")
+                logs,code=K8sLogApi.get_deployment_log(deployment_name,NAMESPACE)
+                #logs,code=K8sLogApi.get_namespace_pod_log(osid,NAMESPACE,"app")
             else:
                 #nova_cli = OpenStack.nova_client
                 Log.logger.info("#####osid:{}".format(osid))
