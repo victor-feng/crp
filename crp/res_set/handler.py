@@ -332,6 +332,8 @@ class ResourceProviderTransitions(object):
         flavor = propertys.get('flavor')
         quantity = propertys.get('quantity')
         meta = propertys.get('meta')
+        instance_type = property.get("instance_type")
+        image_id = property.get("image_id")
         if not flavor:
             flavor = DOCKER_FLAVOR.get(str(cpu) + str(mem))
         if quantity >= 1:
@@ -346,51 +348,100 @@ class ResourceProviderTransitions(object):
             nova_client = OpenStack.nova_client
             server_group = None
 
-            if IS_OPEN_AFFINITY_SCHEDULING:
-                server_group = nova_client.server_groups.create(**{'name': 'create_app_cluster_server_group', 'policies': ['anti-affinity']})
-            
-            err_msg, image_uuid = image_transit(image_url)
-            if err_msg is None:
-                Log.logger.debug(
-                         "Task ID " +
-                          self.task_id.__str__() +
-                          " Transit harbor docker image success. The result glance image UUID is " +
-                          image_uuid)
-                for i in range(0, quantity, 1):
-                    instance_name = '%s_%s_%s' % (cluster_name,docker_tag, i.__str__())
-                    err_msg, osint_id = self._create_docker_by_url(
-                        instance_name, image_uuid, flavor, meta,network_id,availability_zone,server_group)
-                    if err_msg is None:
-                        uopinst_info = {
-                            'uop_inst_id': cluster_id,
-                            'os_inst_id': osint_id
-                        }
-                        uop_os_inst_id_list.append(uopinst_info)
-                        propertys['instance'].append(
-                            {
-                                'instance_type': cluster_type,
-                                'instance_name': instance_name,
-                                'username': DEFAULT_USERNAME,
-                                'password': DEFAULT_PASSWORD,
-                                'domain': domain,
-                                'port': port,
-                                'os_inst_id': osint_id})
-            else:
-                Log.logger.error(
-                    "Task ID " +
-                    self.task_id.__str__() +
-                    " ERROR. Error Message is:")
-                Log.logger.error(err_msg)
-                self.error_msg="pull image or create image error,error msg is:" +err_msg.__str__()
-                # 删除全部
-                is_rollback = True
-                uop_os_inst_id_list = []
-                if err_msg == -1:
-                    self.error_type = 'notfound'
-                    self.error_msg="the image is not found"
+            if instance_type == "docker":
+
+                if IS_OPEN_AFFINITY_SCHEDULING:
+                    server_group = nova_client.server_groups.create(**{'name': 'create_app_cluster_server_group', 'policies': ['anti-affinity']})
+
+                err_msg, image_uuid = image_transit(image_url)
+                if err_msg is None:
+                    Log.logger.debug(
+                             "Task ID " +
+                              self.task_id.__str__() +
+                              " Transit harbor docker image success. The result glance image UUID is " +
+                              image_uuid)
+                    for i in range(0, quantity, 1):
+                        instance_name = '%s_%s_%s' % (cluster_name,docker_tag, i.__str__())
+                        err_msg, osint_id = self._create_docker_by_url(
+                            instance_name, image_uuid, flavor, meta,network_id,availability_zone,server_group)
+                        if err_msg is None:
+                            uopinst_info = {
+                                'uop_inst_id': cluster_id,
+                                'os_inst_id': osint_id
+                            }
+                            uop_os_inst_id_list.append(uopinst_info)
+                            propertys['instance'].append(
+                                {
+                                    'instance_type': cluster_type,
+                                    'instance_name': instance_name,
+                                    'username': DEFAULT_USERNAME,
+                                    'password': DEFAULT_PASSWORD,
+                                    'domain': domain,
+                                    'port': port,
+                                    'os_inst_id': osint_id})
+                else:
+                    Log.logger.error(
+                        "Task ID " +
+                        self.task_id.__str__() +
+                        " ERROR. Error Message is:")
+                    Log.logger.error(err_msg)
+                    self.error_msg="pull image or create image error,error msg is:" +err_msg.__str__()
+                    # 删除全部
+                    is_rollback = True
+                    uop_os_inst_id_list = []
+                    if err_msg == -1:
+                        self.error_type = 'notfound'
+                        self.error_msg="the image is not found"
+            elif instance_type == "kvm":
+                is_rollback, uop_os_inst_id_list = self._create_kvm_cluster(property_mapper, cluster_id, instance_type,
+                                                                            image_id, port, cpu, mem, flavor,
+                                                                            quantity, network_id, availability_zone)
         return is_rollback, uop_os_inst_id_list
 
-    # 申请资源集群kvm资源
+    #创建kvm集群资源
+    def _create_kvm_cluster(self, property_mapper, cluster_id, instance_type, image_id, port, cpu, mem, flavor,
+                            quantity, network_id, availability_zone):
+        is_rollback = False
+        uop_os_inst_id_list = []
+        propertys = property_mapper.get('app_cluster')
+        if not flavor:
+            flavor = KVM_FLAVOR.get(str(cpu) + str(mem))
+        if quantity >= 1:
+            cluster_type_image_port_mapper = cluster_type_image_port_mappers.get(
+                instance_type)
+            if cluster_type_image_port_mapper is not None:
+                port = cluster_type_image_port_mapper.get('port')
+            propertys['cluster_type'] = instance_type
+            propertys['instance_type'] = instance_type
+            propertys['username'] = DEFAULT_USERNAME
+            propertys['password'] = DEFAULT_PASSWORD
+            propertys['port'] = port
+            propertys['instance'] = []
+
+            # 针对servers_group 亲和调度操作 , 需要创建亲和调度
+            nova_client = OpenStack.nova_client
+            server_group = None
+            if IS_OPEN_AFFINITY_SCHEDULING:
+                server_group = nova_client.server_groups.create(
+                    **{'name': 'create_resource_cluster_server_group', 'policies': ['anti-affinity']})
+            for i in range(0, quantity, 1):
+                instance_name = '%s_%s' % (self.req_dict["resource_name"], i.__str__())
+                osint_id = self._create_instance_by_type(
+                    instance_type, instance_name, flavor, network_id, image_id, availability_zone, server_group)
+                uopinst_info = {
+                    'uop_inst_id': cluster_id,
+                    'os_inst_id': osint_id,
+                }
+                uop_os_inst_id_list.append(uopinst_info)
+                propertys['instance'].append({'instance_type': instance_type,
+                                              'instance_name': instance_name,
+                                              'username': DEFAULT_USERNAME,
+                                              'password': DEFAULT_PASSWORD,
+                                              'port': port,
+                                              'os_inst_id': osint_id})
+        return is_rollback, uop_os_inst_id_list
+
+    # 申请资源集群数据库和中间件资源
     def _create_resource_cluster(self, property_mapper):
         is_rollback = False
         uop_os_inst_id_list = []

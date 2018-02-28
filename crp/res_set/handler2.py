@@ -349,6 +349,11 @@ class ResourceProviderTransitions2(object):
         port = propertys.get('port')
         networkName = propertys.get('networkName')
         tenantName = propertys.get('tenantName')
+        instance_type=property.get("instance_type")
+        flavor = property.get("flavor")
+        image_id = property.get("image_id")
+        network_id = propertys.get('network_id')
+        availability_zone = propertys.get('availability_zone')
         if port:
             port = int(port)
         image_url = propertys.get('image_url')
@@ -368,102 +373,153 @@ class ResourceProviderTransitions2(object):
             propertys['password'] = DEFAULT_PASSWORD
             propertys['port'] = port
             propertys['instance'] = []
-            #实例化k8s
-            #--------------
+            propertys['instance_type'] = instance_type
             deployment_name = self.req_dict["resource_name"]
             #创建应用集群
-            if self.set_flag == "res":
-                service_name = deployment_name
-                service_port=port
-                ingress_name=deployment_name + "-" +"ingress"
-                #deployment规格
-                app_requests = APP_REQUESTS.get(app_requests_flavor)
-                filebeat_requests = FILEBEAT_REQUESTS.get(filebeat_requests_flavor)
-                filebeat_limits = FILEBEAT_LIMITS.get(filebeat_limits_flavor)
-                if not app_limits_flavor:
-                    app_limits_flavor = str(cpu) + str(mem)
-                    app_limits = APP_LIMITS.get(app_limits_flavor)
-                else:
-                    app_limits = app_limits_flavor
-                #创建应用集群模板
-                deployment = K8sDeploymentApi.create_deployment_object(deployment_name,
-                                                                       FILEBEAT_NAME,
-                                                                       FILEBEAT_IMAGE_URL,
-                                                                       filebeat_requests,
-                                                                       filebeat_limits,
-                                                                       image_url,
-                                                                       port,
-                                                                       app_requests,
-                                                                       app_limits,
-                                                                       networkName,
-                                                                       tenantName,
-                                                                       HOSTNAMES,
-                                                                       IP,
-                                                                       replicas
-                                                                       )
-                if domain:
-                    #如果有域名创建service和ingress
-                    #code=409 资源已经存在
-                    service=K8sServiceApi.create_service_object(service_name,NAMESPACE,service_port)
-                    service_err_msg,service_err_code=K8sServiceApi.create_service(service,NAMESPACE)
-                    if service_err_msg is None:
-                        #创建ingress
-                        ingress=K8sIngressApi.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,domain)
-                        ingress_err_msg,ingress_err_code=K8sIngressApi.create_ingress(ingress,NAMESPACE)
-                        if ingress_err_msg is None:
-                            #创建应用集群
-                            deployment_err_msg,deployment_err_code = K8sDeploymentApi.create_deployment(deployment,
-                                                                                    NAMESPACE)
-                            if deployment_err_msg:
+            if instance_type == "docker":
+                #创建容器云
+                if self.set_flag == "res":
+                    service_name = deployment_name
+                    service_port=port
+                    ingress_name=deployment_name + "-" +"ingress"
+                    #deployment规格
+                    app_requests = APP_REQUESTS.get(app_requests_flavor)
+                    filebeat_requests = FILEBEAT_REQUESTS.get(filebeat_requests_flavor)
+                    filebeat_limits = FILEBEAT_LIMITS.get(filebeat_limits_flavor)
+                    if not app_limits_flavor:
+                        app_limits_flavor = str(cpu) + str(mem)
+                        app_limits = APP_LIMITS.get(app_limits_flavor)
+                    else:
+                        app_limits = app_limits_flavor
+                    #创建应用集群模板
+                    deployment = K8sDeploymentApi.create_deployment_object(deployment_name,
+                                                                           FILEBEAT_NAME,
+                                                                           FILEBEAT_IMAGE_URL,
+                                                                           filebeat_requests,
+                                                                           filebeat_limits,
+                                                                           image_url,
+                                                                           port,
+                                                                           app_requests,
+                                                                           app_limits,
+                                                                           networkName,
+                                                                           tenantName,
+                                                                           HOSTNAMES,
+                                                                           IP,
+                                                                           replicas
+                                                                           )
+                    if domain:
+                        #如果有域名创建service和ingress
+                        #code=409 资源已经存在
+                        service=K8sServiceApi.create_service_object(service_name,NAMESPACE,service_port)
+                        service_err_msg,service_err_code=K8sServiceApi.create_service(service,NAMESPACE)
+                        if service_err_msg is None:
+                            #创建ingress
+                            ingress=K8sIngressApi.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,domain)
+                            ingress_err_msg,ingress_err_code=K8sIngressApi.create_ingress(ingress,NAMESPACE)
+                            if ingress_err_msg is None:
+                                #创建应用集群
+                                deployment_err_msg,deployment_err_code = K8sDeploymentApi.create_deployment(deployment,
+                                                                                        NAMESPACE)
+                                if deployment_err_msg:
+                                    is_rollback = True
+                                    self.error_msg = deployment_err_msg
+                                    self.code = deployment_err_code
+                            else:
                                 is_rollback = True
-                                self.error_msg = deployment_err_msg
-                                self.code = deployment_err_code
+                                self.error_msg = ingress_err_msg
+                                self.code = ingress_err_code
                         else:
                             is_rollback = True
-                            self.error_msg = ingress_err_msg
-                            self.code = ingress_err_code
+                            self.error_msg = service_err_msg
+                            self.code = service_err_code
                     else:
+                        #没有域名直接创建应用集群
+                        deployment_err_msg,deployment_err_code=K8sDeploymentApi.create_deployment(deployment,NAMESPACE)
+                        if deployment_err_msg:
+                            is_rollback = True
+                            self.error_msg = deployment_err_msg
+                            self.code = deployment_err_code
+                elif self.set_flag == "increase" or self.set_flag == "reduce":
+                    #应用集群扩缩容
+                    update_replicas_deployment=K8sDeploymentApi.update_deployment_replicas_object(deployment_name)
+                    update_deployment_err_msg, update_deployment_err_code = K8sDeploymentApi.update_deployment_scale(
+                        update_replicas_deployment, deployment_name, NAMESPACE, replicas)
+                    if update_deployment_err_msg:
                         is_rollback = True
-                        self.error_msg = service_err_msg
-                        self.code = service_err_code
-                else:
-                    #没有域名直接创建应用集群
-                    deployment_err_msg,deployment_err_code=K8sDeploymentApi.create_deployment(deployment,NAMESPACE)
-                    if deployment_err_msg:
-                        is_rollback = True
-                        self.error_msg = deployment_err_msg
-                        self.code = deployment_err_code
-            elif self.set_flag == "increase" or self.set_flag == "reduce":
-                #应用集群扩缩容
-                update_replicas_deployment=K8sDeploymentApi.update_deployment_replicas_object(deployment_name)
-                update_deployment_err_msg, update_deployment_err_code = K8sDeploymentApi.update_deployment_scale(
-                    update_replicas_deployment, deployment_name, NAMESPACE, replicas)
-                if update_deployment_err_msg:
-                    is_rollback = True
-                    self.error_msg = update_deployment_err_msg
-                    self.code = update_deployment_err_code
-            uopinst_info = {
-                'uop_inst_id': cluster_id,
-                'os_inst_id': deployment_name,
-                'cluster_type': cluster_type,
-                'replicas':replicas
-            }
-            uop_os_inst_id_list.append(uopinst_info)
-            for i in range(0, replicas, 1):
-                os_inst_id=deployment_name+'@@'+str(i)
-                propertys['instance'].append(
-                    {
-                        'instance_type': cluster_type,
-                        'instance_name': cluster_name,
-                        'username': DEFAULT_USERNAME,
-                        'password': DEFAULT_PASSWORD,
-                        'domain': domain,
-                        'port': port,
-                        'os_inst_id': os_inst_id})
+                        self.error_msg = update_deployment_err_msg
+                        self.code = update_deployment_err_code
+                uopinst_info = {
+                    'uop_inst_id': cluster_id,
+                    'os_inst_id': deployment_name,
+                    'cluster_type': cluster_type,
+                    'replicas':replicas,
+                    "instance_type":instance_type
+                }
+                uop_os_inst_id_list.append(uopinst_info)
+                for i in range(0, replicas, 1):
+                    os_inst_id=deployment_name+'@@'+str(i)
+                    propertys['instance'].append(
+                        {
+                            'instance_type': instance_type,
+                            'instance_name': cluster_name,
+                            'username': DEFAULT_USERNAME,
+                            'password': DEFAULT_PASSWORD,
+                            'domain': domain,
+                            'port': port,
+                            'os_inst_id': os_inst_id})
+
+            elif instance_type == "kvm":
+                #创建虚拟化云
+                quantity=replicas
+                is_rollback, uop_os_inst_id_list = self._create_kvm_cluster(property_mapper, cluster_id, instance_type,
+                                                                            image_id, port, cpu, mem, flavor,
+                                                                            quantity, network_id, availability_zone)
+
+
         return is_rollback, uop_os_inst_id_list
 
+    def _create_kvm_cluster(self,property_mapper,cluster_id, instance_type,image_id,port,cpu,mem,flavor,quantity,network_id,availability_zone):
+        is_rollback = False
+        uop_os_inst_id_list = []
+        propertys = property_mapper.get('app_cluster')
+        if not flavor:
+            flavor = KVM_FLAVOR.get(str(cpu) + str(mem))
+        if quantity >= 1:
+            cluster_type_image_port_mapper = cluster_type_image_port_mappers.get(
+                instance_type)
+            if cluster_type_image_port_mapper is not None:
+                port = cluster_type_image_port_mapper.get('port')
+            propertys['cluster_type'] = instance_type
+            propertys['instance_type'] = instance_type
+            propertys['username'] = DEFAULT_USERNAME
+            propertys['password'] = DEFAULT_PASSWORD
+            propertys['port'] = port
+            propertys['instance'] = []
 
-    # 申请资源集群kvm资源
+            # 针对servers_group 亲和调度操作 , 需要创建亲和调度
+            nova_client = OpenStack.nova_client
+            server_group = None
+            if IS_OPEN_AFFINITY_SCHEDULING:
+                server_group = nova_client.server_groups.create(
+                    **{'name': 'create_resource_cluster_server_group', 'policies': ['anti-affinity']})
+            for i in range(0, quantity, 1):
+                instance_name = '%s_%s' % (self.req_dict["resource_name"], i.__str__())
+                osint_id = self._create_instance_by_type(
+                    instance_type, instance_name, flavor, network_id, image_id, availability_zone, server_group)
+                uopinst_info = {
+                    'uop_inst_id': cluster_id,
+                    'os_inst_id': osint_id,
+                }
+                uop_os_inst_id_list.append(uopinst_info)
+                propertys['instance'].append({'instance_type': instance_type,
+                                              'instance_name': instance_name,
+                                              'username': DEFAULT_USERNAME,
+                                              'password': DEFAULT_PASSWORD,
+                                              'port': port,
+                                              'os_inst_id': osint_id})
+        return is_rollback, uop_os_inst_id_list
+
+    # 申请资源集群数据库和中间件资源
     def _create_resource_cluster(self, property_mapper):
         is_rollback = False
         uop_os_inst_id_list = []
@@ -594,7 +650,8 @@ class ResourceProviderTransitions2(object):
         nova_client = OpenStack.nova_client
         for uop_os_inst_id in uop_os_inst_id_wait_query:
             cluster_type = uop_os_inst_id.get('cluster_type')
-            if cluster_type == "app_cluster":
+            instance_type = uop_os_inst_id.get('instance_type')
+            if cluster_type == "app_cluster" and instance_type == "docker":
                 #k8s 应用
                 replicas=uop_os_inst_id.get('replicas',0)
                 deployment_name=self.req_dict["resource_name"]

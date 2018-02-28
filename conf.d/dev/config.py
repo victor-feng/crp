@@ -46,6 +46,11 @@ class DevelopmentConfig(BaseConfig):
             'uuid': 'ef2f955f-647e-4c27-94b8-25b56e8b1f36',
             'name': 'mycat-50G-20170628',
             'port': '3316'
+        },
+        'kvm': {
+            'uuid': 'd67a2e33-cbb7-43f6-85da-8e3ca2873b2a',
+            'name': 'basic',
+            'port': '22'
         }
     }
 
@@ -139,6 +144,8 @@ class DevelopmentConfig(BaseConfig):
             'tenantName': 'tenantName',
             'availability_zone':'availability_zone',
             'flavor': 'flavor',
+            'instance_type':'instance_type',
+            'image_id': 'image_id',
         },
         'resource_cluster': {
             'cluster_name': 'instance_name',
@@ -203,6 +210,11 @@ class DevelopmentConfig(BaseConfig):
             'uuid': 'ef2f955f-647e-4c27-94b8-25b56e8b1f36',
             'name': 'mycat-50G-20170628',
             'port': '3316'
+        },
+        'kvm': {
+            'uuid': 'd67a2e33-cbb7-43f6-85da-8e3ca2873b2a',
+            'name': 'basic',
+            'port': '22'
         }
     }
     KVM_FLAVOR2 = {
