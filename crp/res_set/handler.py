@@ -332,8 +332,8 @@ class ResourceProviderTransitions(object):
         flavor = propertys.get('flavor')
         quantity = propertys.get('quantity')
         meta = propertys.get('meta')
-        instance_type = property.get("instance_type")
-        image_id = property.get("image_id")
+        instance_type = propertys.get("instance_type")
+        image_id = propertys.get("image_id")
         if not flavor:
             flavor = DOCKER_FLAVOR.get(str(cpu) + str(mem))
         if quantity >= 1:

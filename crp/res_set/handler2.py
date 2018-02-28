@@ -349,9 +349,9 @@ class ResourceProviderTransitions2(object):
         port = propertys.get('port')
         networkName = propertys.get('networkName')
         tenantName = propertys.get('tenantName')
-        instance_type=property.get("instance_type")
-        flavor = property.get("flavor")
-        image_id = property.get("image_id")
+        instance_type=propertys.get("instance_type")
+        flavor = propertys.get("flavor")
+        image_id = propertys.get("image_id")
         network_id = propertys.get('network_id')
         availability_zone = propertys.get('availability_zone')
         if port:
