@@ -107,6 +107,7 @@ class NovaVMAPI(Resource):
         parser.add_argument('os_inst_id', type=str)
         args = parser.parse_args()
         os_inst_id = args.os_inst_id
+        vm_state=None
         try:
             vm_state1 = OpenStack_Api.get_vm_status(os_inst_id)
             vm_state2 = OpenStack2_Api.get_vm_status(os_inst_id)
