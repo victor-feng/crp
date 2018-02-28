@@ -720,7 +720,7 @@ class K8sLogApi(object):
         code=200
         try:
             config.load_kube_config(config_file=K8S_CONF_PATH)
-            api_instance = client.ExtensionsV1beta1Api()
+            api_instance = client.CoreV1Api()
             api_response = api_instance.read_namespaced_pod_log(pod_name, namespace,container=container,previous=False,limit_bytes = 1024*1024)
             msg=api_response
         except Exception as e:
