@@ -1,0 +1,11 @@
+
+<!--{{hosts}}-Conf-Start-->
+<Host name="localhost"  appBase="webapps" unpackWARs="true" autoDeploy="false" xmlValidation="false" xmlNamespaceAware="false">
+{% if virtualname is defined %}
+    <Context path="/{{virtualname}}" docBase="/home/webapp/{{hosts}}" reloadable="false" caseSensitive="false" debug="0"></Context>
+{% else %}
+    <Context path="" docBase="/home/webapp/{{hosts}}" reloadable="false" caseSensitive="false" debug="0"></Context>
+{% endif %}
+    <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs" prefix="{{hosts}}_" suffix=".txt" pattern="common" resolveHosts="false" />
+</Host>
+<!--{{hosts}}-Conf-End-->

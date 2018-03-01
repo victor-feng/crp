@@ -1,0 +1,35 @@
+# update war
+#- name: copy war
+  #copy: src=/etc/ansible/roles/deploy/files/{{hosts}}_{{env}}.war dest=/home/java/{{hosts}}.war mode=0755
+#  copy: src=/etc/ansible/war/{{hosts}}_{{env}}.war dest=/home/java/{{hosts}}.war mode=0755
+
+#- name: war directory
+#  file: path=/home/webapp/{{hosts}} state=directory
+
+
+- name: rm bakdirectory
+  file: path=/home/webapp/{{hosts}}.bak state=absent
+#- name: bak directory
+#  file: path=/home/webapp/{{hosts}}.bak state=directory
+#
+#- name: war directory
+#  file: path=/home/webapp/{{hosts}} state=directory
+
+- name: copy old war
+  shell: \cp -a /home/webapp/{{hosts}} /home/webapp/{{hosts}}.bak
+  register: result
+  ignore_errors: True
+
+- name: delete old war  
+  file: path=/home/webapp/{{hosts}}/ state=absent
+- name: war directory
+  file: path=/home/webapp/{{hosts}} state=directory
+
+- name: tar new war
+  unarchive: src=/etc/ansible/war/{{hosts}}_{{env}}.war dest=/home/webapp/{{hosts}}
+
+#- name: unzip war
+#  shell: unzip {{hosts}}.war -d /home/webapp/{{hosts}}
+
+
+

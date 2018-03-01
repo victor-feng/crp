@@ -1,0 +1,18 @@
+---
+
+- name: rm hosts.war
+  file: path=~/{{hosts}}.war state=absent
+
+- name: copycheckfile
+  copy: src=/etc/ansible/files/checkstartup.sh dest=/home/java/checkstartup.sh mode=755
+
+- name: start tomcat
+  shell: /home/java/starttomcat.sh
+
+- name: tomcat startup?
+  shell: /home/java/checkstartup.sh
+
+#- shell: cat /home/java/catalina.out
+#  register: result
+
+#- debug: var=result.stdout_lines

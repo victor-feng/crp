@@ -1,0 +1,7 @@
+- hosts: '{{hosts}}'
+  remote_user: java
+  #gather_facts: False
+#  max_fail_percentage: 0
+  serial: 1
+  roles:
+  - wardeploy

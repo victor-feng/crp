@@ -1,0 +1,25 @@
+- name: server_template.xml
+  template: src=server_template.xml  dest=/home/java/server_template.xml
+
+- name: delete old config server.xml
+  shell: sed -i '/--{{hosts}}-Conf-Start/,/--{{hosts}}-Conf-End/d' /home/java/tomcat7_8081/conf/server.xml
+
+- name: config server.xml
+  shell: sed -i '/<\/Realm>/r /home/java/server_template.xml' /home/java/tomcat7_8081/conf/server.xml
+
+- name: context.xml
+  template: src=context_template.xml dest=/home/java/context_template.xml
+
+- name: delete old config context.xml
+  shell: sed -i '/--{{hosts}}-Conf-Start/,/--{{hosts}}-Conf-End/d'  /home/java/tomcat7_8081/conf/context.xml
+
+- name: config defaultHost
+  shell: sed -i '/<Context>/r /home/java/context_template.xml' /home/java/tomcat7_8081/conf/context.xml
+
+#- name: delete context_template.xml
+#  file: path=/home/java/context_template.xml state=absent
+
+#- name: delete server_template.xml
+#  file: path=/home/java/server_template.xml state=absent
+
+

@@ -1,0 +1,12 @@
+---
+
+- include: config.yml
+
+- include: updatewar.yml
+  tags:
+    - update
+
+- include: restart.yml
+  tags:
+    - update
+    - restart
