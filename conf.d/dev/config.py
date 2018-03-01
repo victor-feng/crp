@@ -144,8 +144,9 @@ class DevelopmentConfig(BaseConfig):
             'tenantName': 'tenantName',
             'availability_zone':'availability_zone',
             'flavor': 'flavor',
-            'instance_type':'instance_type',
+            'host_env':'host_env',
             'image_id': 'image_id',
+            'language_env':'language_env',
         },
         'resource_cluster': {
             'cluster_name': 'instance_name',
@@ -215,6 +216,11 @@ class DevelopmentConfig(BaseConfig):
             'uuid': 'd67a2e33-cbb7-43f6-85da-8e3ca2873b2a',
             'name': 'basic',
             'port': '22'
+        },
+        'java': {
+            'uuid': 'd67a2e33-cbb7-43f6-85da-8e3ca2873b2a',
+            'name': 'basic',
+            'port': '8081'
         }
     }
     KVM_FLAVOR2 = {

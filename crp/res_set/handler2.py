@@ -349,11 +349,12 @@ class ResourceProviderTransitions2(object):
         port = propertys.get('port')
         networkName = propertys.get('networkName')
         tenantName = propertys.get('tenantName')
-        instance_type=propertys.get("instance_type")
+        host_env=propertys.get("host_env")
         flavor = propertys.get("flavor")
         image_id = propertys.get("image_id")
         network_id = propertys.get('network_id')
         availability_zone = propertys.get('availability_zone')
+        language_env = propertys.get('language_env')
         if port:
             port = int(port)
         image_url = propertys.get('image_url')
@@ -373,10 +374,10 @@ class ResourceProviderTransitions2(object):
             propertys['password'] = DEFAULT_PASSWORD
             propertys['port'] = port
             propertys['instance'] = []
-            propertys['instance_type'] = instance_type
+            propertys['instance_type'] = host_env
             deployment_name = self.req_dict["resource_name"]
             #创建应用集群
-            if instance_type == "docker":
+            if host_env == "docker":
                 #创建容器云
                 if self.set_flag == "res":
                     service_name = deployment_name
@@ -453,14 +454,14 @@ class ResourceProviderTransitions2(object):
                     'os_inst_id': deployment_name,
                     'cluster_type': cluster_type,
                     'replicas':replicas,
-                    "instance_type":instance_type
+                    "host_env":host_env
                 }
                 uop_os_inst_id_list.append(uopinst_info)
                 for i in range(0, replicas, 1):
                     os_inst_id=deployment_name+'@@'+str(i)
                     propertys['instance'].append(
                         {
-                            'instance_type': instance_type,
+                            'host_env': host_env,
                             'instance_name': cluster_name,
                             'username': DEFAULT_USERNAME,
                             'password': DEFAULT_PASSWORD,
@@ -468,17 +469,17 @@ class ResourceProviderTransitions2(object):
                             'port': port,
                             'os_inst_id': os_inst_id})
 
-            elif instance_type == "kvm":
+            elif host_env == "kvm":
                 #创建虚拟化云
                 quantity=replicas
-                is_rollback, uop_os_inst_id_list = self._create_kvm_cluster(property_mapper, cluster_id, instance_type,
+                is_rollback, uop_os_inst_id_list = self._create_kvm_cluster(property_mapper, cluster_id, host_env,
                                                                             image_id, port, cpu, mem, flavor,
-                                                                            quantity, network_id, availability_zone)
+                                                                            quantity, network_id, availability_zone,language_env)
 
 
         return is_rollback, uop_os_inst_id_list
 
-    def _create_kvm_cluster(self,property_mapper,cluster_id, instance_type,image_id,port,cpu,mem,flavor,quantity,network_id,availability_zone):
+    def _create_kvm_cluster(self,property_mapper,cluster_id, host_env,image_id,port,cpu,mem,flavor,quantity,network_id,availability_zone,language_env):
         is_rollback = False
         uop_os_inst_id_list = []
         propertys = property_mapper.get('app_cluster')
@@ -486,11 +487,11 @@ class ResourceProviderTransitions2(object):
             flavor = KVM_FLAVOR.get(str(cpu) + str(mem))
         if quantity >= 1:
             cluster_type_image_port_mapper = cluster_type_image_port_mappers.get(
-                instance_type)
+                language_env)
             if cluster_type_image_port_mapper is not None:
                 port = cluster_type_image_port_mapper.get('port')
-            propertys['cluster_type'] = instance_type
-            propertys['instance_type'] = instance_type
+            propertys['cluster_type'] = "app_cluster"
+            propertys['instance_type'] = host_env
             propertys['username'] = DEFAULT_USERNAME
             propertys['password'] = DEFAULT_PASSWORD
             propertys['port'] = port
@@ -505,13 +506,13 @@ class ResourceProviderTransitions2(object):
             for i in range(0, quantity, 1):
                 instance_name = '%s_%s' % (self.req_dict["resource_name"], i.__str__())
                 osint_id = self._create_instance_by_type(
-                    instance_type, instance_name, flavor, network_id, image_id, availability_zone, server_group)
+                    language_env, instance_name, flavor, network_id, image_id, availability_zone, server_group)
                 uopinst_info = {
                     'uop_inst_id': cluster_id,
                     'os_inst_id': osint_id,
                 }
                 uop_os_inst_id_list.append(uopinst_info)
-                propertys['instance'].append({'instance_type': instance_type,
+                propertys['instance'].append({'host_env': host_env,
                                               'instance_name': instance_name,
                                               'username': DEFAULT_USERNAME,
                                               'password': DEFAULT_PASSWORD,
@@ -650,8 +651,8 @@ class ResourceProviderTransitions2(object):
         nova_client = OpenStack.nova_client
         for uop_os_inst_id in uop_os_inst_id_wait_query:
             cluster_type = uop_os_inst_id.get('cluster_type')
-            instance_type = uop_os_inst_id.get('instance_type')
-            if cluster_type == "app_cluster" and instance_type == "docker":
+            host_env = uop_os_inst_id.get('host_env')
+            if cluster_type == "app_cluster" and host_env == "docker":
                 #k8s 应用
                 replicas=uop_os_inst_id.get('replicas',0)
                 deployment_name=self.req_dict["resource_name"]

@@ -332,8 +332,9 @@ class ResourceProviderTransitions(object):
         flavor = propertys.get('flavor')
         quantity = propertys.get('quantity')
         meta = propertys.get('meta')
-        instance_type = propertys.get("instance_type")
+        host_env = propertys.get("host_env")
         image_id = propertys.get("image_id")
+        language_env = propertys.get('language_env')
         if not flavor:
             flavor = DOCKER_FLAVOR.get(str(cpu) + str(mem))
         if quantity >= 1:
@@ -348,7 +349,7 @@ class ResourceProviderTransitions(object):
             nova_client = OpenStack.nova_client
             server_group = None
 
-            if instance_type == "docker":
+            if host_env == "docker":
 
                 if IS_OPEN_AFFINITY_SCHEDULING:
                     server_group = nova_client.server_groups.create(**{'name': 'create_app_cluster_server_group', 'policies': ['anti-affinity']})
@@ -392,15 +393,15 @@ class ResourceProviderTransitions(object):
                     if err_msg == -1:
                         self.error_type = 'notfound'
                         self.error_msg="the image is not found"
-            elif instance_type == "kvm":
-                is_rollback, uop_os_inst_id_list = self._create_kvm_cluster(property_mapper, cluster_id, instance_type,
+            elif host_env == "kvm":
+                is_rollback, uop_os_inst_id_list = self._create_kvm_cluster(property_mapper, cluster_id, host_env,
                                                                             image_id, port, cpu, mem, flavor,
-                                                                            quantity, network_id, availability_zone)
+                                                                            quantity, network_id, availability_zone,language_env)
         return is_rollback, uop_os_inst_id_list
 
     #创建kvm集群资源
-    def _create_kvm_cluster(self, property_mapper, cluster_id, instance_type, image_id, port, cpu, mem, flavor,
-                            quantity, network_id, availability_zone):
+    def _create_kvm_cluster(self, property_mapper, cluster_id, host_env, image_id, port, cpu, mem, flavor,
+                            quantity, network_id, availability_zone,language_env):
         is_rollback = False
         uop_os_inst_id_list = []
         propertys = property_mapper.get('app_cluster')
@@ -408,11 +409,11 @@ class ResourceProviderTransitions(object):
             flavor = KVM_FLAVOR.get(str(cpu) + str(mem))
         if quantity >= 1:
             cluster_type_image_port_mapper = cluster_type_image_port_mappers.get(
-                instance_type)
+                language_env)
             if cluster_type_image_port_mapper is not None:
                 port = cluster_type_image_port_mapper.get('port')
-            propertys['cluster_type'] = instance_type
-            propertys['instance_type'] = instance_type
+            propertys['cluster_type'] = "app_cluster"
+            propertys['instance_type'] = host_env
             propertys['username'] = DEFAULT_USERNAME
             propertys['password'] = DEFAULT_PASSWORD
             propertys['port'] = port
@@ -427,13 +428,13 @@ class ResourceProviderTransitions(object):
             for i in range(0, quantity, 1):
                 instance_name = '%s_%s' % (self.req_dict["resource_name"], i.__str__())
                 osint_id = self._create_instance_by_type(
-                    instance_type, instance_name, flavor, network_id, image_id, availability_zone, server_group)
+                    language_env, instance_name, flavor, network_id, image_id, availability_zone, server_group)
                 uopinst_info = {
                     'uop_inst_id': cluster_id,
                     'os_inst_id': osint_id,
                 }
                 uop_os_inst_id_list.append(uopinst_info)
-                propertys['instance'].append({'instance_type': instance_type,
+                propertys['instance'].append({'instance_type': host_env,
                                               'instance_name': instance_name,
                                               'username': DEFAULT_USERNAME,
                                               'password': DEFAULT_PASSWORD,
