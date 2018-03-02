@@ -279,22 +279,28 @@ class AppDeploy(Resource):
             #部署docker
             if cloud == "2":
                 deployment_name=resource_name
-                update_image_deployment=K8sDeploymentApi.update_deployment_image_object(deployment_name,FILEBEAT_NAME)
                 for i in docker:
                     image_url = i.get('url', '')
                     cluster_name = i.get("ins_name", "")
-                    update_deployment_err_msg, update_deployment_err_code = K8sDeploymentApi.update_deployment_image(
-                        update_image_deployment, deployment_name, image_url, NAMESPACE)
-                    end_flag = True
-                    if update_deployment_err_msg is None:
-                        #不报错开始检查应用和pod的状态
-                        self._check_deployment_status(deployment_name, deploy_id, cluster_name,
-                                               end_flag, deploy_type,
-                                               unique_flag, cloud,deploy_name)
-                    else:
-                        _dep_callback(deploy_id, '127.0.0.1', "docker", update_deployment_err_msg, "None", False, cluster_name, end_flag, deploy_type,
-                                      unique_flag,cloud,deploy_name)
+                    host_env = i.get("host_env")
+                    if host_env == "docker":
+                        update_image_deployment = K8sDeploymentApi.update_deployment_image_object(deployment_name,
+                                                                                                  FILEBEAT_NAME)
+                        update_deployment_err_msg, update_deployment_err_code = K8sDeploymentApi.update_deployment_image(
+                            update_image_deployment, deployment_name, image_url, NAMESPACE)
+                        end_flag = True
+                        if update_deployment_err_msg is None:
+                            #不报错开始检查应用和pod的状态
+                            self._check_deployment_status(deployment_name, deploy_id, cluster_name,
+                                                   end_flag, deploy_type,
+                                                   unique_flag, cloud,deploy_name)
+                        else:
+                            _dep_callback(deploy_id, '127.0.0.1', "docker", update_deployment_err_msg, "None", False, cluster_name, end_flag, deploy_type,
+                                          unique_flag,cloud,deploy_name)
+                    elif host_env == "kvm":
+                        pass
             else:
+                cloud = '1'
                 if not appinfo:
                     Log.logger.info("No nginx ip information, no need to push nginx something")
                 for app in appinfo:
@@ -326,26 +332,28 @@ class AppDeploy(Resource):
                     cluster_name = i.get("ins_name", "")
                     ip=i.get('ip',[])
                     ip=','.join(ip)
-                    if image_url in id2name.keys():
-                        image_uuid = id2name.get(image_url)
-                        i["image_uuid"] = image_uuid
-                    else:
-                        err_msg, image_uuid = image_transit(image_url)
-                        id2name[image_url] = image_uuid
-                        i["image_uuid"] = image_uuid
-                        if err_msg is None:
-                            Log.logger.debug(
-                                "Transit harbor docker image success. The result glance image UUID is " + str(image_uuid))
+                    host_env = i.get("host_env")
+                    if host_env == "docker":
+                        if image_url in id2name.keys():
+                            image_uuid = id2name.get(image_url)
+                            i["image_uuid"] = image_uuid
                         else:
-                            Log.logger.error(
-                                 "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + str(err_msg))
-                            err_msg="image get error image url is: %s, err_msg is: %s " % (str(image_url),str(err_msg))
-                            #将错误信息返回给uop
-                            err_dockers.append(i)
-                            end_flag=False
-                            if len(docker) == (docker.index(i)+1):
-                                end_flag=True
-                            _dep_callback(deploy_id, ip, "docker", err_msg, "None", False, cluster_name, end_flag, 'deploy',unique_flag)
+                            err_msg, image_uuid = image_transit(image_url)
+                            id2name[image_url] = image_uuid
+                            i["image_uuid"] = image_uuid
+                            if err_msg is None:
+                                Log.logger.debug(
+                                    "Transit harbor docker image success. The result glance image UUID is " + str(image_uuid))
+                            else:
+                                Log.logger.error(
+                                     "Transit harbor docker image failed. image_url is " + str(image_url) + " error msg:" + str(err_msg))
+                                err_msg="image get error image url is: %s, err_msg is: %s " % (str(image_url),str(err_msg))
+                                #将错误信息返回给uop
+                                err_dockers.append(i)
+                                end_flag=False
+                                if len(docker) == (docker.index(i)+1):
+                                    end_flag=True
+                                _dep_callback(deploy_id, ip, "docker", err_msg, "None", False, cluster_name, end_flag, 'deploy',unique_flag)
                 #如果有集群拉取镜像失败，将这个集群从docker中删除
                 for err_docker in err_dockers:
                     docker.remove(err_docker)
@@ -357,9 +365,12 @@ class AppDeploy(Resource):
                     all_ips.extend(ips)
                 self.all_ips = all_ips
                 #部署docker
-                cloud = '1'
                 for info in docker:
-                    self._image_transit(deploy_id, info,appinfo,deploy_type,unique_flag,cloud,deploy_name)
+                    host_env = info.get("host_env")
+                    if host_env == "docker":
+                        self._image_transit(deploy_id, info,appinfo,deploy_type,unique_flag,cloud,deploy_name)
+                    elif host_env == "kvm":
+                        pass
             lock.release()
         except Exception as e:
             code = 500
