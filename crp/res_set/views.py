@@ -216,7 +216,7 @@ class ResourceDelete(Resource):
         try:
             request_data=json.loads(request.data)
             Log.logger.debug("Delete resource data is:" + request_data.__str__())
-            resources_id=request_data.get('resources_id')
+            resource_id=request_data.get('resource_id')
             resource_name = request_data.get('resource_name')
             resource_type = request_data.get('resource_type')
             del_os_ins_ip_list=request_data.get("os_ins_ip_list",[])
@@ -224,7 +224,7 @@ class ResourceDelete(Resource):
             set_flag = request_data.get('set_flag')
             cloud = request_data.get('cloud')
             syswin_project = request_data.get('syswin_project')
-            resources = deal_del_request_data(resources_id,del_os_ins_ip_list)
+            resources = deal_del_request_data(resource_id,del_os_ins_ip_list)
             resources = resources.get('resources')
             unique_flag=str(uuid.uuid1())
             #删除虚机和卷

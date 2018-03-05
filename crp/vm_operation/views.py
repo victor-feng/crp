@@ -28,6 +28,7 @@ class VMOperation(Resource):
         parser.add_argument('reboot_type', type=str)
         parser.add_argument('cloud', type=str)
         parser.add_argument('resource_name', type=str)
+        parser.add_argument('resource_type', type=str)
         args = parser.parse_args()
         Log.logger.debug("vm operation receive restart request. args is " + str(args))
         if not args.vm_uuid or not args.operation:
@@ -40,7 +41,7 @@ class VMOperation(Resource):
             }
             return ret, code
         try:
-            if args.cloud == "2":
+            if args.cloud == "2" and args.resource_type == "app":
                 #k8s目前只支持应用重启功能
                 if args.operation == "restart":
                     deployment_name = args.resource_name

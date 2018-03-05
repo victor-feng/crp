@@ -32,9 +32,9 @@ def query_instance(task_id, result, resource):
     :return:
     """
     os_inst_id =resource.get('os_inst_id', '')
-    resource_id =resource.get('resources_id', '')
+    resource_id =resource.get('resource_id', '')
     result['os_inst_id'] = os_inst_id
-    result['resources_id'] = resource_id
+    result['resource_id'] = resource_id
     nova_client = OpenStack.nova_client
     try:
         inst = nova_client.servers.get(os_inst_id)
@@ -243,7 +243,7 @@ def delete_request_callback(task_id, result):
     :return:
     """
     data = {
-            'resources_id': result.get('resources_id', ''),
+            'resource_id': result.get('resource_id', ''),
             'os_inst_id': result.get('os_inst_id', ''),
             'msg': result.get('msg', ''),
             'code': result.get('code', ''),

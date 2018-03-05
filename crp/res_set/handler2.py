@@ -244,7 +244,7 @@ class ResourceProviderTransitions2(object):
                 resource={}
                 os_inst_id=uop_os_inst_id['os_inst_id']
                 os_vol_id = uop_os_inst_id.get('os_vol_id')
-                resource["resources_id"]=resource_id
+                resource["resource_id"]=resource_id
                 resource["os_inst_id"]=os_inst_id
                 resource["os_vol_id"] = os_vol_id
                 #调用删除虚机和卷的接口进行回滚操作
@@ -1693,10 +1693,10 @@ class MongodbCluster(object):
             Log.logger.debug('mongodb cluster push result:%s' % p.stdout.read())
 
 
-def deal_del_request_data(resources_id,del_os_ins_ip_list):
+def deal_del_request_data(resource_id,del_os_ins_ip_list):
     """
     处理uop传的数据，处理成一定格式
-    :param resources_id:
+    :param resource_id:
     :param del_os_ins_ip_list:
     :return:
     """
@@ -1707,7 +1707,7 @@ def deal_del_request_data(resources_id,del_os_ins_ip_list):
             os_inst_id=os_ip.get("os_ins_id")
             os_vol_id=os_ip.get("os_vol_id")
             req_dic={}
-            req_dic['resources_id'] = resources_id
+            req_dic['resource_id'] = resource_id
             req_dic['os_inst_id'] = os_inst_id
             req_dic['os_vol_id']=os_vol_id
             req_list.append(req_dic)
