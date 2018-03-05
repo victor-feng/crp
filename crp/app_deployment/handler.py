@@ -15,6 +15,8 @@ sys.setdefaultencoding('utf-8')
 
 DEP_STATUS_CALLBACK = configs[APP_ENV].DEP_STATUS_CALLBACK
 OS_DOCKER_LOGS = configs[APP_ENV].OS_DOCKER_LOGS
+SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
+UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 
 def _dep_callback(deploy_id,ip,res_type,msg,vm_state,success,cluster_name,end_flag,deploy_type,unique_flag,cloud=None,deploy_name=None):
     """
@@ -194,3 +196,69 @@ def start_write_log(ip):
     sleep_time=1
     Log.logger.debug("Begin wrtite log to file,the docker ip is %s" % ip)
     TaskManager.task_start(sleep_time, timeout, result_list,write_docker_logs_to_file,os_inst_id)
+
+
+def get_war_from_ftp(project_name,war_url):
+    err_msg = None
+    try:
+        war_name = "{project_name}.war".format(project_name=project_name)
+        url_war_name = war_url.split("/")[-1]
+        if war_name != url_war_name:
+            err_msg = "The war url is error,url war name is not project war name "
+            return err_msg
+        project_dir_path = os.path.join(UPLOAD_FOLDER,project_name)
+        if not os.path.exists(project_dir_path):
+            os.makedirs(project_dir_path)
+        project_war_path =  os.path.join(project_dir_path,war_name)
+        if os.path.exists(project_war_path):
+            os.remove(project_war_path)
+        wget_cmd = "wget -O {project_dir_path} --tries=3 {war_url}".format(project_dir_path=project_dir_path,war_url=war_url)
+        os.system(wget_cmd)
+    except Exception as e:
+        err_msg = "get war from frp error:{e}".format(e=str(e))
+    return err_msg
+
+def make_database_config(database_config,project_name,ip,env):
+    err_msg = None
+    try:
+        wardeploy_path = os.path.join(UPLOAD_FOLDER,"wardeploy")
+        config_filename = "{project_name}_dev".format(project_name=project_name)
+        wardeploy_conf_path = os.path.join(wardeploy_path,config_filename)
+        if not os.path.exists(wardeploy_path):
+            os.makedirs(wardeploy_path)
+        database_config = json.loads(database_config)
+        project_name_head = "[{project_name}]".format(project_name=project_name)
+        ip_text = '\n'.join(ip)
+        text = project_name_head + "\n" + ip_text
+        project_name_vars = "[{project_name}:vars]".format(project_name=project_name)
+        text = text + "\n" + project_name_vars
+        domain = "prdomain="
+        env = "env={env}".format(env=env)
+        text = text + "\n" + domain + "\n" + env
+        mysql_info_list = database_config.get("mysql")
+        if mysql_info_list:
+            mysql_text = ""
+            for mysql_info in mysql_info_list:
+                for k, v in mysql_info.items():
+                    mysql_text = mysql_text + "\n" + "{k}={v}".format(k=k, v=v)
+            text = text + "\n" + mysql_text
+        mycat_info_list = database_config.get("mycat")
+        if mycat_info_list:
+            mycat_text = ""
+            for mycat_info in mycat_info_list:
+                for k, v in mycat_info.items():
+                    mycat_text = mycat_text + "\n" + "{k}={v}".format(k=k, v=v)
+            text = text + "\n" + mycat_text
+        write_to_file(text, wardeploy_conf_path)
+    except Exception as e:
+        err_msg = "get database config error:{e}".format(e=str(e))
+    return  err_msg
+
+def write_to_file(text,path):
+    try:
+        f=open(path,"w")
+        f.write(text)
+    finally:
+        f.close()
+
+

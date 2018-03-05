@@ -22,7 +22,7 @@ from crp.log import Log
 from crp.disconf.disconf_api import *
 from crp.utils.aio import exec_cmd_ten_times,async
 from handler import _dep_detail_callback,_dep_callback,closed_nginx_conf,\
-    open_nginx_conf,start_write_log,_image_transit_task
+    open_nginx_conf,start_write_log,get_war_from_ftp,make_database_config
 
 import sys
 reload(sys)
@@ -38,6 +38,7 @@ HEALTH_CHECK_PORT = configs[APP_ENV].HEALTH_CHECK_PORT
 HEALTH_CHECK_PATH = configs[APP_ENV].HEALTH_CHECK_PATH
 NAMESPACE = configs[APP_ENV].NAMESPACE
 FILEBEAT_NAME = configs[APP_ENV].FILEBEAT_NAME
+SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
 
 
 class AppDeploy(Resource):
@@ -214,6 +215,7 @@ class AppDeploy(Resource):
             parser.add_argument('cloud', type=str)
             parser.add_argument('resource_name', type=str)
             parser.add_argument('deploy_name', type=str)
+            parser.add_argument('project_name', type=str)
             args = parser.parse_args()
             Log.logger.debug("AppDeploy receive post request. args is " + str(args))
             deploy_id = args.deploy_id
@@ -227,8 +229,9 @@ class AppDeploy(Resource):
             cloud = args.cloud
             resource_name = args.resource_name
             deploy_name=args.deploy_name
+            project_name = args.project_name
             Log.logger.debug("Thread exec start")
-            t = threading.Thread(target=self.deploy_anything, args=(docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud,resource_name,deploy_name))
+            t = threading.Thread(target=self.deploy_anything, args=(docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud,resource_name,deploy_name,project_name))
             t.start()
             Log.logger.debug("Thread exec done")
 
@@ -246,7 +249,7 @@ class AppDeploy(Resource):
         }
         return res, code
 
-    def deploy_anything(self,docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud,resource_name,deploy_name):
+    def deploy_anything(self,docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud,resource_name,deploy_name,project_name):
         try:
             lock = threading.RLock()
             lock.acquire()
@@ -606,6 +609,35 @@ class AppDeploy(Resource):
         except Exception as e:
             err_msg = "check deployment status error %s" % str(e)
             Log.logger.error(err_msg)
+
+    def deploy_kvm(self,project_name,info,env):
+        try:
+            war_url = info.get("url")
+            database_config = info.get("database_config",'{}')
+            ip = info.get("ip",[])
+            war_err_msg=get_war_from_ftp(project_name,war_url)
+            if war_err_msg:
+                return  war_err_msg
+            config_err_msg = make_database_config(database_config,project_name,ip,env)
+            if config_err_msg:
+                return  config_err_msg
+            #执行playbook命令
+            data_config_path= os.path.join(UPLOAD_FOLDER,"wardeploy")
+            wardeploy_yml_path = os.path.join(SCRIPTPATH,"roles/wardeploy.yml")
+            key_path = os.path.join(SCRIPTPATH,"id_rsa_java_new")
+            deploy_war_cmd = """ansible-playbook -i {data_config_path} {wardeploy_yml_path} 
+            --private-key={key_path} -e hosts={project_name} update""".format(data_config_path=data_config_path,
+                                                                              wardeploy_yml_path=wardeploy_yml_path,
+                                                                              key_path = key_path,
+                                                                              project_name=project_name
+                                                                              )
+
+
+
+
+        except Exception as e:
+            pass
+
 
 
 

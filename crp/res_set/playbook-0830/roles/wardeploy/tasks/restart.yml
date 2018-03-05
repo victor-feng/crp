@@ -4,8 +4,8 @@
   file: path=~/{{hosts}}.war state=absent
 
 - name: copycheckfile
-  copy: src=/etc/ansible/files/checkstartup.sh dest=/home/java/checkstartup.sh mode=755
-- template: src=/etc/ansible/files/chkhealth.sh dest=/home/java/chkhealth.sh mode=755
+  copy: src=../../script/checkstartup.sh dest=/home/java/checkstartup.sh mode=755
+- template: src=../../script/chkhealth.sh dest=/home/java/chkhealth.sh mode=755
 
 - name: start tomcat
   shell: nohup /home/java/starttomcat.sh
