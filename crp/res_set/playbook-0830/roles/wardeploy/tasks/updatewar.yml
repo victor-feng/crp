@@ -26,7 +26,7 @@
   file: path=/home/webapp/{{hosts}} state=directory
 
 - name: tar new war
-  unarchive: src=/etc/ansible/war/{{hosts}}_{{env}}.war dest=/home/webapp/{{hosts}}
+  unarchive: src=/data/war/{{hosts}}_{{env}}.war dest=/home/webapp/{{hosts}}
 
 #- name: unzip war
 #  shell: unzip {{hosts}}.war -d /home/webapp/{{hosts}}
