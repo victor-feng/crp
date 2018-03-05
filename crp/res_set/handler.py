@@ -222,7 +222,7 @@ class ResourceProviderTransitions(object):
             resource={}
             os_inst_id=uop_os_inst_id['os_inst_id']
             os_vol_id = uop_os_inst_id.get('os_vol_id')
-            resource["resource_id"]=resource_id
+            resource["resources_id"]=resource_id
             resource["os_inst_id"]=os_inst_id
             resource["os_vol_id"] = os_vol_id
             #调用删除虚机和卷的接口进行回滚操作
