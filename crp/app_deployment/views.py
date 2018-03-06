@@ -302,6 +302,7 @@ class AppDeploy(Resource):
                                           unique_flag,cloud,deploy_name)
                     elif host_env == "kvm":
                         deploy_kvm_flag, msg=self.deploy_kvm(project_name,i,environment)
+                        end_flag = True
                         if deploy_kvm_flag:
                             _dep_callback(deploy_id, '127.0.0.1', host_env, msg, "None", True, cluster_name,
                                           end_flag,
@@ -385,6 +386,7 @@ class AppDeploy(Resource):
                     if host_env == "docker":
                         self._image_transit(deploy_id, info,appinfo,deploy_type,unique_flag,cloud,deploy_name)
                     elif host_env == "kvm":
+                        end_flag = True
                         deploy_kvm_flag, msg = self.deploy_kvm(project_name, i, environment)
                         if deploy_kvm_flag:
                             _dep_callback(deploy_id, '127.0.0.1', host_env, msg, "None", True, cluster_name,
