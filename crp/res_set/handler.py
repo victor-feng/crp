@@ -59,13 +59,14 @@ class ResourceProviderTransitions(object):
         'query',
         'query_volume',
         'status',
+        'app_push',
         'mysql_push',
         'mongodb_push',
         'redis_push',]
 
     # Define transitions.
     transitions = [
-        {'trigger': 'success', 'source': ['status', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'success', 'after': 'do_success'},
+        {'trigger': 'success', 'source': ['status', 'app_push','mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'success', 'after': 'do_success'},
         {'trigger': 'fail', 'source': 'rollback', 'dest': 'fail', 'after': 'do_fail'},
         {'trigger': 'rollback', 'source': '*', 'dest': 'rollback', 'after': 'do_rollback'},
         {'trigger': 'stop', 'source': ['success', 'fail'], 'dest': 'stop', 'after': 'do_stop'},
@@ -74,9 +75,10 @@ class ResourceProviderTransitions(object):
         {'trigger': 'query', 'source': ['app_cluster', 'resource_cluster', 'query'], 'dest': 'query', 'after': 'do_query'},
         {'trigger': 'query_volume', 'source': ['app_cluster', 'resource_cluster', 'query', 'query_volume'],'dest': 'query_volume', 'after': 'do_query_volume'},
         {'trigger': 'status', 'source': ['query','query_volume','status'], 'dest': 'status', 'after': 'do_status'},
-        {'trigger': 'mysql_push', 'source': ['status', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'mysql_push', 'after': 'do_mysql_push'},
-        {'trigger': 'mongodb_push', 'source': ['status', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'mongodb_push', 'after': 'do_mongodb_push'},
-        {'trigger': 'redis_push', 'source': ['status', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'redis_push', 'after': 'do_redis_push'},
+        {'trigger': 'app_push', 'source': ['status', 'app_push', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'app_push', 'after': 'do_app_push'},
+        {'trigger': 'mysql_push', 'source': ['status', 'app_push','mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'mysql_push', 'after': 'do_mysql_push'},
+        {'trigger': 'mongodb_push', 'source': ['status','app_push', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'mongodb_push', 'after': 'do_mongodb_push'},
+        {'trigger': 'redis_push', 'source': ['status', 'app_push','mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'redis_push', 'after': 'do_redis_push'},
     ]
 
     def __init__(self, resource_id, property_mappers_list, req_dict):
@@ -156,7 +158,7 @@ class ResourceProviderTransitions(object):
         elif self.phase == 'push':
             self.preload_property_mapper(self.push_mappers_list)
 
-        if len(self.property_mapper) != 0 and self.property_mapper.keys()[0] not in ["app","kvm"] :
+        if len(self.property_mapper) != 0 and self.property_mapper.keys()[0] not in ["kvm"] :
             item_id = self.property_mapper.keys()[0]
             if self.phase == 'create':
                 func = getattr(self, item_id, None)
@@ -786,6 +788,21 @@ class ResourceProviderTransitions(object):
         is_finished = True
         if is_finished is True:
             self.next_phase()
+
+    @transition_state_logger
+    def do_app_push(self):
+        app_cluster = self.property_mapper.get('app', {})
+        host_env = app_cluster.get("host_env")
+        instance = app_cluster.get('instance')
+        if host_env == "kvm":
+            for _instance in instance:
+                ip = _instance.get('ip')
+                scp_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m" \
+                          " synchronize -a 'src={dir}/write_host_info.py dest=/tmp/'".format(ip=ip, dir=self.dir)
+                exec_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa " \
+                           "-m shell -a 'python /tmp/write_host_info.py '".format(ip=ip, dir=self.dir, )
+                exec_cmd_ten_times(ip, scp_cmd, 6)
+                exec_cmd_ten_times(ip, exec_cmd, 6)
 
     @transition_state_logger
     def do_mysql_push(self):
