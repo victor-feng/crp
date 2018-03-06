@@ -638,7 +638,7 @@ class AppDeploy(Resource):
             war_url = info.get("url")
             database_config = info.get("database_config",'{}')
             ip = info.get("ip",[])
-            war_err_msg=get_war_from_ftp(project_name,war_url)
+            war_err_msg=get_war_from_ftp(project_name,war_url,env)
             if war_err_msg:
                 deploy_kvm_flag = False
                 return  deploy_kvm_flag,war_err_msg

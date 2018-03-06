@@ -198,10 +198,10 @@ def start_write_log(ip):
     TaskManager.task_start(sleep_time, timeout, result_list,write_docker_logs_to_file,os_inst_id)
 
 
-def get_war_from_ftp(project_name,war_url):
+def get_war_from_ftp(project_name,war_url,env):
     err_msg = None
     try:
-        war_name = "{project_name}.war".format(project_name=project_name)
+        war_name = "{project_name}_{env}.war".format(project_name=project_name,env=env)
         url_war_name = war_url.split("/")[-1]
         if war_name != url_war_name:
             err_msg = "The war url is error,url war name is not project war name "
