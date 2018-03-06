@@ -31,6 +31,10 @@ class VMOperation(Resource):
         parser.add_argument('resource_type', type=str)
         args = parser.parse_args()
         Log.logger.debug("vm operation receive restart request. args is " + str(args))
+        if args.cloud == "2":
+            cloud = "2"
+        else:
+            cloud = "1"
         if not args.vm_uuid or not args.operation:
             code = 500
             ret = {
@@ -41,7 +45,7 @@ class VMOperation(Resource):
             }
             return ret, code
         try:
-            if args.cloud == "2" and args.resource_type == "app":
+            if cloud == "2" and args.resource_type == "app":
                 #k8s目前只支持应用重启功能
                 if args.operation == "restart":
                     deployment_name = args.resource_name
@@ -57,7 +61,7 @@ class VMOperation(Resource):
                         }
                         return ret, code
             else:
-                nova_client = OpenStack.nova_client
+                nova_client = OpenStack_info[cloud].nova_client
                 if args.operation == "restart":
                     reboot_type = args.reboot_type if args.reboot_type else "SOFT"
                     inst = nova_client.servers.reboot(args.vm_uuid,reboot_type=reboot_type)
