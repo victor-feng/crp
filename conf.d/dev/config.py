@@ -51,6 +51,11 @@ class DevelopmentConfig(BaseConfig):
             'uuid': 'd67a2e33-cbb7-43f6-85da-8e3ca2873b2a',
             'name': 'basic',
             'port': '22'
+        },
+        'java': {
+            'uuid': '56dbe75f-fed3-4965-b9b1-f2dbbf6a9762',
+            'name': 'tomcat30G20180306',
+            'port': '8081'
         }
     }
 
@@ -218,8 +223,8 @@ class DevelopmentConfig(BaseConfig):
             'port': '22'
         },
         'java': {
-            'uuid': '18a8d65f-f370-48e5-af19-19e63f89da99',
-            'name': 'tomcat30G20180302',
+            'uuid': '56dbe75f-fed3-4965-b9b1-f2dbbf6a9762',
+            'name': 'tomcat30G20180306',
             'port': '8081'
         }
     }
