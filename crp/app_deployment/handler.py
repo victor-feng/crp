@@ -202,17 +202,17 @@ def get_war_from_ftp(project_name,war_url,env):
     err_msg = None
     try:
         war_name = "{project_name}_{env}.war".format(project_name=project_name,env=env)
-        url_war_name = war_url.split("/")[-1]
-        if war_name != url_war_name:
-            err_msg = "The war url is error,url war name is not project war name "
-            return err_msg
+        #url_war_name = war_url.split("/")[-1]
+        #if war_name != url_war_name:
+        #    err_msg = "The war url is error,url war name is not project war name "
+        #    return err_msg
         project_dir_path = os.path.join(UPLOAD_FOLDER,project_name)
         if not os.path.exists(project_dir_path):
             os.makedirs(project_dir_path)
         project_war_path =  os.path.join(project_dir_path,war_name)
         if os.path.exists(project_war_path):
             os.remove(project_war_path)
-        wget_cmd = "wget -O {project_dir_path} --tries=3 {war_url}".format(project_dir_path=project_dir_path,war_url=war_url)
+        wget_cmd = "wget -O {project_war_path} --tries=3 {war_url}".format(project_war_path=project_war_path,war_url=war_url)
         os.system(wget_cmd)
     except Exception as e:
         err_msg = "get war from frp error:{e}".format(e=str(e))
