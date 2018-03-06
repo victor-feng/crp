@@ -84,7 +84,7 @@ class ResourceProviderTransitions2(object):
 
     # Define transitions.
     transitions = [
-        {'trigger': 'success', 'source': ['status', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'success', 'after': 'do_success'},
+        {'trigger': 'success', 'source': ['status','app_push', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'success', 'after': 'do_success'},
         {'trigger': 'fail', 'source': 'rollback', 'dest': 'fail', 'after': 'do_fail'},
         {'trigger': 'rollback', 'source': '*', 'dest': 'rollback', 'after': 'do_rollback'},
         {'trigger': 'stop', 'source': ['success', 'fail'], 'dest': 'stop', 'after': 'do_stop'},
@@ -94,9 +94,9 @@ class ResourceProviderTransitions2(object):
         {'trigger': 'query_volume', 'source': ['app_cluster', 'resource_cluster', 'query', 'query_volume'],'dest': 'query_volume', 'after': 'do_query_volume'},
         {'trigger': 'status', 'source': ['query','query_volume','status'], 'dest': 'status', 'after': 'do_status'},
         {'trigger': 'app_push','source': ['status', 'app_push', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'app_push', 'after': 'do_app_push'},
-        {'trigger': 'mysql_push', 'source': ['status', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'mysql_push', 'after': 'do_mysql_push'},
-        {'trigger': 'mongodb_push', 'source': ['status', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'mongodb_push', 'after': 'do_mongodb_push'},
-        {'trigger': 'redis_push', 'source': ['status', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'redis_push', 'after': 'do_redis_push'},
+        {'trigger': 'mysql_push', 'source': ['status','app_push' ,'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'mysql_push', 'after': 'do_mysql_push'},
+        {'trigger': 'mongodb_push', 'source': ['status', 'app_push','mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'mongodb_push', 'after': 'do_mongodb_push'},
+        {'trigger': 'redis_push', 'source': ['status','app_push' ,'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'redis_push', 'after': 'do_redis_push'},
     ]
 
     def __init__(self, resource_id, property_mappers_list, req_dict):
