@@ -906,6 +906,7 @@ class ResourceProviderTransitions2(object):
         app_cluster = self.property_mapper.get('app_cluster', {})
         host_env = app_cluster.get("host_env")
         instance = app_cluster.get('instance')
+        Log.logger.debug("---------------do_app_push-------------------------------------{app_cluster}".format(app_cluster=app_cluster))
         if host_env == "kvm":
             for _instance in instance:
                 ip = _instance.get('ip')
