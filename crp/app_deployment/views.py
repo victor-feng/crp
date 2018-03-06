@@ -650,12 +650,12 @@ class AppDeploy(Resource):
             data_config_path= os.path.join(UPLOAD_FOLDER,"wardeploy")
             wardeploy_yml_path = os.path.join(SCRIPTPATH,"roles/wardeploy.yml")
             key_path = os.path.join(SCRIPTPATH,"id_rsa_java_new")
-            deploy_war_cmd = """ansible-playbook -i {data_config_path} {wardeploy_yml_path} 
-            --private-key={key_path} -e hosts={project_name} """.format(data_config_path=data_config_path,
-                                                                              wardeploy_yml_path=wardeploy_yml_path,
-                                                                              key_path = key_path,
-                                                                              project_name=project_name
-                                                                              )
+            deploy_war_cmd = "ansible-playbook -i {data_config_path} {wardeploy_yml_path} --private-key={key_path} -e hosts={project_name} ".format(
+                data_config_path=data_config_path,
+                wardeploy_yml_path=wardeploy_yml_path,
+                key_path=key_path,
+                project_name=project_name
+                )
             Log.logger.debug("Deploy war cmd is {deploy_war_cmd}".format(deploy_war_cmd=deploy_war_cmd))
             p = subprocess.Popen(
                 deploy_war_cmd,
