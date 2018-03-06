@@ -638,10 +638,12 @@ class AppDeploy(Resource):
             ip = info.get("ip",[])
             war_err_msg=get_war_from_ftp(project_name,war_url)
             if war_err_msg:
-                return  war_err_msg
+                deploy_kvm_flag = False
+                return  deploy_kvm_flag,war_err_msg
             config_err_msg = make_database_config(database_config,project_name,ip,env)
             if config_err_msg:
-                return  config_err_msg
+                deploy_kvm_flag = False
+                return  deploy_kvm_flag,config_err_msg
             #执行playbook命令
             data_config_path= os.path.join(UPLOAD_FOLDER,"wardeploy")
             wardeploy_yml_path = os.path.join(SCRIPTPATH,"roles/wardeploy.yml")
