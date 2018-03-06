@@ -656,6 +656,7 @@ class AppDeploy(Resource):
                                                                               key_path = key_path,
                                                                               project_name=project_name
                                                                               )
+            Log.logger.debug("Deploy war cmd is {deploy_war_cmd}".format(deploy_war_cmd=deploy_war_cmd))
             p = subprocess.Popen(
                 deploy_war_cmd,
                 shell=True,
@@ -666,6 +667,7 @@ class AppDeploy(Resource):
                 msg = "Deploy war to kvm success"
                 deploy_kvm_flag = True
             else:
+                Log.logger.debug("Deploy war res is {res}".format(res=res))
                 msg = "Deploy war to kvm failed,failed msg is {res}".format(res=res)
                 deploy_kvm_flag = False
         except Exception as e:
