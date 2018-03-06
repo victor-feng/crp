@@ -206,7 +206,7 @@ def get_war_from_ftp(project_name,war_url,env):
         #if war_name != url_war_name:
         #    err_msg = "The war url is error,url war name is not project war name "
         #    return err_msg
-        project_dir_path = os.path.join(UPLOAD_FOLDER,project_name)
+        project_dir_path = os.path.join(UPLOAD_FOLDER,"war/{project_name}".format(project_name=project_name))
         if not os.path.exists(project_dir_path):
             os.makedirs(project_dir_path)
         project_war_path =  os.path.join(project_dir_path,war_name)
@@ -235,20 +235,21 @@ def make_database_config(database_config,project_name,ip,env):
         domain = "prdomain="
         env = "env={env}".format(env=env)
         text = text + "\n" + domain + "\n" + env
-        mysql_info_list = database_config.get("mysql")
-        if mysql_info_list:
-            mysql_text = ""
-            for mysql_info in mysql_info_list:
-                for k, v in mysql_info.items():
-                    mysql_text = mysql_text + "\n" + "{k}={v}".format(k=k, v=v)
-            text = text + "\n" + mysql_text
-        mycat_info_list = database_config.get("mycat")
-        if mycat_info_list:
-            mycat_text = ""
-            for mycat_info in mycat_info_list:
-                for k, v in mycat_info.items():
-                    mycat_text = mycat_text + "\n" + "{k}={v}".format(k=k, v=v)
-            text = text + "\n" + mycat_text
+        if database_config:
+            mysql_info_list = database_config.get("mysql")
+            if mysql_info_list:
+                mysql_text = ""
+                for mysql_info in mysql_info_list:
+                    for k, v in mysql_info.items():
+                        mysql_text = mysql_text + "\n" + "{k}={v}".format(k=k, v=v)
+                text = text + "\n" + mysql_text
+            mycat_info_list = database_config.get("mycat")
+            if mycat_info_list:
+                mycat_text = ""
+                for mycat_info in mycat_info_list:
+                    for k, v in mycat_info.items():
+                        mycat_text = mycat_text + "\n" + "{k}={v}".format(k=k, v=v)
+                text = text + "\n" + mycat_text
         write_to_file(text, wardeploy_conf_path)
     except Exception as e:
         err_msg = "get database config error:{e}".format(e=str(e))
