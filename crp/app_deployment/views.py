@@ -279,7 +279,7 @@ class AppDeploy(Resource):
                 Log.logger.debug("disconf result:{result},{message}".format(result=result,message=message))
             if disconf_server_info:
                 _dep_detail_callback(deploy_id,"deploy_disconf","res")
-            #部署docker
+            #部署
             if cloud == "2":
                 deployment_name=resource_name
                 for i in docker:
@@ -298,10 +298,22 @@ class AppDeploy(Resource):
                                                    end_flag, deploy_type,
                                                    unique_flag, cloud,deploy_name)
                         else:
-                            _dep_callback(deploy_id, '127.0.0.1', "docker", update_deployment_err_msg, "None", False, cluster_name, end_flag, deploy_type,
+                            _dep_callback(deploy_id, '127.0.0.1', host_env, update_deployment_err_msg, "None", False, cluster_name, end_flag, deploy_type,
                                           unique_flag,cloud,deploy_name)
                     elif host_env == "kvm":
-                        pass
+                        deploy_kvm_flag, msg=self.deploy_kvm(project_name,i,environment)
+                        if deploy_kvm_flag:
+                            _dep_callback(deploy_id, '127.0.0.1', host_env, msg, "None", True, cluster_name,
+                                          end_flag,
+                                          deploy_type,
+                                          unique_flag, cloud, deploy_name)
+                        else:
+                            _dep_callback(deploy_id, '127.0.0.1',host_env, msg, "None", False,
+                                          cluster_name, end_flag, deploy_type,
+                                          unique_flag, cloud, deploy_name)
+
+
+
             else:
                 cloud = '1'
                 if not appinfo:
@@ -367,13 +379,22 @@ class AppDeploy(Resource):
                     ips = info.get('ip')
                     all_ips.extend(ips)
                 self.all_ips = all_ips
-                #部署docker
+                #部署
                 for info in docker:
                     host_env = info.get("host_env")
                     if host_env == "docker":
                         self._image_transit(deploy_id, info,appinfo,deploy_type,unique_flag,cloud,deploy_name)
                     elif host_env == "kvm":
-                        pass
+                        deploy_kvm_flag, msg = self.deploy_kvm(project_name, i, environment)
+                        if deploy_kvm_flag:
+                            _dep_callback(deploy_id, '127.0.0.1', host_env, msg, "None", True, cluster_name,
+                                          end_flag,
+                                          deploy_type,
+                                          unique_flag, cloud, deploy_name)
+                        else:
+                            _dep_callback(deploy_id, '127.0.0.1', host_env, msg, "None", False,
+                                          cluster_name, end_flag, deploy_type,
+                                          unique_flag, cloud, deploy_name)
             lock.release()
         except Exception as e:
             code = 500
@@ -631,12 +652,23 @@ class AppDeploy(Resource):
                                                                               key_path = key_path,
                                                                               project_name=project_name
                                                                               )
-
-
-
-
+            p = subprocess.Popen(
+                deploy_war_cmd,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT)
+            res = p.stdout.read()
+            if "unreachable=0" in res and "failed=0" in res:
+                msg = "Deploy war to kvm success"
+                deploy_kvm_flag = True
+            else:
+                msg = "Deploy war to kvm failed,failed msg is {res}".format(res=res)
+                deploy_kvm_flag = False
         except Exception as e:
-            pass
+            msg = "Deploy war to kvm error,error msg is {e}".format(e=str(e))
+            deploy_kvm_flag = False
+        return deploy_kvm_flag,msg
+
 
 
 
