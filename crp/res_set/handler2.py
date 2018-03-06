@@ -77,6 +77,7 @@ class ResourceProviderTransitions2(object):
         'query',
         'query_volume',
         'status',
+        'app_push',
         'mysql_push',
         'mongodb_push',
         'redis_push',]
