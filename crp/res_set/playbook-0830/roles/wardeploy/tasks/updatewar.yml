@@ -15,10 +15,16 @@
 #- name: war directory
 #  file: path=/home/webapp/{{hosts}} state=directory
 
-- name: copy old war
-  shell: \cp -a /home/webapp/{{hosts}} /home/webapp/{{hosts}}.bak
-  register: result
-  ignore_errors: True
+- name: copy bak project
+  copy: src=../../script/bak_project.py dest=/home/java/bak_project.py mode=755
+
+- name: bak project
+  shell: nohup /home/java/bak_project.py {{hosts}}
+
+#- name: copy old war
+#  shell: \cp -a /home/webapp/{{hosts}} /home/webapp/{{hosts}}.bak
+#  register: result
+#  ignore_errors: True
 
 - name: delete old war  
   file: path=/home/webapp/{{hosts}}/ state=absent

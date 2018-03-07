@@ -67,7 +67,7 @@ class ResourceProviderTransitions(object):
     # Define transitions.
     transitions = [
         {'trigger': 'success', 'source': ['status', 'app_push','mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'success', 'after': 'do_success'},
-        {'trigger': 'fail', 'source': ['rollback','app_push'], 'dest': 'fail', 'after': 'do_fail'},
+        {'trigger': 'fail', 'source': 'rollback', 'dest': 'fail', 'after': 'do_fail'},
         {'trigger': 'rollback', 'source': '*', 'dest': 'rollback', 'after': 'do_rollback'},
         {'trigger': 'stop', 'source': ['success', 'fail'], 'dest': 'stop', 'after': 'do_stop'},
         {'trigger': 'app_cluster', 'source': ['init', 'app_cluster', 'resource_cluster'], 'dest': 'app_cluster', 'after': 'do_app_cluster'},
@@ -806,10 +806,11 @@ class ResourceProviderTransitions(object):
                     exec_flag, err_msg=exec_cmd_ten_times(ip, exec_cmd, 6)
                     if not exec_flag:
                         self.error_msg = err_msg
-                        self.fail()
+                        self.rollback()
+
                 else:
                     self.error_msg = err_msg
-                    self.fail()
+                    self.rollback()
 
     @transition_state_logger
     def do_mysql_push(self):

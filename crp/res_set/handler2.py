@@ -913,8 +913,16 @@ class ResourceProviderTransitions2(object):
                           " synchronize -a 'src={dir}/write_host_info.py dest=/tmp/'".format(ip=ip, dir=self.dir)
                 exec_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa " \
                            "-m shell -a 'python /tmp/write_host_info.py '".format(ip=ip, dir=self.dir,)
-                exec_cmd_ten_times(ip, scp_cmd, 6)
-                exec_cmd_ten_times(ip, exec_cmd, 6)
+                exec_flag, err_msg = exec_cmd_ten_times(ip, scp_cmd, 6)
+                if exec_flag:
+                    exec_flag, err_msg = exec_cmd_ten_times(ip, exec_cmd, 6)
+                    if not exec_flag:
+                        self.error_msg = err_msg
+                        self.rollback()
+
+                else:
+                    self.error_msg = err_msg
+                    self.rollback()
 
     @transition_state_logger
     def do_mysql_push(self):
