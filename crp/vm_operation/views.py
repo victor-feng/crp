@@ -54,6 +54,8 @@ class VMOperation(Resource):
                         restart_deployment, deployment_name, NAMESPACE)
                     Log.logger.debug("---------------------------11111111111111111--------------------------%s" ,type(msg))
                     if msg is not None:
+                        Log.logger.debug("---------------------------222222222222222222222--------------------------%s",
+                                         type(msg))
                         ret = {
                             "code": code,
                             "result": {
