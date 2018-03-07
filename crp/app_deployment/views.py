@@ -301,6 +301,13 @@ class AppDeploy(Resource):
                             _dep_callback(deploy_id, '127.0.0.1', host_env, update_deployment_err_msg, "None", False, cluster_name, end_flag, deploy_type,
                                           unique_flag,cloud,deploy_name)
                     elif host_env == "kvm":
+                        #部署nginx
+                        if not appinfo:
+                            Log.logger.info("No nginx ip information, no need to push nginx something")
+                        for app in appinfo:
+                            self.do_app_push(app)
+                        if appinfo:
+                            _dep_detail_callback(deploy_id, "deploy_nginx", "res")
                         deploy_kvm_flag, msg=self.deploy_kvm(project_name,i,environment)
                         end_flag = True
                         if deploy_kvm_flag:
