@@ -25,6 +25,8 @@ def exec_cmd_ten_times(ip,cmd,sleep):
     :param sleep:
     :return:
     """
+    exec_flag = True
+    err_msg = None
     try:
         check_cmd="cat /etc/ansible/hosts | grep %s | wc -l" % ip
         res=os.popen(check_cmd).read().strip()
@@ -46,11 +48,15 @@ def exec_cmd_ten_times(ip,cmd,sleep):
                 Log.logger.debug(stdout)
                 break
         else:
+            err_msg = 'execute %s %s cmd 10 times failed'% (ip,cmd)
+            exec_flag = False
             Log.logger.debug(stdout)
-            Log.logger.debug('execute %s %s cmd 10 times failed'% (ip,cmd))
+            Log.logger.debug(err_msg)
     except Exception as e:
-        err_msg=str(e.args)
+        exec_flag = False
+        err_msg=str(e)
         Log.logger.error("CRP exec_db_service error ,error msg is:%s" %err_msg)
+    return exec_flag,err_msg
 
 def exec_cmd_one_times(ip,cmd):
     """
