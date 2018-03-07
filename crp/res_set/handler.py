@@ -67,7 +67,7 @@ class ResourceProviderTransitions(object):
     # Define transitions.
     transitions = [
         {'trigger': 'success', 'source': ['status', 'app_push','mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'success', 'after': 'do_success'},
-        {'trigger': 'fail', 'source': 'rollback', 'dest': 'fail', 'after': 'do_fail'},
+        {'trigger': 'fail', 'source': ['rollback','app_push'], 'dest': 'fail', 'after': 'do_fail'},
         {'trigger': 'rollback', 'source': '*', 'dest': 'rollback', 'after': 'do_rollback'},
         {'trigger': 'stop', 'source': ['success', 'fail'], 'dest': 'stop', 'after': 'do_stop'},
         {'trigger': 'app_cluster', 'source': ['init', 'app_cluster', 'resource_cluster'], 'dest': 'app_cluster', 'after': 'do_app_cluster'},
@@ -801,8 +801,15 @@ class ResourceProviderTransitions(object):
                           " synchronize -a 'src={dir}/write_host_info.py dest=/tmp/'".format(ip=ip, dir=self.dir)
                 exec_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa " \
                            "-m shell -a 'python /tmp/write_host_info.py '".format(ip=ip, dir=self.dir, )
-                exec_cmd_ten_times(ip, scp_cmd, 6)
-                exec_cmd_ten_times(ip, exec_cmd, 6)
+                exec_flag, err_msg=exec_cmd_ten_times(ip, scp_cmd, 6)
+                if exec_flag:
+                    exec_flag, err_msg=exec_cmd_ten_times(ip, exec_cmd, 6)
+                    if not exec_flag:
+                        self.error_msg = err_msg
+                        self.fail()
+                else:
+                    self.error_msg = err_msg
+                    self.fail()
 
     @transition_state_logger
     def do_mysql_push(self):
