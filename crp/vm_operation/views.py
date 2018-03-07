@@ -35,7 +35,7 @@ class VMOperation(Resource):
             cloud = "2"
         else:
             cloud = "1"
-        if not args.vm_uuid or not args.operation:
+        if  not args.operation:
             code = 500
             ret = {
                 "code": code,
