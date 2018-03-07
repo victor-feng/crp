@@ -52,6 +52,7 @@ class VMOperation(Resource):
                     restart_deployment = K8sDeploymentApi.restart_deployment_pod_object(deployment_name)
                     msg,code = K8sDeploymentApi.restart_deployment_pod(
                         restart_deployment, deployment_name, NAMESPACE)
+                    Log.logger.debug("---------------------------11111111111111111--------------------------%s" ,msg)
                     if msg is not None:
                         ret = {
                             "code": code,
