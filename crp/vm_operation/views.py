@@ -21,7 +21,6 @@ OpenStack_info={
 class VMOperation(Resource):
     def post(self):
         code = 200
-        msg = "ok"
         parser = reqparse.RequestParser()
         parser.add_argument('vm_uuid', type=str)
         parser.add_argument('operation', type=str)
@@ -52,10 +51,7 @@ class VMOperation(Resource):
                     restart_deployment = K8sDeploymentApi.restart_deployment_pod_object(deployment_name)
                     msg,code = K8sDeploymentApi.restart_deployment_pod(
                         restart_deployment, deployment_name, NAMESPACE)
-                    Log.logger.debug("---------------------------11111111111111111--------------------------%s" ,type(msg))
                     if msg is not None:
-                        Log.logger.debug("---------------------------222222222222222222222--------------------------%s",
-                                         type(msg))
                         ret = {
                             "code": code,
                             "result": {
@@ -96,7 +92,7 @@ class VMOperation(Resource):
         ret = {
             "code": code,
             "result": {
-                "msg": msg,
+                "msg": "ok",
             }
         }
         return ret,code
