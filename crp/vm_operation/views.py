@@ -66,8 +66,6 @@ class VMOperation(Resource):
                     inst = nova_client.servers.reboot(args.vm_uuid,reboot_type=reboot_type)
                 elif args.operation == "stop":
                     inst = nova_client.servers.stop(args.vm_uuid)
-                elif args.operation == "delete":
-                    inst = nova_client.servers.delete(args.vm_uuid)
                 elif args.operation == "start":
                     inst = nova_client.servers.start(args.vm_uuid)
                 else:
