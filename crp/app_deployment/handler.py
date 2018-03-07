@@ -202,10 +202,10 @@ def get_war_from_ftp(project_name,war_url,env):
     err_msg = None
     try:
         war_name = "{project_name}_{env}.war".format(project_name=project_name,env=env)
-        #url_war_name = war_url.split("/")[-1]
-        #if war_name != url_war_name:
-        #    err_msg = "The war url is error,url war name is not project war name "
-        #    return err_msg
+        url_war_name = war_url.split("/")[-1]
+        if war_name != url_war_name:
+            err_msg = "The war url is error,url war name is not project war name "
+            return err_msg
         project_dir_path = os.path.join(UPLOAD_FOLDER,"war/{project_name}".format(project_name=project_name))
         if not os.path.exists(project_dir_path):
             os.makedirs(project_dir_path)
