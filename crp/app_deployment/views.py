@@ -648,6 +648,7 @@ class AppDeploy(Resource):
                 return  deploy_kvm_flag,config_err_msg
             #执行playbook命令
             data_config_path= os.path.join(UPLOAD_FOLDER,"wardeploy")
+            data_config_path = os.path.join(data_config_path, "{project_name}_{env}".format(project_name=project_name,env=env))
             wardeploy_yml_path = os.path.join(SCRIPTPATH,"roles/wardeploy.yml")
             key_path = os.path.join(SCRIPTPATH,"id_rsa_java_new")
             deploy_war_cmd = "ansible-playbook -i {data_config_path} {wardeploy_yml_path} --private-key={key_path} -e hosts={project_name} ".format(
