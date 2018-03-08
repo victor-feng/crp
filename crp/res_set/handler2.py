@@ -131,6 +131,7 @@ class ResourceProviderTransitions2(object):
         self.error_msg = None
         self.set_flag=req_dict["set_flag"]
         self.env=req_dict["env"]
+        self.resource_type = req_dict["resource_type"]
         self.code=None
         # Initialize the state machine
         self.machine = Machine(
@@ -239,7 +240,9 @@ class ResourceProviderTransitions2(object):
             " Failed instance id set is " +
             fail_list[:].__str__())
         # 删除全部，完成rollback
-        if self.code != 409 and self.set_flag == "res":
+        if self.code == 409 or (self.set_flag in ["reaudce","increase"] and self.resource_type == "app") :
+            pass
+        else:
             for uop_os_inst_id in uop_os_inst_id_list:
                 #回滚删除的时候判断是中间件集群，还是应用集群
                 resource_type=self.req_dict["resource_type"]
