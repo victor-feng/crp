@@ -191,7 +191,8 @@ def write_docker_logs_to_file(task_id,result_list=None,os_inst_id=None):
 def start_write_log(ip):
     result_list = []
     server = OpenStack.find_vm_from_ipv4(ip=ip)
-    os_inst_id=server.id
+    if server:
+        os_inst_id=server.id
     timeout = 10000
     sleep_time=1
     Log.logger.debug("Begin wrtite log to file,the docker ip is %s" % ip)
