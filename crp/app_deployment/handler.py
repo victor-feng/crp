@@ -214,7 +214,10 @@ def get_war_from_ftp(project_name,war_url,env):
         if os.path.exists(project_war_path):
             os.remove(project_war_path)
         wget_cmd = "wget -O {project_war_path} --tries=3 {war_url}".format(project_war_path=project_war_path,war_url=war_url)
-        os.system(wget_cmd)
+        res=os.popen(wget_cmd)
+        res=res.read().strip()
+        if "ERROR" in res:
+            err_msg = res
     except Exception as e:
         err_msg = "get war from frp error:{e}".format(e=str(e))
     return err_msg
