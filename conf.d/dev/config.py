@@ -223,8 +223,8 @@ class DevelopmentConfig(BaseConfig):
             'port': '22'
         },
         'java': {
-            'uuid': '3a848942-7c48-410f-b162-118ba1386c32',
-            'name': 'tomcat30G20180307',
+            'uuid': '44002594-587c-46bd-b3d0-cf5e75438cc1',
+            'name': 'tomcat30G20180308',
             'port': '8081'
         }
     }
