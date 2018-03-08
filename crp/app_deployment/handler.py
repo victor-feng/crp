@@ -168,6 +168,8 @@ def open_nginx_conf(appinfo,ip):
 
 def write_docker_logs_to_file(task_id,result_list=None,os_inst_id=None):
     try:
+        if os_inst_id is None:
+            TaskManager.task_exit(task_id)
         nova_cli = OpenStack.nova_client
         vm = nova_cli.servers.get(os_inst_id)
         try:
@@ -191,6 +193,7 @@ def write_docker_logs_to_file(task_id,result_list=None,os_inst_id=None):
 def start_write_log(ip):
     result_list = []
     server = OpenStack.find_vm_from_ipv4(ip=ip)
+    os_inst_id = None
     if server:
         os_inst_id=server.id
     timeout = 10000
