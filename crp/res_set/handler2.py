@@ -920,7 +920,6 @@ class ResourceProviderTransitions2(object):
                     if not exec_flag:
                         self.error_msg = err_msg
                         self.rollback()
-
                 else:
                     self.error_msg = err_msg
                     self.rollback()
