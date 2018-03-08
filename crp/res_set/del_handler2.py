@@ -283,6 +283,7 @@ def delete_request_callback(task_id, result):
     syswin_project = result.get('syswin_project', '')
     DELETE_CALL_BACK = RES_DELETE_CALL_BACK[syswin_project]
     try:
+        Log.logger.debug("Delete request callback{data}".format(data=data))
         data_str=json.dumps(data)
         res=requests.post(DELETE_CALL_BACK,data=data_str,headers=headers)
         res=json.dumps(res.json())
