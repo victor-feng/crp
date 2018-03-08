@@ -1,10 +1,6 @@
 
 <!--{{hosts}}-Conf-Start-->
-{% if prdomain is defined %}
-<Host name="{{prdomain}}"  appBase="webapps" unpackWARs="true" autoDeploy="false" xmlValidation="false" xmlNamespaceAware="false">
-{% else %}
 <Host name="localhost"  appBase="webapps" unpackWARs="true" autoDeploy="false" xmlValidation="false" xmlNamespaceAware="false">
-{% endif %}
 {% if virtualname is defined %}
     <Context path="/{{virtualname}}" docBase="/home/webapp/{{hosts}}" reloadable="false" caseSensitive="false" debug="0"></Context>
 {% else %}
