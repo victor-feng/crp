@@ -644,7 +644,6 @@ class AppDeploy(Resource):
         try:
             war_url = info.get("url")
             database_config = info.get("database_config",'{}')
-            Log.logger.debug("--------------database_config11111-----------------%s", database_config)
             ip = info.get("ip",[])
             war_err_msg=get_war_from_ftp(project_name,war_url,env)
             if war_err_msg:

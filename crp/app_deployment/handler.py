@@ -230,7 +230,6 @@ def make_database_config(database_config,project_name,ip,env):
         wardeploy_conf_path = os.path.join(wardeploy_path,config_filename)
         if not os.path.exists(wardeploy_path):
             os.makedirs(wardeploy_path)
-        database_config = json.loads(database_config)
         project_name_head = "[{project_name}]".format(project_name=project_name)
         ip_text = '\n'.join(ip)
         text = project_name_head + "\n" + ip_text
@@ -240,6 +239,7 @@ def make_database_config(database_config,project_name,ip,env):
         env = "env={env}".format(env=env)
         text = text + "\n" + domain + "\n" + env
         if database_config:
+            database_config = json.loads(database_config)
             mysql_info_list = database_config.get("mysql")
             if mysql_info_list:
                 mysql_text = ""
