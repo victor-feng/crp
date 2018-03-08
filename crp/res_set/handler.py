@@ -406,6 +406,7 @@ class ResourceProviderTransitions(object):
                             quantity, network_id, availability_zone,language_env):
         is_rollback = False
         uop_os_inst_id_list = []
+        kvm_tag = time.time().__str__()[6:10]
         propertys = property_mapper.get('app_cluster')
         if not flavor:
             flavor = KVM_FLAVOR.get(str(cpu) + str(mem))
@@ -428,7 +429,7 @@ class ResourceProviderTransitions(object):
                 server_group = nova_client.server_groups.create(
                     **{'name': 'create_resource_cluster_server_group', 'policies': ['anti-affinity']})
             for i in range(0, quantity, 1):
-                instance_name = '%s_%s' % (self.req_dict["resource_name"], i.__str__())
+                instance_name = '%s_%s_%s' % (self.req_dict["resource_name"],kvm_tag,i.__str__())
                 osint_id = self._create_instance_by_type(
                     language_env, instance_name, flavor, network_id, image_id, availability_zone, server_group)
                 uopinst_info = {
