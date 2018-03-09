@@ -171,10 +171,10 @@ class AppDeploy(Resource):
             set_flag = args.set_flag
             deploy_type=set_flag
             msg_dict={
-                "increase":"扩容完成",
-                "reduce":"缩容完成",
-                "deploy_increase_nginx":"nginx增加扩容docker完成",
-                "deploy_reduce_nginx":"nginx缩减缩容docker完成",
+                "increase":"应用扩容完成",
+                "reduce":"应用缩容完成",
+                "deploy_increase_nginx":"nginx增加扩容应用完成",
+                "deploy_reduce_nginx":"nginx缩减缩容应用完成",
             }
             for app in appinfo:
                 self.do_app_push(app)
