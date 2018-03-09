@@ -203,7 +203,7 @@ class DevelopmentConfig(BaseConfig):
             'port': '3316'
         },
         'redis': {
-            'uuid': '12f260fd-1196-4b68-8d37-d9f1d322c842',
+            'uuid': '9c565dab-91a9-4084-b9b0-5e3b3dfd989f',
             'name': 'redis-50G-20170428',
             'port': '6379'
         },
