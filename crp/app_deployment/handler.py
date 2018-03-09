@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import time
+import subprocess
 from crp.openstack import OpenStack
 from crp.taskmgr import *
 from crp.log import Log
@@ -218,8 +219,12 @@ def get_war_from_ftp(project_name,war_url,env):
         if os.path.exists(project_war_path):
             os.remove(project_war_path)
         wget_cmd = "wget -O {project_war_path} --tries=3 {war_url}".format(project_war_path=project_war_path,war_url=war_url)
-        res=os.popen(wget_cmd)
-        res=res.read().strip()
+        p = subprocess.Popen(
+            wget_cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
+        res = p.stdout.read()
         if "ERROR" in res:
             err_msg = res
     except Exception as e:
