@@ -198,12 +198,12 @@ class DevelopmentConfig(BaseConfig):
     }
     cluster_type_image_port_mappers2 = {
         'mysql': {
-            'uuid': 'fa2e3ebe-4c80-404f-94bb-caa9ec11789c',
+            'uuid': '914cacfd-bedf-4da7-83a3-c7ffea75f239',
             'name': 'mysql_sas_80G_20180130',
             'port': '3316'
         },
         'redis': {
-            'uuid': '914cacfd-bedf-4da7-83a3-c7ffea75f239',
+            'uuid': '9c565dab-91a9-4084-b9b0-5e3b3dfd989f',
             'name': 'redis-50G-20170428',
             'port': '6379'
         },
