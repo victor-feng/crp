@@ -15,6 +15,7 @@ from config import configs, APP_ENV
 from crp.utils.aio import exec_cmd_ten_times,exec_cmd_one_times
 from crp.app_deployment.handler import start_write_log
 from del_handler import delete_instance_and_query,QUERY_VOLUME
+from crp.utils.docker_image import make_docker_image
 
 TIMEOUT = 5000
 SLEEP_TIME = 3
@@ -113,6 +114,7 @@ class ResourceProviderTransitions(object):
         self.error_msg = None
         self.set_flag=req_dict["set_flag"]
         self.env=req_dict["env"]
+        self.project_name = req_dict["project_name"]
         # Initialize the state machine
         self.machine = Machine(
             model=self,
@@ -337,6 +339,8 @@ class ResourceProviderTransitions(object):
         host_env = propertys.get("host_env")
         image_id = propertys.get("image_id")
         language_env = propertys.get('language_env')
+        deploy_source = propertys.get('deploy_source')
+        database_config = propertys.get('database_config')
         if not flavor:
             flavor = DOCKER_FLAVOR.get(str(cpu) + str(mem))
         if quantity >= 1:
@@ -352,6 +356,13 @@ class ResourceProviderTransitions(object):
             server_group = None
 
             if host_env == "docker":
+                if deploy_source == "war":
+                    # 执行war包打镜像的操作
+                    err_msg, image_url = make_docker_image(database_config, self.project_name, self.env)
+                    if err_msg:
+                        self.error_msg = err_msg
+                        is_rollback = True
+
 
                 if IS_OPEN_AFFINITY_SCHEDULING:
                     server_group = nova_client.server_groups.create(**{'name': 'create_app_cluster_server_group', 'policies': ['anti-affinity']})
@@ -381,7 +392,9 @@ class ResourceProviderTransitions(object):
                                     'password': DEFAULT_PASSWORD,
                                     'domain': domain,
                                     'port': port,
-                                    'os_inst_id': osint_id})
+                                    'os_inst_id': osint_id,
+                                    'image_url': image_url,
+                                })
                 else:
                     Log.logger.error(
                         "Task ID " +
@@ -394,7 +407,7 @@ class ResourceProviderTransitions(object):
                     uop_os_inst_id_list = []
                     if err_msg == -1:
                         self.error_type = 'notfound'
-                        self.error_msg="the image is not found"
+                        self.error_msg="the image is not found, image url is {image_url}".format(image_url=image_url)
             elif host_env == "kvm":
                 is_rollback, uop_os_inst_id_list = self._create_kvm_cluster(property_mapper, cluster_id, host_env,
                                                                             image_id, port, cpu, mem, flavor,

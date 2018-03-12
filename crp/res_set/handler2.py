@@ -16,6 +16,7 @@ from crp.utils.aio import exec_cmd_ten_times,exec_cmd_one_times
 from crp.app_deployment.handler import start_write_log
 from del_handler2 import delete_instance_and_query2,QUERY_VOLUME
 from crp.k8s_api import K8sDeploymentApi,K8sIngressApi,K8sServiceApi
+from crp.utils.docker_image import make_docker_image
 
 TIMEOUT = 5000
 SLEEP_TIME = 3
@@ -131,6 +132,7 @@ class ResourceProviderTransitions2(object):
         self.set_flag=req_dict["set_flag"]
         self.env=req_dict["env"]
         self.resource_type = req_dict["resource_type"]
+        self.project_name = req_dict["project_name"]
         self.code=None
         # Initialize the state machine
         self.machine = Machine(
@@ -360,6 +362,7 @@ class ResourceProviderTransitions2(object):
         availability_zone = propertys.get('availability_zone')
         language_env = propertys.get('language_env')
         deploy_source = propertys.get('deploy_source')
+        database_config = propertys.get('database_config')
         if port:
             port = int(port)
         image_url = propertys.get('image_url')
@@ -385,7 +388,10 @@ class ResourceProviderTransitions2(object):
             if host_env == "docker":
                 if deploy_source == "war":
                     #执行war包打镜像的操作
-                    pass
+                    err_msg,image_url = make_docker_image(database_config,self.project_name,self.env)
+                    if err_msg:
+                        self.error_msg = err_msg
+                        is_rollback = True
                 #创建容器云
                 if self.set_flag == "res":
                     service_name = deployment_name
@@ -475,7 +481,9 @@ class ResourceProviderTransitions2(object):
                             'password': DEFAULT_PASSWORD,
                             'domain': domain,
                             'port': port,
-                            'os_inst_id': os_inst_id})
+                            'os_inst_id': os_inst_id,
+                            'image_url':image_url
+                        })
 
             elif host_env == "kvm":
                 #创建虚拟化云
@@ -1192,12 +1200,13 @@ class ResourceProviderTransitions2(object):
                 for deployment_info in deployment_info_list:
                     ip = deployment_info.get("pod_ip")
                     ip_list.append(ip)
-                    Log.logger.debug("---------ip_list-------%s",ip_list )
+                    Log.logger.debug("Ip list is {ip_list}".format(ip_list=ip_list))
                 if None not in ip_list:break
         for i in range(len(deployment_info_list)):
             deployment_info_list[i]["deployment_name"] = deployment_info_list[i][
                                                                  "deployment_name"] + "@@" + str(i)
         return deployment_info_list
+
 
 
 # Transit request_data from the JSON nest structure to the chain structure
