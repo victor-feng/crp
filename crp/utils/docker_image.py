@@ -137,7 +137,7 @@ def deal_templates_xml(database_config,project_name,base_context_path,remote_con
                         mycat_conf_text = mycat_conf_text.replace("{{%s}}" % key_word, v)
                     conf_text = conf_text + "\n" + mycat_conf_text
         replace_file_text(base_context_path,remote_context_path,"UOP",conf_text)
-        replace_file_text(base_server_path, remote_server_path, "{{appname}}", project_name)
+        replace_file_text(base_server_path, remote_server_path, "{{hosts}}", project_name)
     except Exception as e:
         err_msg = "deal templates xml error {e}".format(e=str(e))
     return  err_msg
@@ -175,15 +175,16 @@ def make_docker_image(database_config,project_name,env):
         base_server_path = os.path.join(SCRIPTPATH, "roles/wardeploy/templates/server_template.xml")
         err_msg=deal_templates_xml(database_config,project_name,base_context_path,remote_context_path,base_server_path, remote_server_path)
         if not err_msg:
-            unzip_cmd = "unzip -oq {dk_dir}/{project}_{env} -d {dk_dir}/{project_name}".format(dk_dir=dk_dir,project_name=project_name,env=env)
+            unzip_cmd = "unzip -oq {dk_dir}/{project_name}_{env}.war -d {dk_dir}/{project_name}".format(dk_dir=dk_dir,project_name=project_name,env=env)
             err_msg = exec_cmd(unzip_cmd)
             if not err_msg:
                 err_msg = create_docker_file(project_name)
                 if not err_msg:
-                    build_image_cmd = "cd {dk_dir};docker build -t {harbor_url}/uop/{project_name}:v-1.0.1".format(dk_dir=dk_dir,project_name=project_name,harbor_url=HARBOR_URL)
+                    image_url = "{harbor_url}/uop/{project_name}:v-1.0.1".format(harbor_url=HARBOR_URL,project_name=project_name.lower())
+                    build_image_cmd = "cd {dk_dir};docker build -t {image_harbor_url} .".format(dk_dir=dk_dir,image_url=image_url)
                     stdout = exec_cmd(build_image_cmd)
                     if "Successfully" in stdout:
-                        push_image_cmd = "docker push {harbor_url}/uop/{project_name}:v-1.0.1".format(project_name=project_name,harbor_url=HARBOR_URL)
+                        push_image_cmd = "docker push {image_url}".format(image_url)
                         stdout = exec_cmd(push_image_cmd)
                         if "Digest" not in stdout:
                             err_msg = stdout
