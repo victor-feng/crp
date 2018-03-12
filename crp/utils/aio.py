@@ -4,7 +4,9 @@ import subprocess
 import os
 import time
 import json
+import re
 from crp.log import Log
+
 
 
 def async(fun):
@@ -38,12 +40,7 @@ def exec_cmd_ten_times(ip,cmd,sleep):
             time.sleep(sleep)
             flag=check_remote_host(ip)
             if not flag:continue
-            p = subprocess.Popen(
-                    cmd,
-                    shell=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT)
-            stdout=p.stdout.read()
+            stdout=exec_cmd(cmd)
             if "SUCCESS" in stdout:
                 Log.logger.debug(stdout)
                 break
@@ -73,14 +70,9 @@ def exec_cmd_one_times(ip,cmd):
         if int(res) == 0:
             with open('/etc/ansible/hosts', 'a+') as f:
                 f.write('%s\n' % ip)
-        p = subprocess.Popen(
-                cmd,
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT)
-        stdout=p.stdout.read()
+        stdout=exec_cmd(cmd)
         Log.logger.debug(stdout)
-        return p
+        return stdout
     except Exception as e:
         err_msg=str(e.args)
         Log.logger.error("CRP exec_db_service error ,error msg is:%s" %err_msg)
@@ -106,12 +98,7 @@ def response_data(code, msg, data):
 def check_remote_host(ip):
     try:
         cmd = "nmap %s -p 22" % ip
-        p = subprocess.Popen(
-            cmd,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
-        res=p.stdout.read()
+        res=exec_cmd(cmd)
         if "open" in res:
             flag=True
         else:
@@ -120,3 +107,12 @@ def check_remote_host(ip):
         flag=False
     Log.logger.debug("Check remote host %s is %s" % (ip,str(flag)))
     return flag
+
+def exec_cmd(cmd):
+    p = subprocess.Popen(
+        cmd,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT)
+    stdout = p.stdout.read()
+    return stdout

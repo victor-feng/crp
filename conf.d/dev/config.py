@@ -26,6 +26,8 @@ class DevelopmentConfig(BaseConfig):
     MONGODB_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010'
     MONGODB_AUTH_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010 --authenticationDatabase admin -u admin -p 123456'
 
+    HARBOR_URL = "reg1.syswin.com"
+
     cluster_type_image_port_mappers = {
         'mysql': {
             'uuid': '817d3140-0b82-4722-9816-3cee734f22b6',
