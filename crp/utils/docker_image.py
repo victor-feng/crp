@@ -175,21 +175,29 @@ def make_docker_image(database_config,project_name,env):
         base_server_path = os.path.join(SCRIPTPATH, "roles/wardeploy/templates/server_template.xml")
         err_msg=deal_templates_xml(database_config,project_name,base_context_path,remote_context_path,base_server_path, remote_server_path)
         if not err_msg:
+            Log.logger.debug("Create context.xml and server.xml successfully,the next step is unzip war!!!")
             unzip_cmd = "unzip -oq {dk_dir}/{project_name}_{env}.war -d {dk_dir}/{project_name}".format(dk_dir=dk_dir,project_name=project_name,env=env)
             err_msg = exec_cmd(unzip_cmd)
             if not err_msg:
+                Log.logger.debug("Unzip war successfully,the next step is create Dockerfile!!!")
                 err_msg = create_docker_file(project_name)
                 if not err_msg:
+                    Log.logger.debug("Create Dockerfile successfully,the next step is build docker images !!!")
                     image_url = "{harbor_url}/uop/{project_name}:v-1.0.1".format(harbor_url=HARBOR_URL,project_name=project_name.lower())
-                    build_image_cmd = "cd {dk_dir};docker build -t {image_harbor_url} .".format(dk_dir=dk_dir,image_url=image_url)
+                    build_image_cmd = "cd {dk_dir};docker build -t {image_url} .".format(dk_dir=dk_dir,image_url=image_url)
                     stdout = exec_cmd(build_image_cmd)
                     if "Successfully" in stdout:
-                        push_image_cmd = "docker push {image_url}".format(image_url)
+                        Log.logger.debug("Build docker images successfully,the next step is push docker image to harbor!!!")
+                        push_image_cmd = "docker push {image_url}".format(image_url=image_url)
                         stdout = exec_cmd(push_image_cmd)
                         if "Digest" not in stdout:
                             err_msg = stdout
+                        else:
+                            Log.logger.debug(
+                                "Push docker image to harbor successfull,docker image url is {image_url}".format(image_url=image_url))
                     else:
                         err_msg = stdout
     except Exception as e:
         err_msg = str(e)
+        Log.logger.error("CRP make docker image error {err_msg}".format(err_msg=err_msg))
     return err_msg,image_url
