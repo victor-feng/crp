@@ -192,4 +192,4 @@ def make_docker_image(database_config,project_name,env):
                         err_msg = stdout
     except Exception as e:
         err_msg = str(e)
-    return err_msg
+    return err_msg,image_url
