@@ -3,6 +3,7 @@ import threading
 import subprocess
 import os
 import time
+import docker
 import json
 import re
 from crp.log import Log
@@ -11,6 +12,8 @@ from config import APP_ENV, configs
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
 HARBOR_URL = configs[APP_ENV].HARBOR_URL
+DK_SOCK_URL = configs[APP_ENV].DK_SOCK_URL
+DK_CLI_VERSION = configs[APP_ENV].DK_CLI_VERSION
 
 
 mysql_conf_temp="""
@@ -94,6 +97,31 @@ echo "--------------------"
 service sshd start
 exec ${CATALINA_HOME}/bin/catalina.sh run
 """
+
+def dk_client():
+    try:
+        client = docker.DockerClient(
+            base_url=DK_SOCK_URL,
+            version=DK_CLI_VERSION,
+            timeout=3600)
+        return client
+    except Exception as e:
+        return None
+
+def build_dk_image(dk_client,dk_file_path,dk_tag,timeout):
+    try:
+
+        dk_client.images.build(dk_file_path,dk_tag,timeout=timeout)
+    except Exception as e:
+        pass
+
+def push_dk_image(dk_client):
+    try:
+        pass
+    except Exception as e:
+        pass
+
+
 
 def replace_file_text(base_path,remote_path,old_text,new_text):
     with open(base_path,'r') as f:
