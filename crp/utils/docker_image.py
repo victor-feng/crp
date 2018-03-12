@@ -186,10 +186,12 @@ def make_docker_image(database_config,project_name,env):
                     image_url = "{harbor_url}/uop/{project_name}:v-1.0.1".format(harbor_url=HARBOR_URL,project_name=project_name.lower())
                     build_image_cmd = "cd {dk_dir};docker build -t {image_url} .".format(dk_dir=dk_dir,image_url=image_url)
                     stdout = exec_cmd(build_image_cmd)
+                    Log.logger.debug(stdout)
                     if "Successfully" in stdout:
                         Log.logger.debug("Build docker images successfully,the next step is push docker image to harbor!!!")
                         push_image_cmd = "docker push {image_url}".format(image_url=image_url)
                         stdout = exec_cmd(push_image_cmd)
+                        Log.logger.debug(stdout)
                         if "Digest" not in stdout:
                             err_msg = stdout
                         else:
