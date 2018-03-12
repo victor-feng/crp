@@ -152,6 +152,7 @@ class DevelopmentConfig(BaseConfig):
             'host_env':'host_env',
             'image_id': 'image_id',
             'language_env':'language_env',
+            'deploy_source':'deploy_source',
         },
         'resource_cluster': {
             'cluster_name': 'instance_name',

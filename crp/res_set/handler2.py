@@ -48,7 +48,7 @@ HOSTNAMES = configs[APP_ENV].HOSTNAMES
 IP = configs[APP_ENV].IP
 NETWORKNAME = configs[APP_ENV].NETWORKNAME
 TENANTNAME = configs[APP_ENV].TENANTNAME
-
+BASE_K8S_IAMGE = configs[APP_ENV].BASE_K8S_IAMGE
 
 
 
@@ -360,6 +360,7 @@ class ResourceProviderTransitions2(object):
         network_id = propertys.get('network_id')
         availability_zone = propertys.get('availability_zone')
         language_env = propertys.get('language_env')
+        deploy_source = propertys.get('deploy_source')
         if port:
             port = int(port)
         image_url = propertys.get('image_url')
@@ -383,6 +384,9 @@ class ResourceProviderTransitions2(object):
             deployment_name = self.req_dict["resource_name"]
             #创建应用集群
             if host_env == "docker":
+                if deploy_source == "war":
+                    #执行war包打镜像的操作
+                    pass
                 #创建容器云
                 if self.set_flag == "res":
                     service_name = deployment_name
