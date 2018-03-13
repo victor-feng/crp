@@ -362,8 +362,7 @@ class ResourceProviderTransitions(object):
                     if err_msg:
                         self.error_msg = err_msg
                         is_rollback = True
-
-
+                        return
                 if IS_OPEN_AFFINITY_SCHEDULING:
                     server_group = nova_client.server_groups.create(**{'name': 'create_app_cluster_server_group', 'policies': ['anti-affinity']})
 

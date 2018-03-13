@@ -141,9 +141,9 @@ def exec_cmd(cmd):
 def deal_templates_xml(database_config,project_name,base_context_path,remote_context_path,base_server_path, remote_server_path):
     err_msg = None
     try:
+        conf_text = ""
         if database_config:
             database_config = json.loads(database_config)
-            conf_text = ""
             mysql_info_list = database_config.get("mysql")
             if mysql_info_list:
                 for mysql_info in mysql_info_list:

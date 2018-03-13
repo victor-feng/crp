@@ -393,6 +393,7 @@ class ResourceProviderTransitions2(object):
                     if err_msg:
                         self.error_msg = err_msg
                         is_rollback = True
+                        return
                 #创建容器云
                 if self.set_flag == "res":
                     service_name = deployment_name
