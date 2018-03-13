@@ -394,6 +394,7 @@ class ResourceProviderTransitions(object):
                                     'port': port,
                                     'os_inst_id': osint_id,
                                     'image_url': image_url,
+                                    'deploy_source': deploy_source,
                                 })
                 else:
                     Log.logger.error(

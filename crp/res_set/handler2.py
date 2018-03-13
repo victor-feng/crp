@@ -482,7 +482,8 @@ class ResourceProviderTransitions2(object):
                             'domain': domain,
                             'port': port,
                             'os_inst_id': os_inst_id,
-                            'image_url':image_url
+                            'image_url':image_url,
+                            'deploy_source':deploy_source,
                         })
 
             elif host_env == "kvm":
