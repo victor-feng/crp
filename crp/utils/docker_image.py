@@ -191,6 +191,7 @@ def create_docker_file(project_name):
 
 def make_docker_image(database_config,project_name,env):
     err_msg = None
+    image_url = None
     try:
         dk_client = _dk_py_cli()
         dk_dir = os.path.join(os.path.join(UPLOAD_FOLDER,"war"),project_name)
