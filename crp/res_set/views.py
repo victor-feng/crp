@@ -118,6 +118,7 @@ class ResourceSet(Resource):
             parser.add_argument('syswin_project', type=str, location='json')
             parser.add_argument('project', type=str, location='json')
             parser.add_argument('department_id', type=str, location='json')
+            parser.add_argument('project_name', type=str, location='json')
             args = parser.parse_args()
 
             req_dict = {}
@@ -143,7 +144,8 @@ class ResourceSet(Resource):
             resource_type = args.resource_type
             syswin_project = args.syswin_project
             project = args.project
-            department_id=args.department_id
+            department_id = args.department_id
+            project_name = args.project_name
 
 
             Log.logger.debug(resource_list)
@@ -169,6 +171,7 @@ class ResourceSet(Resource):
             req_dict["syswin_project"] = syswin_project
             req_dict["project"] = project
             req_dict["department_id"] = department_id
+            req_dict["project_name"] = project_name
 
             # init default data
             Log.logger.debug('req_dict\'s object id is :')

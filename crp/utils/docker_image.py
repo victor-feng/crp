@@ -108,10 +108,12 @@ def dk_client():
     except Exception as e:
         return None
 
-def build_dk_image(dk_client,dk_file_path,dk_tag,timeout):
+def build_dk_image(dk_client,dk_file_path,dk_tag):
     try:
-
-        dk_client.images.build(dk_file_path,dk_tag,timeout=timeout)
+        kwargs={
+            "path":dk_file_path
+        }
+        dk_client.images.build(dk_file_path,dk_tag,timeout=1800)
     except Exception as e:
         pass
 
