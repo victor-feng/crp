@@ -8,12 +8,11 @@ import json
 import re
 from crp.log import Log
 from config import APP_ENV, configs
+from crp.utils.docker_tools import _dk_py_cli
 
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
 HARBOR_URL = configs[APP_ENV].HARBOR_URL
-DK_SOCK_URL = configs[APP_ENV].DK_SOCK_URL
-DK_CLI_VERSION = configs[APP_ENV].DK_CLI_VERSION
 
 
 mysql_conf_temp="""
@@ -98,28 +97,24 @@ service sshd start
 exec ${CATALINA_HOME}/bin/catalina.sh run
 """
 
-def dk_client():
-    try:
-        client = docker.DockerClient(
-            base_url=DK_SOCK_URL,
-            version=DK_CLI_VERSION,
-            timeout=3600)
-        return client
-    except Exception as e:
-        return None
 
 def build_dk_image(dk_client,dk_file_path,dk_tag):
+    err_msg = None
     try:
         kwargs={
-            "path":dk_file_path
+            "path":dk_file_path,
+            "tag":dk_tag,
         }
-        dk_client.images.build(dk_file_path,dk_tag,timeout=1800)
+        image=dk_client.images.build(**kwargs)
     except Exception as e:
-        pass
+        err_msg = "Build docker image error {e}".format(e=str(e))
+        image = None
+    return err_msg,image
 
-def push_dk_image(dk_client):
+def push_dk_image(dk_client,tag):
     try:
-        pass
+        res = dk_client.images.push(tag)
+
     except Exception as e:
         pass
 
