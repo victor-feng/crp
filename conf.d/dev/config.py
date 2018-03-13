@@ -268,7 +268,7 @@ class DevelopmentConfig(BaseConfig):
     NETWORKNAME = "contiv-vlan651"
     TENANTNAME = "tenant-vlan651"
     K8S_NETWORK_URL = {
-        "dev": "http://172.28.13.254:19999/api/v1/networks/",
+        "dev": "http://172.28.11.252:19999/api/v1/networks/",
         "test": "http://172.28.13.254:19999/api/v1/networks/",
         "prep": "http://172.28.13.254:19999/api/v1/networks/",
         "prod": "http://172.28.13.254:19999/api/v1/networks/",
