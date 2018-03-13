@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-import threading
 import subprocess
 import os
-import time
-import docker
+import commands
 import json
 import re
 from crp.log import Log
@@ -13,6 +11,8 @@ from crp.utils.docker_tools import _dk_py_cli
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
 HARBOR_URL = configs[APP_ENV].HARBOR_URL
+HARBOR_USERNAME = configs[APP_ENV].HARBOR_USERNAME
+HARBOR_PASSWORD = configs[APP_ENV].HARBOR_PASSWORD
 
 
 mysql_conf_temp="""
@@ -107,17 +107,18 @@ def build_dk_image(dk_client,dk_file_path,dk_tag):
         }
         image=dk_client.images.build(**kwargs)
     except Exception as e:
-        err_msg = "Build docker image error {e}".format(e=str(e))
+        err_msg = "Build docker image {image_url} error {e}".format(image_url=dk_tag,e=str(e))
         image = None
     return err_msg,image
 
-def push_dk_image(dk_client,tag):
+def push_dk_image(dk_client,repository):
+    err_msg = None
     try:
-        res = dk_client.images.push(tag)
-
+        auth_config = {"username": HARBOR_USERNAME, "password": HARBOR_PASSWORD}
+        res = dk_client.images.push(repository=repository,auth_config=auth_config)
     except Exception as e:
-        pass
-
+        err_msg = "Push docker image {image_url} error {e}".format(image_url=repository,e=str(e))
+    return err_msg
 
 
 def replace_file_text(base_path,remote_path,old_text,new_text):
@@ -191,6 +192,7 @@ def create_docker_file(project_name):
 def make_docker_image(database_config,project_name,env):
     err_msg = None
     try:
+        dk_client = _dk_py_cli()
         dk_dir = os.path.join(os.path.join(UPLOAD_FOLDER,"war"),project_name)
         remote_context_path = os.path.join(dk_dir,"context.xml")
         remote_server_path = os.path.join(dk_dir,"server.xml")
@@ -200,28 +202,20 @@ def make_docker_image(database_config,project_name,env):
         if not err_msg:
             Log.logger.debug("Create context.xml and server.xml successfully,the next step is unzip war!!!")
             unzip_cmd = "unzip -oq {dk_dir}/{project_name}_{env}.war -d {dk_dir}/{project_name}".format(dk_dir=dk_dir,project_name=project_name,env=env)
-            err_msg = exec_cmd(unzip_cmd)
-            if not err_msg:
+            code,msg = commands.getstatusoutput(unzip_cmd)
+            if code == 0:
                 Log.logger.debug("Unzip war successfully,the next step is create Dockerfile!!!")
                 err_msg = create_docker_file(project_name)
                 if not err_msg:
                     Log.logger.debug("Create Dockerfile successfully,the next step is build docker images !!!")
                     image_url = "{harbor_url}/uop/{project_name}:v-1.0.1".format(harbor_url=HARBOR_URL,project_name=project_name.lower())
-                    build_image_cmd = "cd {dk_dir};docker build -t {image_url} .".format(dk_dir=dk_dir,image_url=image_url)
-                    stdout = exec_cmd(build_image_cmd)
-                    Log.logger.debug(stdout)
-                    if "Successfully" in stdout:
+                    err_msg,image=build_dk_image(dk_client, dk_dir, image_url)
+                    if not err_msg:
                         Log.logger.debug("Build docker images successfully,the next step is push docker image to harbor!!!")
-                        push_image_cmd = "docker push {image_url}".format(image_url=image_url)
-                        stdout = exec_cmd(push_image_cmd)
-                        Log.logger.debug(stdout)
-                        if "Digest" not in stdout:
-                            err_msg = stdout
-                        else:
+                        err_msg = push_dk_image(dk_client, image_url)
+                        if not err_msg:
                             Log.logger.debug(
                                 "Push docker image to harbor successfull,docker image url is {image_url}".format(image_url=image_url))
-                    else:
-                        err_msg = stdout
     except Exception as e:
         err_msg = str(e)
         Log.logger.error("CRP make docker image error {err_msg}".format(err_msg=err_msg))

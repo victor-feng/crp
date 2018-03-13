@@ -27,6 +27,8 @@ class DevelopmentConfig(BaseConfig):
     MONGODB_AUTH_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010 --authenticationDatabase admin -u admin -p 123456'
 
     HARBOR_URL = "reg1.syswin.com"
+    HARBOR_USERNAME = "crm_test1"
+    HARBOR_PASSWORD = "syswin#"
 
     cluster_type_image_port_mappers = {
         'mysql': {
