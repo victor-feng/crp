@@ -389,6 +389,7 @@ class ResourceProviderTransitions2(object):
                 if deploy_source == "war":
                     #执行war包打镜像的操作
                     err_msg,image_url = make_docker_image(database_config,self.project_name,self.env)
+                    Log.logger.debug("-------------------------err_msg---and---image_url-----{err_msg}--------{image_url}---".format(err_msg=err_msg,image_url=image_url))
                     if err_msg:
                         self.error_msg = err_msg
                         is_rollback = True
