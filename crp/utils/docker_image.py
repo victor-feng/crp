@@ -161,7 +161,8 @@ def deal_templates_xml(database_config,project_name,base_context_path,remote_con
                         key_word = re.sub(r'([\d]+)', '', k)
                         mycat_conf_text = mycat_conf_text.replace("{{%s}}" % key_word, v)
                     conf_text = conf_text + "\n" + mycat_conf_text
-        replace_file_text(base_context_path,remote_context_path,"UOP",conf_text)
+        Log.logger.debug("Database conf text is {conf_text}".format(conf_text=conf_text))
+        replace_file_text(base_context_path,remote_context_path,"UOPDATABASECONFIG",conf_text)
         replace_file_text(base_server_path, remote_server_path, "{{hosts}}", project_name)
     except Exception as e:
         err_msg = "deal templates xml error {e}".format(e=str(e))

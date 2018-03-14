@@ -18,7 +18,7 @@
 <!-- The contents of this file will be loaded for each web application -->
 <Context>
       <!--CollectAPI-Conf-Start-->
-    UOP
+    UOPDATABASECONFIG
     <!--CollectAPI-Conf-End-->
 
     <!-- Default set of monitored resources -->
