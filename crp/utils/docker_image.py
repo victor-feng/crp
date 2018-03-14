@@ -217,6 +217,8 @@ def make_docker_image(database_config,project_name,env):
                         if not err_msg:
                             Log.logger.debug(
                                 "Push docker image to harbor successfull,docker image url is {image_url}".format(image_url=image_url))
+            else:
+                err_msg = msg
     except Exception as e:
         err_msg = str(e)
         Log.logger.error("CRP make docker image error {err_msg}".format(err_msg=err_msg))
