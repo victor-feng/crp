@@ -7,6 +7,7 @@ import re
 from crp.log import Log
 from config import APP_ENV, configs
 from crp.utils.docker_tools import _dk_py_cli
+from crp.app_deployment.handler import get_war_from_ftp
 
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
@@ -189,38 +190,38 @@ def create_docker_file(project_name):
 
 
 
-def make_docker_image(database_config,project_name,env):
+def make_docker_image(database_config,project_name,env,war_url):
     err_msg = None
     image_url = None
     try:
         dk_client = _dk_py_cli()
         dk_dir = os.path.join(os.path.join(UPLOAD_FOLDER,"war"),project_name)
-        if not os.path.exists(dk_dir):
-            os.makedirs(dk_dir)
-        remote_context_path = os.path.join(dk_dir,"context.xml")
-        remote_server_path = os.path.join(dk_dir,"server.xml")
-        base_context_path = os.path.join(SCRIPTPATH,"roles/wardeploy/templates/base_context_template.xml")
-        base_server_path = os.path.join(SCRIPTPATH, "roles/wardeploy/templates/server_template.xml")
-        err_msg=deal_templates_xml(database_config,project_name,base_context_path,remote_context_path,base_server_path, remote_server_path)
+        err_msg=get_war_from_ftp(project_name, war_url, env)
         if not err_msg:
-            Log.logger.debug("Create context.xml and server.xml successfully,the next step is unzip war!!!")
-            unzip_cmd = "unzip -oq {dk_dir}/{project_name}_{env}.war -d {dk_dir}/{project_name}".format(dk_dir=dk_dir,project_name=project_name,env=env)
-            code,msg = commands.getstatusoutput(unzip_cmd)
-            if code == 0:
-                Log.logger.debug("Unzip war successfully,the next step is create Dockerfile!!!")
-                err_msg = create_docker_file(project_name)
-                if not err_msg:
-                    Log.logger.debug("Create Dockerfile successfully,the next step is build docker images !!!")
-                    image_url = "{harbor_url}/uop/{project_name}:v-1.0.1".format(harbor_url=HARBOR_URL,project_name=project_name.lower())
-                    err_msg,image=build_dk_image(dk_client, dk_dir, image_url)
+            remote_context_path = os.path.join(dk_dir,"context.xml")
+            remote_server_path = os.path.join(dk_dir,"server.xml")
+            base_context_path = os.path.join(SCRIPTPATH,"roles/wardeploy/templates/base_context_template.xml")
+            base_server_path = os.path.join(SCRIPTPATH, "roles/wardeploy/templates/server_template.xml")
+            err_msg=deal_templates_xml(database_config,project_name,base_context_path,remote_context_path,base_server_path, remote_server_path)
+            if not err_msg:
+                Log.logger.debug("Create context.xml and server.xml successfully,the next step is unzip war!!!")
+                unzip_cmd = "unzip -oq {dk_dir}/{project_name}_{env}.war -d {dk_dir}/{project_name}".format(dk_dir=dk_dir,project_name=project_name,env=env)
+                code,msg = commands.getstatusoutput(unzip_cmd)
+                if code == 0:
+                    Log.logger.debug("Unzip war successfully,the next step is create Dockerfile!!!")
+                    err_msg = create_docker_file(project_name)
                     if not err_msg:
-                        Log.logger.debug("Build docker images successfully,the next step is push docker image to harbor!!!")
-                        err_msg = push_dk_image(dk_client, image_url)
+                        Log.logger.debug("Create Dockerfile successfully,the next step is build docker images !!!")
+                        image_url = "{harbor_url}/uop/{project_name}:v-1.0.1".format(harbor_url=HARBOR_URL,project_name=project_name.lower())
+                        err_msg,image=build_dk_image(dk_client, dk_dir, image_url)
                         if not err_msg:
-                            Log.logger.debug(
-                                "Push docker image to harbor successfull,docker image url is {image_url}".format(image_url=image_url))
-            else:
-                err_msg = msg
+                            Log.logger.debug("Build docker images successfully,the next step is push docker image to harbor!!!")
+                            err_msg = push_dk_image(dk_client, image_url)
+                            if not err_msg:
+                                Log.logger.debug(
+                                    "Push docker image to harbor successfull,docker image url is {image_url}".format(image_url=image_url))
+                else:
+                    err_msg = msg
     except Exception as e:
         err_msg = str(e)
         Log.logger.error("CRP make docker image error {err_msg}".format(err_msg=err_msg))
