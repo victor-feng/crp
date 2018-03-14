@@ -395,7 +395,7 @@ class ResourceProviderTransitions2(object):
                     if err_msg:
                         self.error_msg = err_msg
                         is_rollback = True
-                        return
+                        return is_rollback, uop_os_inst_id_list
                     else:
                         image_url = img_url
                 #创建容器云
