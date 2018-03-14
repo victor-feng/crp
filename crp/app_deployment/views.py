@@ -277,7 +277,7 @@ class AppDeploy(Resource):
                     if ingress_err_msg:
                         _dep_callback(deploy_id, '127.0.0.1', "docker", ingress_err_msg, "None", False,
                                       "", True, deploy_type,
-                                      unique_flag, cloud, deploy_name,o_domain,o_port)
+                                      unique_flag, cloud, deploy_name,o_domain,o_port,"True")
                         return
                 elif ingress_flag == "create":
                     #创建service和ingress
@@ -291,12 +291,12 @@ class AppDeploy(Resource):
                         if ingress_err_msg:
                             _dep_callback(deploy_id, '127.0.0.1', "docker", ingress_err_msg, "None", False,
                                           "", True, deploy_type,
-                                          unique_flag, cloud, deploy_name,o_domain,o_port)
+                                          unique_flag, cloud, deploy_name,o_domain,o_port,"True")
                             return
                     else:
                         _dep_callback(deploy_id, '127.0.0.1', "docker", service_err_msg, "None", False,
                                       "", True, deploy_type,
-                                      unique_flag, cloud, deploy_name,o_domain,o_port)
+                                      unique_flag, cloud, deploy_name,o_domain,o_port,"True")
                         return
                 elif ingress_flag == "delete":
                     #删除ingress和service
@@ -306,13 +306,13 @@ class AppDeploy(Resource):
                         if service_err_msg:
                             _dep_callback(deploy_id, '127.0.0.1', "docker", ingress_err_msg, "None", False,
                                           "", True, deploy_type,
-                                          unique_flag, cloud, deploy_name,o_domain,o_port)
+                                          unique_flag, cloud, deploy_name,o_domain,o_port,"True")
                             return
 
                     else:
                         _dep_callback(deploy_id, '127.0.0.1', "docker", ingress_err_msg, "None", False,
                                       "", True, deploy_type,
-                                      unique_flag, cloud, deploy_name,o_domain,o_port)
+                                      unique_flag, cloud, deploy_name,o_domain,o_port,"True")
                         return
                 self.do_app_push(app)
             if appinfo:
