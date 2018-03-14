@@ -215,7 +215,7 @@ def make_docker_image(database_config,project_name,env,war_url):
                         image_url = "{harbor_url}/uop/{project_name}:v-1.0.1".format(harbor_url=HARBOR_URL,project_name=project_name.lower())
                         err_msg,image=build_dk_image(dk_client, dk_dir, image_url)
                         if not err_msg:
-                            Log.logger.debug("Build docker images successfully,the next step is push docker image to harbor!!!")
+                            Log.logger.debug("Build docker images successfully,the next step is push docker image to harbor!!!,image url is {image_url}".format(image_url=image_url))
                             err_msg = push_dk_image(dk_client, image_url)
                             if not err_msg:
                                 Log.logger.debug(
