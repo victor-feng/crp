@@ -195,6 +195,8 @@ def make_docker_image(database_config,project_name,env):
     try:
         dk_client = _dk_py_cli()
         dk_dir = os.path.join(os.path.join(UPLOAD_FOLDER,"war"),project_name)
+        if not os.path.exists(dk_dir):
+            os.makedirs(dk_dir)
         remote_context_path = os.path.join(dk_dir,"context.xml")
         remote_server_path = os.path.join(dk_dir,"server.xml")
         base_context_path = os.path.join(SCRIPTPATH,"roles/wardeploy/templates/base_context_template.xml")
