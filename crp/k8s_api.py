@@ -607,7 +607,7 @@ class K8sServiceApi(object):
 class K8sIngressApi(object):
 
     @classmethod
-    def create_ingress_object(cls,ingress_name,namespace,service_name,service_port,domain):
+    def create_ingress_object(cls,ingress_name,namespace,service_name,service_port,domain,lb_methods):
         """
 
         :param ingress_name:"tomcat-cssapi-ingress"
@@ -641,7 +641,46 @@ class K8sIngressApi(object):
             kind="Ingress",
             metadata=client.V1ObjectMeta(
                 name=ingress_name,
-                namespace=namespace
+                namespace=namespace,
+                annotations = {
+                          # lb_methods: round_robin/least_conn/ip_hash
+                          "lb_methods": lb_methods
+                      },
+            ),
+            spec=spec
+        )
+
+        return ingress
+    @classmethod
+    def update_ingress_host_object(cls,ingress_name,namespace,service_name,service_port,domain):
+        spec = client.V1beta1IngressSpec(
+            rules=[
+                client.V1beta1IngressRule(
+                    # host="tomcat.k8s.me",
+                    host=domain,
+                    http=client.V1beta1HTTPIngressRuleValue(
+                        paths=[
+                            client.V1beta1HTTPIngressPath(
+                                backend=client.V1beta1IngressBackend(
+                                    service_name=service_name,
+                                    service_port=service_port,
+                                )
+                            )
+                        ]
+                    )
+                )
+            ]
+        )
+        ingress = client.V1beta1Ingress(
+            api_version="extensions/v1beta1",
+            kind="Ingress",
+            metadata=client.V1ObjectMeta(
+                name=ingress_name,
+                namespace=namespace,
+                # annotations={
+                #     # lb_methods: round_robin/least_conn/ip_hash
+                #     "lb_methods": "least_conn"
+                # },
             ),
             spec=spec
         )
@@ -669,6 +708,32 @@ class K8sIngressApi(object):
             err_msg = "create ingress error %s" % str(e)
             code = get_k8s_err_code(e)
         return err_msg,code
+
+    @classmethod
+    def update_ingress(cls, ingress,ingress_name, namespace):
+        """
+        更新ingress
+        :param api_instance:ExtensionsV1beta1Api()
+        :param ingress:
+        :param namespace:
+        :return:
+        """
+        err_msg = None
+        code = 200
+        try:
+            config.load_kube_config(config_file=K8S_CONF_PATH)
+            api_instance = client.ExtensionsV1beta1Api()
+            api_response = api_instance.patch_namespaced_ingress(
+                name=ingress_name,
+                namespace=namespace,
+                body=ingress
+            )
+        except Exception as e:
+            err_msg = "update ingress error %s" % str(e)
+            code = get_k8s_err_code(e)
+        return err_msg, code
+
+
 
     @classmethod
     def delete_ingress(cls,ingress_name,namespace):

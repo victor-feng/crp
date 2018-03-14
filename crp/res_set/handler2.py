@@ -364,6 +364,7 @@ class ResourceProviderTransitions2(object):
         language_env = propertys.get('language_env')
         deploy_source = propertys.get('deploy_source')
         database_config = propertys.get('database_config')
+        lb_methods = propertys.get('lb_methods',"round_robin")
         if port:
             port = int(port)
         image_url = propertys.get('image_url')
@@ -434,7 +435,7 @@ class ResourceProviderTransitions2(object):
                         service_err_msg,service_err_code=K8sServiceApi.create_service(service,NAMESPACE)
                         if service_err_msg is None:
                             #创建ingress
-                            ingress=K8sIngressApi.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,domain)
+                            ingress=K8sIngressApi.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,domain,lb_methods)
                             ingress_err_msg,ingress_err_code=K8sIngressApi.create_ingress(ingress,NAMESPACE)
                             if ingress_err_msg is None:
                                 #创建应用集群
