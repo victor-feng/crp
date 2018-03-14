@@ -652,7 +652,7 @@ class K8sIngressApi(object):
 
         return ingress
     @classmethod
-    def update_ingress_host_object(cls,ingress_name,namespace,service_name,service_port,domain):
+    def update_ingress_object(cls,ingress_name,namespace,service_name,service_port,domain):
         spec = client.V1beta1IngressSpec(
             rules=[
                 client.V1beta1IngressRule(

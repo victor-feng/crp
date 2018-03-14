@@ -28,7 +28,7 @@ import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
 from config import APP_ENV, configs
-from crp.k8s_api import K8S,K8sDeploymentApi
+from crp.k8s_api import K8S,K8sDeploymentApi,K8sServiceApi,K8sIngressApi
 
 
 app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
@@ -259,6 +259,38 @@ class AppDeploy(Resource):
             if not appinfo:
                 Log.logger.info("No nginx ip information, no need to push nginx something")
             for app in appinfo:
+                ingress_flag = app.get("ingress_flag")
+                port = app.get("port")
+                domain = app.get("domain")
+                lb_methods = app.get("lb_methods","round_robin")
+                service_name = resource_name
+                service_port = port
+                ingress_name = resource_name + "-" + "ingress"
+                if ingress_flag == "update":
+                    #更新ingress域名
+                    ingress = K8sIngressApi.update_ingress_object(ingress_name,NAMESPACE,service_name,service_port,domain)
+                    ingress_err_msg, ingress_err_code=K8sIngressApi.update_ingress(ingress,ingress_name, NAMESPACE)
+                    if ingress_err_msg:
+                        _dep_callback(deploy_id, '127.0.0.1', "docker", ingress_err_msg, "None", False,
+                                      "", True, deploy_type,
+                                      unique_flag, cloud, deploy_name)
+                elif ingress_flag == "create":
+                    #创建service和ingress
+                    service = K8sServiceApi.create_service_object(service_name, NAMESPACE, service_port)
+                    service_err_msg, service_err_code = K8sServiceApi.create_service(service, NAMESPACE)
+                    if service_err_msg is None:
+                        # 创建ingress
+                        ingress = K8sIngressApi.create_ingress_object(ingress_name, NAMESPACE, service_name,
+                                                                      service_port, domain, lb_methods)
+                        ingress_err_msg, ingress_err_code = K8sIngressApi.create_ingress(ingress, NAMESPACE)
+                        if ingress_err_msg:
+                            _dep_callback(deploy_id, '127.0.0.1', "docker", ingress_err_msg, "None", False,
+                                          "", True, deploy_type,
+                                          unique_flag, cloud, deploy_name)
+                    else:
+                        _dep_callback(deploy_id, '127.0.0.1', "docker", service_err_msg, "None", False,
+                                      "", True, deploy_type,
+                                      unique_flag, cloud, deploy_name)
                 self.do_app_push(app)
             if appinfo:
                 _dep_detail_callback(deploy_id, "deploy_nginx", "res")
@@ -301,7 +333,7 @@ class AppDeploy(Resource):
                 Log.logger.debug("disconf result:{result},{message}".format(result=result,message=message))
             if disconf_server_info:
                 _dep_detail_callback(deploy_id,"deploy_disconf","res")
-            #部署
+            #部署应用
             if cloud == "2":
                 deployment_name=resource_name
                 for i in docker:
