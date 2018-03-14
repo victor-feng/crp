@@ -357,7 +357,7 @@ class ResourceProviderTransitions(object):
             server_group = None
 
             if host_env == "docker":
-                if deploy_source == "war":
+                if deploy_source == "war" and self.set_flag == "res":
                     # 执行war包打镜像的操作
                     err_msg, img_url = make_docker_image(database_config, self.project_name, self.env,image_url)
                     Log.logger.debug(

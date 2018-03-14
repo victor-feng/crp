@@ -265,6 +265,8 @@ class AppDeploy(Resource):
                     port = int(port)
                 domain = app.get("domain")
                 lb_methods = app.get("lb_methods","round_robin")
+                o_domain = app.get("o_domain")
+                o_port = app.get("o_port")
                 service_name = resource_name
                 service_port = port
                 ingress_name = resource_name + "-" + "ingress"
@@ -275,7 +277,8 @@ class AppDeploy(Resource):
                     if ingress_err_msg:
                         _dep_callback(deploy_id, '127.0.0.1', "docker", ingress_err_msg, "None", False,
                                       "", True, deploy_type,
-                                      unique_flag, cloud, deploy_name)
+                                      unique_flag, cloud, deploy_name,o_domain,o_port)
+                        return
                 elif ingress_flag == "create":
                     #创建service和ingress
                     service = K8sServiceApi.create_service_object(service_name, NAMESPACE, service_port)
@@ -288,11 +291,29 @@ class AppDeploy(Resource):
                         if ingress_err_msg:
                             _dep_callback(deploy_id, '127.0.0.1', "docker", ingress_err_msg, "None", False,
                                           "", True, deploy_type,
-                                          unique_flag, cloud, deploy_name)
+                                          unique_flag, cloud, deploy_name,o_domain,o_port)
+                            return
                     else:
                         _dep_callback(deploy_id, '127.0.0.1', "docker", service_err_msg, "None", False,
                                       "", True, deploy_type,
-                                      unique_flag, cloud, deploy_name)
+                                      unique_flag, cloud, deploy_name,o_domain,o_port)
+                        return
+                elif ingress_flag == "delete":
+                    #删除ingress和service
+                    ingress_err_msg, ingress_err_code=K8sIngressApi.delete_ingress(ingress_name, NAMESPACE)
+                    if not ingress_err_msg:
+                        service_err_msg, service_err_code=K8sServiceApi.delete_service(service_name, NAMESPACE)
+                        if service_err_msg:
+                            _dep_callback(deploy_id, '127.0.0.1', "docker", ingress_err_msg, "None", False,
+                                          "", True, deploy_type,
+                                          unique_flag, cloud, deploy_name,o_domain,o_port)
+                            return
+
+                    else:
+                        _dep_callback(deploy_id, '127.0.0.1', "docker", ingress_err_msg, "None", False,
+                                      "", True, deploy_type,
+                                      unique_flag, cloud, deploy_name,o_domain,o_port)
+                        return
                 self.do_app_push(app)
             if appinfo:
                 _dep_detail_callback(deploy_id, "deploy_nginx", "res")

@@ -388,7 +388,7 @@ class ResourceProviderTransitions2(object):
             deployment_name = self.req_dict["resource_name"]
             #创建应用集群
             if host_env == "docker":
-                if deploy_source == "war":
+                if deploy_source == "war" and self.set_flag == "res":
                     #执行war包打镜像的操作
                     err_msg,img_url = make_docker_image(database_config,self.project_name,self.env,image_url)
                     Log.logger.debug("CRP make docker image err_msg:{err_msg}--------image_url:{img_url}".format(err_msg=err_msg,img_url=img_url))
