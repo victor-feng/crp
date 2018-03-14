@@ -261,6 +261,8 @@ class AppDeploy(Resource):
             for app in appinfo:
                 ingress_flag = app.get("ingress_flag")
                 port = app.get("port")
+                if port:
+                    port = int(port)
                 domain = app.get("domain")
                 lb_methods = app.get("lb_methods","round_robin")
                 service_name = resource_name
