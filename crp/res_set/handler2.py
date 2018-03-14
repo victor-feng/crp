@@ -346,6 +346,7 @@ class ResourceProviderTransitions2(object):
 
 
     def _create_app_cluster(self, property_mapper):
+        img_url = None
         is_rollback = False
         uop_os_inst_id_list = []
         propertys = property_mapper.get('app_cluster')
@@ -394,6 +395,8 @@ class ResourceProviderTransitions2(object):
                         self.error_msg = err_msg
                         is_rollback = True
                         return
+                    else:
+                        image_url = img_url
                 #创建容器云
                 if self.set_flag == "res":
                     service_name = deployment_name

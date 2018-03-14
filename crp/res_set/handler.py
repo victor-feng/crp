@@ -320,6 +320,7 @@ class ResourceProviderTransitions(object):
 
     # 申请应用集群docker资源
     def _create_app_cluster(self, property_mapper):
+        img_url = None
         is_rollback = False
         uop_os_inst_id_list = []
         docker_tag = time.time().__str__()[6:10]
@@ -366,6 +367,8 @@ class ResourceProviderTransitions(object):
                         self.error_msg = err_msg
                         is_rollback = True
                         return
+                    else:
+                        image_url = img_url
                 if IS_OPEN_AFFINITY_SCHEDULING:
                     server_group = nova_client.server_groups.create(**{'name': 'create_app_cluster_server_group', 'policies': ['anti-affinity']})
 
