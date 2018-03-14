@@ -721,6 +721,7 @@ class K8sIngressApi(object):
         err_msg = None
         code = 200
         try:
+            ingress_name=ingress_name.lower()
             config.load_kube_config(config_file=K8S_CONF_PATH)
             api_instance = client.ExtensionsV1beta1Api()
             api_response = api_instance.patch_namespaced_ingress(
