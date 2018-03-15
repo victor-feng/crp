@@ -28,7 +28,7 @@ import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
 from config import APP_ENV, configs
-from crp.k8s_api import K8sDeploymentApi,K8sServiceApi,K8sIngressApi
+from crp.k8s_api import K8S,K8sDeploymentApi,K8sServiceApi,K8sIngressApi
 
 
 app_deploy_api = Api(app_deploy_blueprint, errors=user_errors)
@@ -39,17 +39,12 @@ HEALTH_CHECK_PATH = configs[APP_ENV].HEALTH_CHECK_PATH
 NAMESPACE = configs[APP_ENV].NAMESPACE
 FILEBEAT_NAME = configs[APP_ENV].FILEBEAT_NAME
 SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
-K8S_CONF_PATH = configs[APP_ENV].K8S_CONF_PATH
 
 
 class AppDeploy(Resource):
 
     def __init__(self):
         self.all_ips=[]
-        # k8s相关
-        self.K8sDeployment = K8sDeploymentApi(K8S_CONF_PATH)
-        self.K8sIngress = K8sIngressApi(K8S_CONF_PATH)
-        self.K8sService = K8sServiceApi(K8S_CONF_PATH)
 
     def do_app_push(self, app):
         # TODO: do app push
@@ -277,8 +272,8 @@ class AppDeploy(Resource):
                 ingress_name = resource_name + "-" + "ingress"
                 if ingress_flag == "update":
                     #更新ingress域名
-                    ingress = self.K8sIngress.update_ingress_object(ingress_name,NAMESPACE,service_name,service_port,domain)
-                    ingress_err_msg, ingress_err_code=self.K8sIngress.update_ingress(ingress,ingress_name, NAMESPACE)
+                    ingress = K8sIngressApi.update_ingress_object(ingress_name,NAMESPACE,service_name,service_port,domain)
+                    ingress_err_msg, ingress_err_code=K8sIngressApi.update_ingress(ingress,ingress_name, NAMESPACE)
                     if ingress_err_msg:
                         _dep_callback(deploy_id, '127.0.0.1', "docker", ingress_err_msg, "None", False,
                                       "", True, deploy_type,
@@ -286,13 +281,13 @@ class AppDeploy(Resource):
                         return
                 elif ingress_flag == "create":
                     #创建service和ingress
-                    service = self.K8sService.create_service_object(service_name, NAMESPACE, service_port)
-                    service_err_msg, service_err_code = self.K8sService.create_service(service, NAMESPACE)
+                    service = K8sServiceApi.create_service_object(service_name, NAMESPACE, service_port)
+                    service_err_msg, service_err_code = K8sServiceApi.create_service(service, NAMESPACE)
                     if service_err_msg is None:
                         # 创建ingress
-                        ingress = self.K8sIngress.create_ingress_object(ingress_name, NAMESPACE, service_name,
+                        ingress = K8sIngressApi.create_ingress_object(ingress_name, NAMESPACE, service_name,
                                                                       service_port, domain, lb_methods)
-                        ingress_err_msg, ingress_err_code = self.K8sIngress.create_ingress(ingress, NAMESPACE)
+                        ingress_err_msg, ingress_err_code = K8sIngressApi.create_ingress(ingress, NAMESPACE)
                         if ingress_err_msg:
                             _dep_callback(deploy_id, '127.0.0.1', "docker", ingress_err_msg, "None", False,
                                           "", True, deploy_type,
@@ -305,9 +300,9 @@ class AppDeploy(Resource):
                         return
                 elif ingress_flag == "delete":
                     #删除ingress和service
-                    ingress_err_msg, ingress_err_code=self.K8sIngress.delete_ingress(ingress_name, NAMESPACE)
+                    ingress_err_msg, ingress_err_code=K8sIngressApi.delete_ingress(ingress_name, NAMESPACE)
                     if not ingress_err_msg:
-                        service_err_msg, service_err_code=self.K8sService.delete_service(service_name, NAMESPACE)
+                        service_err_msg, service_err_code=K8sServiceApi.delete_service(service_name, NAMESPACE)
                         if service_err_msg:
                             _dep_callback(deploy_id, '127.0.0.1', "docker", ingress_err_msg, "None", False,
                                           "", True, deploy_type,
@@ -369,9 +364,9 @@ class AppDeploy(Resource):
                     cluster_name = i.get("ins_name", "")
                     host_env = i.get("host_env")
                     if host_env == "docker":
-                        update_image_deployment = self.K8sDeployment.update_deployment_image_object(deployment_name,
+                        update_image_deployment = K8sDeploymentApi.update_deployment_image_object(deployment_name,
                                                                                                   FILEBEAT_NAME)
-                        update_deployment_err_msg, update_deployment_err_code = self.K8sDeployment.update_deployment_image(
+                        update_deployment_err_msg, update_deployment_err_code = K8sDeploymentApi.update_deployment_image(
                             update_image_deployment, deployment_name, image_url, NAMESPACE)
                         end_flag = True
                         if update_deployment_err_msg is None:
@@ -667,14 +662,14 @@ class AppDeploy(Resource):
         try:
             for i in range(10):
                 time.sleep(30)
-                deployment_status = self.K8sDeployment.get_deployment_status(NAMESPACE, deployment_name)
+                deployment_status = K8sDeploymentApi.get_deployment_status(NAMESPACE, deployment_name)
                 if deployment_status == "available":
                     _dep_callback(deploy_id, '127.0.0.1', "docker", "None", "None", True, cluster_name, end_flag,
                                   deploy_type,
                                   unique_flag, cloud,deploy_name)
                     break
                 else:
-                    s_flag, err_msg = self.K8sDeployment.get_deployment_pod_status(NAMESPACE, deployment_name)
+                    s_flag, err_msg = K8sDeploymentApi.get_deployment_pod_status(NAMESPACE, deployment_name)
                     if s_flag is not True:
                         _dep_callback(deploy_id, '127.0.0.1', "docker", err_msg, "None", False,
                                       cluster_name, end_flag, deploy_type,

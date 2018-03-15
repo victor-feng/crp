@@ -16,7 +16,6 @@ AVAILABILITY_ZONE = configs[APP_ENV].AVAILABILITY_ZONE
 OS_DOCKER_LOGS = configs[APP_ENV].OS_DOCKER_LOGS
 NAMESPACE = configs[APP_ENV].NAMESPACE
 K8S_NETWORK_URL=configs[APP_ENV].K8S_NETWORK_URL
-K8S_CONF_PATH = configs[APP_ENV].K8S_CONF_PATH
 
 openstack_api = Api(openstack_blueprint, errors=az_errors)
 
@@ -220,16 +219,16 @@ class K8sDeployment(Resource):
         parser.add_argument("deployment_name", type=str)
         args = parser.parse_args()
         deployment_name = args.deployment_name
-        K8sDeployment=K8sDeploymentApi(K8S_CONF_PATH)
+        extensions_v1 = K8S.extensions_v1
         data={}
         res_list=[]
         try:
             if deployment_name:
                 #如果传deployment_name,获取单个deployment状态
-                res_list=K8sDeployment.get_deployment_info(NAMESPACE,deployment_name)
+                res_list=K8sDeploymentApi.get_deployment_info(NAMESPACE,deployment_name)
             else:
                 #获取namespace下所有deployment状态
-                res_list = K8sDeployment.get_namespace_deployment_info(NAMESPACE)
+                res_list = K8sDeploymentApi.get_namespace_deployment_info(NAMESPACE)
             data["res_list"] = res_list
             code = 200
             msg = "Get deployment info success"

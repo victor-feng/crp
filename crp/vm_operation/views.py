@@ -6,13 +6,12 @@ from crp.vm_operation.errors import vm_operation_errors
 from crp.log import Log
 from crp.openstack import OpenStack
 from crp.openstack2 import OpenStack as OpenStack2
-from crp.k8s_api import K8sDeploymentApi
+from crp.k8s_api import K8sDeploymentApi,K8S
 from config import configs, APP_ENV
 
 
 vm_operation_api = Api(vm_operation_blueprint, errors=vm_operation_errors)
 NAMESPACE = configs[APP_ENV].NAMESPACE
-K8S_CONF_PATH = configs[APP_ENV].K8S_CONF_PATH
 
 OpenStack_info={
     "1":OpenStack,
@@ -49,9 +48,8 @@ class VMOperation(Resource):
                 #k8s目前只支持应用重启功能
                 if args.operation == "restart":
                     deployment_name = args.resource_name
-                    K8sDeployment=K8sDeploymentApi(K8S_CONF_PATH)
-                    restart_deployment = K8sDeployment.restart_deployment_pod_object(deployment_name)
-                    msg,code = K8sDeployment.restart_deployment_pod(
+                    restart_deployment = K8sDeploymentApi.restart_deployment_pod_object(deployment_name)
+                    msg,code = K8sDeploymentApi.restart_deployment_pod(
                         restart_deployment, deployment_name, NAMESPACE)
                     if msg is not None:
                         ret = {
