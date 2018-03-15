@@ -49,6 +49,7 @@ HOSTNAMES = configs[APP_ENV].HOSTNAMES
 IP = configs[APP_ENV].IP
 NETWORKNAME = configs[APP_ENV].NETWORKNAME
 TENANTNAME = configs[APP_ENV].TENANTNAME
+K8S_CONF_PATH = configs[APP_ENV].K8S_CONF_PATH
 
 
 
@@ -143,6 +144,11 @@ class ResourceProviderTransitions2(object):
 
         self.dir = os.path.dirname(
             os.path.abspath(__file__))
+        #k8s相关
+        self.K8sDeployment = K8sDeploymentApi(K8S_CONF_PATH)
+        self.K8sIngress = K8sIngressApi(K8S_CONF_PATH)
+        self.K8sService = K8sServiceApi(K8S_CONF_PATH)
+
 
     def set_task_id(self, task_id):
         self.task_id = task_id
@@ -414,7 +420,7 @@ class ResourceProviderTransitions2(object):
                     else:
                         app_limits = app_limits_flavor
                     #创建应用集群模板
-                    deployment = K8sDeploymentApi.create_deployment_object(deployment_name,
+                    deployment = self.K8sDeployment.create_deployment_object(deployment_name,
                                                                            FILEBEAT_NAME,
                                                                            FILEBEAT_IMAGE_URL,
                                                                            filebeat_requests,
@@ -432,15 +438,15 @@ class ResourceProviderTransitions2(object):
                     if domain:
                         #如果有域名创建service和ingress
                         #code=409 资源已经存在
-                        service=K8sServiceApi.create_service_object(service_name,NAMESPACE,service_port)
-                        service_err_msg,service_err_code=K8sServiceApi.create_service(service,NAMESPACE)
+                        service=self.K8sService.create_service_object(service_name,NAMESPACE,service_port)
+                        service_err_msg,service_err_code=self.K8sService.create_service(service,NAMESPACE)
                         if service_err_msg is None:
                             #创建ingress
-                            ingress=K8sIngressApi.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,domain,lb_methods)
-                            ingress_err_msg,ingress_err_code=K8sIngressApi.create_ingress(ingress,NAMESPACE)
+                            ingress=self.K8sIngress.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,domain,lb_methods)
+                            ingress_err_msg,ingress_err_code=self.K8sIngress.create_ingress(ingress,NAMESPACE)
                             if ingress_err_msg is None:
                                 #创建应用集群
-                                deployment_err_msg,deployment_err_code = K8sDeploymentApi.create_deployment(deployment,
+                                deployment_err_msg,deployment_err_code = self.K8sDeployment.create_deployment(deployment,
                                                                                         NAMESPACE)
                                 if deployment_err_msg:
                                     is_rollback = True
@@ -456,15 +462,15 @@ class ResourceProviderTransitions2(object):
                             self.code = service_err_code
                     else:
                         #没有域名直接创建应用集群
-                        deployment_err_msg,deployment_err_code=K8sDeploymentApi.create_deployment(deployment,NAMESPACE)
+                        deployment_err_msg,deployment_err_code=self.K8sDeployment.create_deployment(deployment,NAMESPACE)
                         if deployment_err_msg:
                             is_rollback = True
                             self.error_msg = deployment_err_msg
                             self.code = deployment_err_code
                 elif self.set_flag == "increase" or self.set_flag == "reduce":
                     #应用集群扩缩容
-                    update_replicas_deployment=K8sDeploymentApi.update_deployment_replicas_object(deployment_name)
-                    update_deployment_err_msg, update_deployment_err_code = K8sDeploymentApi.update_deployment_scale(
+                    update_replicas_deployment=self.K8sDeployment.update_deployment_replicas_object(deployment_name)
+                    update_deployment_err_msg, update_deployment_err_code = self.K8sDeployment.update_deployment_scale(
                         update_replicas_deployment, deployment_name, NAMESPACE, replicas)
                     if update_deployment_err_msg:
                         is_rollback = True
@@ -681,7 +687,7 @@ class ResourceProviderTransitions2(object):
                 #k8s 应用
                 replicas=uop_os_inst_id.get('replicas',0)
                 deployment_name=self.req_dict["resource_name"]
-                deployment_status=K8sDeploymentApi.get_deployment_status(NAMESPACE, deployment_name)
+                deployment_status=self.K8sDeploymentApi.get_deployment_status(NAMESPACE, deployment_name)
                 Log.logger.debug(
                     "Query Task ID " +
                     self.task_id.__str__() +
@@ -702,7 +708,7 @@ class ResourceProviderTransitions2(object):
                                     instance['os_inst_id'] = deployment_info.get("pod_name","")
                     result_inst_id_list.append(uop_os_inst_id)
                 else:
-                    s_flag,err_msg = K8sDeploymentApi.get_deployment_pod_status(NAMESPACE,deployment_name)
+                    s_flag,err_msg = self.K8sDeployment.get_deployment_pod_status(NAMESPACE,deployment_name)
                     if s_flag is not True:
                         self.error_msg = err_msg
                         is_rollback = True
@@ -1202,7 +1208,7 @@ class ResourceProviderTransitions2(object):
     def get_ready_deployment_info(self,deployment_name,namespace,replicas):
         for i in range(20):
             time.sleep(6)
-            deployment_info_list = K8sDeploymentApi.get_deployment_pod_info(namespace, deployment_name)
+            deployment_info_list = self.K8sDeployment.get_deployment_pod_info(namespace, deployment_name)
             if len(deployment_info_list) == replicas:
                 ip_list=[]
                 for deployment_info in deployment_info_list:
