@@ -6,11 +6,12 @@ import json
 import requests
 from crp.log import Log
 from crp.openstack2 import OpenStack
-from crp.k8s_api import K8S,K8sDeploymentApi,K8sServiceApi,K8sIngressApi
+from crp.k8s_api import K8sDeploymentApi,K8sServiceApi,K8sIngressApi
 from crp.taskmgr import *
 from config import APP_ENV, configs
 NAMESPACE = configs[APP_ENV].NAMESPACE
 RES_DELETE_CALL_BACK = configs[APP_ENV].RES_DELETE_CALL_BACK
+K8S_CONF_PATH = configs[APP_ENV].K8S_CONF_PATH
 
 QUERY_VOLUME = 0
 DETACH_VOLUME = 1
@@ -43,7 +44,8 @@ def query_instance(task_id, result, resource):
     nova_client = OpenStack.nova_client
     try:
         if resource_type == "app":
-            deployment_ret=K8sDeploymentApi.get_deployment(NAMESPACE,resource_name)
+            K8sDeployment = K8sDeploymentApi(K8S_CONF_PATH)
+            deployment_ret=K8sDeployment.get_deployment(NAMESPACE,resource_name)
             result['inst_state'] = 1
             available_replicas = deployment_ret.status.available_replicas
             unavailable_replicas =deployment_ret.status.unavailable_replicas
@@ -96,13 +98,16 @@ def delete_instance(task_id, result):
     try:
         if resource_type == "app":
             #删除deployment 的时候 同时删除service 和 ingress
-            service_res,service_flag=K8sServiceApi.get_service(service_name, NAMESPACE)
+            K8sService = K8sServiceApi(K8S_CONF_PATH)
+            K8sIngress = K8sIngressApi(K8S_CONF_PATH)
+            K8sDeployment = K8sDeploymentApi(K8S_CONF_PATH)
+            service_res,service_flag=K8sService.get_service(service_name, NAMESPACE)
             if service_flag:
-                K8sServiceApi.delete_service(service_name, NAMESPACE)
-            ingress_res,ingress_flag=K8sIngressApi.get_ingress(ingress_name, NAMESPACE)
+                K8sService.delete_service(service_name, NAMESPACE)
+            ingress_res,ingress_flag=K8sIngress.get_ingress(ingress_name, NAMESPACE)
             if ingress_flag:
-                K8sIngressApi.delete_ingress(ingress_name, NAMESPACE)
-            K8sDeploymentApi.delete_deployment(resource_name,NAMESPACE)
+                K8sIngress.delete_ingress(ingress_name, NAMESPACE)
+            K8sDeployment.delete_deployment(resource_name,NAMESPACE)
         else:
             nova_client.servers.delete(os_inst_id)
         result['current_status'] = QUERY_VM
