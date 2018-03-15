@@ -484,13 +484,15 @@ class K8sDeploymentApi(object):
                 if deployment_name in pod_name:
                     res = api_instance.read_namespaced_pod(pod_name, namespace)
                     phase = res.status.phase
-                    waiting = res.status.container_statuses[0].state.waiting
-                    if phase is not None and waiting is not None:
-                        message = waiting.message
-                        if message is not None:
-                            err_msg = waiting.message
-                            s_flag = False
-                            return s_flag, err_msg
+                    container_statuses=res.status.container_statuses
+                    if container_statuses:
+                        waiting = res.status.container_statuses[0].state.waiting
+                        if phase is not None and waiting is not None:
+                            message = waiting.message
+                            if message is not None:
+                                err_msg = waiting.message
+                                s_flag = False
+                                return s_flag, err_msg
         except Exception as e:
             Log.logger.error("get deployment's pod status error: %s" ,str(e))
         return s_flag, err_msg
