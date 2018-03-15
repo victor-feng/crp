@@ -655,6 +655,8 @@ class K8sIngressApi(object):
         return ingress
     @classmethod
     def update_ingress_object(cls,ingress_name,namespace,service_name,service_port,domain):
+        service_name = service_name.lower()
+        ingress_name = ingress_name.lower()
         spec = client.V1beta1IngressSpec(
             rules=[
                 client.V1beta1IngressRule(
@@ -723,7 +725,7 @@ class K8sIngressApi(object):
         err_msg = None
         code = 200
         try:
-            ingress_name=ingress_name.lower()
+            ingress_name = ingress_name.lower()
             config.load_kube_config(config_file=K8S_CONF_PATH)
             api_instance = client.ExtensionsV1beta1Api()
             api_response = api_instance.patch_namespaced_ingress(
