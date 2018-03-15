@@ -158,6 +158,7 @@ class DevelopmentConfig(BaseConfig):
             'language_env':'language_env',
             'deploy_source':'deploy_source',
             'database_config':'database_config',
+            'lb_methods':'lb_methods',
         },
         'resource_cluster': {
             'cluster_name': 'instance_name',
