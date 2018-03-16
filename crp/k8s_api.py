@@ -770,6 +770,19 @@ class K8sIngressApi(object):
             code=get_k8s_err_code(e)
         return  msg,code
 
+    def get_ingress_status(self, ingress_name, namespace):
+        msg = None
+        code = 200
+        try:
+            ingress_name = ingress_name.lower()
+            api_instance = self.extensionsv1
+            api_response = api_instance.read_namespaced_ingress_status(ingress_name, namespace)
+            msg = api_response
+        except Exception as e:
+            msg= "get ingress error %s" % str(e)
+            code=get_k8s_err_code(e)
+        return  msg,code
+
 class K8sLogApi(object):
 
     def __init__(self):
@@ -804,6 +817,7 @@ class K8sLogApi(object):
             code = get_k8s_err_code(e)
             msg = "get deployment log error %s" % str(e)
         return msg, code
+
 
 
 

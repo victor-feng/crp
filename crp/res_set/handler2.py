@@ -392,6 +392,7 @@ class ResourceProviderTransitions2(object):
                 K8sDeployment = K8sDeploymentApi()
                 K8sIngress = K8sIngressApi()
                 K8sService = K8sServiceApi()
+                ingress_flag = 0
                 if deploy_source == "war" and self.set_flag == "res":
                     #执行war包打镜像的操作
                     war_url = image_url
@@ -434,13 +435,14 @@ class ResourceProviderTransitions2(object):
                                                                            replicas
                                                                            )
                     if domain:
+                        ingress_flag = 1
                         #如果有域名创建service和ingress
                         #code=409 资源已经存在
                         service=K8sService.create_service_object(service_name,NAMESPACE,service_port)
                         service_err_msg,service_err_code=K8sService.create_service(service,NAMESPACE)
                         if service_err_msg is None:
                             #创建ingress
-                            ingress=self.K8sIngress.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,domain,lb_methods)
+                            ingress=K8sIngress.create_ingress_object(ingress_name,NAMESPACE,service_name,service_port,domain,lb_methods)
                             ingress_err_msg,ingress_err_code=K8sIngress.create_ingress(ingress,NAMESPACE)
                             if ingress_err_msg is None:
                                 #创建应用集群
@@ -479,7 +481,8 @@ class ResourceProviderTransitions2(object):
                     'os_inst_id': deployment_name,
                     'cluster_type': cluster_type,
                     'replicas':replicas,
-                    "host_env":host_env
+                    "host_env":host_env,
+                    "ingress_flag":ingress_flag
                 }
                 uop_os_inst_id_list.append(uopinst_info)
                 for i in range(0, replicas, 1):
@@ -681,9 +684,12 @@ class ResourceProviderTransitions2(object):
         for uop_os_inst_id in uop_os_inst_id_wait_query:
             cluster_type = uop_os_inst_id.get('cluster_type')
             host_env = uop_os_inst_id.get('host_env')
+            ingress_flag = uop_os_inst_id.get('ingress_flag')
             if cluster_type == "app_cluster" and host_env == "docker":
                 #k8s 应用
                 K8sDeployment = K8sDeploymentApi()
+                K8sIngress = K8sIngressApi()
+                K8sService = K8sServiceApi()
                 replicas=uop_os_inst_id.get('replicas',0)
                 deployment_name=self.req_dict["resource_name"]
                 deployment_status=K8sDeployment.get_deployment_status(NAMESPACE, deployment_name)
@@ -694,6 +700,12 @@ class ResourceProviderTransitions2(object):
                     uop_os_inst_id.__str__() +
                     " Status is " +
                     deployment_status)
+                if ingress_flag == 1:
+                    ingress_status = ""
+                    service_status = ""
+                else:
+                    ingress_status = ""
+                    service_status = ""
                 if deployment_status == "available":
                     deployment_info_list=self.get_ready_deployment_info(deployment_name,NAMESPACE,replicas)
                     for mapper in result_mappers_list:
