@@ -479,6 +479,13 @@ class K8sDeploymentApi(object):
             Log.logger.error("get deployment's pod status error: %s" ,str(e))
         return s_flag, err_msg
 
+    def get_namespace_pod_list(self):
+        try:
+            pass
+        except Exception as e:
+            pass
+
+
 
 class K8sServiceApi(object):
 
