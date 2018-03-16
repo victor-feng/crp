@@ -896,6 +896,7 @@ class K8sNamespaceApi(object):
     def get_namespace_status(self,namespace_name):
         err_msg = None
         code = 200
+        status = None
         try:
             api_instance = self.corev1
             api_response = api_instance.read_namespace_status(namespace_name)
@@ -905,6 +906,65 @@ class K8sNamespaceApi(object):
             err_msg = "get namespace status error {e}".format(e=str(e))
         return status,err_msg,code
 
+class K8sConfigMapApi(object):
+
+    def __init__(self):
+        config.load_kube_config(K8S_CONF_PATH)
+        self.corev1 = client.CoreV1Api()
+
+    def create_config_map_object(self,config_map_nane,namespace,data):
+
+        config_map = client.V1ConfigMap(
+            api_version="v1",
+            kind="ConfigMap",
+            metadata=client.V1ObjectMeta(
+                name=config_map_nane,
+                namespace=namespace),
+            data=data)
+
+        return config_map
+
+    def create_config_map(self, config_map,namespace):
+        err_msg = None
+        code = 200
+        try:
+            api_instance = self.corev1
+            api_response = api_instance.create_namespaced_config_map(
+                body=config_map,
+                namespace=namespace)
+        except Exception as e:
+            err_msg = "create config map error %s" % str(e)
+            code = get_k8s_err_code(e)
+        return err_msg, code
+
+    def delete_config_map(self,config_map_nane,namespace):
+        err_msg = None
+        code = 200
+        try:
+            api_instance = self.corev1
+            api_response = api_instance.delete_namespaced_config_map(
+                name=config_map_nane,
+                namespace=namespace,
+                body=client.V1DeleteOptions(
+                    propagation_policy='Foreground',
+                    grace_period_seconds=5))
+        except Exception as e:
+            err_msg = "delete config map error %s" % str(e)
+            code = get_k8s_err_code(e)
+        return err_msg, code
+
+    def get_config_map(self,config_map_nane,namespace):
+        err_msg = None
+        code = 200
+        res = None
+        try:
+            api_instance = self.corev1
+            api_response = api_instance.read_namespaced_config_map(config_map_nane, namespace)
+            res=api_response
+        except Exception as e:
+            err_msg = "get config map  error %s" % str(e)
+            code = get_k8s_err_code(e)
+        return res,err_msg, code
 
 
 
