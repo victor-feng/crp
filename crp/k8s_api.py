@@ -486,7 +486,6 @@ class K8sServiceApi(object):
 
         config.load_kube_config(config_file=K8S_CONF_PATH)
         self.corev1 = client.CoreV1Api()
-        self.extensionsv1 = client.ExtensionsV1beta1Api()
 
     def create_service_object(self,service_name,namespace,sercice_port):
         """
@@ -614,7 +613,6 @@ class K8sIngressApi(object):
     def __init__(self):
 
         config.load_kube_config(config_file=K8S_CONF_PATH)
-        self.corev1 = client.CoreV1Api()
         self.extensionsv1 = client.ExtensionsV1beta1Api()
 
     def create_ingress_object(self,ingress_name,namespace,service_name,service_port,domain,lb_methods):
@@ -812,7 +810,6 @@ class K8sLogApi(object):
 
         config.load_kube_config(config_file=K8S_CONF_PATH)
         self.corev1 = client.CoreV1Api()
-        self.extensionsv1 = client.ExtensionsV1beta1Api()
 
     def get_namespace_pod_log(self,pod_name,namespace,container):
         code=200
@@ -841,7 +838,72 @@ class K8sLogApi(object):
             msg = "get deployment log error %s" % str(e)
         return msg, code
 
+class K8sNamespaceApi(object):
 
+    def __init__(self):
+        config.load_kube_config(K8S_CONF_PATH)
+        self.corev1 = client.CoreV1Api()
+
+
+    def create_namespace_object(self,namespace_name):
+        namespace_name = namespace_name.lower()
+        namespace = client.V1Namespace(
+            api_version="v1",
+            kind="Namespace",
+            metadata=client.V1ObjectMeta(name=namespace_name))
+
+        return namespace
+
+    def create_namespace(self,namespace):
+        err_msg = None
+        code = 200
+        try:
+            api_instance = self.corev1
+            api_response = api_instance.create_namespace(body=namespace)
+        except Exception as e:
+            code = get_k8s_err_code(e)
+            err_msg = "create namespace error {e}".format(e=str(e))
+        return err_msg,code
+
+    def delete_namespace(self,namespace_name):
+        err_msg = None
+        code = 200
+        try:
+            api_instance = self.corev1
+            api_response = api_instance.delete_namespace(name=namespace_name,
+                                                         body=client.V1DeleteOptions(propagation_policy='Foreground',
+                                                                                     grace_period_seconds=5))
+        except Exception as e:
+            code = get_k8s_err_code(e)
+            err_msg = "delete namespace error {e}".format(e=str(e))
+        return err_msg, code
+
+    def list_namespace(self):
+        err_msg = None
+        code = 200
+        name_list=[]
+        try:
+            api_instance = self.corev1
+            api_response = api_instance.list_namespace()
+            for item in api_response.items:
+                name=item.metadata.name
+                name_list.append(name)
+        except Exception as e:
+            code = get_k8s_err_code(e)
+            err_msg = "list namespace error {e}".format(e=str(e))
+        return name_list,err_msg,code
+
+    def get_namespace_status(self,namespace_name):
+        err_msg = None
+        code = 200
+        try:
+            api_instance = self.corev1
+            api_response = api_instance.read_namespace_status(namespace_name)
+            status=api_response.status.phase
+        except Exception as e:
+            code = get_k8s_err_code(e)
+            err_msg = "get namespace status error {e}".format(e=str(e))
+        return status,err_msg,code
 
 
 
