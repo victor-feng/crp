@@ -587,6 +587,27 @@ class K8sServiceApi(object):
             code = get_k8s_err_code(e)
         return msg,code
 
+    def get_service_status(self,service_name,namespace):
+        """
+
+        :param api_instance:CoreV1Api
+        :param service_name:
+        :param namespace:
+        :return:
+        """
+        code = 200
+        err_msg = None
+        try:
+            api_instance = self.corev1
+            service_name = service_name.lower()
+            api_response = api_instance.read_namespaced_service_status(service_name, namespace)
+            status = api_response.status
+            if status:
+                status = "active"
+        except Exception as e:
+            err_msg = "get service error status %s" % str(e)
+            code = get_k8s_err_code(e)
+        return status,err_msg,code
 
 class K8sIngressApi(object):
 
@@ -771,17 +792,19 @@ class K8sIngressApi(object):
         return  msg,code
 
     def get_ingress_status(self, ingress_name, namespace):
-        msg = None
+        err_msg = None
         code = 200
         try:
             ingress_name = ingress_name.lower()
             api_instance = self.extensionsv1
             api_response = api_instance.read_namespaced_ingress_status(ingress_name, namespace)
-            msg = api_response
+            status = api_response.status
+            if status:
+                status = "active"
         except Exception as e:
-            msg= "get ingress error %s" % str(e)
+            err_msg= "get ingress status error %s" % str(e)
             code=get_k8s_err_code(e)
-        return  msg,code
+        return  status,err_msg,code
 
 class K8sLogApi(object):
 

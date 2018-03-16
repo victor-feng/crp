@@ -701,11 +701,13 @@ class ResourceProviderTransitions2(object):
                     " Status is " +
                     deployment_status)
                 if ingress_flag == 1:
-                    ingress_status = ""
-                    service_status = ""
+                    service_name = deployment_name
+                    ingress_name = deployment_name + "-" + "ingress"
+                    service_status, err_msg.code = K8sService.get_service_status(service_name,NAMESPACE)
+                    ingress_status,err_msg.code = K8sIngress.get_ingress_status(ingress_name,NAMESPACE)
                 else:
-                    ingress_status = ""
-                    service_status = ""
+                    ingress_status = "active"
+                    service_status = "active"
                 if deployment_status == "available":
                     deployment_info_list=self.get_ready_deployment_info(deployment_name,NAMESPACE,replicas)
                     for mapper in result_mappers_list:
