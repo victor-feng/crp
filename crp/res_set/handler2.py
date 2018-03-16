@@ -708,7 +708,7 @@ class ResourceProviderTransitions2(object):
                 else:
                     ingress_status = "active"
                     service_status = "active"
-                if deployment_status == "available":
+                if deployment_status == "available" and ingress_status == "active" and service_status == "active":
                     deployment_info_list=self.get_ready_deployment_info(deployment_name,NAMESPACE,replicas)
                     for mapper in result_mappers_list:
                         value = mapper.values()[0]
