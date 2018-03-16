@@ -6,7 +6,7 @@ from crp.openstack_api import openstack_blueprint
 from crp.openstack_api.errors import az_errors
 from handler import OpenStack_Api,OpenStack2_Api
 from crp.log import Log
-from crp.k8s_api import K8sDeploymentApi,K8S,K8sLogApi
+from crp.k8s_api import K8sDeploymentApi,K8sLogApi,K8sNamespaceApi,K8sConfigMapApi
 from config import configs, APP_ENV
 from crp.utils.aio import response_data
 
@@ -267,8 +267,62 @@ class K8sNetwork(Resource):
         return ret, code
 
 
+class K8sNamespace(Resource):
 
+    def post(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('namespace_name', type=str, location="json")
+        parser.add_argument('config_map_name', type=str, location="json")
+        parser.add_argument('config_map_data', type=dict, location="json")
+        args = parser.parse_args()
+        namespace_name = args.namespace_name
+        config_map_name = args.config_map_name
+        config_map_data = args.config_map_data
+        try:
+            K8sNamespace = K8sNamespaceApi()
+            K8sConfigMap = K8sConfigMapApi()
+            if namespace_name:
+                namespace = K8sNamespace.create_namespace_object(namespace_name)
+                err_msg,code=K8sNamespace.create_namespace(namespace)
+                if not err_msg and config_map_name:
+                    config_map = K8sConfigMap.create_config_map_object(config_map_name,namespace_name,config_map_data)
+                    err_msg,code = K8sConfigMap.create_config_map(config_map,namespace_name)
+            if code == 200:
+                data = "success"
+                msg = "create namespace or config map success"
+                code = code
+            else:
+                data = "Error"
+                code = code
+                msg = err_msg
+        except Exception as e:
+            code = 500
+            data = "Error"
+            msg = "create namespace or config map success error {e}".format(e=str(e))
+            Log.logger.error(msg)
+        ret = response_data(code, msg, data)
+        return ret, code
 
+    def get(self):
+        data = {}
+        try:
+            K8sNamespace = K8sNamespaceApi()
+            res_list,err_msg,code= K8sNamespace.list_namespace()
+            if code == 200:
+                data["res_list"] = res_list
+                code = code
+                msg = "success"
+            else:
+                data = "Error"
+                code = code
+                msg = err_msg
+        except Exception as e:
+            code = 500
+            data = "Error"
+            msg = "create namespace or config map success error {e}".format(e=str(e))
+            Log.logger.error(msg)
+        ret = response_data(code, msg, data)
+        return ret, code
 
 
 
@@ -279,3 +333,4 @@ openstack_api.add_resource(NetworkAPI, '/network/list')
 openstack_api.add_resource(Dockerlogs, '/docker/logs/')
 openstack_api.add_resource(K8sDeployment, '/k8s/deployment')
 openstack_api.add_resource(K8sNetwork, '/k8s/network')
+openstack_api.add_resource(K8sNamespace, '/k8s/namespace')

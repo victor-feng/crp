@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 
 
-import logging
 import json
 import requests
 from crp.log import Log
 from crp.openstack2 import OpenStack
-from crp.k8s_api import K8S,K8sDeploymentApi,K8sServiceApi,K8sIngressApi
+from crp.k8s_api import K8sDeploymentApi,K8sServiceApi,K8sIngressApi
 from crp.taskmgr import *
 from config import APP_ENV, configs
 NAMESPACE = configs[APP_ENV].NAMESPACE

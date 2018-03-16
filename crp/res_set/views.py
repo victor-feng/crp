@@ -14,6 +14,7 @@ from handler import ResourceProviderTransitions
 from del_handler2 import delete_instance_and_query2,QUERY_VOLUME,delete_vip2
 from handler2 import ResourceProviderTransitions2,tick_announce,deal_del_request_data,do_transit_repo_items
 
+
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
 
 TIMEOUT = 5000
@@ -294,6 +295,8 @@ class ResourceDelete(Resource):
                 }
             }
             return res, code
+
+
 
 
 resource_set_api.add_resource(ResourceSet, '/sets')
