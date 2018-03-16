@@ -46,8 +46,13 @@ class K8S(object):
 
 class K8sDeploymentApi(object):
 
-    @classmethod
-    def create_deployment_object(cls,deployment_name,
+    def __init__(self):
+
+        config.load_kube_config(config_file=K8S_CONF_PATH)
+        self.corev1 = client.CoreV1Api()
+        self.extensionsv1 = client.ExtensionsV1beta1Api()
+
+    def create_deployment_object(self,deployment_name,
                                  filebeat_name,
                                  filebeat_image_url,
                                  filebeat_requests,
@@ -163,8 +168,7 @@ class K8sDeploymentApi(object):
         )
         return deployment
 
-    @classmethod
-    def create_deployment(cls,deployment,namespace):
+    def create_deployment(self,deployment,namespace):
         """
 
         :param api_instance: ExtensionsV1beta1Api()
@@ -176,8 +180,7 @@ class K8sDeploymentApi(object):
         err_msg = None
         code=200
         try:
-            config.load_kube_config(config_file=K8S_CONF_PATH)
-            api_instance = client.ExtensionsV1beta1Api()
+            api_instance = self.extensionsv1
             api_response = api_instance.create_namespaced_deployment(
                 body=deployment,
                 namespace=namespace)
@@ -186,8 +189,7 @@ class K8sDeploymentApi(object):
             code = get_k8s_err_code(e)
         return err_msg,code
 
-    @classmethod
-    def update_deployment_image_object(cls,deployment_name,filebeat_name):
+    def update_deployment_image_object(self,deployment_name,filebeat_name):
         """
         deployment image 更新镜像时创建模板
         :param deployment_name:
@@ -223,8 +225,7 @@ class K8sDeploymentApi(object):
 
         return update_image_deployment
 
-    @classmethod
-    def update_deployment_image(cls, update_image_deployment, deployment_name, new_image_url, namespace):
+    def update_deployment_image(self, update_image_deployment, deployment_name, new_image_url, namespace):
         """
         更新deployment
         :param api_instance:
@@ -237,8 +238,7 @@ class K8sDeploymentApi(object):
         err_msg = None
         code=200
         try:
-            config.load_kube_config(config_file=K8S_CONF_PATH)
-            api_instance = client.ExtensionsV1beta1Api()
+            api_instance = self.extensionsv1
             deployment_name = deployment_name.lower()
             update_image_deployment.spec.template.spec.containers[1].image = new_image_url
             # Update the deployment
@@ -251,8 +251,7 @@ class K8sDeploymentApi(object):
             code = get_k8s_err_code(e)
         return err_msg,code
 
-    @classmethod
-    def delete_deployment(cls, deployment_name, namespace):
+    def delete_deployment(self, deployment_name, namespace):
         """
         删除deployment
         :param api_instance:ExtensionsV1beta1Api()
@@ -264,8 +263,7 @@ class K8sDeploymentApi(object):
         code=200
         try:
             deployment_name = deployment_name.lower()
-            config.load_kube_config(config_file=K8S_CONF_PATH)
-            api_instance = client.ExtensionsV1beta1Api()
+            api_instance = self.extensionsv1
             api_response = api_instance.delete_namespaced_deployment(
                 name=deployment_name,
                 namespace=namespace,
@@ -277,8 +275,7 @@ class K8sDeploymentApi(object):
             code = get_k8s_err_code(e)
         return err_msg,code
 
-    @classmethod
-    def update_deployment_replicas_object(cls,deployment_name):
+    def update_deployment_replicas_object(self,deployment_name):
         """
         deployment 扩缩容时创建的模板
         :param deployment_name:
@@ -300,8 +297,7 @@ class K8sDeploymentApi(object):
 
         return update_replicas_deployment
 
-    @classmethod
-    def update_deployment_scale(cls, update_replicas_deployment, deployment_name, namespace, new_replicas):
+    def update_deployment_scale(self, update_replicas_deployment, deployment_name, namespace, new_replicas):
         """
         deployment扩缩容
         :param api_instance:ExtensionsV1beta1Api()
@@ -314,8 +310,7 @@ class K8sDeploymentApi(object):
         code = 200
         try:
             deployment_name = deployment_name.lower()
-            config.load_kube_config(config_file=K8S_CONF_PATH)
-            api_instance = client.ExtensionsV1beta1Api()
+            api_instance = self.extensionsv1
             update_replicas_deployment.spec.replicas = new_replicas
             api_response = api_instance.patch_namespaced_deployment_scale(
                 name=deployment_name,
@@ -326,8 +321,7 @@ class K8sDeploymentApi(object):
             code = get_k8s_err_code(e)
         return err_msg, code
 
-    @classmethod
-    def get_deployment_status(cls, namespace, deployment_name):
+    def get_deployment_status(self, namespace, deployment_name):
         """
         获取deployment状态
         :param api_instance:ExtensionsV1beta1Api()
@@ -336,8 +330,7 @@ class K8sDeploymentApi(object):
         :return:
         """
         deployment_name = deployment_name.lower()
-        config.load_kube_config(config_file=K8S_CONF_PATH)
-        api_instance = client.ExtensionsV1beta1Api()
+        api_instance = self.extensionsv1
         api_response = api_instance.read_namespaced_deployment_status(deployment_name, namespace)
         available_replicas=api_response.status.available_replicas
         replicas=api_response.status.replicas
@@ -346,8 +339,7 @@ class K8sDeploymentApi(object):
         else:
             return 'unavailable'
 
-    @classmethod
-    def get_deployment_pod_info(cls, namespace, deployment_name):
+    def get_deployment_pod_info(self, namespace, deployment_name):
         """
         获取deployment pod的ip和宿主机主机名，pod名字
         :param api_instance:CoreV1Api
@@ -357,8 +349,7 @@ class K8sDeploymentApi(object):
         """
         deployment_name = deployment_name.lower()
         deployment_info_list = []
-        config.load_kube_config(config_file=K8S_CONF_PATH)
-        api_instance = client.CoreV1Api()
+        api_instance = self.corev1
         api_response = api_instance.list_namespaced_pod(namespace)
         result = api_response.items
         for res in result:
@@ -374,8 +365,7 @@ class K8sDeploymentApi(object):
                 deployment_info_list.append(deployment_dict)
         return deployment_info_list
 
-    @classmethod
-    def get_deployment(cls, namespace, deployment_name):
+    def get_deployment(self, namespace, deployment_name):
         """
         获取deployment
         :param api_instance:ExtensionsV1beta1Api()
@@ -384,14 +374,12 @@ class K8sDeploymentApi(object):
         :return:
         """
         deployment_name = deployment_name.lower()
-        config.load_kube_config(config_file=K8S_CONF_PATH)
-        api_instance = client.ExtensionsV1beta1Api()
+        api_instance = self.extensionsv1
         api_response = api_instance.read_namespaced_deployment(deployment_name, namespace)
         return api_response
 
     # 重启deployment下的全部pod
-    @classmethod
-    def restart_deployment_pod_object(cls,deployment_name):
+    def restart_deployment_pod_object(self,deployment_name):
         deployment_name = deployment_name.lower()
         template = client.V1PodTemplateSpec(
             metadata=client.V1ObjectMeta(
@@ -411,12 +399,12 @@ class K8sDeploymentApi(object):
         )
 
         return restart_deployment
-    @classmethod
-    def restart_deployment_pod(cls, restart_deployment,deployment_name,namespace):
+
+
+    def restart_deployment_pod(self, restart_deployment,deployment_name,namespace):
         # restart pod label
         deployment_name = deployment_name.lower()
-        config.load_kube_config(config_file=K8S_CONF_PATH)
-        api_instance = client.ExtensionsV1beta1Api()
+        api_instance = self.extensionsv1
         restart_deployment.spec.template.metadata.labels["restartLatestTime"] = \
             datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         # reatart  the deployment
@@ -432,11 +420,9 @@ class K8sDeploymentApi(object):
             code = get_k8s_err_code(e)
         return err_msg, code
 
-    @classmethod
-    def get_namespace_deployment_info(cls,namespace):
+    def get_namespace_deployment_info(self,namespace):
         deployment_info=[]
-        config.load_kube_config(config_file=K8S_CONF_PATH)
-        api_instance = client.ExtensionsV1beta1Api()
+        api_instance = self.extensionsv1
         deploy_ret = api_instance.list_namespaced_deployment(namespace, watch=False)
         for i in deploy_ret.items:
             deployment_dict={}
@@ -447,13 +433,11 @@ class K8sDeploymentApi(object):
             deployment_info.append(deployment_dict)
         return deployment_info
 
-    @classmethod
-    def get_deployment_info(cls, namespace,deployment_name):
+    def get_deployment_info(self, namespace,deployment_name):
         deployment_name = deployment_name.lower()
         deployment_info = []
         deployment_dict = {}
-        config.load_kube_config(config_file=K8S_CONF_PATH)
-        api_instance = client.ExtensionsV1beta1Api()
+        api_instance = self.extensionsv1
         deploy_ret = api_instance.read_namespaced_deployment(deployment_name,namespace)
         deployment_dict["namespace"] = deploy_ret.metadata.namespace
         deployment_dict["deployment_name"] = deploy_ret.metadata.name
@@ -462,8 +446,7 @@ class K8sDeploymentApi(object):
         deployment_info.append(deployment_dict)
         return deployment_info
 
-    @classmethod
-    def get_deployment_pod_status(cls, namespace, deployment_name):
+    def get_deployment_pod_status(self, namespace, deployment_name):
         """
         获取deployment pod的状态和信息
         :param api_instance:CoreV1Api
@@ -475,8 +458,7 @@ class K8sDeploymentApi(object):
         s_flag = True
         deployment_name = deployment_name.lower()
         try:
-            config.load_kube_config(config_file=K8S_CONF_PATH)
-            api_instance = client.CoreV1Api()
+            api_instance = self.corev1
             api_response = api_instance.list_namespaced_pod(namespace)
             result = api_response.items
             for res in result:
@@ -500,8 +482,13 @@ class K8sDeploymentApi(object):
 
 class K8sServiceApi(object):
 
-    @classmethod
-    def create_service_object(cls,service_name,namespace,sercice_port):
+    def __init__(self):
+
+        config.load_kube_config(config_file=K8S_CONF_PATH)
+        self.corev1 = client.CoreV1Api()
+        self.extensionsv1 = client.ExtensionsV1beta1Api()
+
+    def create_service_object(self,service_name,namespace,sercice_port):
         """
 
         :param service_name:"filebeat-test"
@@ -538,8 +525,7 @@ class K8sServiceApi(object):
 
         return service
 
-    @classmethod
-    def create_service(cls, service,namespace):
+    def create_service(self, service,namespace):
         """
         创建service
         :param api_instance:CoreV1Api
@@ -550,8 +536,7 @@ class K8sServiceApi(object):
         err_msg = None
         code = 200
         try:
-            config.load_kube_config(config_file=K8S_CONF_PATH)
-            api_instance = client.CoreV1Api()
+            api_instance = self.corev1
             api_response = api_instance.create_namespaced_service(
                 body=service,
                 namespace=namespace)
@@ -560,8 +545,7 @@ class K8sServiceApi(object):
             code = get_k8s_err_code(e)
         return err_msg,code
 
-    @classmethod
-    def delete_service(cls,service_name,namespace):
+    def delete_service(self,service_name,namespace):
         """
         删除service
         :param api_instance:CoreV1Api
@@ -573,8 +557,7 @@ class K8sServiceApi(object):
         code=200
         try:
             service_name = service_name.lower()
-            config.load_kube_config(config_file=K8S_CONF_PATH)
-            api_instance = client.CoreV1Api()
+            api_instance = self.corev1
             api_response = api_instance.delete_namespaced_service(
                 name=service_name,
                 namespace=namespace,
@@ -583,8 +566,8 @@ class K8sServiceApi(object):
             err_msg = "delete service error %s" % str(e)
             code = get_k8s_err_code(e)
         return err_msg
-    @classmethod
-    def get_service(cls,service_name,namespace):
+
+    def get_service(self,service_name,namespace):
         """
 
         :param api_instance:CoreV1Api
@@ -595,8 +578,7 @@ class K8sServiceApi(object):
         code = 200
         msg = None
         try:
-            config.load_kube_config(config_file=K8S_CONF_PATH)
-            api_instance = client.CoreV1Api()
+            api_instance = self.corev1
             service_name = service_name.lower()
             api_response = api_instance.read_namespaced_service(service_name, namespace)
             msg=api_response
@@ -608,8 +590,13 @@ class K8sServiceApi(object):
 
 class K8sIngressApi(object):
 
-    @classmethod
-    def create_ingress_object(cls,ingress_name,namespace,service_name,service_port,domain,lb_methods):
+    def __init__(self):
+
+        config.load_kube_config(config_file=K8S_CONF_PATH)
+        self.corev1 = client.CoreV1Api()
+        self.extensionsv1 = client.ExtensionsV1beta1Api()
+
+    def create_ingress_object(self,ingress_name,namespace,service_name,service_port,domain,lb_methods):
         """
 
         :param ingress_name:"tomcat-cssapi-ingress"
@@ -653,8 +640,17 @@ class K8sIngressApi(object):
         )
 
         return ingress
-    @classmethod
-    def update_ingress_object(cls,ingress_name,namespace,service_name,service_port,domain):
+
+    def update_ingress_object(self,ingress_name,namespace,service_name,service_port,domain):
+        """
+        更新ingress
+        :param ingress_name:
+        :param namespace:
+        :param service_name:
+        :param service_port:
+        :param domain:
+        :return:
+        """
         service_name = service_name.lower()
         ingress_name = ingress_name.lower()
         spec = client.V1beta1IngressSpec(
@@ -691,8 +687,7 @@ class K8sIngressApi(object):
 
         return ingress
 
-    @classmethod
-    def create_ingress(cls, ingress,namespace):
+    def create_ingress(self, ingress,namespace):
         """
         创建ingress
         :param api_instance:ExtensionsV1beta1Api()
@@ -703,8 +698,7 @@ class K8sIngressApi(object):
         err_msg=None
         code=200
         try:
-            config.load_kube_config(config_file=K8S_CONF_PATH)
-            api_instance = client.ExtensionsV1beta1Api()
+            api_instance = self.extensionsv1
             api_response = api_instance.create_namespaced_ingress(
                 body=ingress,
                 namespace=namespace)
@@ -713,8 +707,7 @@ class K8sIngressApi(object):
             code = get_k8s_err_code(e)
         return err_msg,code
 
-    @classmethod
-    def update_ingress(cls, ingress,ingress_name, namespace):
+    def update_ingress(self, ingress,ingress_name, namespace):
         """
         更新ingress
         :param api_instance:ExtensionsV1beta1Api()
@@ -726,8 +719,7 @@ class K8sIngressApi(object):
         code = 200
         try:
             ingress_name = ingress_name.lower()
-            config.load_kube_config(config_file=K8S_CONF_PATH)
-            api_instance = client.ExtensionsV1beta1Api()
+            api_instance = self.extensionsv1
             api_response = api_instance.patch_namespaced_ingress(
                 name=ingress_name,
                 namespace=namespace,
@@ -739,9 +731,7 @@ class K8sIngressApi(object):
         return err_msg, code
 
 
-
-    @classmethod
-    def delete_ingress(cls,ingress_name,namespace):
+    def delete_ingress(self,ingress_name,namespace):
         """
         删除ingress
         :param api_instance:ExtensionsV1beta1Api()
@@ -753,8 +743,7 @@ class K8sIngressApi(object):
         code=200
         try:
             ingress_name = ingress_name.lower()
-            config.load_kube_config(config_file=K8S_CONF_PATH)
-            api_instance = client.ExtensionsV1beta1Api()
+            api_instance = self.extensionsv1
             api_response = api_instance.delete_namespaced_ingress(
                 name=ingress_name,
                 namespace=namespace,
@@ -768,14 +757,12 @@ class K8sIngressApi(object):
             code = get_k8s_err_code(e)
         return err_msg,code
 
-    @classmethod
-    def get_ingress(cls, ingress_name, namespace):
+    def get_ingress(self, ingress_name, namespace):
         msg = None
         code = 200
         try:
             ingress_name = ingress_name.lower()
-            config.load_kube_config(config_file=K8S_CONF_PATH)
-            api_instance = client.ExtensionsV1beta1Api()
+            api_instance = self.extensionsv1
             api_response = api_instance.read_namespaced_ingress(ingress_name, namespace)
             msg = api_response
         except Exception as e:
@@ -785,12 +772,16 @@ class K8sIngressApi(object):
 
 class K8sLogApi(object):
 
-    @classmethod
-    def get_namespace_pod_log(cls,pod_name,namespace,container):
+    def __init__(self):
+
+        config.load_kube_config(config_file=K8S_CONF_PATH)
+        self.corev1 = client.CoreV1Api()
+        self.extensionsv1 = client.ExtensionsV1beta1Api()
+
+    def get_namespace_pod_log(self,pod_name,namespace,container):
         code=200
         try:
-            config.load_kube_config(config_file=K8S_CONF_PATH)
-            api_instance = client.CoreV1Api()
+            api_instance = self.corev1
             api_response = api_instance.read_namespaced_pod_log(pod_name, namespace,container=container,previous=False,limit_bytes = 1024*1024)
             msg=api_response
         except Exception as e:
@@ -798,8 +789,7 @@ class K8sLogApi(object):
             msg = "get pod log error %s" % str(e)
         return msg,code
 
-    @classmethod
-    def get_deployment_log(cls, deployment_name, namespace):
+    def get_deployment_log(self, deployment_name, namespace):
         code = 200
         try:
             deployment_name = deployment_name.lower()
@@ -807,7 +797,7 @@ class K8sLogApi(object):
             if deployment_info_list:
                 pod_name = deployment_info_list[0]["pod_name"]
                 container="app"
-                msg = cls.get_namespace_pod_log(pod_name,namespace,container)
+                msg = self.get_namespace_pod_log(pod_name,namespace,container)
             else:
                 msg=""
         except Exception as e:

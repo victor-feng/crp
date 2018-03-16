@@ -177,8 +177,9 @@ class Dockerlogs(Resource):
         resource_name = args.resource_name
         try:
             if cloud == "2":
+                K8sLog = K8sLogApi()
                 deployment_name = resource_name
-                logs,code=K8sLogApi.get_deployment_log(deployment_name,NAMESPACE)
+                logs,code=K8sLog.get_deployment_log(deployment_name,NAMESPACE)
                 #logs,code=K8sLogApi.get_namespace_pod_log(osid,NAMESPACE,"app")
             else:
                 #nova_cli = OpenStack.nova_client
@@ -219,16 +220,16 @@ class K8sDeployment(Resource):
         parser.add_argument("deployment_name", type=str)
         args = parser.parse_args()
         deployment_name = args.deployment_name
-        extensions_v1 = K8S.extensions_v1
         data={}
         res_list=[]
+        K8sDeployment = K8sDeploymentApi()
         try:
             if deployment_name:
                 #如果传deployment_name,获取单个deployment状态
-                res_list=K8sDeploymentApi.get_deployment_info(NAMESPACE,deployment_name)
+                res_list=K8sDeployment.get_deployment_info(NAMESPACE,deployment_name)
             else:
                 #获取namespace下所有deployment状态
-                res_list = K8sDeploymentApi.get_namespace_deployment_info(NAMESPACE)
+                res_list = K8sDeployment.get_namespace_deployment_info(NAMESPACE)
             data["res_list"] = res_list
             code = 200
             msg = "Get deployment info success"

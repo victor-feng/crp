@@ -46,10 +46,11 @@ class VMOperation(Resource):
         try:
             if cloud == "2" and args.resource_type == "app":
                 #k8s目前只支持应用重启功能
+                K8sDeployment = K8sDeploymentApi()
                 if args.operation == "restart":
                     deployment_name = args.resource_name
-                    restart_deployment = K8sDeploymentApi.restart_deployment_pod_object(deployment_name)
-                    msg,code = K8sDeploymentApi.restart_deployment_pod(
+                    restart_deployment = K8sDeployment.restart_deployment_pod_object(deployment_name)
+                    msg,code = K8sDeployment.restart_deployment_pod(
                         restart_deployment, deployment_name, NAMESPACE)
                     if msg is not None:
                         ret = {

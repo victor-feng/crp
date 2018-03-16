@@ -43,7 +43,8 @@ def query_instance(task_id, result, resource):
     nova_client = OpenStack.nova_client
     try:
         if resource_type == "app":
-            deployment_ret=K8sDeploymentApi.get_deployment(NAMESPACE,resource_name)
+            K8sDeployment = K8sDeploymentApi()
+            deployment_ret=K8sDeployment.get_deployment(NAMESPACE,resource_name)
             result['inst_state'] = 1
             available_replicas = deployment_ret.status.available_replicas
             unavailable_replicas =deployment_ret.status.unavailable_replicas
@@ -95,14 +96,17 @@ def delete_instance(task_id, result):
     ingress_name = resource_name + "-" + "ingress"
     try:
         if resource_type == "app":
+            K8sDeployment = K8sDeploymentApi()
+            K8sIngress = K8sIngressApi()
+            K8sService = K8sServiceApi()
             #删除deployment 的时候 同时删除service 和 ingress
-            service_res,service_flag=K8sServiceApi.get_service(service_name, NAMESPACE)
+            service_res,service_flag=K8sService.get_service(service_name, NAMESPACE)
             if service_flag:
-                K8sServiceApi.delete_service(service_name, NAMESPACE)
-            ingress_res,ingress_flag=K8sIngressApi.get_ingress(ingress_name, NAMESPACE)
+                K8sService.delete_service(service_name, NAMESPACE)
+            ingress_res,ingress_flag=K8sIngress.get_ingress(ingress_name, NAMESPACE)
             if ingress_flag:
-                K8sIngressApi.delete_ingress(ingress_name, NAMESPACE)
-            K8sDeploymentApi.delete_deployment(resource_name,NAMESPACE)
+                K8sIngress.delete_ingress(ingress_name, NAMESPACE)
+            K8sDeployment.delete_deployment(resource_name,NAMESPACE)
         else:
             nova_client.servers.delete(os_inst_id)
         result['current_status'] = QUERY_VM
