@@ -703,8 +703,8 @@ class ResourceProviderTransitions2(object):
                 if ingress_flag == 1:
                     service_name = deployment_name
                     ingress_name = deployment_name + "-" + "ingress"
-                    service_status, err_msg.code = K8sService.get_service_status(service_name,NAMESPACE)
-                    ingress_status,err_msg.code = K8sIngress.get_ingress_status(ingress_name,NAMESPACE)
+                    service_status, err_msg,code = K8sService.get_service_status(service_name,NAMESPACE)
+                    ingress_status,err_msg,code = K8sIngress.get_ingress_status(ingress_name,NAMESPACE)
                 else:
                     ingress_status = "active"
                     service_status = "active"
