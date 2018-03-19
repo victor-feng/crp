@@ -316,7 +316,7 @@ class K8sNamespace(Resource):
             if code == 200:
                 for namespace_name in namespace_list:
                     config_map_list,err_msg,code = K8sConfigMap.list_namespace_config_map(namespace_name)
-                    if config_map_name:
+                    if config_map_list:
                         for config_map_name in config_map_list:
                             namespace_config_dict = {}
                             namespace_config_dict["namespace_name"] = namespace_name
