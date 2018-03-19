@@ -338,7 +338,7 @@ class K8sNamespace(Resource):
         except Exception as e:
             code = 500
             data = "Error"
-            msg = "create namespace or config map success error {e}".format(e=str(e))
+            msg = "create namespace or config map error {e}".format(e=str(e))
             Log.logger.error(msg)
         ret = response_data(code, msg, data)
         return ret, code
