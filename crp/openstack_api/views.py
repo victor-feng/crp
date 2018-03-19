@@ -144,7 +144,9 @@ class NovaVMAPIAll(Resource):
         try:
             vm_info_dict1=OpenStack_Api.get_all_vm_status()
             vm_info_dict2=OpenStack2_Api.get_all_vm_status()
+            k8s_info_dict=K8sDeploymentApi.get_namespace_pod_list_info(NAMESPACE)[0]
             vm_info_dict= dict(vm_info_dict1,**vm_info_dict2)
+            vm_info_dict = dict(vm_info_dict, **k8s_info_dict)
         except Exception as e:
             Log.logger.error('get vm status err: %s' % str(e.args))
             res = {

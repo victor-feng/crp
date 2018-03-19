@@ -479,11 +479,26 @@ class K8sDeploymentApi(object):
             Log.logger.error("get deployment's pod status error: %s" ,str(e))
         return s_flag, err_msg
 
-    def get_namespace_pod_list(self):
+    def get_namespace_pod_list_info(self,namespace):
+        code = 200
+        err_msg = None
+        vm_info_dict = {}
         try:
-            pass
+            api_instance = self.corev1
+            api_response = api_instance.list_namespaced_pod(namespace)
+            for i in api_response.items:
+                name = i.metadata.name
+                status = i.status.phase
+                if status == "Running":
+                    vm_state = "active"
+                else:
+                    vm_state = "shutoff"
+                ip = i.status.pod_ip
+                vm_info_dict[name] = [ip, vm_state]
         except Exception as e:
-            pass
+            err_msg = "get namespace pod list info error {e}".format(e=str(e))
+        return vm_info_dict,err_msg,code
+
 
 
 
