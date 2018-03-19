@@ -313,19 +313,20 @@ class K8sNamespace(Resource):
             K8sNamespace = K8sNamespaceApi()
             K8sConfigMap = K8sConfigMapApi()
             namespace_list,err_msg,code= K8sNamespace.list_namespace()
-            for namespace_name in namespace_list:
-                config_map_list,err_msg,code = K8sConfigMap.list_namespace_config_map(namespace_name)
-                if config_map_name:
-                    for config_map_name in config_map_list:
+            if code == 200:
+                for namespace_name in namespace_list:
+                    config_map_list,err_msg,code = K8sConfigMap.list_namespace_config_map(namespace_name)
+                    if config_map_name:
+                        for config_map_name in config_map_list:
+                            namespace_config_dict = {}
+                            namespace_config_dict["namespace_name"] = namespace_name
+                            namespace_config_dict["config_map_name"] = config_map_name
+                            res_list.append(namespace_config_dict)
+                    else:
                         namespace_config_dict = {}
                         namespace_config_dict["namespace_name"] = namespace_name
-                        namespace_config_dict["config_map_name"] = config_map_name
+                        namespace_config_dict["config_map_name"] = ""
                         res_list.append(namespace_config_dict)
-                else:
-                    namespace_config_dict = {}
-                    namespace_config_dict["namespace_name"] = namespace_name
-                    namespace_config_dict["config_map_name"] = ""
-                    res_list.append(namespace_config_dict)
             if code == 200:
                 data["res_list"] = res_list
                 code = code
