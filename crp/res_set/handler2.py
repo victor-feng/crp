@@ -989,6 +989,12 @@ class ResourceProviderTransitions2(object):
 
             vid1, vip1 = self.create_vip_port(mysql_ip_info[0][0],network_id)
             vid2, vip2 = self.create_vip_port(mysql_ip_info[0][0],network_id)
+            for _instance in instance:
+                dbtype = _instance.get("dbtype")
+                if dbtype in ["master","slave1"]:
+                    self.monut_vip(network_id,_instance['ip'],vip2)
+                if dbtype in ["slave1","slave2","lvs1","lvs2"]:
+                    self.monut_vip(network_id, _instance['ip'], vip1)
             ip_info = mysql_ip_info + mycat_ip_info
             ip_info.append(('vip1', vip1))
             ip_info.append(('vip2', vip2))
@@ -1121,6 +1127,8 @@ class ResourceProviderTransitions2(object):
             instance[1]['dbtype'] = 'slave'
             redis['vip'] = vip
             redis['vid'] = vid
+            self.monut_vip(network_id, ip1, vip)
+            self.monut_vip(network_id, ip2, vip)
             cmd = 'python {0}script/redis_cluster.py {1} {2} {3}'.format(
                 SCRIPTPATH, ip1, ip2, vip)
             error_time = 0
@@ -1235,6 +1243,24 @@ class ResourceProviderTransitions2(object):
             deployment_info_list[i]["deployment_name"] = deployment_info_list[i][
                                                                  "deployment_name"] + "@@" + str(i)
         return deployment_info_list
+
+    def monut_vip(self,network_id,ip,vip):
+        err_msg = None
+        neutron_client = OpenStack.neutron_client
+        try:
+            ports = neutron_client.list_ports(**{"network_id": network_id}).get("ports")
+            for port_info in ports:
+                fixed_ip = port_info.get("fixed_ips")[0].get("ip_address")
+                if fixed_ip == ip:
+                    port_id=port_info.get("id")
+            map = {"ip_address": "172.28.39.108"}
+            response=neutron_client.update_port(port_id,{'port': {'allowed_address_pairs': [map]}})
+        except Exception as e:
+            err_msg = "Created database cluster error {e}".format(e=str(e))
+        return  err_msg
+
+
+
 
 
 
