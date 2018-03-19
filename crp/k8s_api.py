@@ -988,6 +988,22 @@ class K8sConfigMapApi(object):
             code = get_k8s_err_code(e)
         return res,err_msg, code
 
+    def list_namespace_config_map(self,namespace):
+        err_msg = None
+        code = 200
+        config_map_list=[]
+        try:
+            api_instance = self.corev1
+            api_response = api_instance.list_namespaced_config_map(namespace)
+            res = api_response
+            for r in res.items:
+                config_map_name=r.metadata.name
+                config_map_list.append(config_map_name)
+        except Exception as e:
+            err_msg = "list namespace config map  error %s" % str(e)
+            code = get_k8s_err_code(e)
+        return config_map_list, err_msg, code
+
 
 
 
