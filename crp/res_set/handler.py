@@ -933,6 +933,7 @@ class ResourceProviderTransitions(object):
                 mongodb['vip1'] = mongodb_ip_list[0]
                 mongodb['vip2'] = mongodb_ip_list[1]
                 mongodb['vip3'] = mongodb_ip_list[2]
+                mongodb['vip'] = mongodb_ip_list[-1]
 
                 instance[0]['dbtype'] = 'slave1'
                 instance[1]['dbtype'] = 'slave2'
@@ -950,7 +951,7 @@ class ResourceProviderTransitions(object):
             Log.logger.debug('mongodb single instance start')
             instance = mongodb.get('instance', '')
             ip= instance[0].get('ip')
-            mongodb['ip'] = ip
+            mongodb['vip'] = ip
             #单实例创建admin用户并验证启动mongodb
             sh_path=self._excute_mongo_cmd("127.0.0.1")
             cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m " \

@@ -1065,6 +1065,7 @@ class ResourceProviderTransitions2(object):
                 mongodb['vip1'] = mongodb_ip_list[0]
                 mongodb['vip2'] = mongodb_ip_list[1]
                 mongodb['vip3'] = mongodb_ip_list[2]
+                mongodb['vip'] = mongodb_ip_list[-1]
 
                 instance[0]['dbtype'] = 'slave1'
                 instance[1]['dbtype'] = 'slave2'
