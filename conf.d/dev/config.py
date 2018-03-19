@@ -47,8 +47,8 @@ class DevelopmentConfig(BaseConfig):
             'port': '27017'
         },
         'mycat': {
-            'uuid': 'ef2f955f-647e-4c27-94b8-25b56e8b1f36',
-            'name': 'mycat-50G-20170628',
+            'uuid': '9f3d7e1b-e1f5-491b-8fc7-a80d0b267d78',
+            'name': 'mycat-20180314',
             'port': '3316'
         },
         'kvm': {
