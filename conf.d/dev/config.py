@@ -52,8 +52,8 @@ class DevelopmentConfig(BaseConfig):
             'port': '3316'
         },
         'kvm': {
-            'uuid': 'd67a2e33-cbb7-43f6-85da-8e3ca2873b2a',
-            'name': 'basic',
+            'uuid': '75fadfb9-2e17-46ec-a3b7-da3b50a27735',
+            'name': 'basic-50G-20170428',
             'port': '22'
         },
         'java': {
