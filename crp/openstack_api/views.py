@@ -290,6 +290,7 @@ class K8sNamespace(Resource):
                 if not err_msg and config_map_name:
                     config_map = K8sConfigMap.create_config_map_object(config_map_name,namespace_name,config_map_data)
                     err_msg,code = K8sConfigMap.create_config_map(config_map,namespace_name)
+                    Log.logger.debug("-----------11111111111111111-----------------{}--------------{}".format(code,err_msg))
             if code == 200:
                 data = "success"
                 msg = "create namespace or config map success"
@@ -301,7 +302,7 @@ class K8sNamespace(Resource):
         except Exception as e:
             code = 500
             data = "Error"
-            msg = "create namespace or config map success error {e}".format(e=str(e))
+            msg = "create namespace or config map error {e}".format(e=str(e))
             Log.logger.error(msg)
         ret = response_data(code, msg, data)
         return ret, code

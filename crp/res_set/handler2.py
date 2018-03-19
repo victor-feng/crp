@@ -1082,7 +1082,7 @@ class ResourceProviderTransitions2(object):
             Log.logger.debug('mongodb single instance start')
             instance = mongodb.get('instance', '')
             ip= instance[0].get('ip')
-            mongodb['ip'] = ip
+            mongodb['vip'] = ip
             #单实例创建admin用户并验证启动mongodb
             sh_path=self._excute_mongo_cmd("127.0.0.1")
             cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m " \
@@ -1208,7 +1208,7 @@ class ResourceProviderTransitions2(object):
             "port": {
                 "admin_state_up": True,
                 "name": instance_name + '_port',
-                "network_id": network_id
+                "network_id": network_id,
             }
         }
         Log.logger.debug('Create port for cluster/instance ' + instance_name)
