@@ -1253,7 +1253,7 @@ class ResourceProviderTransitions2(object):
                 fixed_ip = port_info.get("fixed_ips")[0].get("ip_address")
                 if fixed_ip == ip:
                     port_id=port_info.get("id")
-            map = {"ip_address": "172.28.39.108"}
+            map = {"ip_address": vip}
             response=neutron_client.update_port(port_id,{'port': {'allowed_address_pairs': [map]}})
         except Exception as e:
             err_msg = "Created database cluster error {e}".format(e=str(e))
