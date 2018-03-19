@@ -281,6 +281,7 @@ class K8sNamespace(Resource):
         namespace_name = args.namespace_name
         config_map_name = args.config_map_name
         config_map_data = args.config_map_data
+        Log.logger.debug("-----------222222222222222222222222-----------------{}--------------".format(config_map_data))
         try:
             K8sNamespace = K8sNamespaceApi()
             K8sConfigMap = K8sConfigMapApi()
