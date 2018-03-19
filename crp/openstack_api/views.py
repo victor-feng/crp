@@ -281,7 +281,6 @@ class K8sNamespace(Resource):
         namespace_name = args.namespace_name
         config_map_name = args.config_map_name
         config_map_data = args.config_map_data
-        Log.logger.debug("-----------222222222222222222222222-----------------{}--------------".format(config_map_data))
         try:
             K8sNamespace = K8sNamespaceApi()
             K8sConfigMap = K8sConfigMapApi()
@@ -291,7 +290,6 @@ class K8sNamespace(Resource):
                 if not err_msg and config_map_name:
                     config_map = K8sConfigMap.create_config_map_object(config_map_name,namespace_name,config_map_data)
                     err_msg,code = K8sConfigMap.create_config_map(config_map,namespace_name)
-                    Log.logger.debug("-----------11111111111111111-----------------{}--------------{}".format(code,err_msg))
             if code == 200:
                 data = "success"
                 msg = "create namespace or config map success"
