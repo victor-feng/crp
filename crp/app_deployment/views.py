@@ -785,7 +785,7 @@ class AppDeploy(Resource):
         remote_path = '/tmp/' + path_filename[1]
         Log.logger.debug("local_path and remote_path is %s-%s" % (local_path, remote_path))
         sh_path = self.mongodb_command_file(mongodb_password, mongodb_username, port, database, local_path)
-        Log.logger.debug("start deploy mongodb cluster", sh_path)
+        Log.logger.debug("start deploy mongodb cluster %s", sh_path)
 
         # 只需要对主节点进行认证操作
         host_path = self.mongodb_hosts_file(vip)
