@@ -769,8 +769,8 @@ class AppDeploy(Resource):
         old_db_list = []
         new_db_list = []
         Log.logger.debug("args is %s" % str(mongodb))
-        mongodb_username = mongodb.get('db_username', '')
-        mongodb_password = mongodb.get('db_password', '')
+        mongodb_username = mongodb.get('database_user', '')
+        mongodb_password = mongodb.get('database_password', '')
         vip = mongodb.get('vip', '')
         vip1 = mongodb.get('vip1', '')
         vip2 = mongodb.get('vip2', '')
