@@ -900,7 +900,7 @@ class AppDeploy(Resource):
         mysql_password = "Kvmanger@2wg"
         ip = mysql.get("ip")
         port = mysql.get("port")
-        app_ips = mysql.get("ips")
+        ips = mysql.get("ips")
         # sql = args.mysql.get("sql_script").replace('\xc2\xa0', ' ')
         path_filename = mysql.get("path_filename")
         if not path_filename:
