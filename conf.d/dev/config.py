@@ -159,6 +159,7 @@ class DevelopmentConfig(BaseConfig):
             'deploy_source':'deploy_source',
             'database_config':'database_config',
             'lb_methods':'lb_methods',
+            'namespace':'namespace',
         },
         'resource_cluster': {
             'cluster_name': 'instance_name',
