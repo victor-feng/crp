@@ -369,7 +369,8 @@ class AppDeploy(Resource):
                 if path_filename:
                     mongodb_res, err_msg = self._deploy_mongodb(mongodb)
                     if mongodb_res:
-                        _dep_detail_callback(deploy_id, "deploy_mongodb", "res")
+                        _dep_callback(deploy_id, "ip", "mongodb", "", "active", True, "mongodb", True,
+                                      'deploy', unique_flag, cloud, deploy_name)
                     else:
                         _dep_callback(deploy_id, "ip", "mongodb", err_msg, "active", False, "mongodb", True,
                                       'deploy', unique_flag,cloud,deploy_name)
@@ -381,7 +382,8 @@ class AppDeploy(Resource):
                 if path_filename:
                     sql_ret, err_msg = self._deploy_mysql(mysql, docker, environment)
                     if sql_ret:
-                        _dep_detail_callback(deploy_id, "deploy_mysql", "res")
+                        _dep_callback(deploy_id, "ip", "mysql", "", "active", True, "mysql", True, 'deploy',
+                                      unique_flag, cloud, deploy_name)
                     else:
                         _dep_callback(deploy_id, "ip", "mysql", err_msg, "active", False, "mysql", True, 'deploy',
                                       unique_flag,cloud,deploy_name)
