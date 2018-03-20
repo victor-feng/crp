@@ -28,6 +28,7 @@ class VMOperation(Resource):
         parser.add_argument('cloud', type=str)
         parser.add_argument('resource_name', type=str)
         parser.add_argument('resource_type', type=str)
+        parser.add_argument('namespace', type=str)
         args = parser.parse_args()
         Log.logger.debug("vm operation receive restart request. args is " + str(args))
         if args.cloud == "2":
@@ -46,12 +47,13 @@ class VMOperation(Resource):
         try:
             if cloud == "2" and args.resource_type == "app":
                 #k8s目前只支持应用重启功能
+                namespace = args.namespace if args.namespace else NAMESPACE
                 K8sDeployment = K8sDeploymentApi()
                 if args.operation == "restart":
                     deployment_name = args.resource_name
                     restart_deployment = K8sDeployment.restart_deployment_pod_object(deployment_name)
                     msg,code = K8sDeployment.restart_deployment_pod(
-                        restart_deployment, deployment_name, NAMESPACE)
+                        restart_deployment, deployment_name, namespace)
                     if msg is not None:
                         ret = {
                             "code": code,

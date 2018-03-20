@@ -366,9 +366,7 @@ class ResourceProviderTransitions2(object):
         deploy_source = propertys.get('deploy_source')
         database_config = propertys.get('database_config')
         lb_methods = propertys.get('lb_methods',"round_robin")
-        namespace = propertys.get('namespace')
-        if not namespace:
-            namespace = NAMESPACE
+        namespace = propertys.get('namespace') if propertys.get('namespace') else NAMESPACE
         if port:
             port = int(port)
         image_url = propertys.get('image_url')

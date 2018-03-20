@@ -140,12 +140,16 @@ class NovaVMAPI(Resource):
 class NovaVMAPIAll(Resource):
 
     def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument("namespace", type=str)
+        args = parser.parse_args()
+        namespace = args.namespace if args.namespace else NAMESPACE
         vm_info_dict = {}
         try:
             K8sDeployment = K8sDeploymentApi()
             vm_info_dict1=OpenStack_Api.get_all_vm_status()
             vm_info_dict2=OpenStack2_Api.get_all_vm_status()
-            k8s_info_dict=K8sDeployment.get_namespace_pod_list_info(NAMESPACE)[0]
+            k8s_info_dict=K8sDeployment.get_namespace_pod_list_info(namespace)[0]
             vm_info_dict= dict(vm_info_dict1,**vm_info_dict2)
             vm_info_dict = dict(vm_info_dict, **k8s_info_dict)
         except Exception as e:
@@ -174,15 +178,17 @@ class Dockerlogs(Resource):
         parser.add_argument("osid", type=str, location='json')
         parser.add_argument("cloud", type=str, location='json')
         parser.add_argument("resource_name", type=str, location='json')
+        parser.add_argument("namespace", type=str)
         args = parser.parse_args()
         osid = args.osid
         cloud = args.cloud
         resource_name = args.resource_name
+        namespace = args.namespace if args.namespace else NAMESPACE
         try:
             if cloud == "2":
                 K8sLog = K8sLogApi()
                 deployment_name = resource_name
-                logs,code=K8sLog.get_deployment_log(deployment_name,NAMESPACE)
+                logs,code=K8sLog.get_deployment_log(deployment_name,namespace)
                 #logs,code=K8sLogApi.get_namespace_pod_log(osid,NAMESPACE,"app")
             else:
                 #nova_cli = OpenStack.nova_client
@@ -221,18 +227,20 @@ class K8sDeployment(Resource):
     def get(self):
         parser = reqparse.RequestParser()
         parser.add_argument("deployment_name", type=str)
+        parser.add_argument("namespace", type=str)
         args = parser.parse_args()
         deployment_name = args.deployment_name
+        namespace = args.namespace if args.namespace else NAMESPACE
         data={}
         res_list=[]
         K8sDeployment = K8sDeploymentApi()
         try:
             if deployment_name:
                 #如果传deployment_name,获取单个deployment状态
-                res_list=K8sDeployment.get_deployment_info(NAMESPACE,deployment_name)
+                res_list=K8sDeployment.get_deployment_info(namespace,deployment_name)
             else:
                 #获取namespace下所有deployment状态
-                res_list = K8sDeployment.get_namespace_deployment_info(NAMESPACE)
+                res_list = K8sDeployment.get_namespace_deployment_info(namespace)
             data["res_list"] = res_list
             code = 200
             msg = "Get deployment info success"
