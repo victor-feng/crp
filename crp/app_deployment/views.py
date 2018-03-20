@@ -956,6 +956,7 @@ class AppDeploy(Resource):
                                     cmd1 = "create user \'" + database_user + "\'@\'" + app_ip + "\' identified by  \'" + database_password + "\' ;\n"
                                     cmd2 = "grant select, update, insert, alter,delete, execute on " + data_name + ".* to \'" + database_user + "\'@\'" + app_ip + "\';\n"
                             cmd += cmd1 + cmd2
+                            Log.logger.debug("############{cmd}".format(cmd=cmd))
                         create_path = self._excute_mysql_cmd(mysql_password, mysql_user, port, cmd)
                         ansible_create_cmd = ansible_cmd + ' script -a ' + create_path
                         ans_res, err_msg = self._exec_ansible_cmd(ansible_create_cmd)
