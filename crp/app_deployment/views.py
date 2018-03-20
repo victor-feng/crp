@@ -766,8 +766,6 @@ class AppDeploy(Resource):
         old_db_list = []
         new_db_list = []
         Log.logger.debug("args is %s" % str(mongodb))
-        db_username = mongodb.get('mongodb_username', '')
-        db_password = mongodb.get('mongodb_password', '')
         mongodb_username = mongodb.get('db_username', '')
         mongodb_password = mongodb.get('db_password', '')
         vip = mongodb.get('vip', '')
@@ -897,8 +895,6 @@ class AppDeploy(Resource):
     def _deploy_mysql(self, mysql, docker, environment):
         database_user = mysql.get("database_user")
         database_password = mysql.get("database_password")
-        mysql_password = mysql.get("mysql_password")
-        mysql_user = mysql.get("mysql_user")
         mysql_user = "kvm"
         mysql_password = "Kvmanger@2wg"
         ip = mysql.get("ip")
