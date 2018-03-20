@@ -941,12 +941,12 @@ class AppDeploy(Resource):
                         for app_ip in ips:
                             if database_user in user_output and app_ip in user_output:
                                 cmd1 = ""
-                                if environment == 'dev':
+                                if environment == 'dev' or "test":
                                     cmd2 = "grant select, update, insert, alter,delete, execute on " + data_name + ".* to \'" + database_user + "\'@\'" + "172.%" + "\';\n"
                                 else:
                                     cmd2 = "grant select, update, insert, alter,delete, execute on " + data_name + ".* to \'" + database_user + "\'@\'" + app_ip + "\';\n"
                             else:
-                                if environment == 'dev':
+                                if environment == 'dev' or "test":
                                     cmd1 = "create user \'" + database_user + "\'@\'" + '172.%' + "\' identified by  \'" + database_password + "\' ;\n"
                                     cmd2 = "grant select, update, insert, alter, delete, execute on " + data_name + ".* to \'" + database_user + "\'@\'" + "172.%" + "\';\n"
                                 else:
