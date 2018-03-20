@@ -401,6 +401,7 @@ class ResourceProviderTransitions(object):
                                     'os_inst_id': osint_id,
                                     'img_url': img_url,
                                     'deploy_source': deploy_source,
+                                    'host_env': host_env,
                                 })
                 else:
                     Log.logger.error(
