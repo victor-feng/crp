@@ -372,7 +372,7 @@ class AppDeploy(Resource):
                         _dep_detail_callback(deploy_id, "deploy_mongodb", "res")
                     else:
                         _dep_callback(deploy_id, "ip", "mongodb", err_msg, "active", False, "mongodb", True,
-                                      'deploy', unique_flag)
+                                      'deploy', unique_flag,cloud,deploy_name)
                         code = 500
                         return code, err_msg
             if mysql:
@@ -384,10 +384,12 @@ class AppDeploy(Resource):
                         _dep_detail_callback(deploy_id, "deploy_mysql", "res")
                     else:
                         _dep_callback(deploy_id, "ip", "mysql", err_msg, "active", False, "mysql", True, 'deploy',
-                                      unique_flag)
+                                      unique_flag,cloud,deploy_name)
                         code = 500
                         return code, err_msg
 
+            if not docker:
+                _dep_callback(deploy_id, '127.0.0.1',"", "", "None", True, "mysql",True, "deploy",unique_flag, cloud, deploy_name)
             #部署应用
             if cloud == "2":
                 deployment_name=resource_name
