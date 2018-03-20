@@ -888,12 +888,12 @@ class ResourceProviderTransitions(object):
                     return True
 
             jsq = 0
-            while not _check_mysql_server_ready(path) and jsq <5:
+            while not _check_mysql_server_ready(path) and jsq <10:
                 time.sleep(5)
                 jsq += 1
                 Log.logger.debug('check numbers: %s' % str(jsq))
-                if jsq == 5:
-                    Log.logger.debug('检查5次退出')
+                if jsq == 10:
+                    Log.logger.debug('检查10次退出')
 
             p = subprocess.Popen(
                 cmd,
@@ -1032,8 +1032,8 @@ class ResourceProviderTransitions(object):
 
             instance[0]['dbtype'] = 'master'
             instance[1]['dbtype'] = 'slave'
-            if error_time == 3:
-                Log.logger.debug('redis cluster 重试2次失败')
+            if error_time == 10:
+                Log.logger.debug('redis cluster 重试10次失败')
         else:
             ip=instance[0]['ip']
             #redis_version="redis-2.8.14"
