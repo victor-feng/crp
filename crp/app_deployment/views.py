@@ -390,6 +390,7 @@ class AppDeploy(Resource):
 
             if not docker:
                 _dep_callback(deploy_id, '127.0.0.1',"", "", "None", True, "mysql",True, "deploy",unique_flag, cloud, deploy_name)
+                return
             #部署应用
             if cloud == "2":
                 deployment_name=resource_name
