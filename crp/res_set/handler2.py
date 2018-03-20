@@ -484,7 +484,8 @@ class ResourceProviderTransitions2(object):
                     'cluster_type': cluster_type,
                     'replicas':replicas,
                     "host_env":host_env,
-                    "ingress_flag":ingress_flag
+                    "ingress_flag":ingress_flag,
+                    "namespace":namespace,
                 }
                 uop_os_inst_id_list.append(uopinst_info)
                 for i in range(0, replicas, 1):
@@ -687,6 +688,7 @@ class ResourceProviderTransitions2(object):
             cluster_type = uop_os_inst_id.get('cluster_type')
             host_env = uop_os_inst_id.get('host_env')
             ingress_flag = uop_os_inst_id.get('ingress_flag')
+            namespace = uop_os_inst_id.get("namespace")
             if cluster_type == "app_cluster" and host_env == "docker":
                 #k8s 应用
                 K8sDeployment = K8sDeploymentApi()
@@ -694,7 +696,7 @@ class ResourceProviderTransitions2(object):
                 K8sService = K8sServiceApi()
                 replicas=uop_os_inst_id.get('replicas',0)
                 deployment_name=self.req_dict["resource_name"]
-                deployment_status=K8sDeployment.get_deployment_status(NAMESPACE, deployment_name)
+                deployment_status=K8sDeployment.get_deployment_status(namespace, deployment_name)
                 Log.logger.debug(
                     "Query Task ID " +
                     self.task_id.__str__() +
@@ -705,13 +707,13 @@ class ResourceProviderTransitions2(object):
                 if ingress_flag == 1:
                     service_name = deployment_name
                     ingress_name = deployment_name + "-" + "ingress"
-                    service_status, err_msg,code = K8sService.get_service_status(service_name,NAMESPACE)
-                    ingress_status,err_msg,code = K8sIngress.get_ingress_status(ingress_name,NAMESPACE)
+                    service_status, err_msg,code = K8sService.get_service_status(service_name,namespace)
+                    ingress_status,err_msg,code = K8sIngress.get_ingress_status(ingress_name,namespace)
                 else:
                     ingress_status = "active"
                     service_status = "active"
                 if deployment_status == "available" and ingress_status == "active" and service_status == "active":
-                    deployment_info_list=self.get_ready_deployment_info(deployment_name,NAMESPACE,replicas)
+                    deployment_info_list=self.get_ready_deployment_info(deployment_name,namespace,replicas)
                     for mapper in result_mappers_list:
                         value = mapper.values()[0]
                         instances = value.get('instance',[])
@@ -723,7 +725,7 @@ class ResourceProviderTransitions2(object):
                                     instance['os_inst_id'] = deployment_info.get("pod_name","")
                     result_inst_id_list.append(uop_os_inst_id)
                 else:
-                    s_flag,err_msg = K8sDeployment.get_deployment_pod_status(NAMESPACE,deployment_name)
+                    s_flag,err_msg = K8sDeployment.get_deployment_pod_status(namespace,deployment_name)
                     if s_flag is not True:
                         self.error_msg = err_msg
                         is_rollback = True
