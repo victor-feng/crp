@@ -848,7 +848,7 @@ class K8sLogApi(object):
         code = 200
         try:
             deployment_name = deployment_name.lower()
-            deployment_info_list=K8sDeploymentApi.get_deployment_pod_info(namespace,deployment_name)
+            deployment_info_list=K8sDeploymentApi().get_deployment_pod_info(namespace,deployment_name)
             if deployment_info_list:
                 pod_name = deployment_info_list[0]["pod_name"]
                 container="app"
