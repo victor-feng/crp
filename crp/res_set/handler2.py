@@ -437,6 +437,7 @@ class ResourceProviderTransitions2(object):
                                                                            replicas,
                                                                            ready_probe_path
                                                                            )
+                    Log.logger.debug("#####deployment object {}".format(deployment))
                     if domain:
                         ingress_flag = 1
                         #如果有域名创建service和ingress
