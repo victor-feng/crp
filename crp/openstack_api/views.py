@@ -189,6 +189,7 @@ class Dockerlogs(Resource):
                 K8sLog = K8sLogApi()
                 deployment_name = resource_name
                 logs,code=K8sLog.get_deployment_log(deployment_name,namespace)
+                Log.logger.info("The logs is {}".format(logs))
                 #logs,code=K8sLogApi.get_namespace_pod_log(osid,NAMESPACE,"app")
             else:
                 #nova_cli = OpenStack.nova_client
