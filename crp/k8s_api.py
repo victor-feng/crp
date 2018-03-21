@@ -65,7 +65,8 @@ class K8sDeploymentApi(object):
                                  tenantName,
                                  hostnames,
                                  ip,
-                                 replicas
+                                 replicas,
+                                 ready_probe_path
                                  ):
         """
 
@@ -101,21 +102,50 @@ class K8sDeploymentApi(object):
             image_pull_policy="IfNotPresent"
         )
         if app_container_port:
-            app_container = client.V1Container(
-                name='app',
-                image=app_image_url,
-                ports=[
-                    client.V1ContainerPort(container_port=app_container_port)
-                ],
-                resources=client.V1ResourceRequirements(
-                    requests=app_requests,
-                    limits=app_limits,
-                ),
-                volume_mounts=[
-                    client.V1VolumeMount(name="app-logs", mount_path="/home/logs"),
-                ],
-                image_pull_policy="Always",
-            )
+            if ready_probe_path:
+                app_container = client.V1Container(
+                    name='app',
+                    image=app_image_url,
+                    ports=[
+                        client.V1ContainerPort(container_port=app_container_port)
+                    ],
+                    resources=client.V1ResourceRequirements(
+                        requests=app_requests,
+                        limits=app_limits,
+                    ),
+                    volume_mounts=[
+                        client.V1VolumeMount(name="app-logs", mount_path="/home/logs"),
+                    ],
+                    image_pull_policy="Always",
+                    readiness_probe=client.V1Probe(
+                        failure_threshold=3,
+                        http_get=client.V1HTTPGetAction(
+                            path=ready_probe_path,
+                            port=app_container_port,
+                        ),
+                        initial_delay_seconds=10,
+                        period_seconds=10,
+                        success_threshold=1,
+                        timeout_seconds=1,
+                    )
+                )
+            else:
+                app_container = client.V1Container(
+                    name='app',
+                    image=app_image_url,
+                    ports=[
+                        client.V1ContainerPort(container_port=app_container_port)
+                    ],
+                    resources=client.V1ResourceRequirements(
+                        requests=app_requests,
+                        limits=app_limits,
+                    ),
+                    volume_mounts=[
+                        client.V1VolumeMount(name="app-logs", mount_path="/home/logs"),
+                    ],
+                    image_pull_policy="Always",
+                )
+
         else:
             app_container = client.V1Container(
                 name='app',

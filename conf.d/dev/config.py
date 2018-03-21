@@ -160,6 +160,7 @@ class DevelopmentConfig(BaseConfig):
             'database_config':'database_config',
             'lb_methods':'lb_methods',
             'namespace':'namespace',
+            'ready_probe_path':'ready_probe_path',
         },
         'resource_cluster': {
             'cluster_name': 'instance_name',

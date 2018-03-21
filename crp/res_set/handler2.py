@@ -366,6 +366,7 @@ class ResourceProviderTransitions2(object):
         deploy_source = propertys.get('deploy_source')
         database_config = propertys.get('database_config')
         lb_methods = propertys.get('lb_methods',"round_robin")
+        ready_probe_path = propertys.get('ready_probe_path')
         namespace = propertys.get('namespace') if propertys.get('namespace') else NAMESPACE
         if port:
             port = int(port)
@@ -433,7 +434,8 @@ class ResourceProviderTransitions2(object):
                                                                            tenantName,
                                                                            HOSTNAMES,
                                                                            IP,
-                                                                           replicas
+                                                                           replicas,
+                                                                           ready_probe_path
                                                                            )
                     if domain:
                         ingress_flag = 1
