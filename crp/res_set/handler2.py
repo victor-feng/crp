@@ -1114,7 +1114,7 @@ class ResourceProviderTransitions2(object):
             exec_cmd_one_times(ip,exec_cmd)
             Log.logger.debug(
                 'mongodb single instance end {ip}'.format(
-                    ip=mongodb['ip']))
+                    ip=mongodb['vip']))
             if volume_size > 0:
                 self.mount_volume(ip,"mongodb")
         res_instance_push_callback(self.task_id,self.req_dict,0,{},mongodb,self.set_flag)
