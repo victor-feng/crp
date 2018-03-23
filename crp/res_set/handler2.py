@@ -279,38 +279,39 @@ class ResourceProviderTransitions2(object):
             flavor,
             availability_zone,
             network_id, meta=None, server_group=None):
-        nova_client = OpenStack.nova_client
-        nics_list = []
-        nic_info = {'net-id': network_id}
-        nics_list.append(nic_info)
-        if meta:
-            meta = eval(meta)
-            Log.logger.debug(meta)
-            Log.logger.debug(type(meta))
+        err_msg = None
+        os_inst_id = None
+        try:
+            nova_client = OpenStack.nova_client
+            nics_list = []
+            nic_info = {'net-id': network_id}
+            nics_list.append(nic_info)
             if meta:
                 meta = eval(meta)
-                for m in meta:
-                    meta[m] = str(meta[m])
-                Log.logger.debug(meta)
-                Log.logger.debug(type(meta))
-        if server_group:
-            server_group_dict = {'group': server_group.id}
-            Log.logger.info(server_group.id)
-            int_ = nova_client.servers.create(name, image, flavor,meta=meta,
-                                         availability_zone=availability_zone,
-                                         nics=nics_list, scheduler_hints=server_group_dict)
-        else:
-            int_ = nova_client.servers.create(name, image, flavor, meta=meta,
-                                         availability_zone=availability_zone,
-                                         nics=nics_list)
-        Log.logger.debug(
-            "Task ID " +
-            self.task_id.__str__() +
-            " create instance:")
-        Log.logger.debug(int_)
-        Log.logger.debug(int_.id)
+                if meta:
+                    meta = eval(meta)
+                    for m in meta:
+                        meta[m] = str(meta[m])
+            if server_group:
+                server_group_dict = {'group': server_group.id}
+                int_ = nova_client.servers.create(name, image, flavor,meta=meta,
+                                             availability_zone=availability_zone,
+                                             nics=nics_list, scheduler_hints=server_group_dict)
+            else:
+                int_ = nova_client.servers.create(name, image, flavor, meta=meta,
+                                             availability_zone=availability_zone,
+                                             nics=nics_list)
+            Log.logger.debug(
+                "Task ID " +
+                self.task_id.__str__() +
+                " create instance:")
+            Log.logger.debug(int_)
+            Log.logger.debug(int_.id)
 
-        return int_.id
+            os_inst_id = int_.id
+        except Exception as e:
+            err_msg = "create openstack instance error {}".format(ste(e))
+        return err_msg,os_inst_id
 
     # 依据镜像URL创建NovaDocker容器
     def _create_docker_by_url(self, name, image_uuid, flavor,meta,network_id,availability_zone ,server_group=None):
@@ -541,19 +542,23 @@ class ResourceProviderTransitions2(object):
                     **{'name': 'create_resource_cluster_server_group', 'policies': ['anti-affinity']})
             for i in range(0, quantity, 1):
                 instance_name = '%s_%s_%s' % (self.req_dict["resource_name"],kvm_tag, i.__str__())
-                osint_id = self._create_instance_by_type(
+                err_msg,osint_id = self._create_instance_by_type(
                     language_env, instance_name, flavor, network_id, image_id, availability_zone, server_group)
-                uopinst_info = {
-                    'uop_inst_id': cluster_id,
-                    'os_inst_id': osint_id,
-                }
-                uop_os_inst_id_list.append(uopinst_info)
-                propertys['instance'].append({'host_env': host_env,
-                                              'instance_name': instance_name,
-                                              'username': DEFAULT_USERNAME,
-                                              'password': DEFAULT_PASSWORD,
-                                              'port': port,
-                                              'os_inst_id': osint_id})
+                if not err_msg:
+                    uopinst_info = {
+                        'uop_inst_id': cluster_id,
+                        'os_inst_id': osint_id,
+                    }
+                    uop_os_inst_id_list.append(uopinst_info)
+                    propertys['instance'].append({'host_env': host_env,
+                                                  'instance_name': instance_name,
+                                                  'username': DEFAULT_USERNAME,
+                                                  'password': DEFAULT_PASSWORD,
+                                                  'port': port,
+                                                  'os_inst_id': osint_id})
+                else:
+                    self.error_msg = err_msg
+                    is_rollback = True
         return is_rollback, uop_os_inst_id_list
 
     # 申请资源集群数据库和中间件资源
