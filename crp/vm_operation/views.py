@@ -45,7 +45,7 @@ class VMOperation(Resource):
             }
             return ret, code
         try:
-            if cloud == "2" and args.resource_type == "app":
+            if cloud == "2" and args.resource_type == "app" or "docker":
                 #k8s目前只支持应用重启功能
                 namespace = args.namespace if args.namespace else NAMESPACE
                 K8sDeployment = K8sDeploymentApi()
