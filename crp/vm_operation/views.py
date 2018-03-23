@@ -45,23 +45,24 @@ class VMOperation(Resource):
             }
             return ret, code
         try:
-            if cloud == "2" and args.resource_type == "app" or "docker":
-                #k8s目前只支持应用重启功能
-                namespace = args.namespace if args.namespace else NAMESPACE
-                K8sDeployment = K8sDeploymentApi()
-                if args.operation == "restart":
-                    deployment_name = args.resource_name
-                    restart_deployment = K8sDeployment.restart_deployment_pod_object(deployment_name)
-                    msg,code = K8sDeployment.restart_deployment_pod(
-                        restart_deployment, deployment_name, namespace)
-                    if msg is not None:
-                        ret = {
-                            "code": code,
-                            "result": {
-                                "msg": msg,
+            if cloud == "2":
+                if args.resource_type == "app" or "docker":
+                    #k8s目前只支持应用重启功能
+                    namespace = args.namespace if args.namespace else NAMESPACE
+                    K8sDeployment = K8sDeploymentApi()
+                    if args.operation == "restart":
+                        deployment_name = args.resource_name
+                        restart_deployment = K8sDeployment.restart_deployment_pod_object(deployment_name)
+                        msg,code = K8sDeployment.restart_deployment_pod(
+                            restart_deployment, deployment_name, namespace)
+                        if msg is not None:
+                            ret = {
+                                "code": code,
+                                "result": {
+                                    "msg": msg,
+                                }
                             }
-                        }
-                        return ret, code
+                            return ret, code
             else:
                 nova_client = OpenStack_info[cloud].nova_client
                 if args.operation == "restart":
