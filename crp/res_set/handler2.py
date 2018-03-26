@@ -608,31 +608,35 @@ class ResourceProviderTransitions2(object):
                 instance_name = '%s_%s' % (cluster_name, i.__str__())
                 if cluster_type == "mycat":
                     flavor = KVM_FLAVOR.get("mycat", 'uop-2C4G50G')
-                osint_id = self._create_instance_by_type(
+                err_msg,osint_id = self._create_instance_by_type(
                     cluster_type, instance_name, flavor, network_id, image_id, availability_zone,server_group)
-                if (cluster_type == 'mysql' or cluster_type == 'mongodb') and volume_size != 0:
-                    #如果cluster_type是mysql 和 mongodb 就挂卷 或者 volume_size 不为0时
-                    vm = {
-                        'vm_name': instance_name,
+                if err_msg:
+                    if (cluster_type == 'mysql' or cluster_type == 'mongodb') and volume_size != 0:
+                        #如果cluster_type是mysql 和 mongodb 就挂卷 或者 volume_size 不为0时
+                        vm = {
+                            'vm_name': instance_name,
+                            'os_inst_id': osint_id,
+                        }
+                        #创建volume
+                        volume=create_volume(vm, volume_size)
+                        os_vol_id = volume.get('id')
+                    else:
+                        os_vol_id=None
+                    uopinst_info = {
+                        'uop_inst_id': cluster_id,
                         'os_inst_id': osint_id,
+                        'os_vol_id': os_vol_id
                     }
-                    #创建volume
-                    volume=create_volume(vm, volume_size)
-                    os_vol_id = volume.get('id')
+                    uop_os_inst_id_list.append(uopinst_info)
+                    propertys['instance'].append({'instance_type': cluster_type,
+                                                  'instance_name': instance_name,
+                                                  'username': DEFAULT_USERNAME,
+                                                  'password': DEFAULT_PASSWORD,
+                                                  'port': port,
+                                                  'os_inst_id': osint_id})
                 else:
-                    os_vol_id=None
-                uopinst_info = {
-                    'uop_inst_id': cluster_id,
-                    'os_inst_id': osint_id,
-                    'os_vol_id': os_vol_id
-                }
-                uop_os_inst_id_list.append(uopinst_info)
-                propertys['instance'].append({'instance_type': cluster_type,
-                                              'instance_name': instance_name,
-                                              'username': DEFAULT_USERNAME,
-                                              'password': DEFAULT_PASSWORD,
-                                              'port': port,
-                                              'os_inst_id': osint_id})
+                    self.error_msg = err_msg
+                    is_rollback = True
         return is_rollback, uop_os_inst_id_list
 
     # 将第一阶段输出结果新增至第四阶段

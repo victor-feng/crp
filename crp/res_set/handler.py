@@ -298,7 +298,7 @@ class ResourceProviderTransitions(object):
             return self._create_instance(
                 name, image_uuid, flavor, availability_zone, network_id, meta, server_group)
         else:
-            return None, None
+            return "image id not found", None
 
     # 依据资源类型创建资源
     def _create_instance_by_type(self, ins_type, name, flavor,network_id, image_id,availability_zone,server_group=None):
