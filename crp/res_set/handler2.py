@@ -610,7 +610,7 @@ class ResourceProviderTransitions2(object):
                     flavor = KVM_FLAVOR.get("mycat", 'uop-2C4G50G')
                 err_msg,osint_id = self._create_instance_by_type(
                     cluster_type, instance_name, flavor, network_id, image_id, availability_zone,server_group)
-                if err_msg:
+                if not err_msg:
                     if (cluster_type == 'mysql' or cluster_type == 'mongodb') and volume_size != 0:
                         #如果cluster_type是mysql 和 mongodb 就挂卷 或者 volume_size 不为0时
                         vm = {
