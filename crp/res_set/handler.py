@@ -252,38 +252,42 @@ class ResourceProviderTransitions(object):
             flavor,
             availability_zone,
             network_id, meta=None, server_group=None):
-        nova_client = OpenStack.nova_client
-        nics_list = []
-        nic_info = {'net-id': network_id}
-        nics_list.append(nic_info)
-        if meta:
-            meta = eval(meta)
-            Log.logger.debug(meta)
-            Log.logger.debug(type(meta))
+        err_msg = None
+        os_inst_id = None
+        try:
+            nova_client = OpenStack.nova_client
+            nics_list = []
+            nic_info = {'net-id': network_id}
+            nics_list.append(nic_info)
             if meta:
                 meta = eval(meta)
-                for m in meta:
-                    meta[m] = str(meta[m])
                 Log.logger.debug(meta)
                 Log.logger.debug(type(meta))
-        if server_group:
-            server_group_dict = {'group': server_group.id}
-            Log.logger.info(server_group.id)
-            int_ = nova_client.servers.create(name, image, flavor,meta=meta,
-                                         availability_zone=availability_zone,
-                                         nics=nics_list, scheduler_hints=server_group_dict)
-        else:
-            int_ = nova_client.servers.create(name, image, flavor, meta=meta,
-                                         availability_zone=availability_zone,
-                                         nics=nics_list)
-        Log.logger.debug(
-            "Task ID " +
-            self.task_id.__str__() +
-            " create instance:")
-        Log.logger.debug(int_)
-        Log.logger.debug(int_.id)
+                if meta:
+                    meta = eval(meta)
+                    for m in meta:
+                        meta[m] = str(meta[m])
+                    Log.logger.debug(meta)
+                    Log.logger.debug(type(meta))
+            if server_group:
+                server_group_dict = {'group': server_group.id}
+                Log.logger.info(server_group.id)
+                int_ = nova_client.servers.create(name, image, flavor,meta=meta,
+                                             availability_zone=availability_zone,
+                                             nics=nics_list, scheduler_hints=server_group_dict)
+            else:
+                int_ = nova_client.servers.create(name, image, flavor, meta=meta,
+                                             availability_zone=availability_zone,
+                                             nics=nics_list)
+            Log.logger.debug(
+                "Task ID " +
+                self.task_id.__str__() +
+                " create instance:")
+            os_inst_id = int_.id
+        except Exception as e:
+            err_msg = "create openstack instance error {}".format(str(e))
+        return err_msg, os_inst_id
 
-        return int_.id
 
     # 依据镜像URL创建NovaDocker容器
     def _create_docker_by_url(self, name, image_uuid, flavor, meta,network_id,availability_zone, server_group=None):
@@ -291,7 +295,7 @@ class ResourceProviderTransitions(object):
         if image_uuid:
             if not availability_zone:
                 availability_zone=AVAILABILITY_ZONE.get(self.env,"AZ_UOP")
-            return None, self._create_instance(
+            return self._create_instance(
                 name, image_uuid, flavor, availability_zone, network_id, meta, server_group)
         else:
             return None, None
@@ -374,7 +378,7 @@ class ResourceProviderTransitions(object):
                     server_group = nova_client.server_groups.create(**{'name': 'create_app_cluster_server_group', 'policies': ['anti-affinity']})
 
                 err_msg, image_uuid = image_transit(image_url)
-                if err_msg is None:
+                if not err_msg:
                     Log.logger.debug(
                              "Task ID " +
                               self.task_id.__str__() +
@@ -403,12 +407,14 @@ class ResourceProviderTransitions(object):
                                     'deploy_source': deploy_source,
                                     'host_env': host_env,
                                 })
+                        else:
+                            self.error_msg = err_msg
+                            is_rollback = True
                 else:
                     Log.logger.error(
                         "Task ID " +
                         self.task_id.__str__() +
                         " ERROR. Error Message is:")
-                    Log.logger.error(err_msg)
                     self.error_msg="pull image or create image error,error msg is:" +err_msg.__str__()
                     # 删除全部
                     is_rollback = True
@@ -451,19 +457,23 @@ class ResourceProviderTransitions(object):
                     **{'name': 'create_resource_cluster_server_group', 'policies': ['anti-affinity']})
             for i in range(0, quantity, 1):
                 instance_name = '%s_%s_%s' % (self.req_dict["resource_name"],kvm_tag,i.__str__())
-                osint_id = self._create_instance_by_type(
+                err_msg,osint_id = self._create_instance_by_type(
                     language_env, instance_name, flavor, network_id, image_id, availability_zone, server_group)
-                uopinst_info = {
-                    'uop_inst_id': cluster_id,
-                    'os_inst_id': osint_id,
-                }
-                uop_os_inst_id_list.append(uopinst_info)
-                propertys['instance'].append({'instance_type': host_env,
-                                              'instance_name': instance_name,
-                                              'username': DEFAULT_USERNAME,
-                                              'password': DEFAULT_PASSWORD,
-                                              'port': port,
-                                              'os_inst_id': osint_id})
+                if not err_msg:
+                    uopinst_info = {
+                        'uop_inst_id': cluster_id,
+                        'os_inst_id': osint_id,
+                    }
+                    uop_os_inst_id_list.append(uopinst_info)
+                    propertys['instance'].append({'instance_type': host_env,
+                                                  'instance_name': instance_name,
+                                                  'username': DEFAULT_USERNAME,
+                                                  'password': DEFAULT_PASSWORD,
+                                                  'port': port,
+                                                  'os_inst_id': osint_id})
+                else:
+                    self.error_msg = err_msg
+                    is_rollback = True
         return is_rollback, uop_os_inst_id_list
 
     # 申请资源集群数据库和中间件资源
@@ -514,31 +524,35 @@ class ResourceProviderTransitions(object):
                 instance_name = '%s_%s' % (cluster_name, i.__str__())
                 if cluster_type == "mycat":
                     flavor = KVM_FLAVOR.get("mycat", 'uop-2C4G50G')
-                osint_id = self._create_instance_by_type(
+                err_msg,osint_id = self._create_instance_by_type(
                     cluster_type, instance_name, flavor, network_id,image_id,availability_zone,server_group)
-                if (cluster_type == 'mysql' or cluster_type == 'mongodb') and volume_size != 0:
-                    #如果cluster_type是mysql 和 mongodb 就挂卷 或者 volume_size 不为0时
-                    vm = {
-                        'vm_name': instance_name,
+                if not err_msg:
+                    if (cluster_type == 'mysql' or cluster_type == 'mongodb') and volume_size != 0:
+                        #如果cluster_type是mysql 和 mongodb 就挂卷 或者 volume_size 不为0时
+                        vm = {
+                            'vm_name': instance_name,
+                            'os_inst_id': osint_id,
+                        }
+                        #创建volume
+                        volume=create_volume(vm, volume_size)
+                        os_vol_id = volume.get('id')
+                    else:
+                        os_vol_id = None
+                    uopinst_info = {
+                        'uop_inst_id': cluster_id,
                         'os_inst_id': osint_id,
+                        'os_vol_id': os_vol_id
                     }
-                    #创建volume
-                    volume=create_volume(vm, volume_size)
-                    os_vol_id = volume.get('id')
-                else:
-                    os_vol_id=None
-                uopinst_info = {
-                    'uop_inst_id': cluster_id,
-                    'os_inst_id': osint_id,
-                    'os_vol_id': os_vol_id
-                }
-                uop_os_inst_id_list.append(uopinst_info)
-                propertys['instance'].append({'instance_type': cluster_type,
-                                              'instance_name': instance_name,
-                                              'username': DEFAULT_USERNAME,
-                                              'password': DEFAULT_PASSWORD,
-                                              'port': port,
-                                              'os_inst_id': osint_id})
+                    uop_os_inst_id_list.append(uopinst_info)
+                    propertys['instance'].append({'instance_type': cluster_type,
+                                                  'instance_name': instance_name,
+                                                  'username': DEFAULT_USERNAME,
+                                                  'password': DEFAULT_PASSWORD,
+                                                  'port': port,
+                                                  'os_inst_id': osint_id})
+            else:
+                self.error_msg = err_msg
+                is_rollback = True
         return is_rollback, uop_os_inst_id_list
 
     # 将第一阶段输出结果新增至第四阶段

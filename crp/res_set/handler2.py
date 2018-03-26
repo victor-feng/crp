@@ -305,12 +305,10 @@ class ResourceProviderTransitions2(object):
                 "Task ID " +
                 self.task_id.__str__() +
                 " create instance:")
-            Log.logger.debug(int_)
-            Log.logger.debug(int_.id)
 
             os_inst_id = int_.id
         except Exception as e:
-            err_msg = "create openstack instance error {}".format(ste(e))
+            err_msg = "create openstack instance error {}".format(str(e))
         return err_msg,os_inst_id
 
     # 依据镜像URL创建NovaDocker容器
