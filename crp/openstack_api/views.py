@@ -25,25 +25,9 @@ class NetworkAPI(Resource):
     def get(self):
         name2id = {}
         try:
-            subnet_info={}
-            network1s,subnet1s=OpenStack_Api.get_network_info()
-            network2s, subnet2s = OpenStack2_Api.get_network_info()
-            subnets=subnet1s + subnet2s
-            networks=network1s + network2s
-            for subnet in subnets:
-                network_id = subnet["network_id"]
-                sub_vlan=subnet["cidr"]
-                if network_id in subnet_info.keys():
-                    subnet_info[network_id].append(sub_vlan)
-                else:
-                    subnet_info[network_id] = [sub_vlan]
-            for network in networks:
-                name = network.get('name')
-                id_ = network.get('id')
-                for network_id in subnet_info.keys():
-                    if network_id == id_:
-                        sub_vlans=subnet_info[network_id]
-                        name2id[name] = [id_,sub_vlans]
+            name2id1s = OpenStack_Api.get_network_info()
+            name2id2s = OpenStack2_Api.get_network_info()
+            name2id = dict(name2id1s,**name2id2s)
         except Exception as e:
             err_msg=str(e)
             Log.logger.error('get networks err: %s' % err_msg)
