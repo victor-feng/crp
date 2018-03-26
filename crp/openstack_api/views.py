@@ -173,13 +173,7 @@ class Dockerlogs(Resource):
                 K8sLog = K8sLogApi()
                 deployment_name = resource_name
                 logs,code=K8sLog.get_deployment_log(deployment_name,namespace)
-                Log.logger.info("The logs is {}".format(logs))
-                #logs,code=K8sLogApi.get_namespace_pod_log(osid,NAMESPACE,"app")
             else:
-                #nova_cli = OpenStack.nova_client
-                Log.logger.info("#####osid:{}".format(osid))
-                #vm = nova_cli.servers.get(osid)
-                #Log.logger.info("#####vm:{}".format(vm))
                 os_log_dir = os.path.join(OS_DOCKER_LOGS, osid)
                 os_log_file = os.path.join(os_log_dir, "docker_start.log")
                 if os.path.exists(os_log_file):
