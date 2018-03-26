@@ -2,6 +2,7 @@
 
 import time
 import subprocess
+import commands
 from crp.openstack import OpenStack
 from crp.taskmgr import *
 from crp.log import Log
@@ -222,16 +223,11 @@ def get_war_from_ftp(project_name,war_url,env):
         if os.path.exists(project_war_path):
             os.remove(project_war_path)
         wget_cmd = "wget -O {project_war_path} --tries=3 {war_url}".format(project_war_path=project_war_path,war_url=war_url)
-        p = subprocess.Popen(
-            wget_cmd,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
-        res = p.stdout.read()
-        if "ERROR" in res:
-            err_msg = res
+        code, msg = commands.getstatusoutput(wget_cmd)
+        if code != 0:
+            err_msg = msg
     except Exception as e:
-        err_msg = "get war from frp error:{e}".format(e=str(e))
+        err_msg = "Get war from frp error:{e}".format(e=str(e))
     return err_msg
 
 def make_database_config(database_config,project_name,ip,env):
@@ -268,7 +264,7 @@ def make_database_config(database_config,project_name,ip,env):
                 text = text + "\n" + mycat_text
         write_to_file(text, wardeploy_conf_path)
     except Exception as e:
-        err_msg = "get database config error:{e}".format(e=str(e))
+        err_msg = "Get database config error:{e}".format(e=str(e))
     return  err_msg
 
 def write_to_file(text,path):
