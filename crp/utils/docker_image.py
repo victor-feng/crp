@@ -210,6 +210,7 @@ def make_docker_image(database_config,project_name,env,war_url, resource_id, set
             base_server_path = os.path.join(SCRIPTPATH, "roles/wardeploy/templates/server_template.xml")
             err_msg=deal_templates_xml(database_config,project_name,base_context_path,remote_context_path,base_server_path, remote_server_path)
             if not err_msg:
+                Log.logger.info("Successful pull the var package")
                 req_dict = {"resource_id": resource_id}
                 # var包转镜像完成
                 res_instance_push_callback('', req_dict, 0, {}, {}, var_to_image_success, set_flag)

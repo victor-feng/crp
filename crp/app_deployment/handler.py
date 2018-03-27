@@ -228,6 +228,7 @@ def get_war_from_ftp(project_name,war_url,env, resource_id=None, set_flag=None):
             os.remove(project_war_path)
         wget_cmd = "wget -O {project_war_path} --tries=3 {war_url}".format(project_war_path=project_war_path,war_url=war_url)
         # 开始拉取war包
+        Log.logger.info("Starting pull the var package")
         req_dict = {"resource_id": resource_id}
         res_instance_push_callback('', req_dict, 0, {}, {}, var_to_image_running, set_flag)
         code, msg = commands.getstatusoutput(wget_cmd)
@@ -236,6 +237,7 @@ def get_war_from_ftp(project_name,war_url,env, resource_id=None, set_flag=None):
     except Exception as e:
         err_msg = "Get war from frp error:{e}".format(e=str(e))
     return err_msg
+
 
 def make_database_config(database_config,project_name,ip,env):
     err_msg = None
