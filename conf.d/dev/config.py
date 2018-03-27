@@ -40,6 +40,11 @@ class DevelopmentConfig(BaseConfig):
             [
                 "build_image_running",
                 "build_image_success"
+            ],
+        "PUSH_IMAGE":
+            [
+                "push_image_running",
+                "push_image_success"
             ]
 
     }

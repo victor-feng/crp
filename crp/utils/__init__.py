@@ -7,7 +7,7 @@ RES_STATUS_CALLBACK = configs[APP_ENV].RES_STATUS_CALLBACK
 ADD_LOG = configs[APP_ENV].ADD_LOG
 VAR_DICT = ADD_LOG.get("VAR_DICT")
 BUILD_IMAGE = ADD_LOG.get("BUILD_IMAGE")
-
+PUSH_IMAGE = ADD_LOG.get("PUSH_IMAGE")
 
 def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_info, add_log, set_flag):
     """
@@ -70,12 +70,21 @@ def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_i
         else:
             build_image = {}
 
+        if add_log in PUSH_IMAGE:
+            push_image = {
+                "resource_id": resource_id,
+                "push_image_status": add_log
+            }
+        else:
+            push_image = {}
+
         data={
             "instance":instance,
             "db_push":db_push,
             "set_flag":set_flag,
             "var_dict": var_dict,
-            "build_image": build_image
+            "build_image": build_image,
+            "push_image": push_image
         }
         data_str=json.dumps(data)
         headers = {

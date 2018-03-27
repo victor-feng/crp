@@ -17,8 +17,10 @@ HARBOR_USERNAME = configs[APP_ENV].HARBOR_USERNAME
 HARBOR_PASSWORD = configs[APP_ENV].HARBOR_PASSWORD
 ADD_LOG = configs[APP_ENV].ADD_LOG
 war_to_image_success = ADD_LOG.get("VAR_DICT")[1]
-image_push_running = ADD_LOG.get("BUILD_IMAGE")[0]
-image_push_success = ADD_LOG.get("BUILD_IMAGE")[1]
+image_build_running = ADD_LOG.get("BUILD_IMAGE")[0]
+image_build_success = ADD_LOG.get("BUILD_IMAGE")[1]
+push_image_running = ADD_LOG.get("PUSH_IMAGE")[0]
+push_image_success = ADD_LOG.get("PUSH_IMAGE")[1]
 
 mysql_conf_temp="""
     <Resource name="jdbc/{{prdatasource}}_w"
@@ -224,16 +226,18 @@ def make_docker_image(database_config,project_name,env,war_url, resource_id, set
                         Log.logger.debug("Create Dockerfile successfully,the next step is build docker images !!!")
                         image_url = "{harbor_url}/uop/{project_name}:v-1.0.1".format(harbor_url=HARBOR_URL,project_name=project_name.lower())
                         # 开始构建镜像
-                        res_instance_push_callback('', req_dict, 0, {}, {}, image_push_running, set_flag)
+                        res_instance_push_callback('', req_dict, 0, {}, {}, image_build_running, set_flag)
                         err_msg,image=build_dk_image(dk_client, dk_dir, image_url)
                         if not err_msg:
                             # 构建镜像完成
-                            res_instance_push_callback('', req_dict, 0, {}, {}, image_push_success, set_flag)
+                            res_instance_push_callback('', req_dict, 0, {}, {}, image_build_success, set_flag)
                             Log.logger.debug("Build docker images successfully,the next step is push docker image to harbor!!!,image url is {image_url}".format(image_url=image_url))
+                            # 开始推镜像
+                            res_instance_push_callback('', req_dict, 0, {}, {}, push_image_running, set_flag)
                             err_msg = push_dk_image(dk_client, image_url)
                             if not err_msg:
                                 # 推镜像完成
-                                # res_instance_push_callback('', req_dict, 0, {}, {}, VAR_DICT[1], set_flag)
+                                res_instance_push_callback('', req_dict, 0, {}, {}, push_image_success, set_flag)
                                 Log.logger.debug(
                                     "Push docker image to harbor successfull,docker image url is {image_url}".format(image_url=image_url))
                 else:
