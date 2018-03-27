@@ -135,6 +135,7 @@ class ResourceProviderTransitions2(object):
         self.resource_type = req_dict["resource_type"]
         self.project_name = req_dict["project_name"]
         self.code=None
+        self.check_times = 0
         # Initialize the state machine
         self.machine = Machine(
             model=self,
@@ -736,8 +737,10 @@ class ResourceProviderTransitions2(object):
                 else:
                     s_flag,err_msg = K8sDeployment.get_deployment_pod_status(namespace,deployment_name)
                     if s_flag is not True:
-                        self.error_msg = err_msg
-                        is_rollback = True
+                        self.check_times = self.check_times +1
+                        if self.check_times > 100:
+                            self.error_msg = err_msg
+                            is_rollback = True
             else:
                 #openstack 虚机
                 inst = nova_client.servers.get(uop_os_inst_id['os_inst_id'])
