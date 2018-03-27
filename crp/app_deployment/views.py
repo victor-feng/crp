@@ -217,6 +217,7 @@ class AppDeploy(Resource):
             parser.add_argument('deploy_name', type=str,location='json')
             parser.add_argument('project_name', type=str,location='json')
             parser.add_argument('namespace', type=str, location='json')
+            parser.add_argument('resource_id', type=str, location='json')
             args = parser.parse_args()
             Log.logger.debug("AppDeploy receive post request. args is " + str(args))
             deploy_id = args.deploy_id
@@ -234,6 +235,8 @@ class AppDeploy(Resource):
             deploy_name=args.deploy_name
             project_name = args.project_name
             namespace = args.namespace if args.namespace else NAMESPACE
+            resource_id = args.resource_id
+            self.resource_id = resource_id
             Log.logger.debug("Thread exec start")
             t = threading.Thread(target=self.deploy_anything, args=((mongodb, mysql,docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud,resource_name,deploy_name,project_name,namespace)))
             t.start()

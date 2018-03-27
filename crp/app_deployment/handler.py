@@ -9,16 +9,20 @@ from crp.log import Log
 from crp.disconf.disconf_api import *
 from crp.utils.aio import exec_cmd_ten_times
 from config import APP_ENV, configs
+from crp.res_set.handler import res_instance_push_callback
 
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-
+ADD_LOG = configs[APP_ENV].ADD_LOG
 DEP_STATUS_CALLBACK = configs[APP_ENV].DEP_STATUS_CALLBACK
 OS_DOCKER_LOGS = configs[APP_ENV].OS_DOCKER_LOGS
 SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
+
+var_to_image_running = ADD_LOG.get("VAR_DICT")[0]
+
 
 def _dep_callback(deploy_id,ip,res_type,msg,vm_state,success,cluster_name,end_flag,deploy_type,unique_flag,cloud=None,deploy_name=None,o_domain=None,o_port=None,domain_flag=None):
     """
@@ -207,7 +211,7 @@ def start_write_log(ip):
     TaskManager.task_start(sleep_time, timeout, result_list,write_docker_logs_to_file,os_inst_id)
 
 
-def get_war_from_ftp(project_name,war_url,env):
+def get_war_from_ftp(project_name,war_url,env, resource_id=None, set_flag=None):
     err_msg = None
     try:
         base_war_name = "{project_name}.war".format(project_name=project_name)
@@ -223,6 +227,9 @@ def get_war_from_ftp(project_name,war_url,env):
         if os.path.exists(project_war_path):
             os.remove(project_war_path)
         wget_cmd = "wget -O {project_war_path} --tries=3 {war_url}".format(project_war_path=project_war_path,war_url=war_url)
+        # 开始拉取war包
+        req_dict = {"resource_id": resource_id}
+        res_instance_push_callback('', req_dict, 0, {}, {}, var_to_image_running, set_flag)
         code, msg = commands.getstatusoutput(wget_cmd)
         if code != 0:
             err_msg = msg

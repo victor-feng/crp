@@ -34,7 +34,9 @@ DEFAULT_PASSWORD = configs[APP_ENV].DEFAULT_PASSWORD
 SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
 AVAILABILITY_ZONE = configs[APP_ENV].AVAILABILITY_ZONE
 IS_OPEN_AFFINITY_SCHEDULING = configs[APP_ENV].IS_OPEN_AFFINITY_SCHEDULING
-
+ADD_LOG = configs[APP_ENV].ADD_LOG
+VAR_DICT = ADD_LOG.get("VAR_DICT")
+BUILD_IMAGE = ADD_LOG.get("BUILD_IMAGE")
 # Transition state Log debug decorator
 
 
@@ -364,7 +366,13 @@ class ResourceProviderTransitions(object):
                 if deploy_source == "war" and self.set_flag == "res":
                     # 执行war包打镜像的操作
                     war_url = image_url
-                    err_msg, img_url = make_docker_image(database_config, self.project_name, self.env,war_url)
+                    err_msg, img_url = make_docker_image(
+                        database_config,
+                        self.project_name,
+                        self.env,war_url,
+                        self.resource_id,
+                        self.set_flag
+                    )
                     Log.logger.debug(
                         "CRP make docker image err_msg:{err_msg}--------image_url:{img_url}".format(err_msg=err_msg,
                                                                                                     img_url=img_url))
@@ -639,7 +647,7 @@ class ResourceProviderTransitions(object):
                                     " Instance Info: " +
                                     mapper.__str__())
                                 res_instance_push_callback(self.task_id, self.req_dict, quantity, instance, {},
-                                                           self.set_flag)
+                                                           {},self.set_flag)
                 result_inst_id_list.append(uop_os_inst_id)
             if inst.status == 'ERROR':
                 # 置回滚标志位
@@ -933,7 +941,7 @@ class ResourceProviderTransitions(object):
             if volume_size >0:
                 self.mount_volume(ip,"mysql")
 
-        res_instance_push_callback(self.task_id,self.req_dict,0,{},mysql,self.set_flag)
+        res_instance_push_callback(self.task_id,self.req_dict,0,{},mysql,{},self.set_flag)
 
     @transition_state_logger
     def do_mongodb_push(self):
@@ -987,7 +995,7 @@ class ResourceProviderTransitions(object):
                     ip=mongodb['ip']))
             if volume_size > 0:
                 self.mount_volume(ip,"mongodb")
-        res_instance_push_callback(self.task_id,self.req_dict,0,{},mongodb,self.set_flag)
+        res_instance_push_callback(self.task_id,self.req_dict,0,{},mongodb,{},self.set_flag)
 
     @transition_state_logger
     def do_redis_push(self):
@@ -1055,7 +1063,7 @@ class ResourceProviderTransitions(object):
                 "shell -a '/usr/local/redis-2.8.14/src/redis-server /usr/local/redis-2.8.14/redis.conf'".format(ip=ip,dir=self.dir)
             Log.logger.debug(cmd)
             exec_cmd_ten_times(ip,cmd, 6)
-        res_instance_push_callback(self.task_id,self.req_dict,0,{},redis,self.set_flag)
+        res_instance_push_callback(self.task_id,self.req_dict,0,{},redis,{},self.set_flag)
 
 
     def mount_volume(self,ip,cluster_type):
@@ -1263,7 +1271,7 @@ def do_transit_repo_items(
     return property_mappers_list
 
 
-def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_info,set_flag):
+def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_info, add_log, set_flag):
     """
     crp 将预留资源时的状态和信息回调给uop
     :param task_id:
@@ -1307,10 +1315,29 @@ def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_i
                 }
         else:
             db_push=None
+
+        if add_log in VAR_DICT:
+            var_dict = {
+                "var_to_image_status": add_log,
+                "resource_id": resource_id
+            }
+        else:
+            var_dict = {}
+
+        if add_log in BUILD_IMAGE:
+            build_image = {
+                "resource_id": resource_id,
+                "build_image_status": add_log,
+            }
+        else:
+            build_image = {}
+
         data={
             "instance":instance,
             "db_push":db_push,
             "set_flag":set_flag,
+            "var_dict": var_dict,
+            "build_image": build_image
         }
         data_str=json.dumps(data)
         headers = {

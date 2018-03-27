@@ -30,6 +30,20 @@ class DevelopmentConfig(BaseConfig):
     HARBOR_USERNAME = "crm_test1"
     HARBOR_PASSWORD = "syswin#"
 
+    ADD_LOG = {
+        "VAR_DICT":
+            [
+                "var_to_image_running",
+                "var_to_image_success"
+            ],
+        "BUILD_IMAGE":
+            [
+                "build_image_running",
+                "build_image_success"
+            ]
+
+    }
+
     cluster_type_image_port_mappers = {
         'mysql': {
             'uuid': '817d3140-0b82-4722-9816-3cee734f22b6',
