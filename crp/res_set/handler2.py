@@ -17,6 +17,7 @@ from crp.app_deployment.handler import start_write_log
 from del_handler2 import delete_instance_and_query2,QUERY_VOLUME
 from crp.k8s_api import K8sDeploymentApi,K8sIngressApi,K8sServiceApi
 from crp.utils.docker_image import make_docker_image
+from crp.utils import res_instance_push_callback
 
 TIMEOUT = 5000
 SLEEP_TIME = 3
@@ -1440,64 +1441,64 @@ def do_transit_repo_items(
     return property_mappers_list
 
 
-def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_info,set_flag):
-    """
-    crp 将预留资源时的状态和信息回调给uop
-    :param task_id:
-    :param req_dict:
-    :param quantity:
-    :param instance_info:
-    :param db_push_info:
-    :param set_flag:
-    :return:
-    """
-    try:
-        resource_id = req_dict["resource_id"]
-        if instance_info:
-            ip=instance_info.get('ip')
-            instance_type=instance_info.get('instance_type')
-            instance_name=instance_info.get('instance_name')
-            os_inst_id=instance_info.get('os_inst_id')
-            physical_server=instance_info.get('physical_server')
-            instance={
-                "resource_id":resource_id,
-                "ip": ip,
-                "instance_name": instance_name,
-                "instance_type": instance_type,
-                "os_inst_id": os_inst_id,
-                "physical_server": physical_server,
-                "quantity":quantity,
-                "status":"active",
-                "from":'resource',
-                }
-        else:
-            instance=None
-        if db_push_info:
-            cluster_name=db_push_info.get('cluster_name')
-            cluster_type=db_push_info.get('cluster_type')
-            db_push={
-                "resource_id":resource_id,
-                "cluster_name":cluster_name,
-                "cluster_type":"push_%s" %cluster_type,
-                "status":"ok",
-                "from":'resource',
-                }
-        else:
-            db_push=None
-        data={
-            "instance":instance,
-            "db_push":db_push,
-            "set_flag":set_flag,
-        }
-        data_str=json.dumps(data)
-        headers = {
-        'Content-Type': 'application/json'
-        }
-        res = requests.post(RES_STATUS_CALLBACK,data=data_str,headers=headers)
-        Log.logger.debug(res)
-    except Exception as e:
-        err_msg=e.args
-        Log.logger.error("res_instance_push_callback error %s" % err_msg)
+# def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_info,set_flag):
+#     """
+#     crp 将预留资源时的状态和信息回调给uop
+#     :param task_id:
+#     :param req_dict:
+#     :param quantity:
+#     :param instance_info:
+#     :param db_push_info:
+#     :param set_flag:
+#     :return:
+#     """
+#     try:
+#         resource_id = req_dict["resource_id"]
+#         if instance_info:
+#             ip=instance_info.get('ip')
+#             instance_type=instance_info.get('instance_type')
+#             instance_name=instance_info.get('instance_name')
+#             os_inst_id=instance_info.get('os_inst_id')
+#             physical_server=instance_info.get('physical_server')
+#             instance={
+#                 "resource_id":resource_id,
+#                 "ip": ip,
+#                 "instance_name": instance_name,
+#                 "instance_type": instance_type,
+#                 "os_inst_id": os_inst_id,
+#                 "physical_server": physical_server,
+#                 "quantity":quantity,
+#                 "status":"active",
+#                 "from":'resource',
+#                 }
+#         else:
+#             instance=None
+#         if db_push_info:
+#             cluster_name=db_push_info.get('cluster_name')
+#             cluster_type=db_push_info.get('cluster_type')
+#             db_push={
+#                 "resource_id":resource_id,
+#                 "cluster_name":cluster_name,
+#                 "cluster_type":"push_%s" %cluster_type,
+#                 "status":"ok",
+#                 "from":'resource',
+#                 }
+#         else:
+#             db_push=None
+#         data={
+#             "instance":instance,
+#             "db_push":db_push,
+#             "set_flag":set_flag,
+#         }
+#         data_str=json.dumps(data)
+#         headers = {
+#         'Content-Type': 'application/json'
+#         }
+#         res = requests.post(RES_STATUS_CALLBACK,data=data_str,headers=headers)
+#         Log.logger.debug(res)
+#     except Exception as e:
+#         err_msg=e.args
+#         Log.logger.error("res_instance_push_callback error %s" % err_msg)
 
 
 
