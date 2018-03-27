@@ -828,7 +828,7 @@ class AppDeploy(Resource):
                             status, output = commands.getstatusoutput(exec_auth_file)
                             Log.logger.debug("end exec auth file status is %s output is %s" % (status, output))
 
-                            self.ansible_exec(host_path, vip3, remote_path)  # del the ansible file had uploaded
+                            self.ansible_exec(host_path, vip, remote_path)  # del the ansible file had uploaded
 
                             Log.logger.debug("del the ansible file successful")
                     return True, err_msg
@@ -839,8 +839,8 @@ class AppDeploy(Resource):
         else:
             return False, err_msg
 
-    def ansible_exec(self, host_path, vip3, file_path):
-        cmd = 'ansible -i ' + host_path + ' ' + vip3 + ' ' + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -m'
+    def ansible_exec(self, host_path, vip, file_path):
+        cmd = 'ansible -i ' + host_path + ' ' + vip + ' ' + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -m'
         exec_del_cmd = cmd + 'shell -a "rm -f %s"' % file_path
         status, output = commands.getstatusoutput(exec_del_cmd)
         if not status:
