@@ -8,7 +8,7 @@ from crp.log import Log
 from config import APP_ENV, configs
 from crp.utils.docker_tools import _dk_py_cli
 from crp.app_deployment.handler import get_war_from_ftp
-from crp.res_set.handler import res_instance_push_callback
+from crp.utils import res_instance_push_callback
 
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
