@@ -87,7 +87,9 @@ class DevelopmentConfig(BaseConfig):
     #     "4": "uop-docker-4C8G50G"
     # }
     KVM_FLAVOR = {
-        '24': '0471bc46-4ced-4e35-a2e7-7c56aa71ff52',  # tst-pc-2C4G50G
+        '22':'9ff4c08d-ad94-4417-b90a-bf4382cae768', #uop_2C2G30G
+        '24': '0471bc46-4ced-4e35-a2e7-7c56aa71ff52', # tst-pc-2C4G50G
+        '44':'280d8672-fdb4-4a87-9280-deca23263de5', #uop_4C4G30G
         'mysql': '20f28b8b-7adb-48c4-a7d0-d562007123b6',  # mysql_2C4G80G
         # '4': 'uop-4C8G80G',
         '48': '00d92209-b17e-45cb-991c-d79600e68969',  # xiaojian_sas_4C8G50G
@@ -252,7 +254,7 @@ class DevelopmentConfig(BaseConfig):
         }
     }
     KVM_FLAVOR2 = {
-        '22': '2247ba97-8135-4813-ae2c-0681c0b1616c', #2C2G30G
+        '22': 'ec2b05b1-dd4e-4198-b8ce-738f62c14952', #2C2G30G
         '24': '4faa9926-462c-456f-bb71-3e6cecdec252',  # tst-pc-2C4G50G
         '44': '00da3f51-a8ce-4a0a-b30d-994b4bab94ff', #4C4G30G
         'mysql': '6ef6287c-f4d4-4d08-9b33-901f47542a69',  # mysql_2C4G80G
