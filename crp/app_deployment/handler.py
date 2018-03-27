@@ -9,7 +9,7 @@ from crp.log import Log
 from crp.disconf.disconf_api import *
 from crp.utils.aio import exec_cmd_ten_times
 from config import APP_ENV, configs
-from crp.res_set.handler import res_instance_push_callback
+from crp.utils import res_instance_push_callback
 
 import sys
 reload(sys)
