@@ -56,7 +56,7 @@ def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_i
 
         if add_log in VAR_DICT:
             var_dict = {
-                "var_to_image_status": add_log,
+                "war_to_image_status": add_log,
                 "resource_id": resource_id
             }
         else:

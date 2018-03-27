@@ -16,7 +16,7 @@ HARBOR_URL = configs[APP_ENV].HARBOR_URL
 HARBOR_USERNAME = configs[APP_ENV].HARBOR_USERNAME
 HARBOR_PASSWORD = configs[APP_ENV].HARBOR_PASSWORD
 ADD_LOG = configs[APP_ENV].ADD_LOG
-var_to_image_success = ADD_LOG.get("VAR_DICT")[1]
+war_to_image_success = ADD_LOG.get("VAR_DICT")[1]
 image_push_running = ADD_LOG.get("BUILD_IMAGE")[0]
 image_push_success = ADD_LOG.get("BUILD_IMAGE")[1]
 
@@ -213,7 +213,7 @@ def make_docker_image(database_config,project_name,env,war_url, resource_id, set
                 Log.logger.info("Successful pull the var package")
                 req_dict = {"resource_id": resource_id}
                 # var包转镜像完成
-                res_instance_push_callback('', req_dict, 0, {}, {}, var_to_image_success, set_flag)
+                res_instance_push_callback('', req_dict, 0, {}, {}, war_to_image_success, set_flag)
                 Log.logger.debug("Create context.xml and server.xml successfully,the next step is unzip war!!!")
                 unzip_cmd = "unzip -oq {dk_dir}/{project_name}_{env}.war -d {dk_dir}/{project_name}".format(dk_dir=dk_dir,project_name=project_name,env=env)
                 code,msg = commands.getstatusoutput(unzip_cmd)

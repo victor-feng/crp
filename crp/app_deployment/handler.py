@@ -21,7 +21,7 @@ OS_DOCKER_LOGS = configs[APP_ENV].OS_DOCKER_LOGS
 SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 
-var_to_image_running = ADD_LOG.get("VAR_DICT")[0]
+war_to_image_running = ADD_LOG.get("VAR_DICT")[0]
 
 
 def _dep_callback(deploy_id,ip,res_type,msg,vm_state,success,cluster_name,end_flag,deploy_type,unique_flag,cloud=None,deploy_name=None,o_domain=None,o_port=None,domain_flag=None):
@@ -230,7 +230,7 @@ def get_war_from_ftp(project_name,war_url,env, resource_id=None, set_flag=None):
         # 开始拉取war包
         Log.logger.info("Starting pull the var package")
         req_dict = {"resource_id": resource_id}
-        res_instance_push_callback('', req_dict, 0, {}, {}, var_to_image_running, set_flag)
+        res_instance_push_callback('', req_dict, 0, {}, {}, war_to_image_running, set_flag)
         code, msg = commands.getstatusoutput(wget_cmd)
         if code != 0:
             err_msg = msg

@@ -33,8 +33,8 @@ class DevelopmentConfig(BaseConfig):
     ADD_LOG = {
         "VAR_DICT":
             [
-                "var_to_image_running",
-                "var_to_image_success"
+                "war_to_image_running",
+                "war_to_image_success"
             ],
         "BUILD_IMAGE":
             [
