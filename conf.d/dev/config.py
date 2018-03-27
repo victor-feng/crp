@@ -73,7 +73,9 @@ class DevelopmentConfig(BaseConfig):
     #     "4": "uop-docker-4C8G50G"
     # }
     KVM_FLAVOR = {
-        '24': '0471bc46-4ced-4e35-a2e7-7c56aa71ff52',  # tst-pc-2C4G50G
+        '22':'9ff4c08d-ad94-4417-b90a-bf4382cae768', #uop_2C2G30G
+        '24': '0471bc46-4ced-4e35-a2e7-7c56aa71ff52', # tst-pc-2C4G50G
+        '44':'280d8672-fdb4-4a87-9280-deca23263de5', #uop_4C4G30G
         'mysql': '20f28b8b-7adb-48c4-a7d0-d562007123b6',  # mysql_2C4G80G
         # '4': 'uop-4C8G80G',
         '48': '00d92209-b17e-45cb-991c-d79600e68969',  # xiaojian_sas_4C8G50G
