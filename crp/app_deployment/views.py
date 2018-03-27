@@ -773,7 +773,7 @@ class AppDeploy(Resource):
         Log.logger.debug("args is %s" % str(mongodb))
         mongodb_username = mongodb.get('database_user', '')
         mongodb_password = mongodb.get('database_password', '')
-        vip = mongodb.get('vip', '')
+        vip = mongodb.get('ip', '')
         vip1 = mongodb.get('vip1', '')
         vip2 = mongodb.get('vip2', '')
         vip3 = mongodb.get('vip3', '')
