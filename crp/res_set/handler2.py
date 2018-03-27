@@ -770,7 +770,7 @@ class ResourceProviderTransitions2(object):
                                     " Instance Info: " +
                                     mapper.__str__())
                                 res_instance_push_callback(self.task_id, self.req_dict, quantity, instance, {},
-                                                           self.set_flag)
+                                                           {},self.set_flag)
                     result_inst_id_list.append(uop_os_inst_id)
                 if inst.status == 'ERROR':
                     # 置回滚标志位
@@ -1071,7 +1071,7 @@ class ResourceProviderTransitions2(object):
             if volume_size >0:
                 self.mount_volume(ip,"mysql")
 
-        res_instance_push_callback(self.task_id,self.req_dict,0,{},mysql,self.set_flag)
+        res_instance_push_callback(self.task_id,self.req_dict,0,{},mysql,{},self.set_flag)
 
     @transition_state_logger
     def do_mongodb_push(self):
@@ -1125,7 +1125,7 @@ class ResourceProviderTransitions2(object):
                     ip=mongodb['vip']))
             if volume_size > 0:
                 self.mount_volume(ip,"mongodb")
-        res_instance_push_callback(self.task_id,self.req_dict,0,{},mongodb,self.set_flag)
+        res_instance_push_callback(self.task_id,self.req_dict,0,{},mongodb,{},self.set_flag)
 
     @transition_state_logger
     def do_redis_push(self):
@@ -1195,7 +1195,7 @@ class ResourceProviderTransitions2(object):
                 "shell -a '/usr/local/redis-2.8.14/src/redis-server /usr/local/redis-2.8.14/redis.conf'".format(ip=ip,dir=self.dir)
             Log.logger.debug(cmd)
             exec_cmd_ten_times(ip,cmd, 6)
-        res_instance_push_callback(self.task_id,self.req_dict,0,{},redis,self.set_flag)
+        res_instance_push_callback(self.task_id,self.req_dict,0,{},redis,{},self.set_flag)
 
 
     def mount_volume(self,ip,cluster_type):

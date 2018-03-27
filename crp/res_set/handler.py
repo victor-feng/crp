@@ -16,6 +16,7 @@ from crp.utils.aio import exec_cmd_ten_times,exec_cmd_one_times
 from crp.app_deployment.handler import start_write_log
 from del_handler import delete_instance_and_query,QUERY_VOLUME
 from crp.utils.docker_image import make_docker_image
+from crp.utils import res_instance_push_callback
 
 TIMEOUT = 5000
 SLEEP_TIME = 3
