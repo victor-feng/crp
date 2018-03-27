@@ -935,8 +935,6 @@ class AppDeploy(Resource):
                 ansible_show_user_cmd = ansible_cmd + " script -a " + show_user_path \
                                         + " |grep 'stdout' |awk -F: '{print $NF}' |head -1 |awk -F, '{print $1}'"
                 (user_status, user_output) = commands.getstatusoutput(ansible_show_user_cmd)
-                Log.logger.debug("--------------------------------{}".format(ansible_show_user_cmd))
-                Log.logger.debug("222222222222222222222222222222{}".format(user_output))
                 ##########  去掉影响查询新增数据库的干扰字符 ##########
                 output = output.replace('-', '').replace('+', '').replace('|', '')
                 databases = output.split('\\r\\n')[3:-2][3:]
@@ -946,7 +944,7 @@ class AppDeploy(Resource):
                         data_name = data_name.strip(' ')
                         cmd = ''
                         for app_ip in ips:
-                            if database_user in user_output and app_ip in user_output:
+                            if database_user in user_output:
                                 cmd1 = ""
                                 if environment == 'dev' or "test":
                                     cmd2 = "grant select, update, insert, alter,delete, execute on " + data_name + ".* to \'" + database_user + "\'@\'" + "172.%" + "\';\n"
