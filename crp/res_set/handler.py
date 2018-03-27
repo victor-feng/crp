@@ -550,9 +550,9 @@ class ResourceProviderTransitions(object):
                                                   'password': DEFAULT_PASSWORD,
                                                   'port': port,
                                                   'os_inst_id': osint_id})
-            else:
-                self.error_msg = err_msg
-                is_rollback = True
+                else:
+                    self.error_msg = err_msg
+                    is_rollback = True
         return is_rollback, uop_os_inst_id_list
 
     # 将第一阶段输出结果新增至第四阶段
