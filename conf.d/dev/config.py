@@ -238,7 +238,7 @@ class DevelopmentConfig(BaseConfig):
         }
     }
     KVM_FLAVOR2 = {
-        '22': '2247ba97-8135-4813-ae2c-0681c0b1616c', #2C2G30G
+        '22': 'ec2b05b1-dd4e-4198-b8ce-738f62c14952', #2C2G30G
         '24': '4faa9926-462c-456f-bb71-3e6cecdec252',  # tst-pc-2C4G50G
         '44': '00da3f51-a8ce-4a0a-b30d-994b4bab94ff', #4C4G30G
         'mysql': '6ef6287c-f4d4-4d08-9b33-901f47542a69',  # mysql_2C4G80G
