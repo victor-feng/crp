@@ -281,7 +281,7 @@ class DevelopmentConfig(BaseConfig):
         "prod": "http://172.28.13.254:19999/api/v1/networks/",
     }
 
-BASE_IMAGE_URL = "reg1.syswin.com/base/os69-tomcat7:v0.1"
+    BASE_IMAGE_URL = "reg1.syswin.com/base/os69-tomcat7:v0.1"
 
 configs = {
     'development': DevelopmentConfig,
