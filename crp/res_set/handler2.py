@@ -48,8 +48,7 @@ APP_REQUESTS = configs[APP_ENV].APP_REQUESTS
 APP_LIMITS = configs[APP_ENV].APP_LIMITS
 HOSTNAMES = configs[APP_ENV].HOSTNAMES
 IP = configs[APP_ENV].IP
-NETWORKNAME = configs[APP_ENV].NETWORKNAME
-TENANTNAME = configs[APP_ENV].TENANTNAME
+CHECK_TIMEOUT = configs[APP_ENV].CHECK_TIMEOUT
 
 
 
@@ -437,7 +436,7 @@ class ResourceProviderTransitions2(object):
                                                                            HOSTNAMES,
                                                                            IP,
                                                                            replicas,
-                                                                           ready_probe_path
+                                                                           ready_probe_path,
                                                                            )
                     Log.logger.debug("#####deployment object {}".format(deployment))
                     if domain:
@@ -448,7 +447,7 @@ class ResourceProviderTransitions2(object):
                         service_err_msg,service_err_code=K8sService.create_service(service,namespace)
                         if service_err_msg is None:
                             #创建ingress
-                            ingress=K8sIngress.create_ingress_object(ingress_name,namespace,service_name,service_port,domain,lb_methods)
+                            ingress=K8sIngress.create_ingress_object(ingress_name,namespace,service_name,service_port,domain,lb_methods,domain_path)
                             ingress_err_msg,ingress_err_code=K8sIngress.create_ingress(ingress,namespace)
                             if ingress_err_msg is None:
                                 #创建应用集群
@@ -732,14 +731,14 @@ class ResourceProviderTransitions2(object):
                             for deployment_info in deployment_info_list:
                                 if instance.get('os_inst_id').lower() == deployment_info['deployment_name']:
                                     instance['ip'] = deployment_info.get("pod_ip","127.0.0.1")
-                                    instance['physical_server'] = deployment_info.get("node_name","")
+                                    instance['physical_server'] = deployment_info.get("node_name","") + '@' + deployment_info.get("host_ip", "")
                                     instance['os_inst_id'] = deployment_info.get("pod_name","")
                     result_inst_id_list.append(uop_os_inst_id)
                 else:
                     s_flag,err_msg = K8sDeployment.get_deployment_pod_status(namespace,deployment_name)
                     if s_flag is not True:
                         self.check_times = self.check_times +1
-                        if self.check_times > 100:
+                        if self.check_times > CHECK_TIMEOUT and self.set_flag == "res":
                             self.error_msg = err_msg
                             is_rollback = True
             else:

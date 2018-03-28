@@ -385,13 +385,15 @@ class K8sDeploymentApi(object):
         for res in result:
             deployment_dict = {}
             pod_name = res.metadata.name
-            node_name = res.spec.node_name
             pod_ip = res.status.pod_ip
             if deployment_name in pod_name and pod_ip:
+                node_name = res.spec.node_name
+                host_ip = res.status.host_ip
                 deployment_dict['deployment_name'] = deployment_name
                 deployment_dict['pod_ip'] = pod_ip
                 deployment_dict['node_name'] = node_name
                 deployment_dict['pod_name'] = pod_name
+                deployment_dict['host_ip'] = host_ip
                 deployment_info_list.append(deployment_dict)
         return deployment_info_list
 
@@ -673,7 +675,7 @@ class K8sIngressApi(object):
         config.load_kube_config(config_file=K8S_CONF_PATH)
         self.extensionsv1 = client.ExtensionsV1beta1Api()
 
-    def create_ingress_object(self,ingress_name,namespace,service_name,service_port,domain,lb_methods):
+    def create_ingress_object(self,ingress_name,namespace,service_name,service_port,domain,lb_methods,domain_path):
         """
 
         :param ingress_name:"tomcat-cssapi-ingress"
@@ -685,6 +687,8 @@ class K8sIngressApi(object):
         """
         service_name = service_name.lower()
         ingress_name = ingress_name.lower()
+        if not domain_path:
+            domain_path = "/"
         spec = client.V1beta1IngressSpec(
             rules=[
                 client.V1beta1IngressRule(
@@ -692,6 +696,7 @@ class K8sIngressApi(object):
                     http=client.V1beta1HTTPIngressRuleValue(
                         paths=[
                             client.V1beta1HTTPIngressPath(
+                                path = domain_path,
                                 backend=client.V1beta1IngressBackend(
                                     service_name=service_name,
                                     service_port=service_port,

@@ -282,6 +282,7 @@ class DevelopmentConfig(BaseConfig):
     }
 
     BASE_IMAGE_URL = "reg1.syswin.com/base/os69-tomcat7:v0.1"
+    CHECK_TIMEOUT = 200
 
 configs = {
     'development': DevelopmentConfig,
