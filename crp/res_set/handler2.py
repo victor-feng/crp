@@ -1755,27 +1755,28 @@ class MongodbCluster(object):
             'old_id_rsa']
         for i in script_name:
             os.system('chmod 600 {dir}'.format(dir=self.dir + '/' + i))
+        Log.logger.debug('self.dir is {}'.format(self.dir))
         cmd_before = "ansible {vip} --private-key={dir}/old_id_rsa -m synchronize -a 'src={current_dir}/" \
                      "write_mongo_ip.py dest=/tmp/'".format(vip=ip, dir=self.dir, current_dir=self.current_dir)
         authority_cmd = 'ansible {vip} -u root --private-key={dir}/old_id_rsa -m shell -a ' \
                         '"chmod 777 /tmp/write_mongo_ip.py"'.format(vip=ip, dir=self.dir)
         cmd1 = 'ansible {vip} -u root --private-key={dir}/old_id_rsa -m shell -a "python /tmp/write_mongo_ip.py' \
                ' {m_ip} {s1_ip} {s2_ip}"'.format(vip=ip, dir=self.dir, m_ip=self.ip_master1, s1_ip=self.ip_slave1, s2_ip=self.ip_slave2)
-        Log.logger.debug('开始上传脚本%s' % ip)
+        Log.logger.debug('开始上传脚本{},{}'.format(ip, cmd_before))
         p = subprocess.Popen(
             cmd_before,
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
         Log.logger.debug('mongodb cluster cmd before:%s' % p.stdout.read())
-        Log.logger.debug('开始修改权限%s' % ip)
+        Log.logger.debug('开始修改权限{},{}'.format(ip, authority_cmd))
         p = subprocess.Popen(
             authority_cmd,
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
         Log.logger.debug('mongodb cluster authority:%s' % p.stdout.read())
-        Log.logger.debug('脚本上传完成,开始执行脚本%s' % ip)
+        Log.logger.debug('脚本上传完成,开始执行脚本{},{}'.format(ip, cmd1))
         p = subprocess.Popen(
             cmd1,
             shell=True,
@@ -1796,8 +1797,7 @@ class MongodbCluster(object):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
         Log.logger.debug(
-                'mongodb cluster push result:%s, -----%s' %
-                (p.stdout.read(), ip))
+                'mongodb cluster push result:{}, -----{},{}'.format(p.stdout.read(), ip, cmd_s))
 
     def exec_final_script(self):
         for i in self.cmd:
