@@ -368,6 +368,7 @@ class ResourceProviderTransitions2(object):
         database_config = propertys.get('database_config')
         lb_methods = propertys.get('lb_methods',"round_robin")
         ready_probe_path = propertys.get('ready_probe_path')
+        domain_path = propertys.get('domain_path')
         namespace = propertys.get('namespace') if propertys.get('namespace') else NAMESPACE
         if port:
             port = int(port)

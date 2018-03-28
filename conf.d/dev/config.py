@@ -82,36 +82,20 @@ class DevelopmentConfig(BaseConfig):
         }
     }
 
-    # KVM_FLAVOR = {
-    #     '2': 'uop-2C4G80G',
-    #     '4': 'uop-4C8G80G',
-    #     "mycat": "242c5ee6-d9b5-4456-88db-7603e765f075",  # pret-nginx-4C4G50G
-    # }
-    # DOCKER_FLAVOR = {
-    #     "2": "uop-docker-2C4G50G",
-    #     "4": "uop-docker-4C8G50G"
-    # }
     KVM_FLAVOR = {
         '22':'9ff4c08d-ad94-4417-b90a-bf4382cae768', #uop_2C2G30G
         '24': '0471bc46-4ced-4e35-a2e7-7c56aa71ff52', # tst-pc-2C4G50G
         '44':'280d8672-fdb4-4a87-9280-deca23263de5', #uop_4C4G30G
         'mysql': '20f28b8b-7adb-48c4-a7d0-d562007123b6',  # mysql_2C4G80G
-        # '4': 'uop-4C8G80G',
         '48': '00d92209-b17e-45cb-991c-d79600e68969',  # xiaojian_sas_4C8G50G
-        # "8": 'xiaojian_sas_4C8G50G',
         "mycat": "135154ad-a637-4d29-ac2d-b4f63a2183b5",  # tst-dns-2C2G50G
         "816": '105deffb-dff9-4a16-8757-92a9d44e9b91',  # K8S-8C16G50G
         "832": '8257eac4-c9cb-48f0-b5d4-183e3e08137f',  # pret-mysql-8C32G80G
-        # 'uop-4C16G180G': 'uop-4C16G180G',
-        # 'uop-8C8180G': 'uop-8C8G180G',
-        # 'uop-8C32G180G': 'uop-8C32G180G',
     }
     DOCKER_FLAVOR = {
         "22": "83c52038-3cc1-4865-958a-a85cfde96bc0",
-        # "24": "uop-docker-4C4G30G"
     }
-    # AVAILABILITY_ZONE
-    #AVAILABILITY_ZONE_AZ_UOP = 'AZ_UOP'
+
     AVAILABILITY_ZONE = {
         "dev": 'AZ_UOP',
         "test": 'AZ_UOP',
@@ -182,6 +166,7 @@ class DevelopmentConfig(BaseConfig):
             'lb_methods':'lb_methods',
             'namespace':'namespace',
             'ready_probe_path':'ready_probe_path',
+            'domain_path':'domain_path',
         },
         'resource_cluster': {
             'cluster_name': 'instance_name',
@@ -207,7 +192,6 @@ class DevelopmentConfig(BaseConfig):
         'username': 'root',
         'password': '123456'
         }
-    #NAMEDMANAGER_URL = 'http://172.28.50.141/namedmanager/dnsapi.php'
     NAMEDMANAGER_URL = {
         "dev": "http://172.28.50.141/namedmanager/dnsapi.php",
         "test": "http://172.28.50.141/namedmanager/dnsapi.php",
@@ -263,15 +247,10 @@ class DevelopmentConfig(BaseConfig):
         '24': '4faa9926-462c-456f-bb71-3e6cecdec252',  # tst-pc-2C4G50G
         '44': '00da3f51-a8ce-4a0a-b30d-994b4bab94ff', #4C4G30G
         'mysql': '6ef6287c-f4d4-4d08-9b33-901f47542a69',  # mysql_2C4G80G
-        # '4': 'uop-4C8G80G',
         '48': '00d92209-b17e-45cb-991c-d79600e68969',  # xiaojian_sas_4C8G50G
-        # "8": 'xiaojian_sas_4C8G50G',
         "mycat": "905e3a5f-6b27-46ab-8cb2-2bb26ffbea58",  # tst-dns-2C2G50G
         "816": '105deffb-dff9-4a16-8757-92a9d44e9b91',  # K8S-8C16G50G
         "832": '8257eac4-c9cb-48f0-b5d4-183e3e08137f',  # pret-mysql-8C32G80G
-        # 'uop-4C16G180G': 'uop-4C16G180G',
-        # 'uop-8C8180G': 'uop-8C8G180G',
-        # 'uop-8C32G180G': 'uop-8C32G180G',
     }
     # k8s配置相关
     NAMESPACE = "test-uop"
@@ -302,6 +281,7 @@ class DevelopmentConfig(BaseConfig):
         "prod": "http://172.28.13.254:19999/api/v1/networks/",
     }
 
+BASE_IMAGE_URL = "reg1.syswin.com/base/os69-tomcat7:v0.1"
 
 configs = {
     'development': DevelopmentConfig,

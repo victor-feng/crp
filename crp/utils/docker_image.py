@@ -16,6 +16,7 @@ HARBOR_URL = configs[APP_ENV].HARBOR_URL
 HARBOR_USERNAME = configs[APP_ENV].HARBOR_USERNAME
 HARBOR_PASSWORD = configs[APP_ENV].HARBOR_PASSWORD
 ADD_LOG = configs[APP_ENV].ADD_LOG
+BASE_IMAGE_URL = configs[APP_ENV].BASE_IMAGE_URL
 war_to_image_success = ADD_LOG.get("VAR_DICT")[1]
 image_build_running = ADD_LOG.get("BUILD_IMAGE")[0]
 image_build_success = ADD_LOG.get("BUILD_IMAGE")[1]
@@ -185,7 +186,7 @@ def create_docker_file(project_name):
         with open(start_tomcat_path, "wb+") as f:
             f.write("{start_tomcat_str}\n".format(start_tomcat_str=start_tomcat_str))
         with open(dk_file_path, "wb+") as f:
-            f.write("FROM reg1.syswin.com/base/os69-tomcat7:v0.1\n")
+            f.write("FROM {base_image_url}\n".format(base_image_url=BASE_IMAGE_URL))
             f.write("\n")
             f.write("COPY ./server.xml /home/java/tomcat7_8081/conf/server.xml\n")
             f.write("COPY ./context.xml  /home/java/tomcat7_8081/conf/context.xml\n")
@@ -214,7 +215,7 @@ def make_docker_image(database_config,project_name,env,war_url, resource_id, set
             if not err_msg:
                 Log.logger.info("Successful pull the var package")
                 req_dict = {"resource_id": resource_id}
-                # var包转镜像完成
+                # war包转镜像完成
                 res_instance_push_callback('', req_dict, 0, {}, {}, war_to_image_success, set_flag)
                 Log.logger.debug("Create context.xml and server.xml successfully,the next step is unzip war!!!")
                 unzip_cmd = "unzip -oq {dk_dir}/{project_name}_{env}.war -d {dk_dir}/{project_name}".format(dk_dir=dk_dir,project_name=project_name,env=env)
