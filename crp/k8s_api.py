@@ -690,7 +690,7 @@ class K8sIngressApi(object):
         if not domain_path:
             domain_path = "/"
         else:
-            domain_path = "/{domain_path}".format(domain_path)
+            domain_path = "/{domain_path}".format(domain_path=domain_path)
         spec = client.V1beta1IngressSpec(
             rules=[
                 client.V1beta1IngressRule(
@@ -740,7 +740,7 @@ class K8sIngressApi(object):
         if not domain_path:
             domain_path = "/"
         else:
-            domain_path = "/{domain_path}".format(domain_path)
+            domain_path = "/{domain_path}".format(domain_path=domain_path)
         spec = client.V1beta1IngressSpec(
             rules=[
                 client.V1beta1IngressRule(

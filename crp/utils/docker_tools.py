@@ -270,8 +270,7 @@ def image_transit(_image_url):
         except docker.errors.ImageNotFound, e:
             cur_img=None
         try:
-            docker_cli.images.pull(_image_url)
-            cur_img = docker_cli.images.get(_image_url)
+            cur_img=docker_cli.images.pull(_image_url)
         except Exception as e:
             err_msg="docker pull images from harbor to crp node,err_msg is %s" % str(e)
             return err_msg, None
