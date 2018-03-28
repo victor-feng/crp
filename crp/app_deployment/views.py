@@ -277,12 +277,13 @@ class AppDeploy(Resource):
                 lb_methods = app.get("lb_methods","round_robin")
                 o_domain = app.get("o_domain")
                 o_port = app.get("o_port")
+                domain_path = app.get("domain_path")
                 service_name = resource_name
                 service_port = port
                 ingress_name = resource_name + "-" + "ingress"
                 if ingress_flag == "update":
                     #更新ingress域名
-                    ingress = K8sIngress.update_ingress_object(ingress_name,namespace,service_name,service_port,domain)
+                    ingress = K8sIngress.update_ingress_object(ingress_name,namespace,service_name,service_port,domain,domain_path)
                     ingress_err_msg, ingress_err_code=K8sIngress.update_ingress(ingress,ingress_name, namespace)
                     if ingress_err_msg:
                         _dep_callback(deploy_id, '127.0.0.1', "docker", ingress_err_msg, "None", False,

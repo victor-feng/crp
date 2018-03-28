@@ -689,6 +689,8 @@ class K8sIngressApi(object):
         ingress_name = ingress_name.lower()
         if not domain_path:
             domain_path = "/"
+        else:
+            domain_path = "/{domain_path}".format(domain_path)
         spec = client.V1beta1IngressSpec(
             rules=[
                 client.V1beta1IngressRule(
@@ -723,7 +725,7 @@ class K8sIngressApi(object):
 
         return ingress
 
-    def update_ingress_object(self,ingress_name,namespace,service_name,service_port,domain):
+    def update_ingress_object(self,ingress_name,namespace,service_name,service_port,domain,domain_path):
         """
         更新ingress
         :param ingress_name:
@@ -735,6 +737,10 @@ class K8sIngressApi(object):
         """
         service_name = service_name.lower()
         ingress_name = ingress_name.lower()
+        if not domain_path:
+            domain_path = "/"
+        else:
+            domain_path = "/{domain_path}".format(domain_path)
         spec = client.V1beta1IngressSpec(
             rules=[
                 client.V1beta1IngressRule(
@@ -743,6 +749,7 @@ class K8sIngressApi(object):
                     http=client.V1beta1HTTPIngressRuleValue(
                         paths=[
                             client.V1beta1HTTPIngressPath(
+                                path=domain_path,
                                 backend=client.V1beta1IngressBackend(
                                     service_name=service_name,
                                     service_port=service_port,
