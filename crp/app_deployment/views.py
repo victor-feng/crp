@@ -297,7 +297,7 @@ class AppDeploy(Resource):
                     if service_err_msg is None:
                         # 创建ingress
                         ingress = K8sIngress.create_ingress_object(ingress_name, namespace, service_name,
-                                                                      service_port, domain, lb_methods)
+                                                                      service_port, domain, lb_methods,domain_path)
                         ingress_err_msg, ingress_err_code = K8sIngress.create_ingress(ingress, namespace)
                         if ingress_err_msg:
                             _dep_callback(deploy_id, '127.0.0.1', "docker", ingress_err_msg, "None", False,
