@@ -641,7 +641,7 @@ class ResourceProviderTransitions(object):
                             if instance.get(
                                     'os_inst_id') == uop_os_inst_id['os_inst_id']:
                                 instance['ip'] = _ip
-                                instance['physical_server'] = physical_server
+                                instance['physical_server'] = physical_server + '@'
                                 Log.logger.debug(
                                     "Query Task ID " +
                                     self.task_id.__str__() +
