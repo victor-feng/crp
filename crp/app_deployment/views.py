@@ -91,7 +91,7 @@ class AppDeploy(Resource):
         for ip in ips:
             ip_str = ip + ' '
             real_ip += ip_str
-        ports = str(app.get('port'))
+        ports = str(app.get('nginx_port'))
         Log.logger.debug(
             'the receive (domain, nginx, ip, port) is (%s, %s, %s, %s)' %
             (domain, domain_ip, real_ip, ports))
@@ -271,6 +271,9 @@ class AppDeploy(Resource):
             for app in appinfo:
                 ingress_flag = app.get("ingress_flag")
                 port = app.get("port")
+                nginx_port = app.get("nginx_port")
+                if not nginx_port:
+                    app["nginx_port"] = port
                 if port:
                     port = int(port)
                 domain = app.get("domain")
