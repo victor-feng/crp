@@ -152,6 +152,7 @@ class TestingConfig(BaseConfig):
         "prod": "http://10.253.68.85/api/dnsapi.php",
     }
     IS_OPEN_AFFINITY_SCHEDULING = False
+    CHECK_TIMEOUT = 200
 
 configs = {
     'testing': TestingConfig,

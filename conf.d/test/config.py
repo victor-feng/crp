@@ -259,6 +259,7 @@ class TestingConfig(BaseConfig):
         "prep": "http://172.28.13.254:19999/api/v1/networks/",
         "prod": "http://172.28.13.254:19999/api/v1/networks/",
     }
+    CHECK_TIMEOUT = 200
 
 
 
