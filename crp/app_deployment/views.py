@@ -951,22 +951,14 @@ class AppDeploy(Resource):
                     for data_name in databases:
                         data_name = data_name.strip(' ')
                         cmd = ''
-                        for app_ip in ips:
-                            if database_user in user_output:
-                                cmd1 = ""
-                                if environment == 'dev' or "test":
-                                    cmd2 = "grant select, update, insert, alter,delete, execute on " + data_name + ".* to \'" + database_user + "\'@\'" + "172.%" + "\';\n"
-                                else:
-                                    cmd2 = "grant select, update, insert, alter,delete, execute on " + data_name + ".* to \'" + database_user + "\'@\'" + app_ip + "\';\n"
-                            else:
-                                if environment == 'dev' or "test":
-                                    cmd1 = "create user \'" + database_user + "\'@\'" + '172.%' + "\' identified by  \'" + database_password + "\' ;\n"
-                                    cmd2 = "grant select, update, insert, alter, delete, execute on " + data_name + ".* to \'" + database_user + "\'@\'" + "172.%" + "\';\n"
-                                else:
-                                    cmd1 = "create user \'" + database_user + "\'@\'" + app_ip + "\' identified by  \'" + database_password + "\' ;\n"
-                                    cmd2 = "grant select, update, insert, alter,delete, execute on " + data_name + ".* to \'" + database_user + "\'@\'" + app_ip + "\';\n"
-                            cmd += cmd1 + cmd2
-                            Log.logger.debug("############{cmd}".format(cmd=cmd))
+                        if database_user in user_output:
+                            cmd1 = ""
+                            cmd2 = "grant select, update, insert, alter,delete, execute on " + data_name + ".* to \'" + database_user + "\'@\'" + "172.%" + "\';\n"
+                        else:
+                            cmd1 = "create user \'" + database_user + "\'@\'" + "172.%" + "\' identified by  \'" + database_password + "\' ;\n"
+                            cmd2 = "grant select, update, insert, alter,delete, execute on " + data_name + ".* to \'" + database_user + "\'@\'" + "172.%" + "\';\n"
+                        cmd += cmd1 + cmd2
+                        Log.logger.debug("############{cmd}".format(cmd=cmd))
                         create_path = self._excute_mysql_cmd(mysql_password, mysql_user, port, cmd)
                         ansible_create_cmd = ansible_cmd + ' script -a ' + create_path
                         ans_res, err_msg = self._exec_ansible_cmd(ansible_create_cmd)
