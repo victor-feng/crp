@@ -796,6 +796,7 @@ class AppDeploy(Resource):
 
         # 只需要对主节点进行认证操作
         host_path = self.mongodb_hosts_file(vip)
+        Log.logger.debug("write ip to etc/hosts")
         ansible_cmd = 'ansible -i ' + host_path + ' ' + vip + ' ' + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -m'
         ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + sh_path + ' dest=' + remote_path + '"'
         ansible_sh_cmd = ansible_cmd + ' shell -a "%s < %s"' % (configs[APP_ENV].MONGODB_PATH, remote_path)
@@ -888,7 +889,7 @@ class AppDeploy(Resource):
     def mongodb_hosts_file(self, ip):
         path = os.path.join('/etc', 'ansible', 'hosts')
         with open(path, "wb+") as file_object:
-            file_object.write(ip)
+            file_object.write('{}\n'.format(ip))
         return path
 
     def exec_final_script(self, cmd):
