@@ -107,6 +107,6 @@ MASTER_CONNECT_RETRY=10;
 EOF
 $MYSQL_CMD -e "start slave;"
 #启动mysql后需要给mha的用户授权
-$MYSQL_CMD -e "GRANT ALL PRIVILEGES ON *.* TO 'mha'@'$slaveip1.$slaveip2.$slaveip3.%' IDENTIFIED BY 'O[NI6I~4a' WITH GRANT OPTION;"
+$MYSQL_CMD -e "GRANT ALL PRIVILEGES ON *.* TO 'mha'@'$slaveip1.$slaveip2.$slaveip3.%' IDENTIFIED BY 'Mha.Sys17Q4' WITH GRANT OPTION;"
 $MYSQL_CMD -e "FLUSH   PRIVILEGES;"
 
