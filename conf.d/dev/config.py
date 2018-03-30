@@ -257,10 +257,10 @@ class DevelopmentConfig(BaseConfig):
     FILEBEAT_NAME = "filebeat"
     FILEBEAT_IMAGE_URL = "dkreg-wj.syswin.com/base/filebeat:5.4.0"
     FILEBEAT_REQUESTS = {
-        "05002": {"cpu": 0.5, "memory": "20Mi"}
+        "05002": {"cpu": 0.1, "memory": "20Mi"}
     }
     FILEBEAT_LIMITS = {
-        "101": {"cpu": 1, "memory": "100Mi"}
+        "101": {"cpu": 0.5, "memory": "100Mi"}
 
     }
     APP_REQUESTS = {
