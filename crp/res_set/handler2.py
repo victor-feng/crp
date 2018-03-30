@@ -379,7 +379,7 @@ class ResourceProviderTransitions2(object):
         app_limits_flavor = propertys.get('flavor')
         filebeat_requests_flavor = '05002'
         filebeat_limits_flavor = '101'
-        app_requests_flavor = '11'
+        app_requests_flavor = str(cpu) + str(mem)
         if replicas >= 1:
             propertys['ins_id'] = cluster_id
             cluster_type = 'app_cluster'

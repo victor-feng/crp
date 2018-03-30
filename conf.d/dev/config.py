@@ -264,11 +264,12 @@ class DevelopmentConfig(BaseConfig):
 
     }
     APP_REQUESTS = {
-        "11": {"cpu": 1, "memory": "1Gi"}
+        "22": {"cpu": 0.225, "memory": "2Gi"},
+        "44": {"cpu": 0.445, "memory": "4Gi"}
     }
     APP_LIMITS = {
         "22": {"cpu": 2, "memory": "2Gi"},
-        "24": {"cpu": 2, "memory": "4Gi"}
+        "44": {"cpu": 4, "memory": "4Gi"}
     }
     HOSTNAMES = ["uop-k8s.syswin.com"]
     IP = "127.0.0.1"
