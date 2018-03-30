@@ -88,7 +88,7 @@ class DevelopmentConfig(BaseConfig):
         '44':'280d8672-fdb4-4a87-9280-deca23263de5', #uop_4C4G30G
         'mysql': '20f28b8b-7adb-48c4-a7d0-d562007123b6',  # mysql_2C4G80G
         '48': '00d92209-b17e-45cb-991c-d79600e68969',  # xiaojian_sas_4C8G50G
-        "mycat": "135154ad-a637-4d29-ac2d-b4f63a2183b5",  # tst-dns-2C2G50G
+        "mycat": "daf34739-7dc3-4d4f-abb1-3a222b796944",  # tst-dns-2C2G50G
         "816": '105deffb-dff9-4a16-8757-92a9d44e9b91',  # K8S-8C16G50G
         "832": '8257eac4-c9cb-48f0-b5d4-183e3e08137f',  # pret-mysql-8C32G80G
     }
@@ -248,7 +248,7 @@ class DevelopmentConfig(BaseConfig):
         '44': '00da3f51-a8ce-4a0a-b30d-994b4bab94ff', #4C4G30G
         'mysql': '6ef6287c-f4d4-4d08-9b33-901f47542a69',  # mysql_2C4G80G
         '48': '00d92209-b17e-45cb-991c-d79600e68969',  # xiaojian_sas_4C8G50G
-        "mycat": "905e3a5f-6b27-46ab-8cb2-2bb26ffbea58",  # tst-dns-2C2G50G
+        "mycat": "b722a8e1-b21d-4a29-b8ed-93358950f1c4",  # mycat-20180105
         "816": '105deffb-dff9-4a16-8757-92a9d44e9b91',  # K8S-8C16G50G
         "832": '8257eac4-c9cb-48f0-b5d4-183e3e08137f',  # pret-mysql-8C32G80G
     }
