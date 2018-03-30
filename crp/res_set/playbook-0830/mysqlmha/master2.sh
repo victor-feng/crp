@@ -91,7 +91,7 @@ $MYSQL_CMD -e "GRANT REPLICATION SLAVE,REPLICATION CLIENT ON *.* TO rep3316@'$sl
 #查看是否授权
 #select host,user from mysql.user;
 #授权给mha用户权限
-$MYSQL_CMD -e "GRANT ALL PRIVILEGES ON *.* TO 'mha'@'$slaveip_1.$slaveip_2.$slaveip_3.%' IDENTIFIED BY 'O[NI6I~4a' WITH GRANT OPTION;"
+$MYSQL_CMD -e "GRANT ALL PRIVILEGES ON *.* TO 'mha'@'$slaveip_1.$slaveip_2.$slaveip_3.%' IDENTIFIED BY 'Mha.Sys17Q4' WITH GRANT OPTION;"
 $MYSQL_CMD -e "FLUSH   PRIVILEGES;"
 #查找binlog和pos到master.txt
 echo "---------show master status result-----------" 
