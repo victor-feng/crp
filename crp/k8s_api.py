@@ -395,6 +395,11 @@ class K8sDeploymentApi(object):
                 pod_name = res.metadata.name
                 pod_ip = res.status.pod_ip
                 if deployment_name in pod_name and pod_ip:
+                    status = res.status.phase
+                    if status == "Running":
+                        vm_state = "active"
+                    else:
+                        vm_state = "shutoff"
                     node_name = res.spec.node_name
                     host_ip = res.status.host_ip
                     deployment_dict['deployment_name'] = deployment_name
@@ -403,6 +408,7 @@ class K8sDeploymentApi(object):
                     deployment_dict['pod_name'] = pod_name
                     deployment_dict['host_ip'] = host_ip
                     deployment_dict['resource_name'] = resource_name
+                    deployment_dict['status'] = vm_state
                     deployment_info_list.append(deployment_dict)
         except Exception as e:
             err_msg = "Get deployment pod info error {e}".format(e=str(e))
