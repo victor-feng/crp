@@ -271,6 +271,9 @@ class K8sDeploymentApi(object):
             api_instance = self.extensionsv1
             deployment_name = deployment_name.lower()
             update_image_deployment.spec.template.spec.containers[1].image = new_image_url
+            # Update pod label
+            update_image_deployment.spec.template.metadata.labels["restartLatestTime"] = \
+                datetime.datetime.now().strftime("%Y%m%d%H%M%S")
             # Update the deployment
             api_response = api_instance.patch_namespaced_deployment(
                 name=deployment_name,
