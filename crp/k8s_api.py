@@ -383,24 +383,30 @@ class K8sDeploymentApi(object):
         :param deployment_name:
         :return:
         """
-        deployment_name = deployment_name.lower()
         deployment_info_list = []
-        api_instance = self.corev1
-        api_response = api_instance.list_namespaced_pod(namespace)
-        result = api_response.items
-        for res in result:
-            deployment_dict = {}
-            pod_name = res.metadata.name
-            pod_ip = res.status.pod_ip
-            if deployment_name in pod_name and pod_ip:
-                node_name = res.spec.node_name
-                host_ip = res.status.host_ip
-                deployment_dict['deployment_name'] = deployment_name
-                deployment_dict['pod_ip'] = pod_ip
-                deployment_dict['node_name'] = node_name
-                deployment_dict['pod_name'] = pod_name
-                deployment_dict['host_ip'] = host_ip
-                deployment_info_list.append(deployment_dict)
+        try:
+            resource_name = deployment_name
+            deployment_name = deployment_name.lower()
+            api_instance = self.corev1
+            api_response = api_instance.list_namespaced_pod(namespace)
+            result = api_response.items
+            for res in result:
+                deployment_dict = {}
+                pod_name = res.metadata.name
+                pod_ip = res.status.pod_ip
+                if deployment_name in pod_name and pod_ip:
+                    node_name = res.spec.node_name
+                    host_ip = res.status.host_ip
+                    deployment_dict['deployment_name'] = deployment_name
+                    deployment_dict['pod_ip'] = pod_ip
+                    deployment_dict['node_name'] = node_name
+                    deployment_dict['pod_name'] = pod_name
+                    deployment_dict['host_ip'] = host_ip
+                    deployment_dict['resource_name'] = resource_name
+                    deployment_info_list.append(deployment_dict)
+        except Exception as e:
+            err_msg = "Get deployment pod info error {e}".format(e=str(e))
+            Log.logger.ereor(err_msg)
         return deployment_info_list
 
     def get_deployment(self, namespace, deployment_name):
@@ -548,8 +554,35 @@ class K8sDeploymentApi(object):
                 ip = i.status.pod_ip
                 vm_info_dict[name] = [ip, vm_state]
         except Exception as e:
+            code = get_k8s_err_code(e)
             err_msg = "get namespace pod list info error {e}".format(e=str(e))
         return vm_info_dict,err_msg,code
+
+    def list_namespace_all_pod_info(self,namespace):
+        code = 200
+        err_msg = None
+        pod_info_list = []
+        try:
+            api_instance = self.corev1
+            api_response = api_instance.list_namespaced_pod(namespace)
+            for i in api_response.items:
+                pod_info_dict={}
+                pod_info_dict["pod_name"] = i.metadata.name
+                status = i.status.phase
+                if status == "Running":
+                    vm_state = "active"
+                else:
+                    vm_state = "shutoff"
+                pod_info_dict["status"] = vm_state
+                pod_info_dict["ip"] = i.status.pod_ip
+                pod_info_dict["host_ip"] = i.status.host_ip
+                pod_info_dict["node_name"] = i.spec.node_name
+                pod_info_list.append(pod_info_dict)
+
+        except Exception as e:
+            code = get_k8s_err_code(e)
+            err_msg = "list namespace pod  info error {e}".format(e=str(e))
+        return pod_info_list, err_msg, code
 
 
 
