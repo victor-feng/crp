@@ -43,7 +43,7 @@ def query_instance(task_id, result, resource):
     try:
         if resource_type == "app":
             K8sDeployment = K8sDeploymentApi()
-            deployment_ret=K8sDeployment.get_deployment(NAMESPACE,resource_name)
+            deployment_ret,deployment_code=K8sDeployment.get_deployment(NAMESPACE,resource_name)
             result['inst_state'] = 1
             available_replicas = deployment_ret.status.available_replicas
             unavailable_replicas =deployment_ret.status.unavailable_replicas

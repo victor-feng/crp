@@ -405,10 +405,18 @@ class K8sDeploymentApi(object):
         :param deployment_name:
         :return:
         """
-        deployment_name = deployment_name.lower()
-        api_instance = self.extensionsv1
-        api_response = api_instance.read_namespaced_deployment(deployment_name, namespace)
-        return api_response
+        code = 200
+        msg = None
+        try:
+            deployment_name = deployment_name.lower()
+            api_instance = self.extensionsv1
+            api_response = api_instance.read_namespaced_deployment(deployment_name, namespace)
+            msg=api_response
+        except Exception as e:
+            msg = "Get deployment error {e}".format(e=str(e))
+            code = get_k8s_err_code(e)
+        return msg,code
+
 
     # 重启deployment下的全部pod
     def restart_deployment_pod_object(self,deployment_name):
