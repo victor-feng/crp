@@ -99,11 +99,11 @@ def delete_instance(task_id, result):
             K8sIngress = K8sIngressApi()
             K8sService = K8sServiceApi()
             #删除deployment 的时候 同时删除service 和 ingress
-            service_res,service_flag=K8sService.get_service(service_name, NAMESPACE)
-            if service_flag:
+            service_msg,service_code=K8sService.get_service(service_name, NAMESPACE)
+            if service_code == 200:
                 K8sService.delete_service(service_name, NAMESPACE)
-            ingress_res,ingress_flag=K8sIngress.get_ingress(ingress_name, NAMESPACE)
-            if ingress_flag:
+            ingress_msg,ingress_code=K8sIngress.get_ingress(ingress_name, NAMESPACE)
+            if ingress_code == 200:
                 K8sIngress.delete_ingress(ingress_name, NAMESPACE)
             K8sDeployment.delete_deployment(resource_name,NAMESPACE)
         else:
