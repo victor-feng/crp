@@ -330,6 +330,31 @@ class K8sNamespace(Resource):
         ret = response_data(code, msg, data)
         return ret, code
 
+class K8sDeploymentPod(Resource):
+
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument("deployment_name", type=str)
+        parser.add_argument("namespace", type=str)
+        args = parser.parse_args()
+        deployment_name = args.deployment_name
+        namespace = args.namespace if args.namespace else NAMESPACE
+        data={}
+        res_list=[]
+        K8sDeployment = K8sDeploymentApi()
+        try:
+            res_list=K8sDeployment.get_deployment_pod_info( namespace, deployment_name)
+            data["res_list"] = res_list
+            code = 200
+            msg = "Get deployment info success"
+        except Exception as e:
+            code=500
+            data = "Error"
+            msg= "Get deployment info error %s" % str(e)
+            Log.logger.error(msg)
+        ret = response_data(code, msg, data)
+        return ret, code
+
 
 
 openstack_api.add_resource(NovaVMAPIAll, '/nova/states')
@@ -340,3 +365,4 @@ openstack_api.add_resource(Dockerlogs, '/docker/logs/')
 openstack_api.add_resource(K8sDeployment, '/k8s/deployment')
 openstack_api.add_resource(K8sNetwork, '/k8s/network')
 openstack_api.add_resource(K8sNamespace, '/k8s/namespace')
+openstack_api.add_resource(K8sDeploymentPod, '/k8s/deploymentpod')
