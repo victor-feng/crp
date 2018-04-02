@@ -234,6 +234,9 @@ class K8sDeploymentApi(object):
             image="",
         )
         template = client.V1PodTemplateSpec(
+            metadata=client.V1ObjectMeta(
+                labels={}
+            ),
             spec=client.V1PodSpec(
                 containers=[
                     filebeat_container,
