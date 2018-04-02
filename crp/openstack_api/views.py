@@ -346,7 +346,7 @@ class K8sDeploymentPod(Resource):
             if deployment_name:
                 res_list=K8sDeployment.get_deployment_pod_info(namespace, deployment_name)
             else:
-                res_list=K8sDeployment.list_namespace_all_pod_info(namespace)
+                res_list,msg,code=K8sDeployment.list_namespace_all_pod_info(namespace)
             data["res_list"] = res_list
             code = 200
             msg = "Get deployment info success"
