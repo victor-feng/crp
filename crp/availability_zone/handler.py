@@ -60,7 +60,8 @@ class OpenStack_Api(object):
                                   az_item.hosts, az_item.zoneName, az_item.zoneState)
                     azs.append({
                         "pool_name": az_item.zoneName,
-                        "hosts": az_item.hosts.keys()
+                        "hosts": az_item.hosts.keys(),
+                        "cloud_version": "cloud1.0"
                     })
             return azs 
         except Exception as e:
@@ -119,7 +120,8 @@ class OpenStack2_Api(object):
                                   az_item.hosts, az_item.zoneName, az_item.zoneState)
                     azs.append({
                         "pool_name": az_item.zoneName,
-                        "hosts": az_item.hosts.keys()
+                        "hosts": az_item.hosts.keys(),
+                        "cloud_version": "cloud2.0"
                     })
             return azs 
         except Exception as e:
