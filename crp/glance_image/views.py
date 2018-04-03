@@ -8,6 +8,7 @@ from crp.taskmgr import *
 from crp.glance_image import glance_image_blueprint
 from crp.glance_image.errors import user_errors
 from crp.openstack2 import OpenStack as OpenStack2
+from crp.openstack import OpenStack as OpenStack1
 from crp.log import Log
 
 glance_image_api = Api(glance_image_blueprint, errors=user_errors)
@@ -27,8 +28,22 @@ class ImageListAPI(Resource):
             filters['disk_format'] = args.image_format
         res_images = []
         try:
-            glance_cli = OpenStack2.glance_client()
             kwargs = {'filters': filters}
+
+            glance_cli_1 = OpenStack1.glance_client()
+            images_1 = glance_cli_1.images.list(**kwargs)
+            for item_1 in images_1:
+                if (not args.image_name) or (args.image_name and args.image_name in item_1.name):
+                    res_images.append({
+                        "id": item_1.id,
+                        "image_name": item_1.name,
+                        "image_size": item_1.size,
+                        "image_format": item_1.disk_format,
+                        "created_time": item_1.created_at,
+                        "cloud_version": "cloud1.0"
+                    })
+
+            glance_cli = OpenStack2.glance_client()
             images = glance_cli.images.list(**kwargs)
             for item in images:
                 if (not args.image_name) or (
@@ -39,6 +54,7 @@ class ImageListAPI(Resource):
                         "image_size": item.size,
                         "image_format": item.disk_format,
                         "created_time": item.created_at,
+                        "cloud_version": "cloud2.0"
                     })
         except Exception as e:
             err_msg = e.args
