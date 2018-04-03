@@ -18,7 +18,7 @@ class AZListAPI(Resource):
             azs_cloud1 = OpenStack_Api.get_availability_zones()
             azs_cloud2 = OpenStack2_Api.get_availability_zones()
             Log.logger.debug("azs:{},{}".format(azs_cloud1, azs_cloud2))
-            azs = azs_cloud1.extend(azs_cloud2)
+            azs_cloud1.extend(azs_cloud2)
         except Exception as e:
             Log.logger.error('get az err: %s' % e.args)
             res = {
@@ -34,7 +34,7 @@ class AZListAPI(Resource):
                 "code": 200,
                 "result": {
                     "msg": "请求成功",
-                    "res": azs
+                    "res": azs_cloud1
                 }
             }
             return res, 200
