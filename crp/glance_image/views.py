@@ -32,6 +32,7 @@ class ImageListAPI(Resource):
 
             glance_cli_1 = OpenStack1.glance_client()
             images_1 = glance_cli_1.images.list(**kwargs)
+            Log.logger.info("The cloud1 image_1 is {}".format(images_1))
             for item_1 in images_1:
                 if (not args.image_name) or (args.image_name and args.image_name in item_1.name):
                     res_images.append({
@@ -42,7 +43,7 @@ class ImageListAPI(Resource):
                         "created_time": item_1.created_at,
                         "cloud_version": "cloud1.0"
                     })
-
+            Log.logger.info("The cloud1 image list is {}".format(res_images))
             glance_cli = OpenStack2.glance_client()
             images = glance_cli.images.list(**kwargs)
             for item in images:
@@ -56,6 +57,7 @@ class ImageListAPI(Resource):
                         "created_time": item.created_at,
                         "cloud_version": "cloud2.0"
                     })
+            Log.logger.info("The cloud2 image list is {}".format(res_images))
         except Exception as e:
             err_msg = e.args
             Log.logger.error('list glance image err: %s' % err_msg)
