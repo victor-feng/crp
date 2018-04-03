@@ -504,6 +504,7 @@ class ResourceProviderTransitions(object):
         disk = propertys.get('disk')
         quantity = propertys.get('quantity')
         volume_size=propertys.get('volume_size',0)
+        port = propertys.get('port')
         #volume_size 默认为0
         if not flavor:
             flavor = KVM_FLAVOR.get(str(cpu) + str(mem))
