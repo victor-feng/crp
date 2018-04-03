@@ -36,6 +36,30 @@ class TestingConfig(BaseConfig):
     }
 
     MONGODB_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010'
+    MONGODB_AUTH_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010 --authenticationDatabase admin -u admin -p 123456'
+    HARBOR_URL = "reg1.syswin.com"
+    HARBOR_USERNAME = "crm_test1"
+    HARBOR_PASSWORD = "syswin#"
+    ADD_LOG = {
+        "VAR_DICT":
+            [
+                "war_to_image_running",
+                "war_to_image_success"
+            ],
+        "BUILD_IMAGE":
+            [
+                "build_image_running",
+                "build_image_success"
+            ],
+        "PUSH_IMAGE":
+            [
+                "push_image_running",
+                "push_image_success"
+            ]
+
+    }
+
+
 
     cluster_type_image_port_mappers = {
         'mysql': {
@@ -252,6 +276,49 @@ class TestingConfig(BaseConfig):
     IP="127.0.0.1"
     NETWORKNAME="contiv-vlan651"
     TENANTNAME="tenant-vlan651"
+    property_json_mapper_config = {
+        'app_cluster': {
+            'cluster_name': 'instance_name',
+            'cluster_id': 'instance_id',
+            'domain': 'domain',
+            'image_url': 'image_url',
+            'cpu': 'cpu',
+            'mem': 'mem',
+            'domain_ip': 'domain_ip',
+            'port': 'port',
+            'meta': 'meta',
+            'quantity': 'quantity',
+            'network_id': 'network_id',
+            'networkName': 'networkName',
+            'tenantName': 'tenantName',
+            'availability_zone':'availability_zone',
+            'flavor': 'flavor',
+            'host_env':'host_env',
+            'image_id': 'image_id',
+            'language_env':'language_env',
+            'deploy_source':'deploy_source',
+            'database_config':'database_config',
+            'lb_methods':'lb_methods',
+            'namespace':'namespace',
+            'ready_probe_path':'ready_probe_path',
+            'domain_path':'domain_path',
+        },
+        'resource_cluster': {
+            'cluster_name': 'instance_name',
+            'cluster_id': 'instance_id',
+            'cluster_type': 'instance_type',
+            'version': 'version',
+            'cpu': 'cpu',
+            'mem': 'mem',
+            'disk': 'disk',
+            'quantity': 'quantity',
+            'volume_size': 'volume_size',
+            'network_id': 'network_id',
+            'image_id': 'image_id',
+            'availability_zone':'availability_zone',
+            'flavor': 'flavor',
+        }
+    }
 
     K8S_NETWORK_URL={
         "dev":"http://172.28.13.254:19999/api/v1/networks/",
@@ -259,6 +326,7 @@ class TestingConfig(BaseConfig):
         "prep": "http://172.28.13.254:19999/api/v1/networks/",
         "prod": "http://172.28.13.254:19999/api/v1/networks/",
     }
+    BASE_IMAGE_URL = "reg1.syswin.com/base/os69-tomcat7:v0.1"
     CHECK_TIMEOUT = 200
 
 
