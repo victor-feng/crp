@@ -435,6 +435,9 @@ class ResourceProviderTransitions(object):
                 is_rollback, uop_os_inst_id_list = self._create_kvm_cluster(property_mapper, cluster_id, host_env,
                                                                             image_id, port, cpu, mem, flavor,
                                                                             quantity, network_id, availability_zone,language_env)
+            else:
+                is_rollback = True
+                self.error_msg = "Please pass in the correct parameters,host_env must be 'docker' or 'kvm'"
         return is_rollback, uop_os_inst_id_list
 
     #创建kvm集群资源
