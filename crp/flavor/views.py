@@ -8,6 +8,7 @@ from crp.taskmgr import *
 from crp.flavor import flavor_blueprint
 from crp.flavor.errors import flavor_errors
 from crp.openstack import OpenStack
+from crp.openstack2 import OpenStack as OpenStack2
 from crp.log import Log
 
 flavor_api = Api(flavor_blueprint, errors=flavor_errors)
@@ -27,6 +28,17 @@ class FlavorAPI(Resource):
                     "flavor_name": item.name,
                     "cpu": item.vcpus,
                     "memory": item.ram,
+                    "cloud": "1"
+                })
+            nova_cli_2 = OpenStack2.nova_client
+            flavors_2 = nova_cli_2.flavors.list()
+            for item in flavors_2:
+                res_flavors.append({
+                    "flavor_id": item.id,
+                    "flavor_name": item.name,
+                    "cpu": item.vcpus,
+                    "memory": item.ram,
+                    "cloud": "2"
                 })
         except Exception as e:
             err_msg = e.message

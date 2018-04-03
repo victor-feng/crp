@@ -41,7 +41,7 @@ class ImageListAPI(Resource):
                         "image_size": item_1.size,
                         "image_format": item_1.disk_format,
                         "created_time": item_1.created_at,
-                        "cloud_version": "cloud1.0"
+                        "cloud": "1"
                     })
             Log.logger.info("The cloud1 image list is {}".format(res_images))
             glance_cli = OpenStack2.glance_client()
@@ -55,7 +55,7 @@ class ImageListAPI(Resource):
                         "image_size": item.size,
                         "image_format": item.disk_format,
                         "created_time": item.created_at,
-                        "cloud_version": "cloud2.0"
+                        "cloud": "2"
                     })
             Log.logger.info("The cloud2 image list is {}".format(res_images))
         except Exception as e:
