@@ -512,6 +512,9 @@ class ResourceProviderTransitions2(object):
                                                                             image_id, port, cpu, mem, flavor,
                                                                             quantity, network_id, availability_zone,language_env)
 
+            else:
+                is_rollback = True
+                self.error_msg = "Please pass in the correct parameters,host_env must be 'docker' or 'kvm'"
 
         return is_rollback, uop_os_inst_id_list
 
