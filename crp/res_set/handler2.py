@@ -369,7 +369,6 @@ class ResourceProviderTransitions2(object):
         domain_path = propertys.get('domain_path')
         namespace = propertys.get('namespace') if propertys.get('namespace') else NAMESPACE
         host_mapping = propertys.get('host_mapping') if propertys.get('host_mapping') else json.dumps(HOST_MAPPING)
-        Log.logger.debug("-------------host_mapping--------------------------------{}--------------{}".format(host_mapping,type(host_mapping)))
         image_url = propertys.get('image_url')
         replicas = propertys.get('quantity')
         cpu = propertys.get('cpu','2')
