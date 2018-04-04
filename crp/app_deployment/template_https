@@ -1,7 +1,7 @@
-upstream  ToonDomain {
+  upstream  ToonDomain {
     server  IpPort;
- }
-server {
+  }
+  server {
       listen 80;
       listen 443;
       ssl on;
@@ -16,4 +16,4 @@ server {
           proxy_set_header X-Real-IP        $remote_addr;
           proxy_set_header X-Forwarded-For  $proxy_add_x_forwarded_for;
       }
-}
+  }

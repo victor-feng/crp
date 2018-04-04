@@ -86,13 +86,13 @@ def write_server_config(ip_port):
 
 def statistics_port_ip(args):
     """
-    :param args: sys.argv ['/shell/update.py', 'crp-cluster.syswin.com', '172.28.36.31', '172.28.36.32', '8081', '999']
+    :param args: sys.argv ['/shell/update.py', 'Certificate', 'crp-cluster.syswin.com', '172.28.36.31', '172.28.36.32', '8081', '999']
     :return: ip port
     """
-    ip_num = len(args) - 3
+    ip_num = len(args) - 4
     ip_list = []
     port_list = []
-    first_ip_index = 2
+    first_ip_index = 3
     last_ip_index = (args.index(args[-2])+1)
 
     # first_port_index = last_ip_index + 1
