@@ -63,8 +63,7 @@ class K8sDeploymentApi(object):
                                  app_limits,
                                  networkName,
                                  tenantName,
-                                 hostnames,
-                                 ip,
+                                 host_mapping,
                                  replicas,
                                  ready_probe_path
                                  ):
@@ -88,6 +87,12 @@ class K8sDeploymentApi(object):
         :return:
         """
         deployment_name=deployment_name.lower()
+        host_aliases=[]
+        for host_map in host_mapping:
+            ip = host_map.get("ip", '127.0.0.1')
+            hostnames = host_map.get("hostnames", ['"uop-k8s.syswin.com"'])
+            host_aliase=client.V1HostAlias(hostnames=hostnames, ip=ip)
+            host_aliases.append(host_aliase)
         filebeat_container = client.V1Container(
             name=filebeat_name,
             image=filebeat_image_url,
@@ -169,9 +174,7 @@ class K8sDeploymentApi(object):
                 }
             ),
             spec=client.V1PodSpec(
-                host_aliases=[
-                    client.V1HostAlias(hostnames=hostnames, ip=ip),
-                ],
+                host_aliases=host_aliases,
                 containers=[
                     filebeat_container,
                     app_container,

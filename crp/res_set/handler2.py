@@ -46,8 +46,7 @@ FILEBEAT_REQUESTS = configs[APP_ENV].FILEBEAT_REQUESTS
 FILEBEAT_LIMITS = configs[APP_ENV].FILEBEAT_LIMITS
 APP_REQUESTS = configs[APP_ENV].APP_REQUESTS
 APP_LIMITS = configs[APP_ENV].APP_LIMITS
-HOSTNAMES = configs[APP_ENV].HOSTNAMES
-IP = configs[APP_ENV].IP
+HOST_MAPPING = configs[APP_ENV].HOST_MAPPING
 CHECK_TIMEOUT = configs[APP_ENV].CHECK_TIMEOUT
 
 
@@ -354,7 +353,7 @@ class ResourceProviderTransitions2(object):
         cluster_name = propertys.get('cluster_name')
         cluster_id = propertys.get('cluster_id')
         domain = propertys.get('domain')
-        port = propertys.get('port')
+        port = int(propertys.get('port')) if propertys.get('port') else propertys.get('port')
         networkName = propertys.get('networkName')
         tenantName = propertys.get('tenantName')
         host_env=propertys.get("host_env")
@@ -369,8 +368,9 @@ class ResourceProviderTransitions2(object):
         ready_probe_path = propertys.get('ready_probe_path')
         domain_path = propertys.get('domain_path')
         namespace = propertys.get('namespace') if propertys.get('namespace') else NAMESPACE
-        if port:
-            port = int(port)
+        host_mapping = propertys.get('host_mapping') if propertys.get('host_mapping') else HOST_MAPPING
+        host_mapping=json.loads(host_mapping)
+        host_mapping = host_mapping.get("host_mapping")
         image_url = propertys.get('image_url')
         replicas = propertys.get('quantity')
         cpu = propertys.get('cpu','2')
@@ -433,8 +433,7 @@ class ResourceProviderTransitions2(object):
                                                                            app_limits,
                                                                            networkName,
                                                                            tenantName,
-                                                                           HOSTNAMES,
-                                                                           IP,
+                                                                           host_mapping,
                                                                            replicas,
                                                                            ready_probe_path,
                                                                            )

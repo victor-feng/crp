@@ -167,6 +167,7 @@ class DevelopmentConfig(BaseConfig):
             'namespace':'namespace',
             'ready_probe_path':'ready_probe_path',
             'domain_path':'domain_path',
+            'host_mapping':'host_mapping',
         },
         'resource_cluster': {
             'cluster_name': 'instance_name',
@@ -271,8 +272,14 @@ class DevelopmentConfig(BaseConfig):
         "22": {"cpu": 2, "memory": "2Gi"},
         "44": {"cpu": 4, "memory": "4Gi"}
     }
-    HOSTNAMES = ["uop-k8s.syswin.com"]
-    IP = "127.0.0.1"
+    HOST_MAPPING ={
+        "host_mapping":[
+            {
+            "ip":"127.0.0.1",
+            "hostnames":["uop-k8s.syswin.com"],
+             },
+        ],
+    }
     NETWORKNAME = "contiv-vlan651"
     TENANTNAME = "tenant-vlan651"
     K8S_NETWORK_URL = {
