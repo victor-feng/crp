@@ -7,6 +7,7 @@ from config import APP_ENV, configs
 from crp.utils.aio import get_k8s_err_code
 from crp.log import Log
 import datetime
+import json
 
 
 
@@ -88,6 +89,8 @@ class K8sDeploymentApi(object):
         """
         deployment_name=deployment_name.lower()
         host_aliases=[]
+        host_mapping = json.loads(host_mapping)
+        host_mapping = host_mapping.get("host_mapping")
         for host_map in host_mapping:
             ip = host_map.get("ip", '127.0.0.1')
             hostnames = host_map.get("hostnames", ['"uop-k8s.syswin.com"'])
