@@ -420,7 +420,7 @@ class ResourceProviderTransitions2(object):
                     else:
                         app_limits = app_limits_flavor
                     #创建应用集群模板
-                    deployment = K8sDeployment.create_deployment_object(deployment_name,
+                    deployment,err_msg = K8sDeployment.create_deployment_object(deployment_name,
                                                                            FILEBEAT_NAME,
                                                                            FILEBEAT_IMAGE_URL,
                                                                            filebeat_requests,
@@ -435,39 +435,42 @@ class ResourceProviderTransitions2(object):
                                                                            replicas,
                                                                            ready_probe_path,
                                                                            )
-                    Log.logger.debug("#####deployment object {}".format(deployment))
-                    if domain:
-                        ingress_flag = 1
-                        #如果有域名创建service和ingress
-                        #code=409 资源已经存在
-                        service=K8sService.create_service_object(service_name,namespace,service_port)
-                        service_err_msg,service_err_code=K8sService.create_service(service,namespace)
-                        if service_err_msg is None:
-                            #创建ingress
-                            ingress=K8sIngress.create_ingress_object(ingress_name,namespace,service_name,service_port,domain,lb_methods,domain_path)
-                            ingress_err_msg,ingress_err_code=K8sIngress.create_ingress(ingress,namespace)
-                            if ingress_err_msg is None:
-                                #创建应用集群
-                                deployment_err_msg,deployment_err_code = K8sDeployment.create_deployment(deployment,namespace)
-                                if deployment_err_msg:
+                    if not err_msg:
+                        if domain:
+                            ingress_flag = 1
+                            #如果有域名创建service和ingress
+                            #code=409 资源已经存在
+                            service=K8sService.create_service_object(service_name,namespace,service_port)
+                            service_err_msg,service_err_code=K8sService.create_service(service,namespace)
+                            if service_err_msg is None:
+                                #创建ingress
+                                ingress=K8sIngress.create_ingress_object(ingress_name,namespace,service_name,service_port,domain,lb_methods,domain_path)
+                                ingress_err_msg,ingress_err_code=K8sIngress.create_ingress(ingress,namespace)
+                                if ingress_err_msg is None:
+                                    #创建应用集群
+                                    deployment_err_msg,deployment_err_code = K8sDeployment.create_deployment(deployment,namespace)
+                                    if deployment_err_msg:
+                                        is_rollback = True
+                                        self.error_msg = deployment_err_msg
+                                        self.code = deployment_err_code
+                                else:
                                     is_rollback = True
-                                    self.error_msg = deployment_err_msg
-                                    self.code = deployment_err_code
+                                    self.error_msg = ingress_err_msg
+                                    self.code = ingress_err_code
                             else:
                                 is_rollback = True
-                                self.error_msg = ingress_err_msg
-                                self.code = ingress_err_code
+                                self.error_msg = service_err_msg
+                                self.code = service_err_code
                         else:
-                            is_rollback = True
-                            self.error_msg = service_err_msg
-                            self.code = service_err_code
+                            #没有域名直接创建应用集群
+                            deployment_err_msg,deployment_err_code=K8sDeployment.create_deployment(deployment,namespace)
+                            if deployment_err_msg:
+                                is_rollback = True
+                                self.error_msg = deployment_err_msg
+                                self.code = deployment_err_code
                     else:
-                        #没有域名直接创建应用集群
-                        deployment_err_msg,deployment_err_code=K8sDeployment.create_deployment(deployment,namespace)
-                        if deployment_err_msg:
-                            is_rollback = True
-                            self.error_msg = deployment_err_msg
-                            self.code = deployment_err_code
+                        is_rollback = True
+                        self.error_msg = err_msg
                 elif self.set_flag == "increase" or self.set_flag == "reduce":
                     #应用集群扩缩容
                     update_replicas_deployment=K8sDeployment.update_deployment_replicas_object(deployment_name)

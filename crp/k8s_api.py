@@ -89,61 +89,77 @@ class K8sDeploymentApi(object):
         """
         deployment_name=deployment_name.lower()
         host_aliases=[]
-        host_mapping = json.loads(host_mapping)
-        host_mapping = host_mapping.get("host_mapping")
-        for host_map in host_mapping:
-            ip = host_map.get("ip", '127.0.0.1')
-            hostnames = host_map.get("hostnames", ['"uop-k8s.syswin.com"'])
-            host_aliase=client.V1HostAlias(hostnames=hostnames, ip=ip)
-            host_aliases.append(host_aliase)
-        filebeat_container = client.V1Container(
-            name=filebeat_name,
-            image=filebeat_image_url,
-            resources=client.V1ResourceRequirements(
-                requests=filebeat_requests,
-                limits=filebeat_limits
-            ),
-            volume_mounts=[
-                client.V1VolumeMount(name="app-logs", mount_path="/log"),
-                client.V1VolumeMount(name="%s-config" % filebeat_name , mount_path="/etc/filebeat/"),
-            ],
-            image_pull_policy="IfNotPresent"
-        )
-        if app_container_port:
-            if ready_probe_path:
-                app_container = client.V1Container(
-                    name='app',
-                    image=app_image_url,
-                    ports=[
-                        client.V1ContainerPort(container_port=app_container_port)
-                    ],
-                    resources=client.V1ResourceRequirements(
-                        requests=app_requests,
-                        limits=app_limits,
-                    ),
-                    volume_mounts=[
-                        client.V1VolumeMount(name="app-logs", mount_path="/home/logs"),
-                    ],
-                    image_pull_policy="Always",
-                    readiness_probe=client.V1Probe(
-                        failure_threshold=3,
-                        http_get=client.V1HTTPGetAction(
-                            path=ready_probe_path,
-                            port=app_container_port,
+        err_msg = None
+        try:
+            host_mapping = json.loads(host_mapping)
+            host_mapping = host_mapping.get("host_mapping")
+            for host_map in host_mapping:
+                ip = host_map.get("ip", '127.0.0.1')
+                hostnames = host_map.get("hostnames", ['"uop-k8s.syswin.com"'])
+                host_aliase=client.V1HostAlias(hostnames=hostnames, ip=ip)
+                host_aliases.append(host_aliase)
+            filebeat_container = client.V1Container(
+                name=filebeat_name,
+                image=filebeat_image_url,
+                resources=client.V1ResourceRequirements(
+                    requests=filebeat_requests,
+                    limits=filebeat_limits
+                ),
+                volume_mounts=[
+                    client.V1VolumeMount(name="app-logs", mount_path="/log"),
+                    client.V1VolumeMount(name="%s-config" % filebeat_name , mount_path="/etc/filebeat/"),
+                ],
+                image_pull_policy="IfNotPresent"
+            )
+            if app_container_port:
+                if ready_probe_path:
+                    app_container = client.V1Container(
+                        name='app',
+                        image=app_image_url,
+                        ports=[
+                            client.V1ContainerPort(container_port=app_container_port)
+                        ],
+                        resources=client.V1ResourceRequirements(
+                            requests=app_requests,
+                            limits=app_limits,
                         ),
-                        initial_delay_seconds=10,
-                        period_seconds=10,
-                        success_threshold=1,
-                        timeout_seconds=1,
+                        volume_mounts=[
+                            client.V1VolumeMount(name="app-logs", mount_path="/home/logs"),
+                        ],
+                        image_pull_policy="Always",
+                        readiness_probe=client.V1Probe(
+                            failure_threshold=3,
+                            http_get=client.V1HTTPGetAction(
+                                path=ready_probe_path,
+                                port=app_container_port,
+                            ),
+                            initial_delay_seconds=10,
+                            period_seconds=10,
+                            success_threshold=1,
+                            timeout_seconds=1,
+                        )
                     )
-                )
+                else:
+                    app_container = client.V1Container(
+                        name='app',
+                        image=app_image_url,
+                        ports=[
+                            client.V1ContainerPort(container_port=app_container_port)
+                        ],
+                        resources=client.V1ResourceRequirements(
+                            requests=app_requests,
+                            limits=app_limits,
+                        ),
+                        volume_mounts=[
+                            client.V1VolumeMount(name="app-logs", mount_path="/home/logs"),
+                        ],
+                        image_pull_policy="Always",
+                    )
+
             else:
                 app_container = client.V1Container(
                     name='app',
                     image=app_image_url,
-                    ports=[
-                        client.V1ContainerPort(container_port=app_container_port)
-                    ],
                     resources=client.V1ResourceRequirements(
                         requests=app_requests,
                         limits=app_limits,
@@ -154,55 +170,43 @@ class K8sDeploymentApi(object):
                     image_pull_policy="Always",
                 )
 
-        else:
-            app_container = client.V1Container(
-                name='app',
-                image=app_image_url,
-                resources=client.V1ResourceRequirements(
-                    requests=app_requests,
-                    limits=app_limits,
+            template = client.V1PodTemplateSpec(
+                metadata=client.V1ObjectMeta(
+                    labels={
+                        "app": deployment_name,
+                        "io.contiv.tenant":tenantName ,
+                        "io.contiv.network": networkName,
+                    }
                 ),
-                volume_mounts=[
-                    client.V1VolumeMount(name="app-logs", mount_path="/home/logs"),
-                ],
-                image_pull_policy="Always",
+                spec=client.V1PodSpec(
+                    host_aliases=host_aliases,
+                    containers=[
+                        filebeat_container,
+                        app_container,
+                    ],
+                    volumes=[
+                        client.V1Volume(name="app-logs", empty_dir={}),
+                        client.V1Volume(
+                            name="%s-config" % filebeat_name,
+                            config_map=client.V1ConfigMapVolumeSource(name="%s-config" % filebeat_name)
+                        ),
+                    ]
+                ),
             )
-
-        template = client.V1PodTemplateSpec(
-            metadata=client.V1ObjectMeta(
-                labels={
-                    "app": deployment_name,
-                    "io.contiv.tenant":tenantName ,
-                    "io.contiv.network": networkName,
-                }
-            ),
-            spec=client.V1PodSpec(
-                host_aliases=host_aliases,
-                containers=[
-                    filebeat_container,
-                    app_container,
-                ],
-                volumes=[
-                    client.V1Volume(name="app-logs", empty_dir={}),
-                    client.V1Volume(
-                        name="%s-config" % filebeat_name,
-                        config_map=client.V1ConfigMapVolumeSource(name="%s-config" % filebeat_name)
-                    ),
-                ]
-            ),
-        )
-        spec = client.ExtensionsV1beta1DeploymentSpec(
-            replicas=replicas,
-            template=template,
-        )
-        # Instantiate the deployment object
-        deployment = client.ExtensionsV1beta1Deployment(
-            api_version="extensions/v1beta1",
-            kind="Deployment",
-            metadata=client.V1ObjectMeta(name=deployment_name),
-            spec=spec,
-        )
-        return deployment
+            spec = client.ExtensionsV1beta1DeploymentSpec(
+                replicas=replicas,
+                template=template,
+            )
+            # Instantiate the deployment object
+            deployment = client.ExtensionsV1beta1Deployment(
+                api_version="extensions/v1beta1",
+                kind="Deployment",
+                metadata=client.V1ObjectMeta(name=deployment_name),
+                spec=spec,
+            )
+        except Exception as e:
+            err_msg = "Create deployment object error {e}".format(e=str(e))
+        return deployment,err_msg
 
     def create_deployment(self,deployment,namespace):
         """
