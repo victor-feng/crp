@@ -92,7 +92,13 @@ class K8sDeploymentApi(object):
         err_msg = None
         try:
             host_mapping = json.loads(host_mapping)
+            Log.logger.debug(
+                "-------------host_mapping------------111--------------------{}--------------{}".format(host_mapping, type(
+                    host_mapping)))
             host_mapping = host_mapping.get("host_mapping")
+            Log.logger.debug(
+                "-------------host_mapping----------222----------------------{}--------------{}".format(host_mapping, type(
+                    host_mapping)))
             for host_map in host_mapping:
                 ip = host_map.get("ip", '127.0.0.1')
                 hostnames = host_map.get("hostnames", ['"uop-k8s.syswin.com"'])
