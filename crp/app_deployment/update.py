@@ -19,7 +19,7 @@ def config():
     ip_port = resolve(ip_list, port_list)
     print 'ip + port = ', ip_port
     ips = write_server_config(ip_port)
-    ip_1 = sys.argv[3]     # '172.28.265.32:8081'
+    print "ips = ", ips
     subdomain = '.'.join(domain.split('.')[:-2])
 
     conf_url = '/usr/local/nginx/conf/servers_systoon'

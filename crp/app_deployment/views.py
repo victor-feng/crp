@@ -59,7 +59,7 @@ class AppDeploy(Resource):
             selfdir = os.path.dirname(os.path.abspath(__file__))
             nip = kwargs.get('nip')
             certificate = kwargs.get('certificate', False)
-            template = "template_http" if certificate else "template_https"
+            template = "template_https" if certificate else "template_http"
 
             Log.logger.debug('----->start push:{}dir:{}'.format(kwargs, selfdir))
 
