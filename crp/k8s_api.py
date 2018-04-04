@@ -90,6 +90,7 @@ class K8sDeploymentApi(object):
         deployment_name=deployment_name.lower()
         host_aliases=[]
         err_msg = None
+        deployment = None
         try:
             host_mapping = json.loads(host_mapping)
             Log.logger.debug(
