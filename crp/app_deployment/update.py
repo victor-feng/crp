@@ -32,7 +32,7 @@ def config():
     nginx_dir = '/usr/local/nginx/conf/servers_systoon'
     nginx_conf = os.path.join(nginx_dir, domain)
 
-    template = '/tmp/template_http' if certificate else '/tmp/template_https'
+    template = '/tmp/template_https' if certificate else '/tmp/template_http'
 
     tp = open(template, 'r')
     tp_str = tp.read()
