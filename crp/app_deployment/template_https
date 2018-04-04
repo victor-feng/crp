@@ -1,6 +1,6 @@
 upstream  ToonDomain {
     server  IpPort;
-  }
+ }
 server {
       listen 80;
       listen 443;
