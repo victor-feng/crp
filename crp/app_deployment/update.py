@@ -7,11 +7,11 @@ import ast
 
 
 def config():
-    if len(sys.argv) < 4:
-        print "Please Input domain, Ip:port"
+    if len(sys.argv) < 5:
+        print "Please Input certificate(False), domain, Ip:port"
     print sys.argv, len(sys.argv)
-    domain = sys.argv[1]  # 'api.wangyan.systoon.com'
-
+    domain = sys.argv[2]  # 'api.wangyan.systoon.com'
+    certificate = sys.argv[1] # certificate or False
     # TODO
     ip_list, port_list = statistics_port_ip(sys.argv)
     # ip_list = [sys.argv[2], sys.argv[3]]  # ['1.1.1.1', '2.2.2.2']
@@ -19,7 +19,7 @@ def config():
     ip_port = resolve(ip_list, port_list)
     print 'ip + port = ', ip_port
     ips = write_server_config(ip_port)
-    ip_1 = sys.argv[2]     # '172.28.265.32:8081'
+    ip_1 = sys.argv[3]     # '172.28.265.32:8081'
     subdomain = '.'.join(domain.split('.')[:-2])
 
     conf_url = '/usr/local/nginx/conf/servers_systoon'
@@ -32,7 +32,8 @@ def config():
     nginx_dir = '/usr/local/nginx/conf/servers_systoon'
     nginx_conf = os.path.join(nginx_dir, domain)
 
-    template = '/tmp/template'
+    template = '/tmp/template_http' if certificate else '/tmp/template_https'
+
     tp = open(template, 'r')
     tp_str = tp.read()
     tp.close()
@@ -51,6 +52,10 @@ def config():
 
     else:
         f_dst3 = re.sub(r'SubDomain', subdomain, f_dst5)
+
+    if certificate: # https
+        f_dst3 = re.sub(r'Certificate', certificate, f_dst3)
+        pass
 
     fp.write(f_dst3)
     fp.close()

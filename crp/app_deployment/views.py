@@ -58,22 +58,27 @@ class AppDeploy(Resource):
             """
             selfdir = os.path.dirname(os.path.abspath(__file__))
             nip = kwargs.get('nip')
+            certificate = kwargs.get('certificate', False)
+            template = "template_http" if certificate else "template_https"
+
             Log.logger.debug('----->start push:{}dir:{}'.format(kwargs, selfdir))
+
             yum_install_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip, dir=selfdir)
             scp_update_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/update.py dest=/tmp/'".format(
                     nip=nip, dir=selfdir)
-            scp_template_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/template dest=/tmp/'".format(
-                    nip=nip, dir=selfdir)
+            scp_template_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/{template} dest=/tmp/'".format(
+                    nip=nip, dir=selfdir, template=template)
             chmod_update_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /tmp/update.py'".format(
                 nip=nip, dir=selfdir)
-            chmod_template_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /tmp/template'".format(
-                nip=nip, dir=selfdir)
-            exec_shell_cmd='ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a ''"/tmp/update.py {domain} {ip} {port}"'.format(
-                    nip=kwargs.get('nip'),
-                    dir=selfdir,
-                    domain=kwargs.get('domain'),
-                    ip=kwargs.get('ip'),
-                    port=kwargs.get('port'))
+            chmod_template_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /tmp/{template}'".format(
+                nip=nip, dir=selfdir, template=template)
+            exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a ''"/tmp/update.py {certificate} {domain} {ip} {port}"'.format(
+                nip=kwargs.get('nip'),
+                dir=selfdir,
+                certificate=certificate,
+                domain=kwargs.get('domain'),
+                ip=kwargs.get('ip'),
+                port=kwargs.get('port'))
             exec_cmd_ten_times(nip,yum_install_cmd,1)
             exec_cmd_ten_times(nip, scp_update_cmd, 1)
             exec_cmd_ten_times(nip, scp_template_cmd, 1)
@@ -88,6 +93,7 @@ class AppDeploy(Resource):
         Log.logger.debug("####current compute instance is:{}".format(app))
         domain_ip = app.get('domain_ip', "")
         domain = app.get('domain', '')
+        certificate = app.get('certificate', "")
         for ip in ips:
             ip_str = ip + ' '
             real_ip += ip_str
@@ -99,7 +105,8 @@ class AppDeploy(Resource):
             do_push_nginx_config({'nip': domain_ip,
                                 'domain': domain,
                                 'ip': real_ip.strip(),
-                                'port': ports.strip()})
+                                'port': ports.strip(),
+                                'certificate': certificate})
         except Exception as e:
             Log.logger.error("error:{}".format(e))
 
