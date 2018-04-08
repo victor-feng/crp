@@ -14,8 +14,12 @@ RES_DELETE_CALL_BACK = configs[APP_ENV].RES_DELETE_CALL_BACK
 QUERY_VOLUME = 0
 DETACH_VOLUME = 1
 DETACH_VOLUME_SUCCESSFUL = 2
-QUERY_VM=3
-DELETE_VM=4
+QUERY_INGRESS = 3
+DELETE_INGRESS = 4
+QUERY_SERVICE = 5
+DELETE_SERVICE = 6
+QUERY_VM = 7
+DELETE_VM = 8
 
 
 UOP_URL = configs[APP_ENV].UOP_URL
@@ -24,6 +28,98 @@ UOP_URL = configs[APP_ENV].UOP_URL
 class CrpException(Exception):
     pass
 
+
+def query_ingress(task_id, result):
+    resource_name = result.get('resource_name', '')
+    resource_type = result.get('resource_type', '')
+    ingress_name = resource_name + "-" + "ingress"
+    try:
+        if resource_type == "app":
+            namespace = result.get('namespace') if result.get('namespace') else NAMESPACE
+            K8sIngress = K8sIngressApi()
+            ingress_ret, ingress_code = K8sIngress.get_ingress(ingress_name,namespace)
+            if ingress_code == 200:
+                result['msg'] = 'Ingress is exist  begin delete Ingress'
+                result['current_status'] = DELETE_INGRESS
+                result['ingress_state'] = 1
+            elif ingress_code == 404:
+                result['current_status'] = QUERY_SERVICE
+                ingress_state = result.get('ingress_state', 0)
+                if ingress_state == 1:
+                    result['msg'] = 'Ingress  delete success, begin query Service'
+                else:
+                    result['msg'] = 'Ingress is not exist, begin query Service'
+        else:
+            result['current_status'] = QUERY_VM
+    except Exception as e:
+        err_msg = "Query ingress error {e}".format(e=str(e))
+        result['msg'] = err_msg
+        Log.logger.error(
+            "Query Task ID " + str(task_id) +
+            " result " + result.__str__())
+
+def delete_ingress(task_id, result):
+    resource_name = result.get('resource_name', '')
+    ingress_name = resource_name + "-" + "ingress"
+    try:
+        namespace = result.get('namespace') if result.get('namespace') else NAMESPACE
+        K8sIngress = K8sIngressApi()
+        K8sIngress.delete_ingress(ingress_name, namespace)
+        result['current_status'] = QUERY_INGRESS
+    except Exception as e:
+        err_msg = "Delete ingress error {e}".format(e=str(e))
+        result['msg'] = err_msg
+        Log.logger.error(
+            "Query Task ID " + str(task_id) +
+            " result " + result.__str__())
+        TaskManager.task_exit(task_id)
+
+
+
+def query_service(task_id, result):
+    resource_name = result.get('resource_name', '')
+    resource_type = result.get('resource_type', '')
+    service_name = resource_name
+    try:
+        if resource_type == "app":
+            namespace = result.get('namespace') if result.get('namespace') else NAMESPACE
+            K8sService = K8sServiceApi()
+            service_ret, service_code = K8sService.get_service(service_name,namespace)
+            if service_code == 200:
+                result['msg'] = 'Service is exist  begin delete Deployment'
+                result['current_status'] = DELETE_SERVICE
+                result['service_state'] = 1
+            elif service_code == 404:
+                result['current_status'] = QUERY_VM
+                service_state = result.get('service_state', 0)
+                if service_state == 1:
+                    result['msg'] = 'Service  delete success, begin query Deployment'
+                else:
+                    result['msg'] = 'Service is not exist, begin query Deployment'
+        else:
+            result['current_status'] = QUERY_VM
+    except Exception as e:
+        err_msg = "Query service error {e}".format(e=str(e))
+        result['msg'] = err_msg
+        Log.logger.error(
+            "Query Task ID " + str(task_id) +
+            " result " + result.__str__())
+
+def delete_service(task_id, result):
+    resource_name = result.get('resource_name', '')
+    service_name = resource_name
+    try:
+        namespace = result.get('namespace') if result.get('namespace') else NAMESPACE
+        K8sService = K8sServiceApi()
+        K8sService.delete_service(service_name,namespace)
+        result['current_status'] = QUERY_SERVICE
+    except Exception as e:
+        err_msg = "Delete service error {e}".format(e=str(e))
+        result['msg'] = err_msg
+        Log.logger.error(
+            "Query Task ID " + str(task_id) +
+            " result " + result.__str__())
+        TaskManager.task_exit(task_id)
 
 def query_instance(task_id, result, resource):
     """
@@ -42,8 +138,9 @@ def query_instance(task_id, result, resource):
     nova_client = OpenStack.nova_client
     try:
         if resource_type == "app":
+            namespace = result.get('namespace') if result.get('namespace') else NAMESPACE
             K8sDeployment = K8sDeploymentApi()
-            deployment_ret,deployment_code=K8sDeployment.get_deployment(NAMESPACE,resource_name)
+            deployment_ret,deployment_code=K8sDeployment.get_deployment(namespace,resource_name)
             result['inst_state'] = 1
             available_replicas = deployment_ret.status.available_replicas
             unavailable_replicas =deployment_ret.status.unavailable_replicas
@@ -91,21 +188,11 @@ def delete_instance(task_id, result):
     nova_client = OpenStack.nova_client
     resource_type = result.get('resource_type','')
     resource_name = result.get('resource_name','')
-    service_name = resource_name
-    ingress_name = resource_name + "-" + "ingress"
     try:
         if resource_type == "app":
+            namespace = result.get('namespace') if result.get('namespace') else NAMESPACE
             K8sDeployment = K8sDeploymentApi()
-            K8sIngress = K8sIngressApi()
-            K8sService = K8sServiceApi()
-            #删除deployment 的时候 同时删除service 和 ingress
-            service_msg,service_code=K8sService.get_service(service_name, NAMESPACE)
-            if service_code == 200:
-                K8sService.delete_service(service_name, NAMESPACE)
-            ingress_msg,ingress_code=K8sIngress.get_ingress(ingress_name, NAMESPACE)
-            if ingress_code == 200:
-                K8sIngress.delete_ingress(ingress_name, NAMESPACE)
-            K8sDeployment.delete_deployment(resource_name,NAMESPACE)
+            K8sDeployment.delete_deployment(resource_name,namespace)
         else:
             nova_client.servers.delete(os_inst_id)
         result['current_status'] = QUERY_VM
@@ -234,6 +321,14 @@ def delete_instance_and_query2(task_id, result, resource):
             query_volume_status(task_id, result, resource)
         elif current_status == DETACH_VOLUME_SUCCESSFUL:
             delete_volume(task_id, result,resource)
+        elif current_status == QUERY_INGRESS:
+            query_ingress(task_id,result)
+        elif current_status == DELETE_INGRESS:
+            delete_ingress(task_id,result)
+        elif current_status == QUERY_SERVICE:
+            query_service(task_id,result)
+        elif current_status == DELETE_SERVICE:
+            delete_service(task_id,result)
         elif current_status == QUERY_VM:
             query_instance(task_id, result, resource)
         elif current_status == DELETE_VM:

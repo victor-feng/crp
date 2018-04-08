@@ -228,6 +228,7 @@ class ResourceDelete(Resource):
             set_flag = request_data.get('set_flag')
             cloud = request_data.get('cloud')
             syswin_project = request_data.get('syswin_project')
+            namespace = request_data.get('namespace')
             resources = deal_del_request_data(resource_id,del_os_ins_ip_list)
             resources = resources.get('resources')
             unique_flag=str(uuid.uuid1())
@@ -244,6 +245,7 @@ class ResourceDelete(Resource):
                          "resource_name": resource_name,
                          "resource_type": resource_type,
                          'syswin_project':syswin_project,
+                         'namespace':namespace,
                          },
                         delete_instance_and_query2, {})
                 else:
