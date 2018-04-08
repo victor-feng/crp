@@ -259,6 +259,9 @@ class ResourceDelete(Resource):
                              'syswin_project': syswin_project,
                              },
                              delete_instance_and_query2, resource)
+                # 删除虚IP
+                for port_id in vid_list:
+                    delete_vip2(port_id)
             else:
                 for resource in resources:
                     TaskManager.task_start(
@@ -270,9 +273,9 @@ class ResourceDelete(Resource):
                          'syswin_project': syswin_project,
                          },
                          delete_instance_and_query, resource)
-            #删除虚IP
-            for port_id in vid_list:
-                delete_vip2(port_id)
+                #删除虚IP
+                for port_id in vid_list:
+                    delete_vip(port_id)
 
 
         except Exception as e:
