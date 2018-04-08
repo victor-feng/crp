@@ -31,7 +31,7 @@ class DevelopmentConfig(BaseConfig):
     HARBOR_PASSWORD = "syswin#"
 
     ADD_LOG = {
-        "VAR_DICT":
+        "WAR_DICT":
             [
                 "war_to_image_running",
                 "war_to_image_success"
