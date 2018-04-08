@@ -711,15 +711,18 @@ class AppDeploy(Resource):
     def _check_deployment_status(self, deployment_name=None, deploy_id=None, cluster_name=None, end_flag=None, deploy_type=None,
                                 unique_flag=None, cloud=None,deploy_name=None,namespace=None):
         try:
+            break_flag = False
             K8sDeployment = K8sDeploymentApi()
             for i in range(10):
-                time.sleep(30)
-                deployment_status = K8sDeployment.get_deployment_status(namespace, deployment_name)
-                if deployment_status == "available":
-                    _dep_callback(deploy_id, '127.0.0.1', "docker", "None", "None", True, cluster_name, end_flag,
-                                  deploy_type,
-                                  unique_flag, cloud,deploy_name)
-                    break
+                for j in range(10):
+                    time.sleep(3)
+                    deployment_status = K8sDeployment.get_deployment_status(namespace, deployment_name)
+                    if deployment_status == "available":
+                        break_flag = True
+                        _dep_callback(deploy_id, '127.0.0.1', "docker", "None", "None", True, cluster_name, end_flag,
+                                      deploy_type,
+                                      unique_flag, cloud,deploy_name)
+                        break
                 else:
                     s_flag, err_msg = K8sDeployment.get_deployment_pod_status(namespace, deployment_name)
                     if s_flag is not True:
@@ -727,6 +730,7 @@ class AppDeploy(Resource):
                                       cluster_name, end_flag, deploy_type,
                                       unique_flag, cloud,deploy_name)
                         break
+                if break_flag:break
             else:
                 err_msg = "deploy deployment failed"
                 _dep_callback(deploy_id, '127.0.0.1', "docker", err_msg, "None", False,
