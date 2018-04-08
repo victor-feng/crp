@@ -55,12 +55,12 @@ def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_i
             db_push=None
 
         if add_log in WAR_DICT:
-            var_dict = {
+            war_dict = {
                 "war_to_image_status": add_log,
                 "resource_id": resource_id
             }
         else:
-            var_dict = {}
+            war_dict = {}
 
         if add_log in BUILD_IMAGE:
             build_image = {
@@ -82,7 +82,7 @@ def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_i
             "instance":instance,
             "db_push":db_push,
             "set_flag":set_flag,
-            "var_dict": var_dict,
+            "war_dict": war_dict,
             "build_image": build_image,
             "push_image": push_image
         }
