@@ -93,7 +93,7 @@ def query_service(task_id, result):
             K8sService = K8sServiceApi()
             service_ret, service_code = K8sService.get_service(service_name,namespace)
             if service_code == 200:
-                result['msg'] = 'Service is exist  begin delete Deployment'
+                result['msg'] = 'Service is exist  begin delete service'
                 result['current_status'] = DELETE_SERVICE
                 result['service_state'] = 1
             elif service_code == 404:
