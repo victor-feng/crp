@@ -5,7 +5,7 @@ from crp.log import Log
 from config import configs, APP_ENV
 RES_STATUS_CALLBACK = configs[APP_ENV].RES_STATUS_CALLBACK
 ADD_LOG = configs[APP_ENV].ADD_LOG
-VAR_DICT = ADD_LOG.get("VAR_DICT")
+WAR_DICT = ADD_LOG.get("WAR_DICT")
 BUILD_IMAGE = ADD_LOG.get("BUILD_IMAGE")
 PUSH_IMAGE = ADD_LOG.get("PUSH_IMAGE")
 
@@ -54,7 +54,7 @@ def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_i
         else:
             db_push=None
 
-        if add_log in VAR_DICT:
+        if add_log in WAR_DICT:
             var_dict = {
                 "war_to_image_status": add_log,
                 "resource_id": resource_id
