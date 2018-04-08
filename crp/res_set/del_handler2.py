@@ -51,7 +51,7 @@ def query_ingress(task_id, result):
                     result['msg'] = 'Ingress is not exist, begin query Service'
         else:
             result['current_status'] = QUERY_VM
-        Log.logger.error(
+        Log.logger.debug(
             "Query Task ID " + str(task_id) +
             " result " + result.__str__())
     except Exception as e:
@@ -70,7 +70,7 @@ def delete_ingress(task_id, result):
         K8sIngress.delete_ingress(ingress_name, namespace)
         result['current_status'] = QUERY_INGRESS
         result['msg'] = 'delete ingress begin query ingress status'
-        Log.logger.error(
+        Log.logger.debug(
             "Query Task ID " + str(task_id) +
             " result " + result.__str__())
     except Exception as e:
@@ -105,7 +105,7 @@ def query_service(task_id, result):
                     result['msg'] = 'Service is not exist, begin query Deployment'
         else:
             result['current_status'] = QUERY_VM
-        Log.logger.error(
+        Log.logger.debug(
             "Query Task ID " + str(task_id) +
             " result " + result.__str__())
     except Exception as e:
@@ -124,7 +124,7 @@ def delete_service(task_id, result):
         K8sService.delete_service(service_name,namespace)
         result['current_status'] = QUERY_SERVICE
         result['msg'] = 'delete service begin query service status'
-        Log.logger.error(
+        Log.logger.debug(
             "Query Task ID " + str(task_id) +
             " result " + result.__str__())
     except Exception as e:
