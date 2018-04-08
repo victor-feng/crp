@@ -688,7 +688,7 @@ class K8sServiceApi(object):
         except Exception as e:
             err_msg = "delete service error %s" % str(e)
             code = get_k8s_err_code(e)
-        return err_msg
+        return err_msg,code
 
     def get_service(self,service_name,namespace):
         """
