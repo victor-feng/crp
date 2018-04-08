@@ -272,7 +272,7 @@ class ResourceDelete(Resource):
                          delete_instance_and_query, resource)
             #删除虚IP
             for port_id in vid_list:
-                delete_vip(port_id)
+                delete_vip2(port_id)
 
 
         except Exception as e:
