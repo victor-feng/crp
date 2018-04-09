@@ -80,13 +80,24 @@ class AppDeploy(Resource):
                 ip=kwargs.get('ip'),
                 port=kwargs.get('port'))
             exec_cmd_ten_times(nip,yum_install_cmd,1)
-            exec_cmd_ten_times(nip, scp_update_cmd, 1)
-            exec_cmd_ten_times(nip, scp_template_cmd, 1)
+            exec_flag, err_msg=exec_cmd_ten_times(nip, scp_update_cmd, 1)
+            if not exec_flag:
+                return exec_flag, err_msg
+            exec_flag, err_msg=exec_cmd_ten_times(nip, scp_template_cmd, 1)
+            if not exec_flag:
+                return exec_flag, err_msg
             Log.logger.debug('------>上传配置文件完成')
-            exec_cmd_ten_times(nip, chmod_update_cmd, 1)
-            exec_cmd_ten_times(nip, chmod_template_cmd, 1)
-            exec_cmd_ten_times(nip, exec_shell_cmd, 1)
+            exec_flag, err_msg=exec_cmd_ten_times(nip, chmod_update_cmd, 1)
+            if not exec_flag:
+                return exec_flag, err_msg
+            exec_flag, err_msg=exec_cmd_ten_times(nip, chmod_template_cmd, 1)
+            if not exec_flag:
+                return exec_flag, err_msg
+            exec_flag, err_msg=exec_cmd_ten_times(nip, exec_shell_cmd, 1)
             Log.logger.debug('------>end push')
+            if not exec_flag:
+                return exec_flag, err_msg
+
 
         real_ip = ''
         ips = app.get('ips')
@@ -102,13 +113,15 @@ class AppDeploy(Resource):
             'the receive (domain, nginx, ip, port) is (%s, %s, %s, %s)' %
             (domain, domain_ip, real_ip, ports))
         try:
-            do_push_nginx_config({'nip': domain_ip,
+            exec_flag, err_msg=do_push_nginx_config({'nip': domain_ip,
                                 'domain': domain,
                                 'ip': real_ip.strip(),
                                 'port': ports.strip(),
                                 'certificate': certificate})
         except Exception as e:
+            err_msg = "do nginx push error {e}".format(e=str(e))
             Log.logger.error("error:{}".format(e))
+        return  err_msg
 
     @async
     def run_delete_cmd(self, **kwargs):
@@ -335,7 +348,12 @@ class AppDeploy(Resource):
                                       "", True, deploy_type,
                                       unique_flag, cloud, deploy_name,o_domain,o_port,"True")
                         return
-                self.do_app_push(app)
+                err_msg=self.do_app_push(app)
+                if err_msg:
+                    _dep_callback(deploy_id, "ip", "nginx", err_msg, "active", False, "nginx", True, 'deploy',
+                                  unique_flag, cloud, deploy_name)
+                    code = 400
+                    return code, err_msg
             if appinfo:
                 _dep_detail_callback(deploy_id, "deploy_nginx", "res")
             #配置dns
