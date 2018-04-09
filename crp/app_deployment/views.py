@@ -382,30 +382,37 @@ class AppDeploy(Resource):
             Log.logger.debug("All Docker is " + str(docker))
             #添加disconf配置
             for disconf_info in disconf_server_info:
+                err_msg = None
                 Log.logger.debug('The disconf_info: %s' % disconf_info)
                 disconf_api_connect = DisconfServerApi(disconf_info)
                 if disconf_info.get('disconf_env','').isdigit():
                     env_id = disconf_info.get('disconf_env')
                 else:
-                    env_id = disconf_api_connect.disconf_env_id(env_name=disconf_info.get('disconf_env'))
+                    env_id,err_msg = disconf_api_connect.disconf_env_id(env_name=disconf_info.get('disconf_env'))
 
                 if len(disconf_info.get('disconf_admin_content','').strip()) == 0:
                     disconf_admin_name = exchange_disconf_name(disconf_info.get('disconf_content'))
                 else:
                     disconf_admin_name = exchange_disconf_name(disconf_info.get('disconf_admin_content'))
-
-                err_msg,result,message = disconf_api_connect.disconf_add_app_config_api_file(
+                if not err_msg:
+                    err_msg,result,message = disconf_api_connect.disconf_add_app_config_api_file(
                                                 app_name=disconf_info.get('disconf_app_name'),
                                                 myfilerar=disconf_admin_name,
                                                 version=disconf_info.get('disconf_version'),
                                                 env_id=env_id
                                                 )
-                Log.logger.debug("disconf result:{result},{message}".format(result=result,message=message))
-                if err_msg:
-                    _dep_callback(deploy_id, "ip", "disconf", err_msg, "active", False, "disconf", True, 'deploy',
+                    Log.logger.debug("disconf result:{result},{message}".format(result=result,message=message))
+                    if err_msg:
+                        _dep_callback(deploy_id, "ip", "disconf", err_msg, "active", False, "disconf", True, 'deploy',
                                   unique_flag, cloud, deploy_name)
-                    code = 400
-                    return code, err_msg
+                        code = 400
+                        return code, err_msg
+                else:
+                    if err_msg:
+                        _dep_callback(deploy_id, "ip", "disconf", err_msg, "active", False, "disconf", True, 'deploy',
+                                  unique_flag, cloud, deploy_name)
+                        code = 400
+                        return code, err_msg
             if disconf_server_info:
                 _dep_detail_callback(deploy_id,"deploy_disconf","res")
 

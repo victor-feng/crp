@@ -230,6 +230,7 @@ class DisconfServerApi(object):
 
 
     def disconf_env_id(self, env_name):
+        err_msg = None
         try:
             env_id = None
             self.disconf_session()
@@ -240,8 +241,8 @@ class DisconfServerApi(object):
                         env_id = env.get('id')
                         break
         except Exception as e:
-            raise ServerError(e.message)
-        return env_id
+            err_msg = str(e)
+        return env_id,err_msg
 
 
     def disconf_env_name(self, env_id):
