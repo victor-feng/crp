@@ -327,7 +327,7 @@ class NamedManagerApi(object):
             record_name = exchange_result.get('record_name')
             data = {"method":"adddns","domain":domain,"recordname":record_name,"hostip":domain_ip}
             url = NAMEDMANAGER_URL.get(self.env)
-            rep = requests.post(url, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS)
+            rep = requests.post(url, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS,timeout=120)
             ret_json = json.loads(rep.text)
             if ret_json.get('result') == 'success':
                 res = ret_json.get('content')
