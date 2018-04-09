@@ -345,8 +345,13 @@ class AppDeploy(Resource):
                 Log.logger.debug('domain_name:%s,domain_ip:%s' % (domain_name, domain_ip))
                 if len(domain_name.strip()) != 0 and len(domain_ip.strip()) != 0:
                     dns_api = NamedManagerApi(environment)
-                    msg = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=domain_ip)
-                    Log.logger.debug('The dns add result: %s' % msg)
+                    err_msg,res = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=domain_ip)
+                    Log.logger.debug('The dns add result: %s' % res)
+                    if err_msg:
+                        _dep_callback(deploy_id, "ip", "dns", err_msg, "active", False, "dns", True, 'deploy',
+                                      unique_flag, cloud, deploy_name)
+                        code = 400
+                        return code, err_msg
                 else:
                     Log.logger.debug(
                         'domain_name:{domain_name},domain_ip:{domain_ip} is null'.format(domain_name=domain_name,
@@ -368,13 +373,18 @@ class AppDeploy(Resource):
                 else:
                     disconf_admin_name = exchange_disconf_name(disconf_info.get('disconf_admin_content'))
 
-                result,message = disconf_api_connect.disconf_add_app_config_api_file(
+                err_msg,result,message = disconf_api_connect.disconf_add_app_config_api_file(
                                                 app_name=disconf_info.get('disconf_app_name'),
                                                 myfilerar=disconf_admin_name,
                                                 version=disconf_info.get('disconf_version'),
                                                 env_id=env_id
                                                 )
                 Log.logger.debug("disconf result:{result},{message}".format(result=result,message=message))
+                if err_msg:
+                    _dep_callback(deploy_id, "ip", "disconf", err_msg, "active", False, "disconf", True, 'deploy',
+                                  unique_flag, cloud, deploy_name)
+                    code = 400
+                    return code, err_msg
             if disconf_server_info:
                 _dep_detail_callback(deploy_id,"deploy_disconf","res")
 
@@ -390,7 +400,7 @@ class AppDeploy(Resource):
                     else:
                         _dep_callback(deploy_id, "ip", "mongodb", err_msg, "active", False, "mongodb", True,
                                       'deploy', unique_flag,cloud,deploy_name)
-                        code = 500
+                        code = 400
                         return code, err_msg
             if mysql:
                 Log.logger.debug("The mysql data is %s" % str(mysql))
@@ -403,7 +413,7 @@ class AppDeploy(Resource):
                     else:
                         _dep_callback(deploy_id, "ip", "mysql", err_msg, "active", False, "mysql", True, 'deploy',
                                       unique_flag,cloud,deploy_name)
-                        code = 500
+                        code = 400
                         return code, err_msg
 
             if docker:

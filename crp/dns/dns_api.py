@@ -347,6 +347,7 @@ class NamedManagerApi(object):
         :param domain_ip:
         :return:
         """
+        err_msg = None
         try:
             exchange_result = exchange_domain_to_zone_and_name(domain_name)
             domain = exchange_result.get('zone')
@@ -357,8 +358,9 @@ class NamedManagerApi(object):
             else:
                 raise ServerError('The zone [{zone_name}] does not exist'.format(zone_name=domain))
         except Exception as e:
-            res = e.args
-        return res
+            res=None
+            err_msg = "dns add namemanager error {e}".format(e=str(e))
+        return err_msg,res
 
 
 if __name__ == '__main__':

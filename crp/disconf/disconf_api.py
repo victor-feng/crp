@@ -379,6 +379,7 @@ class DisconfServerApi(object):
 
 
     def disconf_add_app_config_api_file(self, app_name, myfilerar, version, env_id):
+        err_msg = None
         try:
             app_id = self.disconf_app_id(app_name)
             if app_id is None:
@@ -394,11 +395,12 @@ class DisconfServerApi(object):
                 ret = self.disconf_file(app_id, env_id, version, myfilerar)
 
             result = 'success'
-            message = 'instance_name:{ins_name},filename:{filename} success'.format(ins_name=app_name,filename=filename)
+            res = 'instance_name:{ins_name},filename:{filename} success'.format(ins_name=app_name,filename=filename)
         except Exception as e:
+            res = None
             result = 'fail'
-            message = e.message
-        return result,message
+            err_msg = "add app config to disconf error {e}".format(e=str(e))
+        return err_msg,result,res
 
     def disconf_get_app_config_api(self, app_name, env_id):
         try:
