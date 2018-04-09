@@ -725,7 +725,7 @@ class AppDeploy(Resource):
                         break
                 else:
                     s_flag, err_msg = K8sDeployment.get_deployment_pod_status(namespace, deployment_name)
-                    if s_flag is not True:
+                    if s_flag is not True and i >= 8:
                         _dep_callback(deploy_id, '127.0.0.1', "docker", err_msg, "None", False,
                                       cluster_name, end_flag, deploy_type,
                                       unique_flag, cloud,deploy_name)
