@@ -251,6 +251,7 @@ class ResourceProviderTransitions2(object):
                 resource={}
                 os_inst_id=uop_os_inst_id['os_inst_id']
                 os_vol_id = uop_os_inst_id.get('os_vol_id')
+                namespace = uop_os_inst_id.get("namespace")
                 resource["resource_id"]=resource_id
                 resource["os_inst_id"]=os_inst_id
                 resource["os_vol_id"] = os_vol_id
@@ -262,7 +263,8 @@ class ResourceProviderTransitions2(object):
                      "del_os_ins_ip_list": [],
                      "sef_flag": "rollback",
                      "resource_type":resource_type,
-                     "resource_name":self.req_dict["resource_name"],},
+                     "resource_name":self.req_dict["resource_name"],
+                     'namespace':namespace,},
                     delete_instance_and_query2, resource)
             Log.logger.debug(
                 "Task ID " +

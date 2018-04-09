@@ -79,7 +79,8 @@ def delete_ingress(task_id, result):
         Log.logger.error(
             "Query Task ID " + str(task_id) +
             " result " + result.__str__())
-        TaskManager.task_exit(task_id)
+        result['current_status'] = QUERY_SERVICE
+
 
 
 
@@ -133,7 +134,7 @@ def delete_service(task_id, result):
         Log.logger.error(
             "Query Task ID " + str(task_id) +
             " result " + result.__str__())
-        TaskManager.task_exit(task_id)
+        result['current_status'] = QUERY_VM
 
 def query_instance(task_id, result, resource):
     """
@@ -248,7 +249,7 @@ def detach_volume(task_id, result, resource):
             nova_client.volumes.delete_server_volume(os_inst_id, os_vol_id)
         elif not os_vol_id:
             #如果volume不存在直接删除虚机
-            result['current_status'] = QUERY_VM
+            result['current_status'] = QUERY_INGRESS
     except Exception as e:
         err_msg=str(e)
         Log.logger.error('Task ID %s,detach_volume error, os_inst_id is %s, os_vol_id is %s.error msg is %s'% (task_id, os_inst_id, os_vol_id,err_msg))
@@ -287,7 +288,7 @@ def query_volume_status(task_id, result, resource):
                 result['current_status'] = DETACH_VOLUME_SUCCESSFUL
         elif not os_vol_id:
             #volume 不存在 直接删除虚机
-            result['current_status']=QUERY_VM
+            result['current_status']=QUERY_INGRESS
     except Exception as e:
         err_msg=str(e)
         Log.logger.error('Task ID %s,query_volume_status error.error msg is %s' % (task_id, err_msg))
@@ -308,13 +309,13 @@ def delete_volume(task_id,result,resource):
         if os_vol_id:
             cinder_client = OpenStack.cinder_client
             cinder_client.volumes.delete(os_vol_id)
-        result['current_status'] = QUERY_VM
+        result['current_status'] = QUERY_INGRESS
         Log.logger.debug(
             "Task ID %s, delete volume , vol_id is %s" % (task_id,os_vol_id))
     except Exception as e:
         Log.logger.error(
             "[CRP] _delete_volume failed, Exception:%s" % str(e))
-        result['current_status'] = QUERY_VM
+        result['current_status'] = QUERY_INGRESS
         raise CrpException(str(e))
 
 
