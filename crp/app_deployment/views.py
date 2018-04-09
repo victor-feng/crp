@@ -56,6 +56,7 @@ class AppDeploy(Resource):
             :param kwargs:
             :return:
             """
+            #exec_flag, err_msg = None,None
             selfdir = os.path.dirname(os.path.abspath(__file__))
             nip = kwargs.get('nip')
             certificate = kwargs.get('certificate', 0)
@@ -97,6 +98,8 @@ class AppDeploy(Resource):
             Log.logger.debug('------>end push')
             if not exec_flag:
                 return exec_flag, err_msg
+
+            return True,None
 
 
         real_ip = ''
