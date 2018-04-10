@@ -626,7 +626,7 @@ class ResourceProviderTransitions2(object):
                         }
                         #创建volume
                         volume=create_volume(vm, volume_size)
-                        os_vol_id = volume.get('id')
+                        os_vol_id = volume.id
                     else:
                         os_vol_id=None
                     uopinst_info = {
