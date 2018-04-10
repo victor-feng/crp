@@ -157,6 +157,7 @@ def query_instance(task_id, result, resource):
             K8sDeployment = K8sDeploymentApi()
             deployment_ret,deployment_code=K8sDeployment.get_deployment(namespace,resource_name)
             result['inst_state'] = 1
+            Log.logger.info("DDD--------------delete---------------{}-------------{}".format(deployment_ret,deployment_code))
             available_replicas = deployment_ret.status.available_replicas
             unavailable_replicas =deployment_ret.status.unavailable_replicas
             if available_replicas or unavailable_replicas:
