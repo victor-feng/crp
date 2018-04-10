@@ -196,8 +196,8 @@ class DevelopmentConfig(BaseConfig):
     NAMEDMANAGER_URL = {
         "dev": "http://172.28.39.94/namedmanager/dnsapi.php",
         "test": "http://172.28.39.94/namedmanager/dnsapi.php",
-        "prep": "http://10.253.68.85/api/dnsapi.php",
-        "prod": "http://10.253.68.85/api/dnsapi.php",
+        "prep": "http://10.253.68.85/namedmanager/api/dnsapi.php",
+        "prod": "http://10.253.68.85/namedmanager/api/dnsapi.php",
     }
     IS_OPEN_AFFINITY_SCHEDULING = False
 

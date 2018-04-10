@@ -151,10 +151,10 @@ class TestingConfig(BaseConfig):
         }
     #NAMEDMANAGER_URL = 'http://172.28.50.141/namedmanager/dnsapi.php'
     NAMEDMANAGER_URL={
-        "dev":"http://172.28.4.228/api/dnsapi.php",
-        "test":"http://172.28.18.82/api/dnsapi.php",
-        "prep":"http://10.253.68.85/api/dnsapi.php",
-        "prod":"http://10.253.68.85/api/dnsapi.php",
+        "dev":"http://172.28.4.228/namedmanager/api/dnsapi.php",
+        "test":"http://172.28.18.82/namedmanager/api/dnsapi.php",
+        "prep":"http://10.253.68.85/namedmanager/api/dnsapi.php",
+        "prod":"http://10.253.68.85/namedmanager/api/dnsapi.php",
     }
     IS_OPEN_AFFINITY_SCHEDULING = False
     CHECK_TIMEOUT = 200
