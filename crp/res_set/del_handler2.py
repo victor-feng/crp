@@ -156,10 +156,10 @@ def query_instance(task_id, result, resource):
             namespace = result.get('namespace') if result.get('namespace') else NAMESPACE
             K8sDeployment = K8sDeploymentApi()
             deployment_ret,deployment_code=K8sDeployment.get_deployment(namespace,resource_name)
-            result['inst_state'] = 1
-            Log.logger.info("DDD--------------delete---------------{}-------------{}".format(deployment_ret,deployment_code))
+            #如果deploymenr已经删除 下面会抛一次
             available_replicas = deployment_ret.status.available_replicas
             unavailable_replicas =deployment_ret.status.unavailable_replicas
+            result['inst_state'] = 1
             if available_replicas or unavailable_replicas:
                 result['current_status'] = DELETE_VM
                 result['msg'] = 'deployment is exist  begin delete Deployment'
@@ -180,7 +180,7 @@ def query_instance(task_id, result, resource):
     except Exception as e:
         inst_state=result.get('inst_state',0)
         if inst_state == 1:
-            result['msg']='delete instance or deployment success'
+            result['msg']='delete deployment or  instance success'
             Log.logger.debug(
                 "Query Task ID " + str(task_id) +
                 " query Instance ID " + os_inst_id +
