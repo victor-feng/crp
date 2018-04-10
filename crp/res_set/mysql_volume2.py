@@ -9,7 +9,7 @@ from del_handler import CrpException
 # 创建volume
 # 挂载volume到虚机
 
-
+'''
 def create_volume(vm,volume_size):
     """
     创建卷
@@ -69,6 +69,27 @@ def create_volume(vm,volume_size):
             }
             Log.logger.debug("CreateVolume success %s" % res)
             return volume
+'''
+
+def create_volume(vm,volume_size):
+    """
+    创建卷，卷和虚机在同一台宿主机上
+    :param vm:
+    :param volume_size:
+    :return:
+    """
+    volume = None
+    try:
+        cinder_client = OpenStack.cinder_client
+        volume_name = vm.get("vm_name","") + "-vol"
+        os_inst_id = vm.get("os_inst_id")
+        volume = cinder_client.volumes.create(name=volume_name, size=volume_size,scheduler_hints={"local_to_instance":os_inst_id})
+    except Exception as e:
+        err_msg = "create volume error {e}".format(e=str(e))
+        Log.logger.error(err_msg)
+    return volume
+
+
 
 def instance_attach_volume(os_inst_id, os_vol_id,device=None):
     """
@@ -88,7 +109,7 @@ def instance_attach_volume(os_inst_id, os_vol_id,device=None):
             "\r\nresult: " + str(vol_attach_result.to_dict()))
         return "AttachVolumeSuccess"
     except BaseException as e:
-        err_msg=str(e.args)
+        err_msg=str(e)
         Log.logger.error('attach volume os_inst_id is %s os_vol_id is  error msg: %s' % (os_inst_id,os_vol_id,err_msg))
         return "AttachVolumeError"
 
