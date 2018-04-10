@@ -352,7 +352,7 @@ class NamedManagerApi(object):
             domain = exchange_result.get('zone')
             zone_result = self.named_zone_query(zone_name=domain)
             if len(zone_result) != 0:
-                domainip = self.named_domain_query(domain_name)
+                #domainip = self.named_domain_query(domain_name)
                 #判断域名是否已经添加，注册了就不再添加
                 #if not domainip:
                 #    self.named_domain_add(domain_name=domain_name,domain_ip=domain_ip)
