@@ -275,7 +275,7 @@ class NamedManagerApi(object):
         try:
             data = {"method":"getdomains"}
             url=NAMEDMANAGER_URL.get(self.env)
-            rep = requests.post(url, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS)
+            rep = requests.post(url, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS,timeout=120)
             ret_json = json.loads(rep.text)
             result = ret_json.get('zone')
             if (result is not None) and (len(result) != 0):
@@ -302,8 +302,7 @@ class NamedManagerApi(object):
             record_name = exchange_result.get('record_name')
             data = {"method":"getDns","domain":domain,"recordname":record_name}
             url = NAMEDMANAGER_URL.get(self.env)
-            rep = requests.post(url, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS)
-            print rep.text
+            rep = requests.post(url, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS,timeout=120)
             ret_json = json.loads(rep.text)
             if ret_json.get('result') == 'success':
                 res = ret_json.get('domainip')
@@ -353,8 +352,10 @@ class NamedManagerApi(object):
             domain = exchange_result.get('zone')
             zone_result = self.named_zone_query(zone_name=domain)
             if len(zone_result) != 0:
-                self.named_domain_add(domain_name=domain_name,domain_ip=domain_ip)
-                res = 'name: {domain_name}, ip: {domain_ip}'.format(domain_name=domain_name,domain_ip=domain_ip)
+                domainip = self.named_domain_query(domain_name)
+                if not domainip:
+                    self.named_domain_add(domain_name=domain_name,domain_ip=domain_ip)
+                    res = 'name: {domain_name}, ip: {domain_ip}'.format(domain_name=domain_name,domain_ip=domain_ip)
             else:
                 raise ServerError('The zone [{zone_name}] does not exist'.format(zone_name=domain))
         except Exception as e:
