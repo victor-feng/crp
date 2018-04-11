@@ -300,11 +300,11 @@ def query_volume_status(task_id, result, resource):
                 result['vol_state'] = 1
         elif not os_vol_id:
             #volume 不存在 直接删除虚机
-            result['current_status']=QUERY_INGRESS
+            result['current_status']=QUERY_VM
     except Exception as e:
         vol_state = result.get("vol_state",0)
         if vol_state == 0:
-            result['current_status'] = QUERY_INGRESS
+            result['current_status'] = QUERY_VM
         else:
             err_msg=str(e)
             Log.logger.error('Task ID %s,query_volume_status error.error msg is %s' % (task_id, err_msg))
@@ -325,13 +325,13 @@ def delete_volume(task_id,result,resource):
         if os_vol_id:
             cinder_client = OpenStack.cinder_client
             cinder_client.volumes.delete(os_vol_id)
-        result['current_status'] = QUERY_INGRESS
+        result['current_status'] = QUERY_VM
         Log.logger.debug(
             "Task ID %s, delete volume , vol_id is %s" % (task_id,os_vol_id))
     except Exception as e:
         Log.logger.error(
             "[CRP] _delete_volume failed, Exception:%s" % str(e))
-        result['current_status'] = QUERY_INGRESS
+        result['current_status'] = QUERY_VM
         raise CrpException(str(e))
 
 
