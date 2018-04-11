@@ -150,7 +150,8 @@ def query_instance(task_id, result, resource):
     os_inst_id =resource.get('os_inst_id', '')
     resource_id =resource.get('resource_id', '')
     result['os_inst_id'] = os_inst_id
-    result['resource_id'] = resource_id
+    if resource_id:
+        result['resource_id'] = resource_id
     resource_type=result.get('resource_type','')
     resource_name = result.get('resource_name','')
     nova_client = OpenStack.nova_client
