@@ -973,7 +973,7 @@ class ResourceProviderTransitions2(object):
             for _instance in instance:
                 ip = _instance.get('ip')
                 scp_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m" \
-                          " synchronize -a 'src={dir}/write_host_info.py dest=/tmp/'".format(ip=ip, dir=self.dir)
+                          " copy -a 'src={dir}/write_host_info.py dest=/tmp/ mode=777'".format(ip=ip, dir=self.dir)
                 exec_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa " \
                            "-m shell -a 'python /tmp/write_host_info.py '".format(ip=ip, dir=self.dir,)
                 exec_flag, err_msg = exec_cmd_ten_times(ip, scp_cmd, 6)
@@ -1118,15 +1118,12 @@ class ResourceProviderTransitions2(object):
             cmd="ansible {ip} --private-key={dir}/playbook-0830/old_id_rsa -m " \
                 "shell -a '/opt/mongodb/bin/mongod --config=/data/mongodb/conf/mongodb.conf'".format(ip=ip,dir=self.dir)
             scp_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m " \
-                    "synchronize -a 'src={sh_path} dest=/tmp/'".format(ip=ip,sh_path=sh_path ,dir=self.dir)
-            ch_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m " \
-                   "shell -a 'chmod 777 /tmp/mongodb_single.sh'".format(ip=ip, dir=self.dir)
+                    "copy -a 'src={sh_path} dest=/tmp/ mode=77'".format(ip=ip,sh_path=sh_path ,dir=self.dir)
             exec_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m " \
                      "shell -a 'sh /tmp/mongodb_single.sh'".format(ip=ip, dir=self.dir)
             Log.logger.debug(cmd)
             exec_cmd_ten_times(ip,cmd, 6)
             exec_cmd_ten_times(ip,scp_cmd, 6)
-            exec_cmd_ten_times(ip,ch_cmd, 6)
             exec_cmd_one_times(ip,exec_cmd)
             Log.logger.debug(
                 'mongodb single instance end {ip}'.format(
@@ -1208,7 +1205,7 @@ class ResourceProviderTransitions2(object):
 
     def mount_volume(self,ip,cluster_type):
         scp_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m" \
-                " synchronize -a 'src={dir}/volume.py dest=/tmp/'".format(ip=ip,dir=self.dir)
+                " copy -a 'src={dir}/volume.py dest=/tmp/ mode=777'".format(ip=ip,dir=self.dir)
         exec_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa " \
                  "-m shell -a 'python /tmp/volume.py {cluster_type}'".format(ip=ip, dir=self.dir,cluster_type=cluster_type)
         exec_cmd_ten_times(ip, scp_cmd,6)
@@ -1761,10 +1758,8 @@ class MongodbCluster(object):
         for i in script_name:
             os.system('chmod 600 {dir}'.format(dir=self.dir + '/' + i))
         Log.logger.debug('self.dir is {}'.format(self.dir))
-        cmd_before = "ansible {vip} --private-key={dir}/old_id_rsa -m synchronize -a 'src={current_dir}/" \
-                     "write_mongo_ip.py dest=/tmp/'".format(vip=ip, dir=self.dir, current_dir=self.current_dir)
-        authority_cmd = 'ansible {vip} -u root --private-key={dir}/old_id_rsa -m shell -a ' \
-                        '"chmod 777 /tmp/write_mongo_ip.py"'.format(vip=ip, dir=self.dir)
+        cmd_before = "ansible {vip} --private-key={dir}/old_id_rsa -m copy -a 'src={current_dir}/" \
+                     "write_mongo_ip.py dest=/tmp/ mode=777'".format(vip=ip, dir=self.dir, current_dir=self.current_dir)
         cmd1 = 'ansible {vip} -u root --private-key={dir}/old_id_rsa -m shell -a "python /tmp/write_mongo_ip.py' \
                ' {m_ip} {s1_ip} {s2_ip}"'.format(vip=ip, dir=self.dir, m_ip=self.ip_master1, s1_ip=self.ip_slave1, s2_ip=self.ip_slave2)
         Log.logger.debug('开始上传脚本{},{}'.format(ip, cmd_before))
@@ -1774,13 +1769,6 @@ class MongodbCluster(object):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
         Log.logger.debug('mongodb cluster cmd before:%s' % p.stdout.read())
-        Log.logger.debug('开始修改权限{},{}'.format(ip, authority_cmd))
-        p = subprocess.Popen(
-            authority_cmd,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
-        Log.logger.debug('mongodb cluster authority:%s' % p.stdout.read())
         Log.logger.debug('脚本上传完成,开始执行脚本{},{}'.format(ip, cmd1))
         p = subprocess.Popen(
             cmd1,

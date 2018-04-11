@@ -61,18 +61,11 @@ class AppDeploy(Resource):
             nip = kwargs.get('nip')
             certificate = kwargs.get('certificate', 0)
             template = "template_https" if certificate else "template_http"
-
             Log.logger.debug('----->start push:{}dir:{}'.format(kwargs, selfdir))
-
-            yum_install_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip, dir=selfdir)
-            scp_update_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/update.py dest=/tmp/'".format(
+            scp_update_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/update.py dest=/tmp/ mode=777'".format(
                     nip=nip, dir=selfdir)
-            scp_template_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/{template} dest=/tmp/'".format(
+            scp_template_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/{template} dest=/tmp/ mode=777'".format(
                     nip=nip, dir=selfdir, template=template)
-            chmod_update_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /tmp/update.py'".format(
-                nip=nip, dir=selfdir)
-            chmod_template_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /tmp/{template}'".format(
-                nip=nip, dir=selfdir, template=template)
             exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a ''"/tmp/update.py {certificate} {domain} {ip} {port}"'.format(
                 nip=kwargs.get('nip'),
                 dir=selfdir,
@@ -80,7 +73,6 @@ class AppDeploy(Resource):
                 domain=kwargs.get('domain'),
                 ip=kwargs.get('ip'),
                 port=kwargs.get('port'))
-            exec_cmd_ten_times(nip,yum_install_cmd,1)
             exec_flag, err_msg=exec_cmd_ten_times(nip, scp_update_cmd, 1)
             if not exec_flag:
                 return exec_flag, err_msg
@@ -88,12 +80,6 @@ class AppDeploy(Resource):
             if not exec_flag:
                 return exec_flag, err_msg
             Log.logger.debug('------>上传配置文件完成')
-            exec_flag, err_msg=exec_cmd_ten_times(nip, chmod_update_cmd, 1)
-            if not exec_flag:
-                return exec_flag, err_msg
-            exec_flag, err_msg=exec_cmd_ten_times(nip, chmod_template_cmd, 1)
-            if not exec_flag:
-                return exec_flag, err_msg
             exec_flag, err_msg=exec_cmd_ten_times(nip, exec_shell_cmd, 1)
             Log.logger.debug('------>end push')
             if not exec_flag:
@@ -143,19 +129,14 @@ class AppDeploy(Resource):
             if not nip or not domain:
                 Log.logger.info("nginx ip or domain is null, do nothing")
                 continue
-            yum_install_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -a 'yum install rsync -y'".format(nip=nip, dir=selfdir)
-            scp_delete_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m synchronize -a 'src={dir}/delete.py dest=/tmp/'".format(
+            scp_delete_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/delete.py dest=/tmp/' mode=777".format(
                     nip=nip, dir=selfdir)
-            chmod_delete_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a 'chmod 777 /tmp/delete.py'".format(
-                nip=nip, dir=selfdir)
             exec_shell_cmd='ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a ''"/tmp/delete.py {domain}"'.format(
                     nip=nip,
                     dir=selfdir,
                     domain=domain)
-            exec_cmd_ten_times(nip,yum_install_cmd,1)
             exec_cmd_ten_times(nip,scp_delete_cmd,1)
             Log.logger.debug('------>上传删除脚本完成')
-            exec_cmd_ten_times(nip, chmod_delete_cmd, 1)
             exec_cmd_ten_times(nip, exec_shell_cmd, 1)
         Log.logger.debug("--------->stop delete nginx profiles: success")
 
@@ -850,14 +831,14 @@ class AppDeploy(Resource):
         host_path = self.mongodb_hosts_file(vip)
         Log.logger.debug("write ip to etc/hosts")
         ansible_cmd = 'ansible -i ' + host_path + ' ' + vip + ' ' + ' --private-key=crp/res_set/playbook-0830/old_id_rsa -m'
-        ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + sh_path + ' dest=' + remote_path + '"'
+        ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + sh_path + ' dest=' + remote_path + '"'
         ansible_sh_cmd = ansible_cmd + ' shell -a "%s < %s"' % (configs[APP_ENV].MONGODB_PATH, remote_path)
         ans_res, err_msg = self._exec_ansible_cmd(ansible_sql_cmd)
         if ans_res:
             ans_res, err_msg = self._exec_ansible_cmd(ansible_sh_cmd)
             if ans_res:
                 sh_path = self.mongodb_command_file(mongodb_password, mongodb_username, port, database, "")
-                ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + sh_path + ' dest=' + remote_path + '"'
+                ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + sh_path + ' dest=' + remote_path + '"'
                 query_current_db = ansible_cmd + 'shell -a "%s < %s"' % (configs[APP_ENV].MONGODB_PATH, remote_path)
 
                 ans_res, err_msg = self._exec_ansible_cmd(ansible_sql_cmd)
@@ -875,7 +856,7 @@ class AppDeploy(Resource):
                     Log.logger.debug("the new create db list is %s" % new_db_list)
                     if len(new_db_list):
                         auth_path = self.mongodb_auth_file(mongodb_username, mongodb_password, new_db_list)
-                        ansible_sql_cmd = ansible_cmd + ' synchronize -a "src=' + auth_path + ' dest=' + remote_path + '"'
+                        ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + auth_path + ' dest=' + remote_path + '"'
                         exec_auth_file = ansible_cmd + ' shell -a "%s < %s"' % \
                                                        (configs[APP_ENV].MONGODB_AUTH_PATH, remote_path)
                         Log.logger.debug("start upload auth file")
