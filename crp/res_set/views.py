@@ -246,6 +246,7 @@ class ResourceDelete(Resource):
                          "resource_type": resource_type,
                          'syswin_project':syswin_project,
                          'namespace':namespace,
+                         'resource_id':resource_id,
                          },
                         delete_instance_and_query2, {})
                 else:

@@ -106,7 +106,7 @@ class DnsConfig(object):
             self.ssh = paramiko.SSHClient()
             self.ssh._transport = self.trans
         except Exception as e:
-            raise ServerError('connect dns server error:%s' % e.message)
+            raise ServerError('connect dns server error:%s' % str(e))
 
     def add(self, domain_name, ip):
         try:
@@ -123,7 +123,7 @@ class DnsConfig(object):
             else:
                 raise ServerError('Add dns error: %s' % result)
         except Exception as e:
-            raise ServerError('Add dns error: %s' % e.message)
+            raise ServerError('Add dns error: %s' % str(e))
         return response
 
     def query(self, domain_name):
@@ -144,7 +144,7 @@ class DnsConfig(object):
             else:
                 raise ServerError('Query Dns Error: %s' % result_err)
         except Exception as e:
-            raise ServerError('Query Dns Error: %s' % e.message)
+            raise ServerError('Query Dns Error: %s' % str(e))
         return response
 
     def delete(self, domain_name):
@@ -160,7 +160,7 @@ class DnsConfig(object):
             else:
                 raise ServerError('Query Dns Error: %s' % result)
         except Exception as e:
-            raise ServerError('Delete Dns Error: %s' % e.message)
+            raise ServerError('Delete Dns Error: %s' % str(e))
         return response
 
     def reload(self):
@@ -176,7 +176,7 @@ class DnsConfig(object):
             else:
                 raise ServerError('Dns reload error: %s' % result)
         except Exception as e:
-            raise ServerError('Dns reload error: %s' % e.message)
+            raise ServerError('Dns reload error: %s' % str(e))
         return reload_response
 
     def zone_query(self,domain_name):
@@ -194,7 +194,7 @@ class DnsConfig(object):
             else:
                 raise ServerError('zone is not exist')
         except Exception as e:
-            raise ServerError('Zone Query Error: %s' % e.message)
+            raise ServerError('Zone Query Error: %s' % str(e))
         return response
 
     def zone_add(self,domain_name):
@@ -213,7 +213,7 @@ class DnsConfig(object):
             else:
                 raise ServerError('zone add error')
         except Exception as e:
-            raise ServerError(e.message)
+            raise ServerError(str(e))
         return response
 
     def close(self):
@@ -235,7 +235,7 @@ class DnsApi(DnsConfig):
             res = self.dns_connect.add(domain_name=domain_name, ip=ip)
             self.dns_connect.reload()
         except ServerError as e:
-            res = e.message
+            res = str(e)
         return res
 
     def dns_delete(self, domain_name):
@@ -249,7 +249,7 @@ class DnsApi(DnsConfig):
             res = self.dns_connect.delete(domain_name=domain_name)
             self.dns_connect.reload()
         except ServerError as e:
-            res = e.message
+            res = str(e)
         return res
 
     def dns_query(self, domain_name):
@@ -257,7 +257,7 @@ class DnsApi(DnsConfig):
             self.dns_connect.zone_query(domain_name=domain_name)
             res = self.dns_connect.query(domain_name=domain_name)
         except ServerError as e:
-            res = e.message
+            res = str(e)
         return res
 
 
@@ -275,7 +275,7 @@ class NamedManagerApi(object):
         try:
             data = {"method":"getdomains"}
             url=NAMEDMANAGER_URL.get(self.env)
-            rep = requests.post(url, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS)
+            rep = requests.post(url, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS,timeout=120)
             ret_json = json.loads(rep.text)
             result = ret_json.get('zone')
             if (result is not None) and (len(result) != 0):
@@ -286,7 +286,7 @@ class NamedManagerApi(object):
             else:
                 raise ServerError('zone list is null')
         except Exception as e:
-            raise ServerError(e.message)
+            raise ServerError(str(e))
         return res
 
     def named_domain_query(self,domain_name):
@@ -302,15 +302,14 @@ class NamedManagerApi(object):
             record_name = exchange_result.get('record_name')
             data = {"method":"getDns","domain":domain,"recordname":record_name}
             url = NAMEDMANAGER_URL.get(self.env)
-            rep = requests.post(url, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS)
-            print rep.text
+            rep = requests.post(url, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS,timeout=120)
             ret_json = json.loads(rep.text)
             if ret_json.get('result') == 'success':
                 res = ret_json.get('domainip')
             else:
                 raise ServerError('domain query error')
         except Exception as e:
-            raise ServerError(e.message)
+            raise ServerError(str(e))
         return res
 
     def named_domain_add(self,domain_name,domain_ip):
@@ -334,7 +333,7 @@ class NamedManagerApi(object):
             else:
                 raise ServerError('add domain error:{message}'.format(message=ret_json.get('message')))
         except Exception as e:
-            raise ServerError(e.message)
+            raise ServerError(str(e))
         return res
 
     def named_domain_delete(self,domain_name):
@@ -353,6 +352,9 @@ class NamedManagerApi(object):
             domain = exchange_result.get('zone')
             zone_result = self.named_zone_query(zone_name=domain)
             if len(zone_result) != 0:
+                #domainip = self.named_domain_query(domain_name)
+                #判断域名是否已经添加，注册了就不再添加
+                #if not domainip:
                 self.named_domain_add(domain_name=domain_name,domain_ip=domain_ip)
                 res = 'name: {domain_name}, ip: {domain_ip}'.format(domain_name=domain_name,domain_ip=domain_ip)
             else:

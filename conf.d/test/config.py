@@ -201,8 +201,8 @@ class TestingConfig(BaseConfig):
         }
     #NAMEDMANAGER_URL = 'http://172.28.50.141/namedmanager/dnsapi.php'
     NAMEDMANAGER_URL = {
-        "dev": "http://172.28.39.94/namedmanager/dnsapi.php",
-        "test": "http://172.28.39.94/namedmanager/dnsapi.php",
+        "dev": "http://172.28.39.94/namedmanager/api/dnsapi.php",
+        "test": "http://172.28.39.94/namedmanager/api/dnsapi.php",
         "prep": "http://10.253.68.85/namedmanager/api/dnsapi.php",
         "prod": "http://10.253.68.85/namedmanager/api/dnsapi.php",
     }

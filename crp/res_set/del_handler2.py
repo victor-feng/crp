@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
 
-import json
-import requests
+
 from crp.log import Log
 from crp.openstack2 import OpenStack
 from crp.k8s_api import K8sDeploymentApi,K8sServiceApi,K8sIngressApi
 from crp.taskmgr import *
 from config import APP_ENV, configs
+from crp.res_set import  delete_request_callback
 NAMESPACE = configs[APP_ENV].NAMESPACE
 RES_DELETE_CALL_BACK = configs[APP_ENV].RES_DELETE_CALL_BACK
 
@@ -60,6 +60,7 @@ def query_ingress(task_id, result):
         Log.logger.error(
             "Query Task ID " + str(task_id) +
             " result " + result.__str__())
+        raise CrpException(err_msg)
 
 def delete_ingress(task_id, result):
     resource_name = result.get('resource_name', '')
@@ -79,7 +80,7 @@ def delete_ingress(task_id, result):
         Log.logger.error(
             "Query Task ID " + str(task_id) +
             " result " + result.__str__())
-        result['current_status'] = QUERY_SERVICE
+        raise CrpException(err_msg)
 
 
 
@@ -115,6 +116,7 @@ def query_service(task_id, result):
         Log.logger.error(
             "Query Task ID " + str(task_id) +
             " result " + result.__str__())
+        raise CrpException(err_msg)
 
 def delete_service(task_id, result):
     resource_name = result.get('resource_name', '')
@@ -134,7 +136,8 @@ def delete_service(task_id, result):
         Log.logger.error(
             "Query Task ID " + str(task_id) +
             " result " + result.__str__())
-        result['current_status'] = QUERY_VM
+        raise CrpException(err_msg)
+
 
 def query_instance(task_id, result, resource):
     """
@@ -147,7 +150,8 @@ def query_instance(task_id, result, resource):
     os_inst_id =resource.get('os_inst_id', '')
     resource_id =resource.get('resource_id', '')
     result['os_inst_id'] = os_inst_id
-    result['resource_id'] = resource_id
+    if resource_id:
+        result['resource_id'] = resource_id
     resource_type=result.get('resource_type','')
     resource_name = result.get('resource_name','')
     nova_client = OpenStack.nova_client
@@ -181,10 +185,12 @@ def query_instance(task_id, result, resource):
         inst_state=result.get('inst_state',0)
         if inst_state == 1:
             result['msg']='delete deployment or  instance success'
+            result['status'] = "success"
             Log.logger.debug(
                 "Query Task ID " + str(task_id) +
                 " query Instance ID " + os_inst_id +
                 " result " + result.__str__())
+            delete_request_callback(task_id, result)
         elif inst_state == 0: 
             result['msg'] = 'instance or deployment is not exist'
             result['code'] = 404
@@ -193,7 +199,11 @@ def query_instance(task_id, result, resource):
                 "Query Task ID " + str(task_id) +
                 " query Instance ID " + os_inst_id +
                 " result " + result.__str__())
-        delete_request_callback(task_id, result)
+            result['status'] = "success"
+            delete_request_callback(task_id, result)
+        else:
+            err_msg = "Query deployment or instance error {}".format(e=str(e))
+            raise CrpException(err_msg)
         TaskManager.task_exit(task_id)
 
 def delete_instance(task_id, result):
@@ -225,9 +235,11 @@ def delete_instance(task_id, result):
     except Exception as e:
         result['msg'] = 'delete instance failed'
         result['code'] = 400
+        err_msg = " [CRP] delete_instance failed, Exception:{e}".format(e=str(e))
         Log.logger.error(
-            "Query Task ID " + str(task_id) + " result " + result.__str__() + " [CRP] delete_instance failed, Exception:%s" % str(e))
+            "Query Task ID " + str(task_id) + " result " + result.__str__() + err_msg)
         TaskManager.task_exit(task_id)
+        raise CrpException(err_msg)
 
 
 
@@ -277,23 +289,30 @@ def query_volume_status(task_id, result, resource):
                     "Task ID %s, query_detach_status, Volume status: %s, info: %s" % (task_id, vol.status, vol))
             if vol.status == 'available':
                 result['current_status'] = DETACH_VOLUME_SUCCESSFUL
+                result['vol_state'] = 1
                 Log.logger.info(
                     "Task ID %s, detach volume(%s) successful." % (task_id, os_vol_id))
             elif vol.status == 'in-use':
                 result['current_status'] = DETACH_VOLUME
+                result['vol_state'] = 1
                 Log.logger.debug(
                     "Task ID %s, begin detach volume , vol_id is %s" %(task_id,os_vol_id))
             elif vol.status == 'error' or 'error' in vol.status:
                 Log.logger.error(
                     "Task ID %s, volume status is error begin delete volume, vol_id is %s" %(task_id,os_vol_id))
                 result['current_status'] = DETACH_VOLUME_SUCCESSFUL
+                result['vol_state'] = 1
         elif not os_vol_id:
             #volume 不存在 直接删除虚机
-            result['current_status']=QUERY_INGRESS
+            result['current_status']=QUERY_VM
     except Exception as e:
-        err_msg=str(e)
-        Log.logger.error('Task ID %s,query_volume_status error.error msg is %s' % (task_id, err_msg))
-        raise CrpException(err_msg)
+        vol_state = result.get("vol_state",0)
+        if vol_state == 0:
+            result['current_status'] = QUERY_VM
+        else:
+            err_msg=str(e)
+            Log.logger.error('Task ID %s,query_volume_status error.error msg is %s' % (task_id, err_msg))
+            raise CrpException(err_msg)
 
 
 
@@ -310,13 +329,13 @@ def delete_volume(task_id,result,resource):
         if os_vol_id:
             cinder_client = OpenStack.cinder_client
             cinder_client.volumes.delete(os_vol_id)
-        result['current_status'] = QUERY_INGRESS
+        result['current_status'] = QUERY_VM
         Log.logger.debug(
             "Task ID %s, delete volume , vol_id is %s" % (task_id,os_vol_id))
     except Exception as e:
         Log.logger.error(
             "[CRP] _delete_volume failed, Exception:%s" % str(e))
-        result['current_status'] = QUERY_INGRESS
+        result['current_status'] = QUERY_VM
         raise CrpException(str(e))
 
 
@@ -356,7 +375,11 @@ def delete_instance_and_query2(task_id, result, resource):
         elif current_status == QUERY_VM:
             query_instance(task_id, result, resource)
     except Exception as e:
-        Log.logger.error("Query Task ID " + str(task_id) +" [CRP] delete_instance_and_query failed, Exception:%s" % str(e))
+        err_msg = " [CRP] delete_instance_and_query failed, Exception:%s" % str(e)
+        Log.logger.error("Query Task ID " + str(task_id) + err_msg)
+        result['msg'] = err_msg
+        result['status'] = "fail"
+        delete_request_callback(task_id, result)
         TaskManager.task_exit(task_id)
 
 
@@ -375,43 +398,6 @@ def delete_vip2(port_id):
     except Exception as e:
         Log.logger.error(" delete vip  error, Exception:%s" % e)
         raise CrpException(str(e))
-
-
-    
-
-
-def delete_request_callback(task_id, result):
-    """
-    把删除信息和状态回调给uop
-    :param task_id:
-    :param result:
-    :return:
-    """
-    data = {
-            'resource_id': result.get('resource_id', ''),
-            'os_inst_id': result.get('os_inst_id', ''),
-            'msg': result.get('msg', ''),
-            'code': result.get('code', ''),
-            'unique_flag': result.get('unique_flag',''),
-            'del_os_ins_ip_list': result.get('del_os_ins_ip_list', []),
-            "set_flag":result.get('set_flag',''),
-            "syswin_project": result.get('syswin_project', '')
-        }
-    headers = {'Content-Type': 'application/json'}
-    syswin_project = result.get('syswin_project', '')
-    DELETE_CALL_BACK = RES_DELETE_CALL_BACK[syswin_project]
-    try:
-        Log.logger.debug("Delete request callback{data}".format(data=data))
-        data_str=json.dumps(data)
-        res=requests.post(DELETE_CALL_BACK,data=data_str,headers=headers)
-        res=json.dumps(res.json())
-        Log.logger.debug(res)
-    except BaseException as e:
-        err_msg = str(e)
-        Log.logger.error(
-                "Callback Task ID " + str(task_id) + '\r\n' +
-                'delete_request_callback err_msg ' + str(err_msg))
-        raise CrpException(err_msg)
 
 
 
