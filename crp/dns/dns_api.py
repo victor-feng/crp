@@ -355,7 +355,7 @@ class NamedManagerApi(object):
                 #domainip = self.named_domain_query(domain_name)
                 #判断域名是否已经添加，注册了就不再添加
                 #if not domainip:
-                #    self.named_domain_add(domain_name=domain_name,domain_ip=domain_ip)
+                self.named_domain_add(domain_name=domain_name,domain_ip=domain_ip)
                 res = 'name: {domain_name}, ip: {domain_ip}'.format(domain_name=domain_name,domain_ip=domain_ip)
             else:
                 raise ServerError('The zone [{zone_name}] does not exist'.format(zone_name=domain))
