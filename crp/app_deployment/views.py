@@ -73,6 +73,7 @@ class AppDeploy(Resource):
                 domain=kwargs.get('domain'),
                 ip=kwargs.get('ip'),
                 port=kwargs.get('port'))
+            Log.logger.info(exec_shell_cmd)
             exec_flag, err_msg=exec_cmd_ten_times(nip, scp_update_cmd, 1)
             if not exec_flag:
                 return exec_flag, err_msg
