@@ -60,6 +60,7 @@ def query_ingress(task_id, result):
         Log.logger.error(
             "Query Task ID " + str(task_id) +
             " result " + result.__str__())
+        raise CrpException(err_msg)
 
 def delete_ingress(task_id, result):
     resource_name = result.get('resource_name', '')
@@ -79,7 +80,7 @@ def delete_ingress(task_id, result):
         Log.logger.error(
             "Query Task ID " + str(task_id) +
             " result " + result.__str__())
-        result['current_status'] = QUERY_SERVICE
+        raise CrpException(err_msg)
 
 
 
@@ -115,6 +116,7 @@ def query_service(task_id, result):
         Log.logger.error(
             "Query Task ID " + str(task_id) +
             " result " + result.__str__())
+        raise CrpException(err_msg)
 
 def delete_service(task_id, result):
     resource_name = result.get('resource_name', '')
@@ -134,7 +136,8 @@ def delete_service(task_id, result):
         Log.logger.error(
             "Query Task ID " + str(task_id) +
             " result " + result.__str__())
-        result['current_status'] = QUERY_VM
+        raise CrpException(err_msg)
+
 
 def query_instance(task_id, result, resource):
     """
@@ -193,6 +196,9 @@ def query_instance(task_id, result, resource):
                 "Query Task ID " + str(task_id) +
                 " query Instance ID " + os_inst_id +
                 " result " + result.__str__())
+        else:
+            err_msg = "Query deployment or instance error {}".format(e=str(e))
+            raise CrpException(err_msg)
         delete_request_callback(task_id, result)
         TaskManager.task_exit(task_id)
 
@@ -225,9 +231,11 @@ def delete_instance(task_id, result):
     except Exception as e:
         result['msg'] = 'delete instance failed'
         result['code'] = 400
+        err_msg = " [CRP] delete_instance failed, Exception:{e}".format(e=str(e))
         Log.logger.error(
-            "Query Task ID " + str(task_id) + " result " + result.__str__() + " [CRP] delete_instance failed, Exception:%s" % str(e))
+            "Query Task ID " + str(task_id) + " result " + result.__str__() + err_msg)
         TaskManager.task_exit(task_id)
+        raise CrpException(err_msg)
 
 
 
@@ -277,23 +285,30 @@ def query_volume_status(task_id, result, resource):
                     "Task ID %s, query_detach_status, Volume status: %s, info: %s" % (task_id, vol.status, vol))
             if vol.status == 'available':
                 result['current_status'] = DETACH_VOLUME_SUCCESSFUL
+                result['vol_state'] = 1
                 Log.logger.info(
                     "Task ID %s, detach volume(%s) successful." % (task_id, os_vol_id))
             elif vol.status == 'in-use':
                 result['current_status'] = DETACH_VOLUME
+                result['vol_state'] = 1
                 Log.logger.debug(
                     "Task ID %s, begin detach volume , vol_id is %s" %(task_id,os_vol_id))
             elif vol.status == 'error' or 'error' in vol.status:
                 Log.logger.error(
                     "Task ID %s, volume status is error begin delete volume, vol_id is %s" %(task_id,os_vol_id))
                 result['current_status'] = DETACH_VOLUME_SUCCESSFUL
+                result['vol_state'] = 1
         elif not os_vol_id:
             #volume 不存在 直接删除虚机
             result['current_status']=QUERY_INGRESS
     except Exception as e:
-        err_msg=str(e)
-        Log.logger.error('Task ID %s,query_volume_status error.error msg is %s' % (task_id, err_msg))
-        raise CrpException(err_msg)
+        vol_state = result.get("vol_state",0)
+        if vol_state == 0:
+            result['current_status'] = QUERY_INGRESS
+        else:
+            err_msg=str(e)
+            Log.logger.error('Task ID %s,query_volume_status error.error msg is %s' % (task_id, err_msg))
+            raise CrpException(err_msg)
 
 
 
