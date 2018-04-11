@@ -66,7 +66,7 @@ class AppDeploy(Resource):
                     nip=nip, dir=selfdir)
             scp_template_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/{template} dest=/tmp/ mode=777'".format(
                     nip=nip, dir=selfdir, template=template)
-            exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a ''"/tmp/update.py {certificate} {domain} {ip} {port}"'.format(
+            exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/update.py {certificate} {domain} {ip} {port}"'.format(
                 nip=kwargs.get('nip'),
                 dir=selfdir,
                 certificate=certificate,
