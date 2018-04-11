@@ -10,12 +10,18 @@ def config():
     if len(sys.argv) < 5:
         print "Please Input certificate(False), domain, Ip:port"
     print sys.argv, len(sys.argv)
-    domain = sys.argv[2]  # 'api.wangyan.systoon.com'
-    certificate = sys.argv[1] # certificate or False
+    length_args = len(sys.argv)
+    certificate = "0"
+    if length_args % 2 != 0:
+        domain = sys.argv[2]  # 'api.wangyan.systoon.com'
+        certificate = sys.argv[1]  # certificate or False
+    else:
+        domain = sys.argv[1]
     # TODO
     ip_list, port_list = statistics_port_ip(sys.argv)
     # ip_list = [sys.argv[2], sys.argv[3]]  # ['1.1.1.1', '2.2.2.2']
     # port_list = [sys.argv[4], sys.argv[5]]  # [11, 22]
+    print '-----', ip_list, port_list
     ip_port = resolve(ip_list, port_list)
     print 'ip + port = ', ip_port
     ips = write_server_config(ip_port)
@@ -86,29 +92,39 @@ def write_server_config(ip_port):
 
 def statistics_port_ip(args):
     """
-    :param args: sys.argv ['/shell/update.py', 'Certificate', 'crp-cluster.syswin.com', '172.28.36.31', '172.28.36.32', '8081', '999']
+    :param args: sys.argv ['/shell/update.py', 'Certificate', 'crp-cluster.syswin.com',
+    '172.28.36.31', '172.28.36.32', '8081', '999']
+
+    ['/shell/update.py', 'crp-cluster.syswin.com',
+    '172.28.36.31', '999']
     :return: ip port
     """
-    ip_num = len(args) - 4
-    ip_list = []
-    port_list = []
-    first_ip_index = 3
-    last_ip_index = (args.index(args[-2])+1)
+    length = len(args)
+    if length % 2 == 0:
+        # no certificate
+        num_ip_port = length - 2
+        ip_num = num_ip_port - num_ip_port/2
+        first_ip_index = 2
+    else:
+        # 5 - 3 - 1
+        # 7 - 3 - 2
+        # 9 - 3 - 3
+        num_ip_port = length - 3
+        ip_num = num_ip_port - num_ip_port/2
+        first_ip_index = 3
+        # last_ip_index = (args.index(args[-2])+1)
+    last_ip_tag = ip_num + 1
+    last_ip_index = (args.index(args[-last_ip_tag]))
 
     # first_port_index = last_ip_index + 1
     # last_port_index = len(args) - 1
-
+    ip_list = []
+    port_list = []
     for ip in args[first_ip_index:last_ip_index+1]:
         ip_list.append(ip)
         if args.index(ip) == last_ip_index:
             break
-    # for port in args[first_port_index:last_port_index+1]:
-    #     port_list.append(port)
-    #     if args.index(port) == last_port_index:
-    #         break
 
-    # last_port = args[last_port_index]
-    # last_ip = args[last_ip_index]
     for i in range(ip_num):
         port_list.append(args[-1])
     return ip_list, port_list
