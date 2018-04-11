@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
 
-import json
-import requests
+
 from crp.log import Log
 from crp.openstack2 import OpenStack
 from crp.k8s_api import K8sDeploymentApi,K8sServiceApi,K8sIngressApi
 from crp.taskmgr import *
 from config import APP_ENV, configs
+from crp.res_set import  delete_request_callback
 NAMESPACE = configs[APP_ENV].NAMESPACE
 RES_DELETE_CALL_BACK = configs[APP_ENV].RES_DELETE_CALL_BACK
 
@@ -184,6 +184,7 @@ def query_instance(task_id, result, resource):
         inst_state=result.get('inst_state',0)
         if inst_state == 1:
             result['msg']='delete deployment or  instance success'
+            result['status'] = "success"
             Log.logger.debug(
                 "Query Task ID " + str(task_id) +
                 " query Instance ID " + os_inst_id +
@@ -371,7 +372,11 @@ def delete_instance_and_query2(task_id, result, resource):
         elif current_status == QUERY_VM:
             query_instance(task_id, result, resource)
     except Exception as e:
-        Log.logger.error("Query Task ID " + str(task_id) +" [CRP] delete_instance_and_query failed, Exception:%s" % str(e))
+        err_msg = " [CRP] delete_instance_and_query failed, Exception:%s" % str(e)
+        Log.logger.error("Query Task ID " + str(task_id) + err_msg)
+        result['msg'] = err_msg
+        result['status'] = "fail"
+        delete_request_callback(task_id, result)
         TaskManager.task_exit(task_id)
 
 
@@ -390,43 +395,6 @@ def delete_vip2(port_id):
     except Exception as e:
         Log.logger.error(" delete vip  error, Exception:%s" % e)
         raise CrpException(str(e))
-
-
-    
-
-
-def delete_request_callback(task_id, result):
-    """
-    把删除信息和状态回调给uop
-    :param task_id:
-    :param result:
-    :return:
-    """
-    data = {
-            'resource_id': result.get('resource_id', ''),
-            'os_inst_id': result.get('os_inst_id', ''),
-            'msg': result.get('msg', ''),
-            'code': result.get('code', ''),
-            'unique_flag': result.get('unique_flag',''),
-            'del_os_ins_ip_list': result.get('del_os_ins_ip_list', []),
-            "set_flag":result.get('set_flag',''),
-            "syswin_project": result.get('syswin_project', '')
-        }
-    headers = {'Content-Type': 'application/json'}
-    syswin_project = result.get('syswin_project', '')
-    DELETE_CALL_BACK = RES_DELETE_CALL_BACK[syswin_project]
-    try:
-        Log.logger.debug("Delete request callback{data}".format(data=data))
-        data_str=json.dumps(data)
-        res=requests.post(DELETE_CALL_BACK,data=data_str,headers=headers)
-        res=json.dumps(res.json())
-        Log.logger.debug(res)
-    except BaseException as e:
-        err_msg = str(e)
-        Log.logger.error(
-                "Callback Task ID " + str(task_id) + '\r\n' +
-                'delete_request_callback err_msg ' + str(err_msg))
-        raise CrpException(err_msg)
 
 
 
