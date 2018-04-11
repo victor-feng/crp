@@ -66,22 +66,13 @@ class AppDeploy(Resource):
                     nip=nip, dir=selfdir)
             scp_template_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/{template} dest=/tmp/ mode=777'".format(
                     nip=nip, dir=selfdir, template=template)
-            if certificate:
-                exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/update.py {certificate} {domain} {ip} {port}"'.format(
+            exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/update.py {certificate} {domain} {ip} {port}"'.format(
                     nip=kwargs.get('nip'),
                     dir=selfdir,
                     certificate=certificate,
                     domain=kwargs.get('domain'),
                     ip=kwargs.get('ip'),
                     port=kwargs.get('port'))
-            else:
-                exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/update.py {domain} {ip} {port}"'.format(
-                    nip=kwargs.get('nip'),
-                    dir=selfdir,
-                    domain=kwargs.get('domain'),
-                    ip=kwargs.get('ip'),
-                    port=kwargs.get('port'))
-            Log.logger.info(exec_shell_cmd)
             exec_flag, err_msg=exec_cmd_ten_times(nip, scp_update_cmd, 1)
             if not exec_flag:
                 return exec_flag, err_msg
