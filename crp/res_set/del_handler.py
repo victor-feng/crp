@@ -63,6 +63,8 @@ def query_instance(task_id, result, resource):
                 "Query Task ID " + str(task_id) +
                 " query Instance ID " + os_inst_id +
                 " result " + result.__str__())
+            result['status'] = "success"
+            delete_request_callback(task_id, result)
         else:
             err_msg = "Query instance error {}".format(e=str(e))
             raise CrpException(err_msg)
