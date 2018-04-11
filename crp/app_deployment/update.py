@@ -59,9 +59,8 @@ def config():
     else:
         f_dst3 = re.sub(r'SubDomain', subdomain, f_dst5)
 
-    if certificate == "0": # https
+    if certificate != "0": # https
         f_dst3 = re.sub(r'Certificate', certificate, f_dst3)
-        pass
 
     fp.write(f_dst3)
     fp.close()
