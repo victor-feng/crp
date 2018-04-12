@@ -332,12 +332,13 @@ class AppDeploy(Resource):
                                       "", True, deploy_type,
                                       unique_flag, cloud, deploy_name,o_domain,o_port,"True")
                         return
-                err_msg=self.do_app_push(app)
-                if err_msg:
-                    _dep_callback(deploy_id, "ip", "nginx", err_msg, "active", False, "nginx", True, 'deploy',
-                                  unique_flag, cloud, deploy_name)
-                    code = 400
-                    return code, err_msg
+                if domain:
+                    err_msg=self.do_app_push(app)
+                    if err_msg:
+                        _dep_callback(deploy_id, "ip", "nginx", err_msg, "active", False, "nginx", True, 'deploy',
+                                      unique_flag, cloud, deploy_name)
+                        code = 400
+                        return code, err_msg
             if appinfo:
                 _dep_detail_callback(deploy_id, "deploy_nginx", "res")
             #配置dns
