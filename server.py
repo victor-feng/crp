@@ -26,6 +26,10 @@ os.system('rm -rf conf')
 os.system('ln -s conf.d/%s  conf '%(options.deploy))
 os.system('ln -s conf/config.py  config.py')
 os.system('> /etc/ansible/hosts')
+os.system('chmod 600 crp/res_set/playbook-0830/id_rsa_java_new')
+os.system('chmod 600 crp/res_set/playbook-0830/old_id_rsa')
+os.system('chmod 600 crp/res_set/mongo_script/old_id_rsa')
+os.system('chmod 600 crp/app_deployment/id_rsa_98')
 
 from crp import create_app
 from config import APP_ENV
