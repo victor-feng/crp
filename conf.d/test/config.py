@@ -15,7 +15,6 @@ class TestingConfig(BaseConfig):
 
     #NOTE: noused in mpc
     UOP_URL = "http://uop-test.syswin.com/"
-    #UOP_URL = "http://172.28.20.124:5000/"
     MPC_URL = "http://mpc-test.syswin.com/"
     OPENRC_PATH = "/root/openrc"
     
@@ -37,9 +36,11 @@ class TestingConfig(BaseConfig):
 
     MONGODB_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010'
     MONGODB_AUTH_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010 --authenticationDatabase admin -u admin -p 123456'
+
     HARBOR_URL = "reg1.syswin.com"
     HARBOR_USERNAME = "crm_test1"
     HARBOR_PASSWORD = "syswin#"
+
     ADD_LOG = {
         "VAR_DICT":
             [
@@ -59,8 +60,6 @@ class TestingConfig(BaseConfig):
 
     }
 
-
-
     cluster_type_image_port_mappers = {
         'mysql': {
             'uuid': '817d3140-0b82-4722-9816-3cee734f22b6',
@@ -68,56 +67,55 @@ class TestingConfig(BaseConfig):
             'port': '3316'
         },
         'redis': {
-            'uuid': '3da55e5b-814c-4935-abf0-1469ae606286',
+            'uuid': '12f260fd-1196-4b68-8d37-d9f1d322c842',
             'name': 'redis-50G-20170428',
             'port': '6379'
         },
         'mongodb': {
-            'uuid': '95863650-6816-4588-846a-c0423b5baae0',
+            'uuid': 'ccc48185-961a-405e-95b5-136c4ed77c69',
             'name': 'mongosas-50G-20170428',
             'port': '27017'
         },
         'mycat': {
-            'uuid': '59a5022b-3c46-47ec-8e97-b63edc4b7be0',
-            'name': 'mycat-50G-20170628',
+            'uuid': 'daf34739-7dc3-4d4f-abb1-3a222b796944',
+            'name': 'mycat-50G-20180105',
             'port': '3316'
+        },
+        'kvm': {
+            'uuid': '75fadfb9-2e17-46ec-a3b7-da3b50a27735',
+            'name': 'basic-50G-20170428',
+            'port': '22'
+        },
+        'java': {
+            'uuid': 'abdc1770-ee4a-43a0-a83e-e5107a37012a',
+            'name': 'tomcat-30G-20180308',
+            'port': '8081'
         }
     }
 
-    # KVM_FLAVOR = {
-    #     '2': 'uop-2C4G80G',
-    #     '4': 'uop-4C8G80G',
-    #     "mycat": "242c5ee6-d9b5-4456-88db-7603e765f075",  # pret-nginx-4C4G50G
-    # }
-    # DOCKER_FLAVOR = {
-    #     "2": "uop-docker-2C4G50G",
-    #     "4": "uop-docker-4C8G50G"
-    # }
     KVM_FLAVOR = {
-        '24': '0471bc46-4ced-4e35-a2e7-7c56aa71ff52', # tst-pc-2C4G50G
-        'mysql':'20f28b8b-7adb-48c4-a7d0-d562007123b6', #mysql_2C4G80G
-        # '4': 'uop-4C8G80G',
+        '22': '9ff4c08d-ad94-4417-b90a-bf4382cae768',  # uop_2C2G30G
+        '24': '0471bc46-4ced-4e35-a2e7-7c56aa71ff52',  # tst-pc-2C4G50G
+        '44': '280d8672-fdb4-4a87-9280-deca23263de5',  # uop_4C4G30G
+        'mysql': '20f28b8b-7adb-48c4-a7d0-d562007123b6',  # mysql_2C4G80G
         '48': '00d92209-b17e-45cb-991c-d79600e68969',  # xiaojian_sas_4C8G50G
-        # "8": 'xiaojian_sas_4C8G50G',
         "mycat": "135154ad-a637-4d29-ac2d-b4f63a2183b5",  # tst-dns-2C2G50G
         "816": '105deffb-dff9-4a16-8757-92a9d44e9b91',  # K8S-8C16G50G
         "832": '8257eac4-c9cb-48f0-b5d4-183e3e08137f',  # pret-mysql-8C32G80G
-        # 'uop-4C16G180G': 'uop-4C16G180G',
-        # 'uop-8C8180G': 'uop-8C8G180G',
-        # 'uop-8C32G180G': 'uop-8C32G180G',
     }
+
     DOCKER_FLAVOR = {
         "22": "83c52038-3cc1-4865-958a-a85cfde96bc0",
-        # "24": "uop-docker-4C4G30G"
     }
-    # AVAILABILITY_ZONE
-    #AVAILABILITY_ZONE_AZ_UOP = 'AZ_UOP'
+
+
     AVAILABILITY_ZONE = {
         "dev": 'AZ_UOP',
         "test": 'AZ_UOP',
         "prep": 'AZ-UOP',
         "prod": 'AZ-UOP',
     }
+
     DEV_NETWORK_ID = '7aca50a9-cf4b-4cc7-b078-be055dd7c6af'
     OS_EXT_PHYSICAL_SERVER_ATTR = 'OS-EXT-SRV-ATTR:host'
 
@@ -141,7 +139,7 @@ class TestingConfig(BaseConfig):
 
     HEALTH_CHECK_PORT = "8000"
     HEALTH_CHECK_PATH = "admin/health"
-    OS_DOCKER_LOGS = "/os_docker_logs"
+    OS_DOCKER_LOGS = "/data/os_docker_logs"
 
     # Define Request JSON Format
     items_sequence_list_config = [
@@ -169,11 +167,21 @@ class TestingConfig(BaseConfig):
             'port': 'port',
             'meta': 'meta',
             'quantity': 'quantity',
-            'network_id':'network_id',
-            'networkName':'networkName',
-            'tenantName':'tenantName',
+            'network_id': 'network_id',
+            'networkName': 'networkName',
+            'tenantName': 'tenantName',
             'availability_zone': 'availability_zone',
             'flavor': 'flavor',
+            'host_env': 'host_env',
+            'image_id': 'image_id',
+            'language_env': 'language_env',
+            'deploy_source': 'deploy_source',
+            'database_config': 'database_config',
+            'lb_methods': 'lb_methods',
+            'namespace': 'namespace',
+            'ready_probe_path': 'ready_probe_path',
+            'domain_path': 'domain_path',
+            'host_mapping': 'host_mapping',
         },
         'resource_cluster': {
             'cluster_name': 'instance_name',
@@ -220,12 +228,12 @@ class TestingConfig(BaseConfig):
     }
     cluster_type_image_port_mappers2 = {
         'mysql': {
-            'uuid': 'fa2e3ebe-4c80-404f-94bb-caa9ec11789c',
+            'uuid': '914cacfd-bedf-4da7-83a3-c7ffea75f239',
             'name': 'mysql_sas_80G_20180130',
             'port': '3316'
         },
         'redis': {
-            'uuid': '12f260fd-1196-4b68-8d37-d9f1d322c842',
+            'uuid': '9c565dab-91a9-4084-b9b0-5e3b3dfd989f',
             'name': 'redis-50G-20170428',
             'port': '6379'
         },
@@ -235,97 +243,65 @@ class TestingConfig(BaseConfig):
             'port': '27017'
         },
         'mycat': {
-            'uuid': 'ef2f955f-647e-4c27-94b8-25b56e8b1f36',
-            'name': 'mycat-50G-20170628',
+            'uuid': 'b722a8e1-b21d-4a29-b8ed-93358950f1c4',
+            'name': 'mycat-50G-20180105',
             'port': '3316'
+        },
+        'kvm': {
+            'uuid': 'd67a2e33-cbb7-43f6-85da-8e3ca2873b2a',
+            'name': 'basic',
+            'port': '22'
+        },
+        'java': {
+            'uuid': '44002594-587c-46bd-b3d0-cf5e75438cc1',
+            'name': 'tomcat30G20180308',
+            'port': '8081'
         }
     }
     KVM_FLAVOR2 = {
-        '22': '905e3a5f-6b27-46ab-8cb2-2bb26ffbea58',
+        '22': 'ec2b05b1-dd4e-4198-b8ce-738f62c14952',  # 2C2G30G
         '24': '4faa9926-462c-456f-bb71-3e6cecdec252',  # tst-pc-2C4G50G
+        '44': '00da3f51-a8ce-4a0a-b30d-994b4bab94ff',  # 4C4G30G
         'mysql': '6ef6287c-f4d4-4d08-9b33-901f47542a69',  # mysql_2C4G80G
-        # '4': 'uop-4C8G80G',
         '48': '00d92209-b17e-45cb-991c-d79600e68969',  # xiaojian_sas_4C8G50G
-        # "8": 'xiaojian_sas_4C8G50G',
-        "mycat": "905e3a5f-6b27-46ab-8cb2-2bb26ffbea58",  # tst-dns-2C2G50G
+        "mycat": "905e3a5f-6b27-46ab-8cb2-2bb26ffbea58",  # mycat-20180105
         "816": '105deffb-dff9-4a16-8757-92a9d44e9b91',  # K8S-8C16G50G
         "832": '8257eac4-c9cb-48f0-b5d4-183e3e08137f',  # pret-mysql-8C32G80G
-        # 'uop-4C16G180G': 'uop-4C16G180G',
-        # 'uop-8C8180G': 'uop-8C8G180G',
-        # 'uop-8C32G180G': 'uop-8C32G180G',
     }
-    #k8s配置相关
-    NAMESPACE="test-uop"
-    FILEBEAT_NAME="filebeat"
-    FILEBEAT_IMAGE_URL="dkreg-wj.syswin.com/base/filebeat:5.4.0"
-    FILEBEAT_REQUESTS={
-        "05002":{"cpu": 0.5, "memory": "20Mi"}
+    # k8s配置相关
+    NAMESPACE = "test-uop"
+    FILEBEAT_NAME = "filebeat"
+    FILEBEAT_IMAGE_URL = "dkreg-wj.syswin.com/base/filebeat:5.4.0"
+    FILEBEAT_REQUESTS = {
+        "05002": {"cpu": 0.1, "memory": "20Mi"}
     }
-    FILEBEAT_LIMITS={
-        "101": {"cpu": 1, "memory": "100Mi"}
+    FILEBEAT_LIMITS = {
+        "101": {"cpu": 0.5, "memory": "100Mi"}
 
     }
-    APP_REQUESTS={
-        "11":{"cpu": 1, "memory": "1Gi"}
+    APP_REQUESTS = {
+        "22": {"cpu": 0.225, "memory": "2Gi"},
+        "44": {"cpu": 0.445, "memory": "4Gi"}
     }
-    APP_LIMITS={
-        "22":{"cpu": 2, "memory": "2Gi"},
-        "24": {"cpu": 2, "memory": "4Gi"}
+    APP_LIMITS = {
+        "22": {"cpu": 2, "memory": "2Gi"},
+        "44": {"cpu": 4, "memory": "4Gi"}
     }
-    HOSTNAMES=["uop-k8s.syswin.com"]
-    IP="127.0.0.1"
-    NETWORKNAME="contiv-vlan651"
-    TENANTNAME="tenant-vlan651"
-    property_json_mapper_config = {
-        'app_cluster': {
-            'cluster_name': 'instance_name',
-            'cluster_id': 'instance_id',
-            'domain': 'domain',
-            'image_url': 'image_url',
-            'cpu': 'cpu',
-            'mem': 'mem',
-            'domain_ip': 'domain_ip',
-            'port': 'port',
-            'meta': 'meta',
-            'quantity': 'quantity',
-            'network_id': 'network_id',
-            'networkName': 'networkName',
-            'tenantName': 'tenantName',
-            'availability_zone':'availability_zone',
-            'flavor': 'flavor',
-            'host_env':'host_env',
-            'image_id': 'image_id',
-            'language_env':'language_env',
-            'deploy_source':'deploy_source',
-            'database_config':'database_config',
-            'lb_methods':'lb_methods',
-            'namespace':'namespace',
-            'ready_probe_path':'ready_probe_path',
-            'domain_path':'domain_path',
+    HOST_MAPPING = [
+        {
+            "ip": "127.0.0.1",
+            "hostnames": ["uop-k8s.syswin.com"],
         },
-        'resource_cluster': {
-            'cluster_name': 'instance_name',
-            'cluster_id': 'instance_id',
-            'cluster_type': 'instance_type',
-            'version': 'version',
-            'cpu': 'cpu',
-            'mem': 'mem',
-            'disk': 'disk',
-            'quantity': 'quantity',
-            'volume_size': 'volume_size',
-            'network_id': 'network_id',
-            'image_id': 'image_id',
-            'availability_zone':'availability_zone',
-            'flavor': 'flavor',
-        }
-    }
-
-    K8S_NETWORK_URL={
-        "dev":"http://172.28.13.254:19999/api/v1/networks/",
+    ]
+    NETWORKNAME = "contiv-vlan651"
+    TENANTNAME = "tenant-vlan651"
+    K8S_NETWORK_URL = {
+        "dev": "http://172.28.13.254:19999/api/v1/networks/",
         "test": "http://172.28.13.254:19999/api/v1/networks/",
         "prep": "http://172.28.13.254:19999/api/v1/networks/",
         "prod": "http://172.28.13.254:19999/api/v1/networks/",
     }
+
     BASE_IMAGE_URL = "reg1.syswin.com/base/os69-tomcat7:v0.1"
     CHECK_TIMEOUT = 200
 
