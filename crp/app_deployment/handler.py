@@ -243,7 +243,7 @@ def make_database_config(database_config,project_name,ip,env):
     err_msg = None
     try:
         wardeploy_path = os.path.join(UPLOAD_FOLDER,"wardeploy")
-        config_filename = "{project_name}_dev".format(project_name=project_name)
+        config_filename = "{project_name}_{env}".format(project_name=project_name,env=env)
         wardeploy_conf_path = os.path.join(wardeploy_path,config_filename)
         if not os.path.exists(wardeploy_path):
             os.makedirs(wardeploy_path)
