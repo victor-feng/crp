@@ -17,7 +17,7 @@ def config():
 
     # TODO
     ip_list = sys.argv[3].split("=")[1].split(",")
-    port_list = sys.argv[4].split("=")[1]
+    port_list = [sys.argv[4].split("=")[1]]
     # ip_list = [sys.argv[2], sys.argv[3]]  # ['1.1.1.1', '2.2.2.2']
     # port_list = [sys.argv[4], sys.argv[5]]  # [11, 22]
     print '-----', ip_list, port_list
