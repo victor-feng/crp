@@ -195,11 +195,11 @@ def query_instance(task_id, result, resource):
             result['msg'] = 'instance or deployment is not exist'
             result['code'] = 404
             result['inst_state']=0
+            result['status'] = "success"
             Log.logger.debug(
                 "Query Task ID " + str(task_id) +
                 " query Instance ID " + os_inst_id +
                 " result " + result.__str__())
-            result['status'] = "success"
             delete_request_callback(task_id, result)
         else:
             err_msg = "Query deployment or instance error {}".format(e=str(e))
@@ -238,7 +238,6 @@ def delete_instance(task_id, result):
         err_msg = " [CRP] delete_instance failed, Exception:{e}".format(e=str(e))
         Log.logger.error(
             "Query Task ID " + str(task_id) + " result " + result.__str__() + err_msg)
-        TaskManager.task_exit(task_id)
         raise CrpException(err_msg)
 
 

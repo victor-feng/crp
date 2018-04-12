@@ -59,11 +59,11 @@ def query_instance(task_id, result, resource):
             result['msg'] = 'instance is not exist'
             result['code'] = 404
             result['inst_state']=0
+            result['status'] = "success"
             Log.logger.debug(
                 "Query Task ID " + str(task_id) +
                 " query Instance ID " + os_inst_id +
                 " result " + result.__str__())
-            result['status'] = "success"
             delete_request_callback(task_id, result)
         else:
             err_msg = "Query instance error {}".format(e=str(e))
