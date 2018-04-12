@@ -225,15 +225,15 @@ def delete_instance(task_id, result):
             result['msg'] = 'delete deployment begin query deployment status'
         else:
             nova_client.servers.delete(os_inst_id)
+            result['msg'] = 'delete instance begin query Instance status'
         result['current_status'] = QUERY_VM
-        result['msg']='delete instance begin query Instance status'
         result['code'] = 200
         Log.logger.debug(
               "Query Task ID " + str(task_id) +
               " query Instance ID " + str(os_inst_id) +
               " result " + result.__str__())
     except Exception as e:
-        result['msg'] = 'delete instance failed'
+        result['msg'] = 'delete instance or deployment failed'
         result['code'] = 400
         err_msg = " [CRP] delete_instance failed, Exception:{e}".format(e=str(e))
         Log.logger.error(
