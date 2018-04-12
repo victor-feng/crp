@@ -66,7 +66,7 @@ class AppDeploy(Resource):
                     nip=nip, dir=selfdir)
             scp_template_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/{template} dest=/tmp/ mode=777'".format(
                     nip=nip, dir=selfdir, template=template)
-            exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/update.py {certificate} {domain} {ip} {port}"'.format(
+            exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/update.py -certificate={certificate} -domain={domain} -ip={ip} -port={port}"'.format(
                     nip=kwargs.get('nip'),
                     dir=selfdir,
                     certificate=certificate,
@@ -95,7 +95,7 @@ class AppDeploy(Resource):
         domain = app.get('domain', '')
         certificate = app.get('certificate', "")
         for ip in ips:
-            ip_str = ip + ' '
+            ip_str = ip + ','
             real_ip += ip_str
         ports = str(app.get('nginx_port'))
         Log.logger.debug(
@@ -104,7 +104,7 @@ class AppDeploy(Resource):
         try:
             exec_flag, err_msg=do_push_nginx_config({'nip': domain_ip,
                                 'domain': domain,
-                                'ip': real_ip.strip(),
+                                'ip': real_ip[:-1],
                                 'port': ports.strip(),
                                 'certificate': certificate})
         except Exception as e:

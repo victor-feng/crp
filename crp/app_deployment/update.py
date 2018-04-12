@@ -7,16 +7,14 @@ import ast
 
 
 def config():
+    #/tmp/update.py -certificate={certificate} -domain={domain} -ip={ip} -port={port}
     if len(sys.argv) < 5:
         print "Please Input certificate(False), domain, Ip:port"
     print sys.argv, len(sys.argv)
     length_args = len(sys.argv)
-    certificate = "0"
-    if length_args % 2 != 0:
-        domain = sys.argv[2]  # 'api.wangyan.systoon.com'
-        certificate = sys.argv[1]  # certificate or False
-    else:
-        domain = sys.argv[1]
+    domain = sys.argv[2]  # 'api.wangyan.systoon.com'
+    certificate = sys.argv[1]  # certificate or False
+
     # TODO
     ip_list, port_list = statistics_port_ip(sys.argv)
     # ip_list = [sys.argv[2], sys.argv[3]]  # ['1.1.1.1', '2.2.2.2']
@@ -123,9 +121,8 @@ def statistics_port_ip(args):
         ip_list.append(ip)
         if args.index(ip) == last_ip_index:
             break
-
     for i in range(ip_num):
         port_list.append(args[-1])
-    return ip_list, port_list
+    return ip_list
 
 config()
