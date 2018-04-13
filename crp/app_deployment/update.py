@@ -71,13 +71,11 @@ def config():
 def resolve(ip_list, port_list):
     res_list = []
     ip_num = len(ip_list)
+    port = port_list.pop(0)
     # port_num = len(port_list)
     if ip_num > 0:
         for ip in ip_list:
-            for port in port_list:
-                res_list.append(str(ip)+':'+str(port))
-                port_list.pop(0)
-                break
+            res_list.append(str(ip) + ':' + str(port))
     return res_list
 
 
