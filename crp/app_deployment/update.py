@@ -37,7 +37,7 @@ def config():
     nginx_dir = '/usr/local/nginx/conf/servers_systoon'
     nginx_conf = os.path.join(nginx_dir, domain)
 
-    template = '/tmp/template_https' if certificate != "0" else '/tmp/template_http'
+    template = '/tmp/template_https' if certificate else '/tmp/template_http'
 
     tp = open(template, 'r')
     tp_str = tp.read()
@@ -58,7 +58,7 @@ def config():
     else:
         f_dst3 = re.sub(r'SubDomain', subdomain, f_dst5)
 
-    if certificate != "0": # https
+    if certificate: # https
         f_dst3 = re.sub(r'Certificate', certificate, f_dst3)
 
     fp.write(f_dst3)
