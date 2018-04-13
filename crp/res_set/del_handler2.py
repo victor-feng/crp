@@ -370,8 +370,8 @@ def delete_instance_and_query2(task_id, result, resource):
     """
     current_status = result.get('current_status', None)
     Log.logger.debug(
-         "Task ID %s,\r\n resource %s ." %
-         (task_id, resource))
+         "Task ID %s,\r\n resource %s .current_status %s" %
+         (task_id, resource,current_status))
     try:
         if current_status == QUERY_VOLUME:
             query_volume_status(task_id, result, resource)
