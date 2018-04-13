@@ -377,8 +377,6 @@ def delete_instance_and_query2(task_id, result, resource):
             query_volume_status(task_id, result, resource)
         elif current_status == DETACH_VOLUME:
             detach_volume(task_id, result, resource)
-        elif current_status == QUERY_VOLUME:
-            query_volume_status(task_id, result, resource)
         elif current_status == DETACH_VOLUME_SUCCESSFUL:
             delete_volume(task_id, result,resource)
         elif current_status == QUERY_INGRESS:
@@ -393,8 +391,6 @@ def delete_instance_and_query2(task_id, result, resource):
             query_instance(task_id, result, resource)
         elif current_status == DELETE_VM:
             delete_instance(task_id, result)
-        elif current_status == QUERY_VM:
-            query_instance(task_id, result, resource)
     except Exception as e:
         err_msg = " [CRP] delete_instance_and_query failed, Exception:%s" % str(e)
         Log.logger.error("Query Task ID " + str(task_id) + err_msg)
