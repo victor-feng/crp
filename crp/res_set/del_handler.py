@@ -163,7 +163,7 @@ def query_volume_status(task_id, result, resource):
             result['current_status']=QUERY_VM
     except Exception as e:
         vol_state = result.get("vol_state", 0)
-        if vol_state == 0:
+        if vol_state == 0 or 1:
             result['current_status'] = QUERY_VM
         else:
             err_msg = str(e)
@@ -185,13 +185,12 @@ def delete_volume(task_id,result,resource):
         if os_vol_id:
             cinder_client = OpenStack.cinder_client
             cinder_client.volumes.delete(os_vol_id)
-        result['current_status'] = QUERY_VM
+        result['current_status'] = QUERY_VOLUME
         Log.logger.debug(
             "Task ID %s, delete volume , vol_id is %s" % (task_id,os_vol_id))
     except Exception as e:
         Log.logger.error(
             "[CRP] _delete_volume failed, Exception:%s" %str(e))
-        result['current_status'] = QUERY_VM
         raise CrpException(str(e))
 
 
