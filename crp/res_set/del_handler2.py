@@ -160,16 +160,33 @@ def query_instance(task_id, result, resource):
             namespace = result.get('namespace') if result.get('namespace') else NAMESPACE
             K8sDeployment = K8sDeploymentApi()
             deployment_ret,deployment_code=K8sDeployment.get_deployment(namespace,resource_name)
-            #如果deploymenr已经删除 下面会抛一次
-            available_replicas = deployment_ret.status.available_replicas
-            unavailable_replicas =deployment_ret.status.unavailable_replicas
-            result['inst_state'] = 1
-            if available_replicas or unavailable_replicas:
+            if deployment_code == 200:
+                result['deployment_state'] = 1
                 result['current_status'] = DELETE_VM
                 result['msg'] = 'deployment is exist  begin delete Deployment'
                 Log.logger.error(
                     "Query Task ID " + str(task_id) +
                     " result " + result.__str__())
+            elif deployment_code == 404:
+                deployment_state = result.get("deployment_state",0)
+                if deployment_state == 1:
+                    result['msg'] = 'delete deployment success'
+                    result['status'] = "success"
+                    Log.logger.debug(
+                        "Query Task ID " + str(task_id) +
+                        " query Instance ID " + os_inst_id +
+                        " result " + result.__str__())
+                    delete_request_callback(task_id, result)
+                elif deployment_state == 0:
+                    result['msg'] = 'deployment is not exist'
+                    result['code'] = 404
+                    result['inst_state'] = 0
+                    result['status'] = "success"
+                    Log.logger.debug(
+                        "Query Task ID " + str(task_id) +
+                        " query Instance ID " + os_inst_id +
+                        " result " + result.__str__())
+                    delete_request_callback(task_id, result)
         else:
             inst = nova_client.servers.get(os_inst_id)
             task_state=getattr(inst,'OS-EXT-STS:task_state')
@@ -182,28 +199,31 @@ def query_instance(task_id, result, resource):
                 result['current_status'] = DELETE_VM
                 result['msg']='instance is exist  begin delete Instance'
     except Exception as e:
-        inst_state=result.get('inst_state',0)
-        if inst_state == 1:
-            result['msg']='delete deployment or  instance success'
-            result['status'] = "success"
-            Log.logger.debug(
-                "Query Task ID " + str(task_id) +
-                " query Instance ID " + os_inst_id +
-                " result " + result.__str__())
-            delete_request_callback(task_id, result)
-        elif inst_state == 0: 
-            result['msg'] = 'instance or deployment is not exist'
-            result['code'] = 404
-            result['inst_state']=0
-            result['status'] = "success"
-            Log.logger.debug(
-                "Query Task ID " + str(task_id) +
-                " query Instance ID " + os_inst_id +
-                " result " + result.__str__())
-            delete_request_callback(task_id, result)
-        else:
-            err_msg = "Query deployment or instance error {}".format(e=str(e))
+        err_msg = "Query deployment or instance error {}".format(e=str(e))
+        if resource_type == "app":
             raise CrpException(err_msg)
+        else:
+            inst_state=result.get('inst_state',0)
+            if inst_state == 1:
+                result['msg']='delete  instance success'
+                result['status'] = "success"
+                Log.logger.debug(
+                    "Query Task ID " + str(task_id) +
+                    " query Instance ID " + os_inst_id +
+                    " result " + result.__str__())
+                delete_request_callback(task_id, result)
+            elif inst_state == 0:
+                result['msg'] = 'instance  is not exist'
+                result['code'] = 404
+                result['inst_state']=0
+                result['status'] = "success"
+                Log.logger.debug(
+                    "Query Task ID " + str(task_id) +
+                    " query Instance ID " + os_inst_id +
+                    " result " + result.__str__())
+                delete_request_callback(task_id, result)
+            else:
+                raise CrpException(err_msg)
         TaskManager.task_exit(task_id)
 
 def delete_instance(task_id, result):
