@@ -188,6 +188,11 @@ class AppDeploy(Resource):
             }
             for app in appinfo:
                 domain = app.get("domain")
+                nginx_port = app.get("nginx_port")
+                if not nginx_port:
+                    app["nginx_port"] = port
+                if port:
+                    port = int(port)
                 if domain:
                     self.do_app_push(app)
             if appinfo:
