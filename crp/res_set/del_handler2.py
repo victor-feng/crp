@@ -177,6 +177,7 @@ def query_instance(task_id, result, resource):
                         " query Instance ID " + os_inst_id +
                         " result " + result.__str__())
                     delete_request_callback(task_id, result)
+                    TaskManager.task_exit(task_id)
                 elif deployment_state == 0:
                     result['msg'] = 'deployment is not exist'
                     result['code'] = 404
@@ -187,6 +188,7 @@ def query_instance(task_id, result, resource):
                         " query Instance ID " + os_inst_id +
                         " result " + result.__str__())
                     delete_request_callback(task_id, result)
+                    TaskManager.task_exit(task_id)
         else:
             inst = nova_client.servers.get(os_inst_id)
             task_state=getattr(inst,'OS-EXT-STS:task_state')
