@@ -187,7 +187,9 @@ class AppDeploy(Resource):
                 "deploy_reduce_nginx":"nginx缩减缩容应用完成",
             }
             for app in appinfo:
-                self.do_app_push(app)
+                domain = app.get("domain")
+                if domain:
+                    self.do_app_push(app)
             if appinfo:
                 _dep_detail_callback(deploy_id, "deploy_%s_nginx" % set_flag, set_flag, msg_dict["deploy_%s_nginx" % set_flag])
                 _dep_detail_callback(deploy_id, deploy_type, set_flag, msg_dict[set_flag])
@@ -1008,7 +1010,7 @@ class AppDeploy(Resource):
 
     def _exec_ansible_cmd(self, cmd):
         (status, output) = commands.getstatusoutput(cmd)
-        if output.lower().find("error") == -1 and output.lower().find("failed") == -1:
+        if output.lower().find("success") > 0:
             Log.logger.debug("ansible exec succeed,command: " + str(cmd) + " output: " + output)
             err_msg = None
             return True, err_msg
