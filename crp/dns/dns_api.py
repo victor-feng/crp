@@ -337,6 +337,7 @@ class NamedManagerApi(object):
         return res
 
     def named_domain_delete(self,domain_name):
+        res = None
         try:
             exchange_result = exchange_domain_to_zone_and_name(domain_name)
             domain = exchange_result.get('zone')
