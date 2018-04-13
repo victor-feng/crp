@@ -283,7 +283,7 @@ def detach_volume(task_id, result, resource):
             nova_client.volumes.delete_server_volume(os_inst_id, os_vol_id)
         elif not os_vol_id:
             #如果volume不存在直接删除虚机
-            result['current_status'] = QUERY_INGRESS
+            result['current_status'] = QUERY_VM
     except Exception as e:
         err_msg=str(e)
         Log.logger.error('Task ID %s,detach_volume error, os_inst_id is %s, os_vol_id is %s.error msg is %s'% (task_id, os_inst_id, os_vol_id,err_msg))
