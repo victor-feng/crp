@@ -238,6 +238,7 @@ class ResourceProviderTransitions(object):
                 {'current_status': QUERY_VOLUME,
                  "unique_flag": "",
                  "del_os_ins_ip_list": [],
+                 'syswin_project': "uop",
                  "sef_flag": "rollback"},
                 delete_instance_and_query, resource)
         Log.logger.debug(
