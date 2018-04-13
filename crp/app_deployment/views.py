@@ -122,6 +122,7 @@ class AppDeploy(Resource):
         selfdir = os.path.dirname(os.path.abspath(__file__))
         domain_list = kwargs.get("domain_list")
         disconf_list = kwargs.get("disconf_list")
+        environment = kwargs.get("disconf_list")
         Log.logger.debug("--------->start delete nginx profiles")
         for dl in domain_list:
             nip = dl.get("domain_ip")
@@ -138,6 +139,10 @@ class AppDeploy(Resource):
             exec_cmd_ten_times(nip,scp_delete_cmd,1)
             Log.logger.debug('------>上传删除脚本完成')
             exec_cmd_ten_times(nip, exec_shell_cmd, 1)
+            #开始删除dns
+            dns_api = NamedManagerApi(environment)
+            res = dns_api.named_domain_delete(domain)
+            Log.logger.debug("--------->{}".format(res))
         Log.logger.debug("--------->stop delete nginx profiles: success")
 
     def delete(self):
@@ -147,7 +152,8 @@ class AppDeploy(Resource):
             request_data = json.loads(request.data)
             disconf_list = request_data.get('disconf_list')
             domain_list = request_data.get('domain_list')
-            self.run_delete_cmd(domain_list=domain_list, disconf_list=disconf_list)
+            environment = request_data.get('environment')
+            self.run_delete_cmd(domain_list=domain_list, disconf_list=disconf_list,environment=environment)
         except Exception as msg:
             Log.logger.error("delete nginx ip error {}".format(msg))
             code = 500

@@ -337,7 +337,21 @@ class NamedManagerApi(object):
         return res
 
     def named_domain_delete(self,domain_name):
-        pass
+        try:
+            exchange_result = exchange_domain_to_zone_and_name(domain_name)
+            domain = exchange_result.get('zone')
+            record_name = exchange_result.get('record_name')
+            data = {"method":"delDns","domain":domain,"recordname":record_name}
+            url = NAMEDMANAGER_URL.get(self.env)
+            rep = requests.post(url, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS,timeout=120)
+            ret_json = json.loads(rep.text)
+            if ret_json.get('result') == 'success':
+                res = ret_json.get('content')
+            else:
+                raise ServerError('add domain error:{message}'.format(message=ret_json.get('message')))
+        except Exception as e:
+            raise ServerError(str(e))
+        return res
 
     def named_dns_domain_add(self, domain_name, domain_ip):
         """
