@@ -130,7 +130,7 @@ class AppDeploy(Resource):
             if not nip or not domain:
                 Log.logger.info("nginx ip or domain is null, do nothing")
                 continue
-            scp_delete_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/delete.py dest=/tmp/' mode=777".format(
+            scp_delete_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/delete.py dest=/tmp/ mode=777'".format(
                     nip=nip, dir=selfdir)
             exec_shell_cmd='ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a ''"/tmp/delete.py {domain}"'.format(
                     nip=nip,

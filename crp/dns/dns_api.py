@@ -329,7 +329,7 @@ class NamedManagerApi(object):
             rep = requests.post(url, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS,timeout=120)
             ret_json = json.loads(rep.text)
             if ret_json.get('result') == 'success':
-                res = ret_json.get('content')
+                res = ret_json.get('message')
             else:
                 raise ServerError('add domain error:{message}'.format(message=ret_json.get('message')))
         except Exception as e:
@@ -346,9 +346,7 @@ class NamedManagerApi(object):
             rep = requests.post(url, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS,timeout=120)
             ret_json = json.loads(rep.text)
             if ret_json.get('result') == 'success':
-                res = ret_json.get('content')
-            else:
-                raise ServerError('add domain error:{message}'.format(message=ret_json.get('message')))
+                res = ret_json.get('message')
         except Exception as e:
             raise ServerError(str(e))
         return res
