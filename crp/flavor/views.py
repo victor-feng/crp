@@ -41,14 +41,13 @@ class FlavorAPI(Resource):
                     "cloud": "2"
                 })
         except Exception as e:
-            err_msg = e.message
-            #Log.logger.error('list flavor err: %s' % err_msg)
-            Log.logger.error('list flavor err: %s' % err_msg)
+            err_msg = 'CRP list flavor err: %s' % str(e)
+            Log.logger.error(err_msg)
             res = {
                 "code": 400,
                 "result": {
                     "res": "failed",
-                    "msg": e.message
+                    "msg": err_msg
                 }
             }
             return res, 400
@@ -56,7 +55,7 @@ class FlavorAPI(Resource):
             res = {
                 "code": 200,
                 "result": {
-                    "msg": "请求成功",
+                    "msg": "Get flavor list success",
                     "res": res_flavors
                 }
             }
