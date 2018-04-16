@@ -5,7 +5,6 @@ import time
 import requests
 import json
 from config import APP_ENV, configs
-from crp.log import Log
 
 
 response = {'success': False, 'error': ''}
@@ -340,20 +339,12 @@ class NamedManagerApi(object):
     def named_domain_delete(self,domain_name):
         res = None
         try:
-            Log.logger.info("000000000000000000000000000000000000000000000000000000----{}".format(domain_name))
             exchange_result = exchange_domain_to_zone_and_name(domain_name)
-            Log.logger.info("11111111111111111111111111111111111----{}".format(exchange_result))
             domain = exchange_result.get('zone')
             record_name = exchange_result.get('record_name')
-            Log.logger.info("22222222222222222222222222222222----{}----{}".format(domain,record_name))
             data = {"method":"delDns","domain":domain,"recordname":record_name}
-            Log.logger.info("3333333333333333333333333333333333333----{}".format(data))
-            Log.logger.info("999999999999999999999999999999999999999---{}--{}----{}".format(NAMEDMANAGER_URL,type(NAMEDMANAGER_URL),self.env))
-            Log.logger.info("888888888888888888888888888888888888888888888888888----{}".format(NAMEDMANAGER_URL[self.env]))
             url = NAMEDMANAGER_URL.get(self.env)
-            Log.logger.info("4444444444444444444444444444444444----{}".format(url))
             rep = requests.post(url, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS,timeout=120)
-            Log.logger.info("5555555555555555555555555555555555555555----{}".format(rep.text))
             ret_json = json.loads(rep.text)
             if ret_json.get('result') == 'success':
                 res = ret_json.get('message')

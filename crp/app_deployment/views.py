@@ -122,7 +122,7 @@ class AppDeploy(Resource):
         selfdir = os.path.dirname(os.path.abspath(__file__))
         domain_list = kwargs.get("domain_list")
         disconf_list = kwargs.get("disconf_list")
-        environment = kwargs.get("disconf_list")
+        environment = kwargs.get("environment")
         Log.logger.debug("--------->start delete nginx profiles")
         for dl in domain_list:
             nip = dl.get("domain_ip")
