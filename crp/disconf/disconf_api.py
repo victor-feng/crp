@@ -46,7 +46,7 @@ class DisconfServerApi(object):
         user_info = self.disconf_user_info
         SIGNIN = self.SIGNIN
         try:
-            rep = requests.post(SIGNIN, data=user_info)
+            rep = requests.post(SIGNIN, data=user_info,timeout=120)
             ret_json = json.loads(rep.text)
             result = ret_json.get('success')
 
