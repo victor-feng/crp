@@ -27,7 +27,7 @@ class FlavorAPI(Resource):
                     "flavor_id": item.id,
                     "flavor_name": item.name,
                     "cpu": item.vcpus,
-                    "memory": item.ram,
+                    "memory": item.ram/1024,
                     "cloud": "1"
                 })
             nova_cli_2 = OpenStack2.nova_client
@@ -37,7 +37,7 @@ class FlavorAPI(Resource):
                     "flavor_id": item.id,
                     "flavor_name": item.name,
                     "cpu": item.vcpus,
-                    "memory": item.ram,
+                    "memory": item.ram/1024,
                     "cloud": "2"
                 })
         except Exception as e:
