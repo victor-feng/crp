@@ -230,9 +230,9 @@ class K8sDeploymentApi(object):
             code = get_k8s_err_code(e)
         return err_msg,code
 
-    def update_deployment_image_object(self,deployment_name,filebeat_name):
+    def update_deployment_image_object(self,deployment_name,filebeat_name,app_requests,app_limits):
         """
-        deployment image 更新镜像时创建模板
+        deployment image 更新镜像时创建模板,配额
         :param deployment_name:
         :return:
         """
@@ -243,6 +243,10 @@ class K8sDeploymentApi(object):
         app_container = client.V1Container(
             name="app",
             image="",
+            resources=client.V1ResourceRequirements(
+                requests=app_requests,
+                limits=app_limits,
+            )
         )
         template = client.V1PodTemplateSpec(
             metadata=client.V1ObjectMeta(
