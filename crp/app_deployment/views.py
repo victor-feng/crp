@@ -260,7 +260,7 @@ class AppDeploy(Resource):
             flavor = args.flavor
             self.resource_id = resource_id
             Log.logger.debug("Thread exec start")
-            t = threading.Thread(target=self.deploy_anything, args=((mongodb, mysql,docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud,resource_name,deploy_name,project_name,namespace)))
+            t = threading.Thread(target=self.deploy_anything, args=((mongodb, mysql,docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud,resource_name,deploy_name,project_name,namespace,flavor)))
             t.start()
             Log.logger.debug("Thread exec done")
 
