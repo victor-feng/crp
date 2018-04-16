@@ -59,13 +59,13 @@ class ImageListAPI(Resource):
                     })
             Log.logger.info("The cloud2 image list is {}".format(res_images))
         except Exception as e:
-            err_msg = e.args
-            Log.logger.error('list glance image err: %s' % err_msg)
+            err_msg ='CRP list glance image err: %s' % str(e)
+            Log.logger.error(err_msg)
             res = {
                 "code": 400,
                 "result": {
                     "res": "failed",
-                    "msg": e.message
+                    "msg": err_msg
                 }
             }
             return res, 400
@@ -73,7 +73,7 @@ class ImageListAPI(Resource):
             res = {
                 "code": 200,
                 "result": {
-                    "msg": "请求成功",
+                    "msg": "Get image list success ",
                     "res": res_images
                 }
             }
