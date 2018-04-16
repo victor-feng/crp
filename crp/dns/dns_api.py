@@ -348,7 +348,7 @@ class NamedManagerApi(object):
             Log.logger.info("22222222222222222222222222222222----{}----{}".format(domain,record_name))
             data = {"method":"delDns","domain":domain,"recordname":record_name}
             Log.logger.info("3333333333333333333333333333333333333----{}".format(data))
-            Log.logger.info("999999999999999999999999999999999999999---{}--{}----{}".format(NAMEDMANAGER_URL,type(NAMEDMANAGER_URL,self.env)))
+            Log.logger.info("999999999999999999999999999999999999999---{}--{}----{}".format(NAMEDMANAGER_URL,type(NAMEDMANAGER_URL),self.env))
             Log.logger.info("888888888888888888888888888888888888888888888888888----{}".format(NAMEDMANAGER_URL[self.env]))
             url = NAMEDMANAGER_URL.get(self.env)
             Log.logger.info("4444444444444444444444444444444444----{}".format(url))
