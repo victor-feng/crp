@@ -349,7 +349,9 @@ class NamedManagerApi(object):
             data = {"method":"delDns","domain":domain,"recordname":record_name}
             Log.logger.info("3333333333333333333333333333333333333----{}".format(data))
             url = NAMEDMANAGER_URL.get(self.env)
+            Log.logger.info("4444444444444444444444444444444444----{}".format(url))
             rep = requests.post(url, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS,timeout=120)
+            Log.logger.info("5555555555555555555555555555555555555555----{}".format(rep.text))
             ret_json = json.loads(rep.text)
             if ret_json.get('result') == 'success':
                 res = ret_json.get('message')
