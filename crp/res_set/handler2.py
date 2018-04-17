@@ -180,7 +180,7 @@ class ResourceProviderTransitions2(object):
         elif self.phase == 'push':
             self.preload_property_mapper(self.push_mappers_list)
 
-        if len(self.property_mapper) != 0 and self.property_mapper.keys()[0] not in ["kvm"]:
+        if len(self.property_mapper) != 0 and self.property_mapper.keys()[0] not in ["kvm","other"]:
             item_id = self.property_mapper.keys()[0]
             if self.phase == 'create':
                 func = getattr(self, item_id, None)
@@ -1605,6 +1605,7 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list,error_ms
     redis = {}
     mongodb = {}
     kvm={}
+    other={}
     
     if status == RES_STATUS_OK:
         for result_mapper in result_mappers_list:
@@ -1620,6 +1621,8 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list,error_ms
                 mongodb = result_mapper.get('mongodb')
             elif result_mapper.keys()[0] == 'kvm':
                 kvm=result_mapper.get('kvm')
+            elif result_mapper.keys()[0] == 'other':
+                kvm=result_mapper.get('other')
 
     data["container"] = container
 
@@ -1631,6 +1634,8 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list,error_ms
         db_info["mongodb"] = mongodb
     if kvm is not None and kvm.get('quantity') > 0:
         db_info["kvm"] = kvm
+    if other is not None and other.get('quantity') > 0:
+        db_info["other"] = other
 
     data["db_info"] = db_info
     data_str = json.dumps(data)
