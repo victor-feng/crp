@@ -230,13 +230,21 @@ class K8sDeploymentApi(object):
             code = get_k8s_err_code(e)
         return err_msg,code
 
-    def update_deployment_image_object(self,deployment_name,filebeat_name,app_requests,app_limits):
+    def update_deployment_image_object(self,deployment_name,filebeat_name,app_requests,app_limits,host_mapping):
         """
         deployment image 更新镜像时创建模板,配额
         :param deployment_name:
         :return:
         """
         deployment_name = deployment_name.lower()
+        host_aliases = []
+        host_mapping = json.loads(host_mapping)
+        if host_mapping:
+            for host_map in host_mapping:
+                ip = host_map.get("ip", '127.0.0.1')
+                hostnames = host_map.get("hostnames", ['"uop-k8s.syswin.com"'])
+                host_aliase = client.V1HostAlias(hostnames=hostnames, ip=ip)
+                host_aliases.append(host_aliase)
         filebeat_container = client.V1Container(
             name=filebeat_name,
         )
@@ -253,6 +261,7 @@ class K8sDeploymentApi(object):
                 labels={}
             ),
             spec=client.V1PodSpec(
+                host_aliases=host_aliases,
                 containers=[
                     filebeat_container,
                     app_container,

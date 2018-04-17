@@ -238,7 +238,6 @@ class AppDeploy(Resource):
             parser.add_argument('project_name', type=str,location='json')
             parser.add_argument('namespace', type=str, location='json')
             parser.add_argument('resource_id', type=str, location='json')
-            parser.add_argument('flavor', type=str, location='json')
             args = parser.parse_args()
             Log.logger.debug("AppDeploy receive post request. args is " + str(args))
             deploy_id = args.deploy_id
@@ -257,10 +256,9 @@ class AppDeploy(Resource):
             project_name = args.project_name
             namespace = args.namespace if args.namespace else NAMESPACE
             resource_id = args.resource_id
-            flavor = args.flavor
             self.resource_id = resource_id
             Log.logger.debug("Thread exec start")
-            t = threading.Thread(target=self.deploy_anything, args=((mongodb, mysql,docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud,resource_name,deploy_name,project_name,namespace,flavor)))
+            t = threading.Thread(target=self.deploy_anything, args=((mongodb, mysql,docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud,resource_name,deploy_name,project_name,namespace)))
             t.start()
             Log.logger.debug("Thread exec done")
 
@@ -278,7 +276,7 @@ class AppDeploy(Resource):
         }
         return res, code
 
-    def deploy_anything(self,mongodb, mysql,docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud,resource_name,deploy_name,project_name,namespace,flavor):
+    def deploy_anything(self,mongodb, mysql,docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud,resource_name,deploy_name,project_name,namespace):
         try:
             lock = threading.RLock()
             lock.acquire()
@@ -448,12 +446,14 @@ class AppDeploy(Resource):
             #部署应用
                 if cloud == "2":
                     deployment_name=resource_name
-                    app_requests = APP_REQUESTS.get(flavor)
-                    app_limits = APP_LIMITS.get(flavor)
                     for i in docker:
+                        flavor = i.get('flavor','22')
                         image_url = i.get('url', '')
                         cluster_name = i.get("ins_name", "")
                         host_env = i.get("host_env")
+                        host_mapping = i.get("host_mapping")
+                        app_requests = APP_REQUESTS.get(flavor)
+                        app_limits = APP_LIMITS.get(flavor)
                         if host_env == "docker":
                             update_image_deployment = K8sDeployment.update_deployment_image_object(deployment_name,
                                                                                                       FILEBEAT_NAME,
