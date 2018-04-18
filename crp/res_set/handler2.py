@@ -1622,7 +1622,7 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list,error_ms
             elif result_mapper.keys()[0] == 'kvm':
                 kvm=result_mapper.get('kvm')
             elif result_mapper.keys()[0] == 'other':
-                kvm=result_mapper.get('other')
+                other=result_mapper.get('other')
 
     data["container"] = container
 
