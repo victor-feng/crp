@@ -458,7 +458,7 @@ class AppDeploy(Resource):
                             update_image_deployment = K8sDeployment.update_deployment_image_object(deployment_name,
                                                                                                       FILEBEAT_NAME,
                                                                                                       app_requests,
-                                                                                                      app_limits)
+                                                                                                      app_limits,host_mapping)
                             update_deployment_err_msg, update_deployment_err_code = K8sDeployment.update_deployment_image(
                                 update_image_deployment, deployment_name, image_url, namespace)
                             end_flag = True
