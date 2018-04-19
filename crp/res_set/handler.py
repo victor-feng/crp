@@ -118,6 +118,7 @@ class ResourceProviderTransitions(object):
         self.set_flag=req_dict["set_flag"]
         self.env=req_dict["env"]
         self.project_name = req_dict["project_name"]
+        self.resource_type = req_dict["resource_type"]
         # Initialize the state machine
         self.machine = Machine(
             model=self,
