@@ -163,7 +163,7 @@ class ResourceProviderTransitions2(object):
 
     def preload_property_mapper(self, property_mappers_list):
         Log.logger.info(
-            "99999999999999999999999999999999999999999999998888--".format(property_mappers_list))
+            "99999999999999999999999999999999999999999999998888--{}".format(property_mappers_list))
         if len(property_mappers_list) != 0:
             if len(self.pre_property_mapper) == 0:
                 self.pre_property_mapper = self.property_mapper
@@ -172,7 +172,7 @@ class ResourceProviderTransitions2(object):
                 self.pre_property_mapper = self.property_mapper
             self.property_mapper = property_mappers_list.pop()
             Log.logger.info(
-                "9999999999999999999999999999999999999999999999--".format(self.property_mapper))
+                "9999999999999999999999999999999999999999999999--{}".format(self.property_mapper))
 
         else:
             self.pre_property_mapper = {}
@@ -189,21 +189,21 @@ class ResourceProviderTransitions2(object):
             self.preload_property_mapper(self.push_mappers_list)
 
         if len(self.property_mapper) != 0 and self.property_mapper.keys()[0] not in ["kvm"]:
-            Log.logger.info("1111111111333311444444444444111111112222222211111111111155555555555551--".format(self.property_mapper))
+            Log.logger.info("1111111111333311444444444444111111112222222211111111111155555555555551--{}".format(self.property_mapper))
             Log.logger.info(
-                "11111111113333114444444444441111111122222222111111111111555555555555519999--".format(self.property_mapper.keys()))
+                "11111111113333114444444444441111111122222222111111111111555555555555519999--{}".format(self.property_mapper.keys()))
             item_id = self.property_mapper.keys()[0]
-            Log.logger.info("111111111133331144444444444411111111222222221111111111111--".format(item_id))
+            Log.logger.info("111111111133331144444444444411111111222222221111111111111--{}".format(item_id))
             if item_id not in ["app","kvm","mysql","redis","mongodb"]:
                 item_id = "other"
             if self.phase == 'create':
                 func = getattr(self, item_id, None)
             elif self.phase == 'push':
                 func = getattr(self, ('%s_push' % item_id), None)
-                Log.logger.info("111111111111111111111111111111111--".format(func))
-                Log.logger.info("11111111111111111111222222221111111111111--".format(dir(self)))
+                Log.logger.info("111111111111111111111111111111111--{}".format(func))
+                Log.logger.info("11111111111111111111222222221111111111111--{}".format(dir(self)))
             if not func:
-                Log.logger.info("111111111133331111111111222222221111111111111--".format(dir(self)))
+                Log.logger.info("111111111133331111111111222222221111111111111--{}".format(dir(self)))
                 raise NotImplementedError("Unexpected item_id=%s" % item_id)
             Log.logger.debug('Trigger is %s', item_id)
             func()
