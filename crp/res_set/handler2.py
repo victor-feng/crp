@@ -184,7 +184,7 @@ class ResourceProviderTransitions2(object):
             self.preload_property_mapper(self.push_mappers_list)
 
         if len(self.property_mapper) != 0 and self.property_mapper.keys()[0] not in ["kvm"]:
-            Log.logger.info("1111111111333311444444444444111111112222222211111111111155555555555551--".format(self.pre_property_mapper))
+            Log.logger.info("1111111111333311444444444444111111112222222211111111111155555555555551--".format(self.self.property_mapper))
             item_id = self.property_mapper.keys()[0]
             Log.logger.info("111111111133331144444444444411111111222222221111111111111--".format(item_id))
             if item_id not in ["app","kvm","mysql","redis","mongodb"]:
