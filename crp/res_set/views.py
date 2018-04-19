@@ -105,7 +105,8 @@ class ResourceSet(Resource):
             parser.add_argument('username', type=str, location='json')
             parser.add_argument('department', type=str, location='json')
             parser.add_argument('created_time', type=str, location='json')
-            parser.add_argument('project_id', type=str)
+            parser.add_argument('project_id', type=str,location='json')
+            parser.add_argument('module_id', type=str,location='json')
             parser.add_argument('resource_id', type=str, location='json')
             parser.add_argument('resource_name', type=str, location='json')
             parser.add_argument('env', type=str, location='json')
@@ -147,6 +148,7 @@ class ResourceSet(Resource):
             project = args.project
             department_id = args.department_id
             project_name = args.project_name
+            module_id = args.module_id
 
 
             Log.logger.debug(resource_list)
@@ -173,6 +175,7 @@ class ResourceSet(Resource):
             req_dict["project"] = project
             req_dict["department_id"] = department_id
             req_dict["project_name"] = project_name
+            req_dict["module_id"] = module_id
 
             # init default data
             Log.logger.debug('req_dict\'s object id is :')

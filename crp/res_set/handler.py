@@ -1365,6 +1365,7 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list,error_ms
     data["project"] = req_dict["project"]
     data["syswin_project"] = req_dict["syswin_project"]
     data["department_id"] = req_dict["department_id"]
+    data["module_id"] = req_dict["module_id"]
 
     container = []
     db_info = {}
