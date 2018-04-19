@@ -1215,13 +1215,23 @@ class ResourceProviderTransitions2(object):
         volume_size = other.get("volume_size", 0)
         volume_exp_size = other.get("volume_size", 0)
         instance = other.get('instance', '')
-        ip = instance[0].get('ip')
-        #挂卷
-        if volume_size > 0 and volume_exp_size == 0:
-            self.mount_volume(ip, self.resource_type)
-        #对卷扩缩容
-        if volume_size > 0 and volume_exp_size > 0:
-            pass
+        flavor = other.get('flavor')
+        for ins in instance:
+            ip = ins.get('ip')
+            #挂卷
+            if volume_size > 0 and volume_exp_size == 0:
+                self.mount_volume(ip, self.resource_type)
+            #对卷扩缩容
+            if volume_size > 0 and volume_exp_size > 0:
+                pass
+            #通过ip获取flavor
+            vm = OpenStack.find_vm_from_ipv4(ip)
+            vm_flavor = vm.flavor.get("id")
+            #flavor不同更新flavor
+            if vm_flavor != flavor:
+                pass
+
+
 
 
 
