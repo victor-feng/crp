@@ -98,7 +98,7 @@ class ResourceProviderTransitions2(object):
         {'trigger': 'mysql_push', 'source': ['status','app_push' ,'mysql_push', 'mongodb_push', 'redis_push','other_push'], 'dest': 'mysql_push', 'after': 'do_mysql_push'},
         {'trigger': 'mongodb_push', 'source': ['status', 'app_push','mysql_push', 'mongodb_push', 'redis_push','other_push'], 'dest': 'mongodb_push', 'after': 'do_mongodb_push'},
         {'trigger': 'redis_push', 'source': ['status','app_push' ,'mysql_push', 'mongodb_push', 'redis_push','other_push'], 'dest': 'redis_push', 'after': 'do_redis_push'},
-        {'trigger': 'other_push', 'source': ['status', 'app_push', 'mysql_push', 'mongodb_push', 'redis_push','other_push'],'dest': 'redis_push', 'after': 'do_other_push'},
+        {'trigger': 'other_push', 'source': ['status', 'app_push', 'mysql_push', 'mongodb_push', 'redis_push','other_push'],'dest': 'other_push', 'after': 'do_other_push'},
     ]
 
     def __init__(self, resource_id, property_mappers_list, req_dict):
