@@ -79,11 +79,13 @@ class ResourceProviderTransitions2(object):
         'app_push',
         'mysql_push',
         'mongodb_push',
-        'redis_push',]
+        'redis_push',
+        'other_push',
+    ]
 
     # Define transitions.
     transitions = [
-        {'trigger': 'success', 'source': ['status','app_push', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'success', 'after': 'do_success'},
+        {'trigger': 'success', 'source': ['status','app_push', 'mysql_push', 'mongodb_push', 'redis_push','other_push'], 'dest': 'success', 'after': 'do_success'},
         {'trigger': 'fail', 'source': 'rollback', 'dest': 'fail', 'after': 'do_fail'},
         {'trigger': 'rollback', 'source': '*', 'dest': 'rollback', 'after': 'do_rollback'},
         {'trigger': 'stop', 'source': ['success', 'fail'], 'dest': 'stop', 'after': 'do_stop'},
@@ -92,10 +94,11 @@ class ResourceProviderTransitions2(object):
         {'trigger': 'query', 'source': ['app_cluster', 'resource_cluster', 'query'], 'dest': 'query', 'after': 'do_query'},
         {'trigger': 'query_volume', 'source': ['app_cluster', 'resource_cluster', 'query', 'query_volume'],'dest': 'query_volume', 'after': 'do_query_volume'},
         {'trigger': 'status', 'source': ['query','query_volume','status'], 'dest': 'status', 'after': 'do_status'},
-        {'trigger': 'app_push','source': ['status', 'app_push', 'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'app_push', 'after': 'do_app_push'},
-        {'trigger': 'mysql_push', 'source': ['status','app_push' ,'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'mysql_push', 'after': 'do_mysql_push'},
-        {'trigger': 'mongodb_push', 'source': ['status', 'app_push','mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'mongodb_push', 'after': 'do_mongodb_push'},
-        {'trigger': 'redis_push', 'source': ['status','app_push' ,'mysql_push', 'mongodb_push', 'redis_push'], 'dest': 'redis_push', 'after': 'do_redis_push'},
+        {'trigger': 'app_push','source': ['status', 'app_push', 'mysql_push', 'mongodb_push', 'redis_push','other_push'], 'dest': 'app_push', 'after': 'do_app_push'},
+        {'trigger': 'mysql_push', 'source': ['status','app_push' ,'mysql_push', 'mongodb_push', 'redis_push','other_push'], 'dest': 'mysql_push', 'after': 'do_mysql_push'},
+        {'trigger': 'mongodb_push', 'source': ['status', 'app_push','mysql_push', 'mongodb_push', 'redis_push','other_push'], 'dest': 'mongodb_push', 'after': 'do_mongodb_push'},
+        {'trigger': 'redis_push', 'source': ['status','app_push' ,'mysql_push', 'mongodb_push', 'redis_push','other_push'], 'dest': 'redis_push', 'after': 'do_redis_push'},
+        {'trigger': 'other_push', 'source': ['status', 'app_push', 'mysql_push', 'mongodb_push', 'redis_push','other_push'],'dest': 'redis_push', 'after': 'do_other_push'},
     ]
 
     def __init__(self, resource_id, property_mappers_list, req_dict):
@@ -180,8 +183,10 @@ class ResourceProviderTransitions2(object):
         elif self.phase == 'push':
             self.preload_property_mapper(self.push_mappers_list)
 
-        if len(self.property_mapper) != 0 and self.property_mapper.keys()[0] not in ["kvm",self.resource_type]:
+        if len(self.property_mapper) != 0 and self.property_mapper.keys()[0] not in ["kvm"]:
             item_id = self.property_mapper.keys()[0]
+            if item_id not in ["app","kvm","mysql","redis","mongodb"]:
+                item_id = "other"
             if self.phase == 'create':
                 func = getattr(self, item_id, None)
             elif self.phase == 'push':
@@ -584,6 +589,7 @@ class ResourceProviderTransitions2(object):
         disk = propertys.get('disk')
         quantity = propertys.get('quantity')
         volume_size=propertys.get('volume_size',0)
+        volume_exp_size = propertys.get('volume_exp_size', 0)
         network_id = propertys.get('network_id')
         availability_zone = propertys.get('availability_zone')
         port = ''
@@ -1202,6 +1208,15 @@ class ResourceProviderTransitions2(object):
             Log.logger.debug(cmd)
             exec_cmd_ten_times(ip,cmd, 6)
         res_instance_push_callback(self.task_id,self.req_dict,0,{},redis,{},self.set_flag)
+
+    @transition_state_logger
+    def do_other_push(self):
+        other = self.property_mapper.get(self.resource_type, {})
+        volume_size = other.get("volume_size", 0)
+        volume_exp_size = other.get("volume_size", 0)
+
+
+
 
 
     def mount_volume(self,ip,cluster_type):
