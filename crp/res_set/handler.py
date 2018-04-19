@@ -176,7 +176,11 @@ class ResourceProviderTransitions(object):
                 func = getattr(self, item_id, None)
             elif self.phase == 'push':
                 func = getattr(self, ('%s_push' % item_id), None)
+                Log.logger.info("111111111111111111111111111111111--{}".format(func))
+                Log.logger.info("11111111111111111111222222221111111111111--{}".format(dir(self)))
             if not func:
+                Log.logger.info("111111111119999999991111111111111111111111--{}".format(func))
+                Log.logger.info("111111111133331111111111222222221111111111111--{}".format(dir(self)))
                 raise NotImplementedError("Unexpected item_id=%s" % item_id)
             Log.logger.debug('Trigger is %s', item_id)
             func()
