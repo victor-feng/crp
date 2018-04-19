@@ -185,6 +185,7 @@ class ResourceProviderTransitions2(object):
 
         if len(self.property_mapper) != 0 and self.property_mapper.keys()[0] not in ["kvm"]:
             item_id = self.property_mapper.keys()[0]
+            Log.logger.info("111111111133331144444444444411111111222222221111111111111--".format(item_id))
             if item_id not in ["app","kvm","mysql","redis","mongodb"]:
                 item_id = "other"
             if self.phase == 'create':
