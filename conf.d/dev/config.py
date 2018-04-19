@@ -183,6 +183,7 @@ class DevelopmentConfig(BaseConfig):
             'image_id': 'image_id',
             'availability_zone':'availability_zone',
             'flavor': 'flavor',
+            'volume_exp_size':'volume_exp_size',
         }
     }
     SCRIPTPATH = r'crp/res_set/playbook-0830/'
