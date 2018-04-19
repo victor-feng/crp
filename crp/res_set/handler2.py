@@ -1576,6 +1576,7 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list,error_ms
 }
     """
     data = {}
+    resource_type = req_dict["resource_type"]
     data["unit_name"] = req_dict["unit_name"]
     data["unit_id"] = req_dict["unit_id"]
     data["unit_des"] = req_dict["unit_des"]
@@ -1592,12 +1593,11 @@ def request_res_callback(task_id, status, req_dict, result_mappers_list,error_ms
     data["set_flag"] = req_dict["set_flag"]
     data["error_msg"] = error_msg
     data["project_id"] = req_dict["project_id"]
-    data["resource_type"] = req_dict["resource_type"]
+    data["resource_type"] = resource_type
     data["cloud"] = req_dict["cloud"]
     data["project"] = req_dict["project"]
     data["syswin_project"] = req_dict["syswin_project"]
     data["department_id"] = req_dict["department_id"]
-    resource_type = req_dict["resource_type"]
 
 
     container = []
