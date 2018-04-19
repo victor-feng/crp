@@ -1214,6 +1214,15 @@ class ResourceProviderTransitions2(object):
         other = self.property_mapper.get(self.resource_type, {})
         volume_size = other.get("volume_size", 0)
         volume_exp_size = other.get("volume_size", 0)
+        instance = other.get('instance', '')
+        ip = instance[0].get('ip')
+        #挂卷
+        if volume_size > 0 and volume_exp_size == 0:
+            self.mount_volume(ip, self.resource_type)
+        #对卷扩缩容
+        if volume_size > 0 and volume_exp_size > 0:
+            pass
+
 
 
 
