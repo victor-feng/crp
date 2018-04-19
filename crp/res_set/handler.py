@@ -172,6 +172,7 @@ class ResourceProviderTransitions(object):
                     self.property_mapper.keys()))
             item_id = self.property_mapper.keys()[0]
             Log.logger.info("111111111133331144444444444411111111222222221111111111111--{}".format(item_id))
+            Log.logger.info("11111111111111111111222222221111111111111--{}".format(dir(self)))
             if self.phase == 'create':
                 func = getattr(self, item_id, None)
             elif self.phase == 'push':
