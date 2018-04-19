@@ -162,6 +162,8 @@ class ResourceProviderTransitions2(object):
             self.status()
 
     def preload_property_mapper(self, property_mappers_list):
+        Log.logger.info(
+            "99999999999999999999999999999999999999999999998888--".format(property_mappers_list))
         if len(property_mappers_list) != 0:
             if len(self.pre_property_mapper) == 0:
                 self.pre_property_mapper = self.property_mapper
@@ -169,6 +171,9 @@ class ResourceProviderTransitions2(object):
                     self.pre_property_mapper.keys()[0] != self.property_mapper.keys()[0]):
                 self.pre_property_mapper = self.property_mapper
             self.property_mapper = property_mappers_list.pop()
+            Log.logger.info(
+                "9999999999999999999999999999999999999999999999--".format(self.property_mapper))
+
         else:
             self.pre_property_mapper = {}
             self.property_mapper = {}
