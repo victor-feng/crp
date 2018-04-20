@@ -317,7 +317,7 @@ def volume_resize_and_query(task_id, result, resource):
         if current_status == QUERY_VM:
             query_vm(task_id, result, resource)
         elif current_status == STOP_VM:
-            start_vm(task_id, result)
+            stop_vm(task_id, result)
         elif current_status == QUERY_VOLUME:
             query_volume(task_id, result, resource)
         elif current_status == DETACH_VOLUME:
