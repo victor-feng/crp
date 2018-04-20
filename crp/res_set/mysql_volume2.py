@@ -146,14 +146,15 @@ def query_vm(task_id, result, resource):
     nova_client = OpenStack.nova_client
     try:
         inst = nova_client.servers.get(os_inst_id)
-        if inst.status == 'SHUTOFF':
+        task_state = getattr(inst, 'OS-EXT-STS:task_state')
+        if inst.status == 'SHUTOFF' and not task_state:
             result['current_status'] = QUERY_VOLUME
             result['msg']='vm status is shutoff  begin query volume'
-        if inst.status == "ACTIVE":
+        if inst.status == "ACTIVE" and not task_state:
             attach_state = result.get("attach_state",0)
             if attach_state == 0:
                 result['current_status'] = STOP_VM
-                result['msg'] = 'vm status is active  begin start vm'
+                result['msg'] = 'vm status is active  begin stop vm'
             elif attach_state == 1:
                 result['current_status'] = MOUNT_VOLUME
                 result['msg'] = 'vm status is active  begin mount volume'
