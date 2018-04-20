@@ -7,7 +7,7 @@ import requests
 from transitions import Machine
 from flask import request
 from crp.taskmgr import *
-from mysql_volume2 import create_volume,instance_attach_volume,volume_resize_and_query,QUERY_VM
+from mysql_volume2 import create_volume,instance_attach_volume
 from crp.log import Log
 from crp.openstack2 import OpenStack
 from crp.utils.docker_tools import image_transit
