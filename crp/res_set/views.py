@@ -238,6 +238,7 @@ class ResourceSet(Resource):
         resource_id = args.resource_id
         resource_type = args.resource_type
         resources = deal_del_request_data(resource_id, os_ins_ip_list)
+        resources = resources.get('resources')
         Log.logger.debug("Put resource {}".format(resources))
         try:
             volume_size = volume_size + volume_exp_size
