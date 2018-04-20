@@ -339,7 +339,7 @@ def volume_resize_and_query2(task_id, result, resource):
         elif current_status == START_VM:
             start_vm(task_id, result)
         elif current_status == MOUNT_VOLUME:
-            mount_volume(task_id,result)
+            mount_volume(task_id,result,resource)
     except Exception as e:
         err_msg = " [CRP] volume_resize_and_query failed, Exception:%s" % str(e)
         Log.logger.error("Query Task ID " + str(task_id) + err_msg)
