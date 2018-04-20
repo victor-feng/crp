@@ -222,9 +222,9 @@ class ResourceSet(Resource):
         parser.add_argument('cloud', type=str, location='json')
         parser.add_argument('volume_size', type=str, location='json')
         parser.add_argument('volume_exp_size', type=str, location='json')
-        parser.add_argument('syswin_project', type=list, location='json')
-        parser.add_argument('resource_id', type=list, location='json')
-        parser.add_argument('resource_type', type=list, location='json')
+        parser.add_argument('syswin_project', type=str, location='json')
+        parser.add_argument('resource_id', type=str, location='json')
+        parser.add_argument('resource_type', type=str, location='json')
         parser.add_argument('os_ins_ip_list', type=list, location='json')
         args = parser.parse_args()
         set_flag = args.set_flag
