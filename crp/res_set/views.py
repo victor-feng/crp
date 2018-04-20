@@ -13,6 +13,7 @@ from del_handler import delete_instance_and_query,QUERY_VOLUME,delete_vip
 from handler import ResourceProviderTransitions
 from del_handler2 import delete_instance_and_query2,QUERY_VOLUME as QUERY_VOLUME2,delete_vip2,QUERY_INGRESS
 from handler2 import ResourceProviderTransitions2,tick_announce,deal_del_request_data,do_transit_repo_items
+from mysql_volume2 import QUERY_VM as QUERY_VM2,volume_resize_and_query2
 
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
@@ -26,6 +27,7 @@ property_json_mapper_config = configs[APP_ENV].property_json_mapper_config
 
 # res_set REST API Controller
 class ResourceSet(Resource):
+
     @classmethod
     def post(cls):
         """
@@ -199,7 +201,7 @@ class ResourceSet(Resource):
         except Exception as e:
             # exception return http code 500 (Internal Server Error)
             code = 500
-            msg = e.message
+            msg = str(e)
 
         res = {
             'code': code,
@@ -212,6 +214,69 @@ class ResourceSet(Resource):
         }
 
         return res, 202
+
+    def put(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('set_flag', type=str, location='json')
+        parser.add_argument('flavor', type=str, location='json')
+        parser.add_argument('cloud', type=str, location='json')
+        parser.add_argument('volume_size', type=str, location='json')
+        parser.add_argument('volume_exp_size', type=str, location='json')
+        parser.add_argument('syswin_project', type=list, location='json')
+        parser.add_argument('resource_id', type=list, location='json')
+        parser.add_argument('resource_type', type=list, location='json')
+        parser.add_argument('os_ins_ip_list', type=list, location='json')
+        args = parser.parse_args()
+        set_flag = args.set_flag
+        flavor = args.flavor
+        cloud = args.cloud
+        os_ins_ip_list = args.os_ins_ip_list
+        volume_size = args.volume_size
+        volume_exp_size = args.volume_exp_size
+        syswin_project = args.syswin_project
+        resource_id = args.resource_id
+        resource_type = args.resource_type
+        resources = deal_del_request_data(resource_id, os_ins_ip_list)
+        try:
+            volume_size = volume_size + volume_exp_size
+            if cloud == "2":
+                for resource in resources:
+                    result = {
+                        "volume_size": volume_size,
+                        "current_status": QUERY_VM2,
+                        "set_flag":set_flag,
+                        "syswin_project": syswin_project,
+                        "resource_id":resource_id,
+                        "resource_type":resource_type,
+                    }
+                    TaskManager.task_start(
+                        SLEEP_TIME, TIMEOUT,
+                        result,
+                        volume_resize_and_query2, resource)
+            else:
+                pass
+        except Exception as e:
+            err_msg = str(e)
+            Log.logger.error(
+                "[CRP] Resource put failed, Exception:%s" % err_msg)
+            code = 400
+            res = {
+                "code": code,
+                "result": {
+                    "res": "failed",
+                    "msg": err_msg
+                }
+            }
+            return res, code
+        else:
+            code = 200
+            res = {
+                "code": code,
+                "result": {
+                    "msg": "提交成功"
+                }
+            }
+            return res, code
 
 
         

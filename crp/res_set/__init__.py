@@ -13,6 +13,7 @@ resource_set_blueprint = Blueprint('resource_set_blueprint', __name__)
 
 UOP_URL = configs[APP_ENV].UOP_URL
 RES_DELETE_CALL_BACK = configs[APP_ENV].RES_DELETE_CALL_BACK
+RES_CALLBACK = configs[APP_ENV].RES_CALLBACK
 
 def delete_request_callback(task_id, result):
     """
@@ -44,5 +45,35 @@ def delete_request_callback(task_id, result):
         Log.logger.error(
                 "Callback Task ID " + str(task_id) + '\r\n' +
                 'delete_request_callback err_msg ' + str(err_msg))
+
+def put_request_callback(task_id, result):
+    """
+    把配置信息和状态回调给uop
+    :param task_id:
+    :param result:
+    :return:
+    """
+    data = {
+            'resource_id': result.get('resource_id', ''),
+            'msg': result.get('msg', ''),
+            "set_flag":result.get('set_flag','config'),
+            "status" : result.get("status",'fail')
+        }
+    headers = {'Content-Type': 'application/json'}
+    syswin_project=result.get('syswin_project', '')
+    PUT_CALL_BACK=RES_CALLBACK[syswin_project]
+    try:
+        data_str=json.dumps(data)
+        res=requests.put(PUT_CALL_BACK,data=data_str,headers=headers)
+        res=json.dumps(res.json())
+        Log.logger.debug(res)
+    except BaseException as e:
+        err_msg = str(e)
+        Log.logger.error(
+                "Callback Task ID " + str(task_id) + '\r\n' +
+                'delete_request_callback err_msg ' + str(err_msg))
+
+
+
 
 from . import handler, views, forms, errors

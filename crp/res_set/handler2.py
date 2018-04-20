@@ -1217,48 +1217,13 @@ class ResourceProviderTransitions2(object):
         :return:
         """
         other = self.property_mapper.get(self.resource_type, {})
-        Log.logger.info("0000000000000000000000000000000000000000000000000000000000--{}".format(other))
         volume_size = other.get("volume_size", 0)
         volume_exp_size = other.get("volume_exp_size", 0)
         instance = other.get('instance', '')
-        flavor = other.get('flavor')
         for ins in instance:
             ip = ins.get('ip')
-            vm = OpenStack.find_vm_from_ipv4(ip)
-            if vm:
-                #挂卷
-                os_inst_id = vm.id
-                volume_info=getattr(vm,"os-extended-volumes:volumes_attached")
-                if volume_info:
-                    os_vol_id = volume_info[0].get("id")
-                if volume_size > 0 and volume_exp_size == 0:
-                    self.mount_volume(ip, self.resource_type)
-                #对卷扩缩容
-                if volume_size > 0 and volume_exp_size > 0 and os_vol_id:
-                    Log.logger.info("11111111111111111111111111111111111111111111111111111111111111111")
-                    volume_size = volume_size + volume_exp_size
-                    resource={"os_inst_id":os_inst_id,"os_vol_id":os_vol_id}
-                    result={
-                        "ip":ip,
-                        "volume_size":volume_size,
-                        "current_status":QUERY_VM,
-                    }
-                    TaskManager.task_start(
-                        SLEEP_TIME, TIMEOUT,
-                        result,
-                        volume_resize_and_query, resource)
-                #通过ip获取flavor
-                vm_flavor = vm.flavor.get("id")
-                #flavor不同更新flavor
-                if vm_flavor != flavor:
-                    pass
-
-
-
-
-
-
-
+            if volume_size > 0 and volume_exp_size == 0:
+                self.mount_volume(ip, self.resource_type)
 
     def mount_volume(self,ip,cluster_type):
         scp_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m" \
@@ -1879,10 +1844,12 @@ def deal_del_request_data(resource_id,del_os_ins_ip_list):
         for os_ip in del_os_ins_ip_list:
             os_inst_id=os_ip.get("os_ins_id")
             os_vol_id=os_ip.get("os_vol_id")
+            ip = os_ip.get("ip")
             req_dic={}
             req_dic['resource_id'] = resource_id
             req_dic['os_inst_id'] = os_inst_id
             req_dic['os_vol_id']=os_vol_id
+            req_dic['ip'] = ip
             req_list.append(req_dic)
         resources['resources']=req_list
         return resources

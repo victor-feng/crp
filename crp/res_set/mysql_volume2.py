@@ -8,6 +8,7 @@ from crp.openstack2 import OpenStack
 from del_handler2 import CrpException
 from crp.utils.aio import exec_cmd_ten_times
 from config import configs, APP_ENV
+from crp.res_set import put_request_callback
 
 SCRIPTPATH=configs[APP_ENV].SCRIPTPATH
 # 创建volume
@@ -290,8 +291,8 @@ def query_volume(task_id, result, resource):
         raise CrpException(err_msg)
 
 
-def mount_volume(task_id,result):
-    ip = result.get("ip")
+def mount_volume(task_id,result,resource):
+    ip = resource.get("ip")
     try:
         scp_cmd = "ansible {ip} --private-key={dir}/old_id_rsa -m" \
                   " copy -a 'src={dir}/volume.py dest=/tmp/ mode=777'".format(ip=ip, dir=SCRIPTPATH)
@@ -299,6 +300,12 @@ def mount_volume(task_id,result):
                    "-m shell -a 'python /tmp/volume.py'".format(ip=ip, dir=SCRIPTPATH)
         exec_cmd_ten_times(ip, scp_cmd, 6)
         exec_cmd_ten_times(ip, exec_cmd, 6)
+        result['msg'] = 'monut volume success'
+        result['status'] = 'success'
+        Log.logger.debug(
+            "Query Task ID " + str(task_id) +
+            " result " + result.__str__())
+        put_request_callback(task_id, result)
     except Exception as e:
         err_msg = "Mount volume error {e}".format(e=str(e))
         Log.logger.error(err_msg)
@@ -308,7 +315,7 @@ def mount_volume(task_id,result):
 
 
 
-def volume_resize_and_query(task_id, result, resource):
+def volume_resize_and_query2(task_id, result, resource):
     current_status = result.get('current_status', None)
     Log.logger.debug(
         "Task ID %s,\r\n resource %s .current_status %s" %
@@ -333,4 +340,6 @@ def volume_resize_and_query(task_id, result, resource):
     except Exception as e:
         err_msg = " [CRP] volume_resize_and_query failed, Exception:%s" % str(e)
         Log.logger.error("Query Task ID " + str(task_id) + err_msg)
-        raise CrpException(err_msg)
+        result['msg'] = err_msg
+        result['status'] = "fail"
+        put_request_callback(task_id, result)
