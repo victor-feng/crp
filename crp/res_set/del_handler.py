@@ -66,7 +66,7 @@ def query_instance(task_id, result, resource):
                 " result " + result.__str__())
             delete_request_callback(task_id, result)
         else:
-            err_msg = "Query instance error {}".format(e=str(e))
+            err_msg = "Query instance error {e}".format(e=str(e))
             raise CrpException(err_msg)
         TaskManager.task_exit(task_id)
 

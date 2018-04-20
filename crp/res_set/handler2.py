@@ -7,7 +7,7 @@ import requests
 from transitions import Machine
 from flask import request
 from crp.taskmgr import *
-from mysql_volume2 import create_volume,instance_attach_volume
+from mysql_volume2 import create_volume,instance_attach_volume,volume_resize_and_query,QUERY_VM
 from crp.log import Log
 from crp.openstack2 import OpenStack
 from crp.utils.docker_tools import image_transit
@@ -1212,6 +1212,9 @@ class ResourceProviderTransitions2(object):
 
     @transition_state_logger
     def do_other_push(self):
+        """
+        :return:
+        """
         other = self.property_mapper.get(self.resource_type, {})
         volume_size = other.get("volume_size", 0)
         volume_exp_size = other.get("volume_size", 0)
@@ -1219,15 +1222,27 @@ class ResourceProviderTransitions2(object):
         flavor = other.get('flavor')
         for ins in instance:
             ip = ins.get('ip')
-            #挂卷
-            if volume_size > 0 and volume_exp_size == 0:
-                self.mount_volume(ip, self.resource_type)
-            #对卷扩缩容
-            if volume_size > 0 and volume_exp_size > 0:
-                pass
-            #通过ip获取flavor
             vm = OpenStack.find_vm_from_ipv4(ip)
             if vm:
+                #挂卷
+                os_inst_id = vm.id
+                volume_info=getattr(vm,"os-extended-volumes:volumes_attached")
+                if volume_info:
+                    os_vol_id = volume_info[0].get("id")
+                if volume_size > 0 and volume_exp_size == 0:
+                    self.mount_volume(ip, self.resource_type)
+                #对卷扩缩容
+                if volume_size > 0 and volume_exp_size > 0 and os_vol_id:
+                    resource={"os_inst_id":os_inst_id,"os_vol_id":os_vol_id}
+                    result={
+                        "ip":ip,
+                        "current_status":QUERY_VM,
+                    }
+                TaskManager.task_start(
+                    SLEEP_TIME, TIMEOUT,
+                    result,
+                    volume_resize_and_query, resource)
+                #通过ip获取flavor
                 vm_flavor = vm.flavor.get("id")
                 #flavor不同更新flavor
                 if vm_flavor != flavor:
