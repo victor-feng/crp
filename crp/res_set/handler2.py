@@ -186,7 +186,7 @@ class ResourceProviderTransitions2(object):
 
         if len(self.property_mapper) != 0 and self.property_mapper.keys()[0] not in ["kvm"]:
             item_id = self.property_mapper.keys()[0]
-            if item_id not in ["app_cluster","resource_cluster","mysql","redis","mongodb"]:
+            if item_id not in ["app_cluster","resource_cluster","mysql","redis","mongodb","app"]:
                 item_id = "other"
             if self.phase == 'create':
                 func = getattr(self, item_id, None)
@@ -1227,10 +1227,11 @@ class ResourceProviderTransitions2(object):
                 pass
             #通过ip获取flavor
             vm = OpenStack.find_vm_from_ipv4(ip)
-            vm_flavor = vm.flavor.get("id")
-            #flavor不同更新flavor
-            if vm_flavor != flavor:
-                pass
+            if vm:
+                vm_flavor = vm.flavor.get("id")
+                #flavor不同更新flavor
+                if vm_flavor != flavor:
+                    pass
 
 
 
