@@ -135,6 +135,7 @@ class ResourceProviderTransitions2(object):
         self.env=req_dict["env"]
         self.resource_type = req_dict["resource_type"]
         self.project_name = req_dict["project_name"]
+        self.os_ins_ip_list = req_dict["os_ins_ip_list"]
         self.code=None
         self.check_times = 0
         # Initialize the state machine
@@ -1216,6 +1217,7 @@ class ResourceProviderTransitions2(object):
         :return:
         """
         other = self.property_mapper.get(self.resource_type, {})
+        Log.logger.info("0000000000000000000000000000000000000000000000000000000000--{}".format(other))
         volume_size = other.get("volume_size", 0)
         volume_exp_size = other.get("volume_size", 0)
         instance = other.get('instance', '')
@@ -1233,6 +1235,7 @@ class ResourceProviderTransitions2(object):
                     self.mount_volume(ip, self.resource_type)
                 #对卷扩缩容
                 if volume_size > 0 and volume_exp_size > 0 and os_vol_id:
+                    Log.logger.info("11111111111111111111111111111111111111111111111111111111111111111")
                     volume_size = volume_size + volume_exp_size
                     resource={"os_inst_id":os_inst_id,"os_vol_id":os_vol_id}
                     result={

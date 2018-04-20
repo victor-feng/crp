@@ -149,6 +149,7 @@ class ResourceSet(Resource):
             department_id = args.department_id
             project_name = args.project_name
             module_id = args.module_id
+            os_ins_ip_list = args.os_ins_ip_list
 
 
             Log.logger.debug(resource_list)
@@ -176,6 +177,7 @@ class ResourceSet(Resource):
             req_dict["department_id"] = department_id
             req_dict["project_name"] = project_name
             req_dict["module_id"] = module_id
+            req_dict["os_ins_ip_list"] = os_ins_ip_list
 
             # init default data
             Log.logger.debug('req_dict\'s object id is :')
