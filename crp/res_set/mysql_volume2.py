@@ -309,7 +309,6 @@ def mount_volume(task_id,result):
 
 
 def volume_resize_and_query(task_id, result, resource):
-    err_msg = None
     current_status = result.get('current_status', None)
     Log.logger.debug(
         "Task ID %s,\r\n resource %s .current_status %s" %
