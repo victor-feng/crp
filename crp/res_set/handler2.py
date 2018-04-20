@@ -1854,7 +1854,7 @@ def deal_del_request_data(resource_id,del_os_ins_ip_list):
         resources['resources']=req_list
         return resources
     except Exception as e:
-        err_msg = str(e.args)
+        err_msg = str(e)
         Log.logger.error(
             "[CRP] deal_del_request_data error, Exception:%s" % err_msg)
         return resources
