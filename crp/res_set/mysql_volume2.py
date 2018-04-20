@@ -334,4 +334,4 @@ def volume_resize_and_query(task_id, result, resource):
     except Exception as e:
         err_msg = " [CRP] delete_instance_and_query failed, Exception:%s" % str(e)
         Log.logger.error("Query Task ID " + str(task_id) + err_msg)
-    return  err_msg
+        raise CrpException(err_msg)
