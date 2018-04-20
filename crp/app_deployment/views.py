@@ -545,7 +545,7 @@ class AppDeploy(Resource):
             lock.release()
         except Exception as e:
             code = 500
-            msg = "internal server error: " + str(e.args)
+            msg = "internal server error: " + str(e)
             Log.logger.error(msg)
         return code, msg
 
