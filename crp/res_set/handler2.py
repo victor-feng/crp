@@ -1219,7 +1219,7 @@ class ResourceProviderTransitions2(object):
         other = self.property_mapper.get(self.resource_type, {})
         Log.logger.info("0000000000000000000000000000000000000000000000000000000000--{}".format(other))
         volume_size = other.get("volume_size", 0)
-        volume_exp_size = other.get("volume_size", 0)
+        volume_exp_size = other.get("volume_exp_size", 0)
         instance = other.get('instance', '')
         flavor = other.get('flavor')
         for ins in instance:
