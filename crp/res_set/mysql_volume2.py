@@ -9,6 +9,7 @@ from del_handler2 import CrpException
 from crp.utils.aio import exec_cmd_ten_times
 from config import configs, APP_ENV
 from crp.res_set import put_request_callback
+from crp.taskmgr import *
 
 SCRIPTPATH=configs[APP_ENV].SCRIPTPATH
 # 创建volume
@@ -306,6 +307,7 @@ def mount_volume(task_id,result,resource):
             "Query Task ID " + str(task_id) +
             " result " + result.__str__())
         put_request_callback(task_id, result)
+        TaskManager.task_exit(task_id)
     except Exception as e:
         err_msg = "Mount volume error {e}".format(e=str(e))
         Log.logger.error(err_msg)
@@ -343,3 +345,4 @@ def volume_resize_and_query2(task_id, result, resource):
         result['msg'] = err_msg
         result['status'] = "fail"
         put_request_callback(task_id, result)
+        TaskManager.task_exit(task_id)
