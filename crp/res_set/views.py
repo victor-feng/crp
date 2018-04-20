@@ -121,6 +121,7 @@ class ResourceSet(Resource):
             parser.add_argument('project', type=str, location='json')
             parser.add_argument('department_id', type=str, location='json')
             parser.add_argument('project_name', type=str, location='json')
+            parser.add_argument('os_ins_ip_list', type=str, location='json')
             args = parser.parse_args()
 
             req_dict = {}
