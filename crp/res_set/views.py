@@ -240,19 +240,20 @@ class ResourceSet(Resource):
         try:
             volume_size = volume_size + volume_exp_size
             if cloud == "2":
-                for resource in resources:
-                    result = {
-                        "volume_size": volume_size,
-                        "current_status": QUERY_VM2,
-                        "set_flag":set_flag,
-                        "syswin_project": syswin_project,
-                        "resource_id":resource_id,
-                        "resource_type":resource_type,
-                    }
-                    TaskManager.task_start(
-                        SLEEP_TIME, TIMEOUT,
-                        result,
-                        volume_resize_and_query2, resource)
+                if volume_exp_size > 0 and volume_size >0:
+                    for resource in resources:
+                        result = {
+                            "volume_size": volume_size,
+                            "current_status": QUERY_VM2,
+                            "set_flag":set_flag,
+                            "syswin_project": syswin_project,
+                            "resource_id":resource_id,
+                            "resource_type":resource_type,
+                        }
+                        TaskManager.task_start(
+                            SLEEP_TIME, TIMEOUT,
+                            result,
+                            volume_resize_and_query2, resource)
             else:
                 pass
         except Exception as e:
