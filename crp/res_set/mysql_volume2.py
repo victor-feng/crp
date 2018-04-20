@@ -185,7 +185,7 @@ def start_vm(task_id,result):
     nova_client = OpenStack.nova_client
     os_inst_id = result.get('os_inst_id', '')
     try:
-        nova_client.servers.stop(os_inst_id)
+        nova_client.servers.start(os_inst_id)
         result['current_status'] = QUERY_VM
         result['msg'] = 'start vm begin mount volume'
         Log.logger.debug(

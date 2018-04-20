@@ -1233,15 +1233,17 @@ class ResourceProviderTransitions2(object):
                     self.mount_volume(ip, self.resource_type)
                 #对卷扩缩容
                 if volume_size > 0 and volume_exp_size > 0 and os_vol_id:
+                    volume_size = volume_size + volume_exp_size
                     resource={"os_inst_id":os_inst_id,"os_vol_id":os_vol_id}
                     result={
                         "ip":ip,
+                        "volume_size":volume_size,
                         "current_status":QUERY_VM,
                     }
-                TaskManager.task_start(
-                    SLEEP_TIME, TIMEOUT,
-                    result,
-                    volume_resize_and_query, resource)
+                    TaskManager.task_start(
+                        SLEEP_TIME, TIMEOUT,
+                        result,
+                        volume_resize_and_query, resource)
                 #通过ip获取flavor
                 vm_flavor = vm.flavor.get("id")
                 #flavor不同更新flavor
