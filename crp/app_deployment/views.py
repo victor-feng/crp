@@ -476,7 +476,8 @@ class AppDeploy(Resource):
                                     _dep_callback(deploy_id, '127.0.0.1', host_env, update_deployment_err_msg, "None", False, cluster_name, end_flag, deploy_type,
                                                   unique_flag,cloud,deploy_name)
                             else:
-                                _dep_callback(deploy_id, '127.0.0.1', host_env, err_msg, "None",
+                                end_flag = True
+                                _dep_callback(deploy_id, '127.0.0.1', host_env, update_object_err_msg, "None",
                                               False, cluster_name, end_flag, deploy_type,
                                               unique_flag, cloud, deploy_name)
                         elif host_env == "kvm":
