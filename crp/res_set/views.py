@@ -13,7 +13,7 @@ from del_handler import delete_instance_and_query,QUERY_VOLUME,delete_vip
 from handler import ResourceProviderTransitions
 from del_handler2 import delete_instance_and_query2,QUERY_VOLUME as QUERY_VOLUME2,delete_vip2,QUERY_INGRESS
 from handler2 import ResourceProviderTransitions2,tick_announce,deal_del_request_data,do_transit_repo_items
-from put_hander2 import QUERY_VM as QUERY_VM2,volume_resize_and_query2
+from put_hander2 import QUERY_VM as QUERY_VM2,modfiy_vm_config2
 
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
@@ -243,20 +243,21 @@ class ResourceSet(Resource):
         try:
             volume_size = volume_size + volume_exp_size
             if cloud == "2":
-                if volume_exp_size > 0 and volume_size >0:
-                    for resource in resources:
-                        result = {
-                            "volume_size": volume_size,
-                            "current_status": QUERY_VM2,
-                            "set_flag":set_flag,
-                            "syswin_project": syswin_project,
-                            "resource_id":resource_id,
-                            "resource_type":resource_type,
-                        }
-                        TaskManager.task_start(
-                            SLEEP_TIME, TIMEOUT,
-                            result,
-                            volume_resize_and_query2, resource)
+                for resource in resources:
+                    result = {
+                        "volume_size": volume_size,
+                        "current_status": QUERY_VM2,
+                        "set_flag":set_flag,
+                        "syswin_project": syswin_project,
+                        "resource_id":resource_id,
+                        "resource_type":resource_type,
+                        "flavor":flavor,
+                        "volume_exp_size":volume_exp_size,
+                    }
+                    TaskManager.task_start(
+                        SLEEP_TIME, TIMEOUT,
+                        result,
+                        modfiy_vm_config2, resource)
             else:
                 pass
         except Exception as e:

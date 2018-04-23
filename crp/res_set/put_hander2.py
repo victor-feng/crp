@@ -24,6 +24,8 @@ RESIZE_VOLUME = 4
 ATTACH_VOLUME = 5
 START_VM = 6
 MOUNT_VOLUME = 7
+RESIZE_FLAVOR = 8
+RESIZE_CONFIRM = 9
 
 
 
@@ -36,22 +38,51 @@ def query_vm(task_id, result, resource):
     :return:
     """
     os_inst_id =resource.get('os_inst_id', '')
+    volume_exp_size = result.get("volume_exp_size",0)
     result['os_inst_id'] = os_inst_id
+    flavor = result.get("flavor")
     nova_client = OpenStack.nova_client
     try:
+        attach_state = result.get("attach_state", 0)
+        confirm_state = result.get("confirm_state", 0)
         inst = nova_client.servers.get(os_inst_id)
         task_state = getattr(inst, 'OS-EXT-STS:task_state')
         if inst.status == 'SHUTOFF' and not task_state:
-            result['current_status'] = QUERY_VOLUME
-            result['msg']='vm status is shutoff  begin query volume'
-        if inst.status == "ACTIVE" and not task_state:
-            attach_state = result.get("attach_state",0)
-            if attach_state == 0:
+            if volume_exp_size > 0 and attach_state == 0:
+                result['current_status'] = QUERY_VOLUME
+                result['msg']='vm status is shutoff  begin query volume'
+            elif  volume_exp_size > 0 and attach_state == 1:
+                old_flavor = inst.flavor.get("id")
+                if old_flavor != flavor:
+                    result['current_status'] = RESIZE_FLAVOR
+                    result['msg'] = 'vm status is shutoff  begin resize flavor'
+                else:
+                    result['status'] = "success"
+                    put_request_callback(task_id, result)
+                    TaskManager.task_exit(task_id)
+            elif  volume_exp_size == 0 :
+                old_flavor = inst.flavor.get("id")
+                if old_flavor != flavor:
+                    result['current_status'] = RESIZE_FLAVOR
+                    result['msg'] = 'vm status is shutoff  begin resize flavor'
+                else:
+                    result['status'] = "success"
+                    put_request_callback(task_id, result)
+                    TaskManager.task_exit(task_id)
+        elif inst.status == "ACTIVE" and not task_state:
+            if attach_state == 0 and confirm_state == 0:
                 result['current_status'] = STOP_VM
                 result['msg'] = 'vm status is active  begin stop vm'
-            elif attach_state == 1:
+            elif attach_state == 1 and confirm_state == 0:
                 result['current_status'] = MOUNT_VOLUME
                 result['msg'] = 'vm status is active  begin mount volume'
+            elif confirm_state == 1:
+                result['status'] = "success"
+                put_request_callback(task_id, result)
+                TaskManager.task_exit(task_id)
+        elif inst.status == "VERIFY_RESIZE" and not task_state:
+            result['current_status'] = RESIZE_CONFIRM
+            result['msg'] = 'vm status is VERIFY_RESIZE  begin vm resize confirm'
         Log.logger.debug(
             "Query Task ID " + str(task_id) +
             " query Instance ID " + os_inst_id +
@@ -100,7 +131,8 @@ def resize_volume(task_id,result,resource):
     cinder_client = OpenStack.cinder_client
     try:
         cinder_client.volumes.extend(os_vol_id,volume_size)
-        result['current_status'] = ATTACH_VOLUME
+        result['current_status'] = QUERY_VOLUME
+        result['revol_state'] = 1
         result['msg'] = 'resize volume  begin attack volume'
         Log.logger.debug(
             "Query Task ID " + str(task_id) +
@@ -164,8 +196,13 @@ def query_volume(task_id, result, resource):
         cinder_client = OpenStack.cinder_client
         vol = cinder_client.volumes.get(os_vol_id)
         if vol.status == 'available':
-            result['current_status'] = RESIZE_VOLUME
-            result['msg'] = 'volume status is avaiable  begin resize volume'
+            revol_state = result.get("revol_state")
+            if revol_state ==0:
+                result['current_status'] = RESIZE_VOLUME
+                result['msg'] = 'volume status is avaiable  begin resize volume'
+            elif revol_state == 1:
+                result['current_status'] = ATTACH_VOLUME
+                result['msg'] = 'volume status is avaiable  begin attach volume'
         elif vol.status == 'in-use':
             attach_state = result.get("attach_state",0)
             if attach_state == 0:
@@ -198,23 +235,59 @@ def mount_volume(task_id,result,resource):
                    "-m raw -a 'python /tmp/volume.py'".format(ip=ip, dir=SCRIPTPATH)
         exec_cmd_ten_times(ip, scp_cmd, 6)
         exec_cmd_ten_times(ip, exec_cmd, 6)
-        result['msg'] = 'monut volume success'
-        result['status'] = 'success'
+        result['current_status'] = STOP_VM
+        result['msg'] = 'monut volume success,begin stop vm'
         Log.logger.debug(
             "Query Task ID " + str(task_id) +
             " result " + result.__str__())
-        put_request_callback(task_id, result)
-        TaskManager.task_exit(task_id)
+        #put_request_callback(task_id, result)
+        #TaskManager.task_exit(task_id)
     except Exception as e:
         err_msg = "Mount volume error {e}".format(e=str(e))
         Log.logger.error(err_msg)
         raise CrpException(err_msg)
 
 
+def resize_flavor(task_id,result):
+    nova_client = OpenStack.nova_client
+    os_inst_id = result.get('os_inst_id', '')
+    flavor = result.get('flavor')
+    try:
+        inst=nova_client.servers.get(os_inst_id)
+        inst.resize(flavor)
+        result['current_status'] = QUERY_VM
+        result['msg'] = 'vm flavor resize begin query vm'
+        Log.logger.debug(
+            "Query Task ID " + str(task_id) +
+            " query Instance ID " + str(os_inst_id) +
+            " result " + result.__str__())
+    except Exception as e:
+        err_msg = "Resize vm flavor error {e}".format(e=str(e))
+        Log.logger.error(err_msg)
+        raise CrpException(err_msg)
+
+def confim_flavor(task_id,result):
+    nova_client = OpenStack.nova_client
+    os_inst_id = result.get('os_inst_id', '')
+    try:
+        inst = nova_client.servers.get(os_inst_id)
+        inst.confirm_resize()
+        result['current_status'] = START_VM
+        result['msg'] = 'vm flavor resize confirm begin start vm'
+        result['confirm_state'] = 1
+        Log.logger.debug(
+            "Query Task ID " + str(task_id) +
+            " query Instance ID " + str(os_inst_id) +
+            " result " + result.__str__())
+    except Exception as e:
+        err_msg = "Resize confirm vm flavor  error {e}".format(e=str(e))
+        Log.logger.error(err_msg)
+        raise CrpException(err_msg)
 
 
 
-def volume_resize_and_query2(task_id, result, resource):
+
+def modfiy_vm_config2(task_id, result, resource):
     current_status = result.get('current_status', None)
     Log.logger.debug(
         "Task ID %s,\r\n resource %s .current_status %s" %
@@ -236,6 +309,10 @@ def volume_resize_and_query2(task_id, result, resource):
             start_vm(task_id, result)
         elif current_status == MOUNT_VOLUME:
             mount_volume(task_id,result,resource)
+        elif current_status == RESIZE_FLAVOR:
+            resize_flavor(task_id,result)
+        elif current_status == RESIZE_CONFIRM:
+            confim_flavor(task_id,result)
     except Exception as e:
         err_msg = " [CRP] volume_resize_and_query failed, Exception:%s" % str(e)
         Log.logger.error("Query Task ID " + str(task_id) + err_msg)
