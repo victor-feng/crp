@@ -447,17 +447,13 @@ class AppDeploy(Resource):
                 if cloud == "2":
                     deployment_name=resource_name
                     for i in docker:
-                        Log.logger.info("111111111111111111111111111111111{}".format(i))
-                        Log.logger.info("22222222222222222222222222222222222222222{}".format(type(i)))
                         flavor = i.get('flavor','22')
                         image_url = i.get('url', '')
                         cluster_name = i.get("ins_name", "")
                         host_env = i.get("host_env")
                         host_mapping = i.get("host_mapping")
-                        Log.logger.info("4444444444444444444444444444444444444444444444{}".format(APP_REQUESTS))
                         app_requests = APP_REQUESTS.get(flavor)
                         app_limits = APP_LIMITS.get(flavor)
-                        Log.logger.info("33333333333333333333333333333333333{}".format(APP_LIMITS))
                         if host_env == "docker":
                             update_image_deployment,update_object_err_msg = K8sDeployment.update_deployment_image_object(deployment_name,
                                                                                                       FILEBEAT_NAME,
