@@ -447,8 +447,8 @@ class AppDeploy(Resource):
                 if cloud == "2":
                     deployment_name=resource_name
                     for i in docker:
-                        Log.logger.info("111111111111111111111111111111111".format(i))
-                        Log.logger.info("22222222222222222222222222222222222222222".format(type(2)))
+                        Log.logger.info("111111111111111111111111111111111{}".format(i))
+                        Log.logger.info("22222222222222222222222222222222222222222{}".format(type(2)))
                         flavor = i.get('flavor','22')
                         image_url = i.get('url', '')
                         cluster_name = i.get("ins_name", "")
