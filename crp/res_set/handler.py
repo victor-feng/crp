@@ -4,6 +4,7 @@ import json
 import time
 import subprocess
 import requests
+import re
 from transitions import Machine
 from flask import request
 from crp.taskmgr import *
@@ -36,8 +37,7 @@ SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
 AVAILABILITY_ZONE = configs[APP_ENV].AVAILABILITY_ZONE
 IS_OPEN_AFFINITY_SCHEDULING = configs[APP_ENV].IS_OPEN_AFFINITY_SCHEDULING
 ADD_LOG = configs[APP_ENV].ADD_LOG
-VAR_DICT = ADD_LOG.get("VAR_DICT")
-BUILD_IMAGE = ADD_LOG.get("BUILD_IMAGE")
+NAMEDMANAGER_URL = configs[APP_ENV].NAMEDMANAGER_URL
 # Transition state Log debug decorator
 
 
@@ -848,12 +848,16 @@ class ResourceProviderTransitions(object):
         host_env = app_cluster.get("host_env")
         instance = app_cluster.get('instance')
         if host_env == "kvm":
+            namedmanager_url = NAMEDMANAGER_URL.get(self.env)
+            dns_ip = re.findall(
+                r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b",
+                namedmanager_url)
             for _instance in instance:
                 ip = _instance.get('ip')
                 scp_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m" \
                           "copy -a 'src={dir}/write_host_info.py dest=/tmp/'".format(ip=ip, dir=self.dir)
                 exec_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa " \
-                           "-m shell -a 'python /tmp/write_host_info.py '".format(ip=ip, dir=self.dir, )
+                           "-m shell -a 'python /tmp/write_host_info.py {dns_ip}'".format(ip=ip, dir=self.dir,dns_ip=dns_ip)
                 exec_flag, err_msg=exec_cmd_ten_times(ip, scp_cmd, 6)
                 if exec_flag:
                     exec_flag, err_msg=exec_cmd_ten_times(ip, exec_cmd, 6)

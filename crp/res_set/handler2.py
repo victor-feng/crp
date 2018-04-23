@@ -4,6 +4,7 @@ import json
 import time
 import subprocess
 import requests
+import re
 from transitions import Machine
 from flask import request
 from crp.taskmgr import *
@@ -37,6 +38,7 @@ DEFAULT_USERNAME = configs[APP_ENV].DEFAULT_USERNAME
 DEFAULT_PASSWORD = configs[APP_ENV].DEFAULT_PASSWORD
 SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
 IS_OPEN_AFFINITY_SCHEDULING = configs[APP_ENV].IS_OPEN_AFFINITY_SCHEDULING
+NAMEDMANAGER_URL = configs[APP_ENV].NAMEDMANAGER_URL
 
 #k8s相关
 NAMESPACE = configs[APP_ENV].NAMESPACE
@@ -136,7 +138,7 @@ class ResourceProviderTransitions2(object):
         self.resource_type = req_dict["resource_type"]
         self.project_name = req_dict["project_name"]
         self.os_ins_ip_list = req_dict["os_ins_ip_list"]
-        self.code=None
+        self.code = None
         self.check_times = 0
         # Initialize the state machine
         self.machine = Machine(
@@ -979,12 +981,14 @@ class ResourceProviderTransitions2(object):
         host_env = app_cluster.get("host_env")
         instance = app_cluster.get('instance')
         if host_env == "kvm":
+            namedmanager_url=NAMEDMANAGER_URL.get(self.env)
+            dns_ip = re.findall(r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b", namedmanager_url)
             for _instance in instance:
                 ip = _instance.get('ip')
                 scp_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m" \
                           " copy -a 'src={dir}/write_host_info.py dest=/tmp/ mode=777'".format(ip=ip, dir=self.dir)
                 exec_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa " \
-                           "-m shell -a 'python /tmp/write_host_info.py '".format(ip=ip, dir=self.dir,)
+                           "-m shell -a 'python /tmp/write_host_info.py {dns_ip}'".format(ip=ip, dir=self.dir,dns_ip=dns_ip)
                 exec_flag, err_msg = exec_cmd_ten_times(ip, scp_cmd, 6)
                 if exec_flag:
                     exec_flag, err_msg = exec_cmd_ten_times(ip, exec_cmd, 6)

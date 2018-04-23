@@ -2,10 +2,13 @@
 #coding:utf-8
 
 
-import os
+import os,sys
 
-def write_host_info():
+
+
+def write_host_info(dns_ip):
     hosts_path="/etc/hosts"
+    dns_path = "/etc/resolv.conf"
     cmd = "hostname"
     hostname = os.popen(cmd).read().strip()
     ip = "127.0.0.1"
@@ -17,8 +20,16 @@ def write_host_info():
         #write_to_file(host_info,hosts_path)
         with open(hosts_path,"a+") as f:
             f.write(host_info)
+    dns_info = "nameserver  {dns_ip}".format(dns_ip=dns_ip)
+    check_dns_cmd = "cat {dns_path} | grep '{dns_info}' |wc -l".format(dns_path=dns_path,dns_info=dns_info)
+    dns_res = os.popen(check_dns_cmd).read().strip()
+    if int(dns_res) == 0:
+        with open(dns_path,"a+") as f:
+            f.write(dns_info)
+
 
 
 
 if __name__ == "__main__":
-    write_host_info()
+    dns_ip = sys.argv[1]
+    write_host_info(dns_ip)
