@@ -55,6 +55,7 @@ def put_request_callback(task_id, result):
     """
     data = {
             'resource_id': result.get('resource_id', ''),
+            'resource_type': result.get('resource_type', ''),
             'msg': result.get('msg', ''),
             "set_flag":result.get('set_flag','config'),
             "status" : result.get("status",'fail')
