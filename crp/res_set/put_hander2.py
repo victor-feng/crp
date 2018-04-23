@@ -195,7 +195,7 @@ def mount_volume(task_id,result,resource):
         scp_cmd = "ansible {ip} --private-key={key_dir}old_id_rsa -m" \
                   " copy -a 'src={dir}/volume.py dest=/tmp/ mode=777'".format(ip=ip, key_dir=SCRIPTPATH,dir=dir)
         exec_cmd = "ansible {ip} --private-key={dir}old_id_rsa " \
-                   "-m shell -a 'python /tmp/volume.py'".format(ip=ip, dir=SCRIPTPATH)
+                   "-m raw -a 'python /tmp/volume.py'".format(ip=ip, dir=SCRIPTPATH)
         exec_cmd_ten_times(ip, scp_cmd, 6)
         exec_cmd_ten_times(ip, exec_cmd, 6)
         result['msg'] = 'monut volume success'
