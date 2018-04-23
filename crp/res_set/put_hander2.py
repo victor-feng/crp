@@ -196,8 +196,8 @@ def query_volume(task_id, result, resource):
         cinder_client = OpenStack.cinder_client
         vol = cinder_client.volumes.get(os_vol_id)
         if vol.status == 'available':
-            revol_state = result.get("revol_state")
-            if revol_state ==0:
+            revol_state = result.get("revol_state",0)
+            if revol_state == 0:
                 result['current_status'] = RESIZE_VOLUME
                 result['msg'] = 'volume status is avaiable  begin resize volume'
             elif revol_state == 1:
