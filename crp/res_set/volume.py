@@ -11,13 +11,15 @@ import os,sys
 if not os.path.exists("/data"):
     os.mkdir("/data")
 #挂载卷
-if len(sys.argv) == 1:
+if len(sys.argv) == 2:
     cluster_type = sys.argv[1]
     #如果是mysql和mongodb必须修改/data目录的权限
     if cluster_type == "mysql":
         chown_cmd="chown -R mysql.mysql /data"
     elif cluster_type == "mongodb":
         chown_cmd="chown -R mongodb01:db /data"
+    else:
+        chown_cmd = None
 
     if os.path.exists("/dev/vdb"):
         os.system("mkfs.ext4 /dev/vdb")
@@ -38,9 +40,10 @@ if len(sys.argv) == 1:
 
     os.system("chmod 700 /data")
 
-    os.system(chown_cmd)
+    if chown_cmd:
+        os.system(chown_cmd)
 #扩容卷
-else:
+elif len(sys.argv) == 1:
     #卸载卷
     os.system("umount /data")
     #检查卷
