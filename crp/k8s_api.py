@@ -236,51 +236,56 @@ class K8sDeploymentApi(object):
         :param deployment_name:
         :return:
         """
-        deployment_name = deployment_name.lower()
         host_aliases = []
-        host_mapping = json.loads(host_mapping)
-        if host_mapping:
-            for host_map in host_mapping:
-                ip = host_map.get("ip", '127.0.0.1')
-                hostnames = host_map.get("hostnames", ['"uop-k8s.syswin.com"'])
-                host_aliase = client.V1HostAlias(hostnames=hostnames, ip=ip)
-                host_aliases.append(host_aliase)
-        filebeat_container = client.V1Container(
-            name=filebeat_name,
-        )
-        app_container = client.V1Container(
-            name="app",
-            image="",
-            resources=client.V1ResourceRequirements(
-                requests=app_requests,
-                limits=app_limits,
+        err_msg = None
+        update_image_deployment = None
+        try:
+            deployment_name = deployment_name.lower()
+            host_mapping = json.loads(host_mapping)
+            if host_mapping:
+                for host_map in host_mapping:
+                    ip = host_map.get("ip", '127.0.0.1')
+                    hostnames = host_map.get("hostnames", ['"uop-k8s.syswin.com"'])
+                    host_aliase = client.V1HostAlias(hostnames=hostnames, ip=ip)
+                    host_aliases.append(host_aliase)
+            filebeat_container = client.V1Container(
+                name=filebeat_name,
             )
-        )
-        template = client.V1PodTemplateSpec(
-            metadata=client.V1ObjectMeta(
-                labels={}
-            ),
-            spec=client.V1PodSpec(
-                host_aliases=host_aliases,
-                containers=[
-                    filebeat_container,
-                    app_container,
-                ],
-            ),
-        )
-        spec = client.ExtensionsV1beta1DeploymentSpec(
-            template=template,
-        )
+            app_container = client.V1Container(
+                name="app",
+                image="",
+                resources=client.V1ResourceRequirements(
+                    requests=app_requests,
+                    limits=app_limits,
+                )
+            )
+            template = client.V1PodTemplateSpec(
+                metadata=client.V1ObjectMeta(
+                    labels={}
+                ),
+                spec=client.V1PodSpec(
+                    host_aliases=host_aliases,
+                    containers=[
+                        filebeat_container,
+                        app_container,
+                    ],
+                ),
+            )
+            spec = client.ExtensionsV1beta1DeploymentSpec(
+                template=template,
+            )
 
-        # Instantiate the deployment object
-        update_image_deployment = client.ExtensionsV1beta1Deployment(
-            api_version="extensions/v1beta1",
-            kind="Deployment",
-            metadata=client.V1ObjectMeta(name=deployment_name),
-            spec=spec,
-        )
+            # Instantiate the deployment object
+            update_image_deployment = client.ExtensionsV1beta1Deployment(
+                api_version="extensions/v1beta1",
+                kind="Deployment",
+                metadata=client.V1ObjectMeta(name=deployment_name),
+                spec=spec,
+            )
 
-        return update_image_deployment
+        except Exception as e:
+            err_msg = "Update deployment object error {e}".format(e=str(e))
+        return update_image_deployment,err_msg
 
     def update_deployment_image(self, update_image_deployment, deployment_name, new_image_url, namespace):
         """

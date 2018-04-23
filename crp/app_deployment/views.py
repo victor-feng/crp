@@ -459,21 +459,26 @@ class AppDeploy(Resource):
                         app_limits = APP_LIMITS.get(flavor)
                         Log.logger.info("33333333333333333333333333333333333{}".format(APP_LIMITS))
                         if host_env == "docker":
-                            update_image_deployment = K8sDeployment.update_deployment_image_object(deployment_name,
+                            update_image_deployment,update_object_err_msg = K8sDeployment.update_deployment_image_object(deployment_name,
                                                                                                       FILEBEAT_NAME,
                                                                                                       app_requests,
                                                                                                       app_limits,host_mapping)
-                            update_deployment_err_msg, update_deployment_err_code = K8sDeployment.update_deployment_image(
-                                update_image_deployment, deployment_name, image_url, namespace)
-                            end_flag = True
-                            if update_deployment_err_msg is None:
-                                #不报错开始检查应用和pod的状态
-                                self._check_deployment_status(deployment_name, deploy_id, cluster_name,
-                                                       end_flag, deploy_type,
-                                                       unique_flag, cloud,deploy_name,namespace)
+                            if update_object_err_msg is None:
+                                update_deployment_err_msg, update_deployment_err_code = K8sDeployment.update_deployment_image(
+                                    update_image_deployment, deployment_name, image_url, namespace)
+                                end_flag = True
+                                if update_deployment_err_msg is None:
+                                    #不报错开始检查应用和pod的状态
+                                    self._check_deployment_status(deployment_name, deploy_id, cluster_name,
+                                                           end_flag, deploy_type,
+                                                           unique_flag, cloud,deploy_name,namespace)
+                                else:
+                                    _dep_callback(deploy_id, '127.0.0.1', host_env, update_deployment_err_msg, "None", False, cluster_name, end_flag, deploy_type,
+                                                  unique_flag,cloud,deploy_name)
                             else:
-                                _dep_callback(deploy_id, '127.0.0.1', host_env, update_deployment_err_msg, "None", False, cluster_name, end_flag, deploy_type,
-                                              unique_flag,cloud,deploy_name)
+                                _dep_callback(deploy_id, '127.0.0.1', host_env, err_msg, "None",
+                                              False, cluster_name, end_flag, deploy_type,
+                                              unique_flag, cloud, deploy_name)
                         elif host_env == "kvm":
                             deploy_kvm_flag, msg=self.deploy_kvm(project_name,i,environment)
                             end_flag = True
