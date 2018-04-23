@@ -292,7 +292,7 @@ def confim_flavor(task_id,result):
 
 
 
-def modfiy_vm_config2(task_id, result, resource):
+def modfiy_vm_config(task_id, result, resource):
     current_status = result.get('current_status', None)
     Log.logger.debug(
         "Task ID %s,\r\n resource %s .current_status %s" %
