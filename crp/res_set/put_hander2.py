@@ -45,7 +45,6 @@ def query_vm(task_id, result, resource):
     try:
         attach_state = result.get("attach_state", 0)
         confirm_state = result.get("confirm_state", 0)
-        exit_state = result.get("exit_state",0)
         inst = nova_client.servers.get(os_inst_id)
         task_state = getattr(inst, 'OS-EXT-STS:task_state')
         if inst.status == 'SHUTOFF' and not task_state:
@@ -71,6 +70,7 @@ def query_vm(task_id, result, resource):
                     result['msg'] = 'vm status is shutoff  begin start vm'
                     result['exit_state'] = 1
         elif inst.status == "ACTIVE" and not task_state:
+            exit_state = result.get("exit_state", 0)
             if attach_state == 0 and confirm_state == 0 and exit_state == 0:
                 result['current_status'] = STOP_VM
                 result['msg'] = 'vm status is active  begin stop vm'
@@ -244,8 +244,6 @@ def mount_volume(task_id,result,resource):
         Log.logger.debug(
             "Query Task ID " + str(task_id) +
             " result " + result.__str__())
-        #put_request_callback(task_id, result)
-        #TaskManager.task_exit(task_id)
     except Exception as e:
         err_msg = "Mount volume error {e}".format(e=str(e))
         Log.logger.error(err_msg)
