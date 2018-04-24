@@ -851,7 +851,7 @@ class ResourceProviderTransitions(object):
             namedmanager_url = NAMEDMANAGER_URL.get(self.env)
             dns_ip = re.findall(
                 r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b",
-                namedmanager_url)
+                namedmanager_url)[0]
             for _instance in instance:
                 ip = _instance.get('ip')
                 scp_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m" \
