@@ -754,9 +754,10 @@ class ResourceProviderTransitions2(object):
                     s_flag,err_msg = K8sDeployment.get_deployment_pod_status(namespace,deployment_name)
                     if s_flag is not True:
                         self.check_times = self.check_times +1
-                        if self.check_times > CHECK_TIMEOUT and self.set_flag == "res":
+                        if self.check_times > CHECK_TIMEOUT:
                             self.error_msg = err_msg
                             is_rollback = True
+                            result_inst_id_list.append(uop_os_inst_id)
             else:
                 #openstack 虚机
                 inst = nova_client.servers.get(uop_os_inst_id['os_inst_id'])
