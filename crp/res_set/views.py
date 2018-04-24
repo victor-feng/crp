@@ -242,11 +242,9 @@ class ResourceSet(Resource):
         resources = resources.get('resources')
         Log.logger.debug("Put resource {}".format(resources))
         try:
-            volume_size = volume_size + volume_exp_size
             if cloud == "2":
                 for resource in resources:
                     result = {
-                        "volume_size": volume_size,
                         "current_status": QUERY_VM2,
                         "set_flag":set_flag,
                         "syswin_project": syswin_project,

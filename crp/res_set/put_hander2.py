@@ -127,9 +127,12 @@ def start_vm(task_id,result):
 
 def resize_volume(task_id,result,resource):
     os_vol_id = resource.get('os_vol_id')
-    volume_size = result.get("volume_size",100)
+    volume_exp_size = result.get("volume_exp_size",0)
     cinder_client = OpenStack.cinder_client
     try:
+        volume = cinder_client.volumes.get(os_vol_id)
+        volume_size = volume.size
+        volume_size = volume_size + volume_exp_size
         cinder_client.volumes.extend(os_vol_id,volume_size)
         result['current_status'] = QUERY_VOLUME
         result['revol_state'] = 1
@@ -314,7 +317,7 @@ def modfiy_vm_config2(task_id, result, resource):
         elif current_status == RESIZE_CONFIRM:
             confim_flavor(task_id,result)
     except Exception as e:
-        err_msg = " [CRP] volume_resize_and_query failed, Exception:%s" % str(e)
+        err_msg = " [CRP] modfiy_vm_config2 failed, Exception:%s" % str(e)
         Log.logger.error("Query Task ID " + str(task_id) + err_msg)
         result['msg'] = err_msg
         result['status'] = "fail"
