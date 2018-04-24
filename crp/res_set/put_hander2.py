@@ -45,6 +45,7 @@ def query_vm(task_id, result, resource):
     try:
         attach_state = result.get("attach_state", 0)
         confirm_state = result.get("confirm_state", 0)
+        exit_state = result.get("exit_state",0)
         inst = nova_client.servers.get(os_inst_id)
         task_state = getattr(inst, 'OS-EXT-STS:task_state')
         if inst.status == 'SHUTOFF' and not task_state:
@@ -57,26 +58,26 @@ def query_vm(task_id, result, resource):
                     result['current_status'] = RESIZE_FLAVOR
                     result['msg'] = 'vm status is shutoff  begin resize flavor'
                 else:
-                    result['status'] = "success"
-                    put_request_callback(task_id, result)
-                    TaskManager.task_exit(task_id)
+                    result['current_status'] = START_VM
+                    result['msg'] = 'vm status is shutoff  begin start vm'
+                    result['exit_state'] = 1
             elif  volume_exp_size == 0 :
                 old_flavor = inst.flavor.get("id")
                 if old_flavor != flavor:
                     result['current_status'] = RESIZE_FLAVOR
                     result['msg'] = 'vm status is shutoff  begin resize flavor'
                 else:
-                    result['status'] = "success"
-                    put_request_callback(task_id, result)
-                    TaskManager.task_exit(task_id)
+                    result['current_status'] = START_VM
+                    result['msg'] = 'vm status is shutoff  begin start vm'
+                    result['exit_state'] = 1
         elif inst.status == "ACTIVE" and not task_state:
-            if attach_state == 0 and confirm_state == 0:
+            if attach_state == 0 and confirm_state == 0 and exit_state == 0:
                 result['current_status'] = STOP_VM
                 result['msg'] = 'vm status is active  begin stop vm'
-            elif attach_state == 1 and confirm_state == 0:
+            elif attach_state == 1 and confirm_state == 0 and exit_state == 0:
                 result['current_status'] = MOUNT_VOLUME
                 result['msg'] = 'vm status is active  begin mount volume'
-            elif confirm_state == 1:
+            elif confirm_state == 1 or exit_state == 1:
                 result['status'] = "success"
                 put_request_callback(task_id, result)
                 TaskManager.task_exit(task_id)
