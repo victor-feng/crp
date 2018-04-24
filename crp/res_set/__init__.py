@@ -29,7 +29,7 @@ def delete_request_callback(task_id, result):
             'code': result.get('code', ''),
             'unique_flag': result.get('unique_flag',''),
             'del_os_ins_ip_list': result.get('del_os_ins_ip_list', []),
-            "set_flag":result.get('set_flag','res'),
+            "set_flag":result.get('set_flag',"res"),
             "status" : result.get("status",'fail')
         }
     headers = {'Content-Type': 'application/json'}

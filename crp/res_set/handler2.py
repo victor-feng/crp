@@ -270,7 +270,7 @@ class ResourceProviderTransitions2(object):
                     {'current_status': QUERY_VOLUME,
                      "unique_flag": "",
                      "del_os_ins_ip_list": [],
-                     "sef_flag": "rollback",
+                     "set_flag": "rollback",
                      'syswin_project': "uop",
                      "resource_type":resource_type,
                      "resource_name":self.req_dict["resource_name"],
