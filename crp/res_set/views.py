@@ -13,8 +13,8 @@ from del_handler import delete_instance_and_query,QUERY_VOLUME,delete_vip
 from handler import ResourceProviderTransitions
 from del_handler2 import delete_instance_and_query2,QUERY_VOLUME as QUERY_VOLUME2,delete_vip2,QUERY_INGRESS
 from handler2 import ResourceProviderTransitions2,tick_announce,deal_del_request_data,do_transit_repo_items
-from put_hander2 import QUERY_VM as QUERY_VM2,modfiy_vm_config2
-from put_hander import QUERY_VM,modfiy_vm_config
+from put_handler2 import QUERY_VM as QUERY_VM2,modfiy_vm_config2
+from put_handler import QUERY_VM,modfiy_vm_config
 
 
 resource_set_api = Api(resource_set_blueprint, errors=resource_set_errors)
