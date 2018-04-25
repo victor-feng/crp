@@ -452,13 +452,18 @@ class AppDeploy(Resource):
                         cluster_name = i.get("ins_name", "")
                         host_env = i.get("host_env")
                         host_mapping = i.get("host_mapping")
+                        networkName = i.get("networkName")
+                        tenantName = i.get("tenantName")
                         app_requests = APP_REQUESTS.get(flavor)
                         app_limits = APP_LIMITS.get(flavor)
                         if host_env == "docker":
                             update_image_deployment,update_object_err_msg = K8sDeployment.update_deployment_image_object(deployment_name,
                                                                                                       FILEBEAT_NAME,
                                                                                                       app_requests,
-                                                                                                      app_limits,host_mapping)
+                                                                                                      app_limits,
+                                                                                                      host_mapping,
+                                                                                                      networkName,
+                                                                                                      tenantName)
                             if update_object_err_msg is None:
                                 update_deployment_err_msg, update_deployment_err_code = K8sDeployment.update_deployment_image(
                                     update_image_deployment, deployment_name, image_url, namespace)

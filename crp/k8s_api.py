@@ -230,7 +230,7 @@ class K8sDeploymentApi(object):
             code = get_k8s_err_code(e)
         return err_msg,code
 
-    def update_deployment_image_object(self,deployment_name,filebeat_name,app_requests,app_limits,host_mapping):
+    def update_deployment_image_object(self,deployment_name,filebeat_name,app_requests,app_limits,host_mapping,tenantName,networkName):
         """
         deployment image 更新镜像时创建模板,配额
         :param deployment_name:
@@ -261,7 +261,11 @@ class K8sDeploymentApi(object):
             )
             template = client.V1PodTemplateSpec(
                 metadata=client.V1ObjectMeta(
-                    labels={}
+                    labels={
+                        "app": deployment_name,
+                        "io.contiv.tenant":tenantName ,
+                        "io.contiv.network": networkName,
+                            }
                 ),
                 spec=client.V1PodSpec(
                     host_aliases=host_aliases,
