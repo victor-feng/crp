@@ -230,7 +230,7 @@ class K8sDeploymentApi(object):
             code = get_k8s_err_code(e)
         return err_msg,code
 
-    def update_deployment_image_object(self,deployment_name,filebeat_name,app_requests,app_limits,host_mapping,tenantName,networkName):
+    def update_deployment_image_object(self,deployment_name,filebeat_name,app_requests,app_limits,host_mapping,networkName,tenantName):
         """
         deployment image 更新镜像时创建模板,配额
         :param deployment_name:
