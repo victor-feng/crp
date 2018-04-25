@@ -275,7 +275,15 @@ class K8sDeploymentApi(object):
                     ],
                 ),
             )
+            selector = client.V1LabelSelector(
+
+                match_labels={
+                    "app": deployment_name
+                }
+            )
+
             spec = client.ExtensionsV1beta1DeploymentSpec(
+                selector=selector,
                 template=template,
             )
 
