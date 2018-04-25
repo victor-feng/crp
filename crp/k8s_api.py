@@ -263,7 +263,7 @@ class K8sDeploymentApi(object):
                 metadata=client.V1ObjectMeta(
                     labels={
                         "app": deployment_name,
-                        "io.contiv.tenant":tenantName ,
+                        "io.contiv.tenant":tenantName,
                         "io.contiv.network": networkName,
                             }
                 ),
