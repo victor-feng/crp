@@ -79,6 +79,7 @@ def query_vm(task_id, result, resource):
                 result['msg'] = 'vm status is active  begin mount volume'
             elif confirm_state == 1 or exit_state == 1:
                 result['status'] = "success"
+                result['msg'] = 'modify vm config success,exit'
                 put_request_callback(task_id, result)
                 TaskManager.task_exit(task_id)
         elif inst.status == "VERIFY_RESIZE" and not task_state:
@@ -100,7 +101,7 @@ def stop_vm(task_id,result):
     try:
         nova_client.servers.stop(os_inst_id)
         result['current_status'] = QUERY_VM
-        result['msg'] = 'stop vm begin query volume'
+        result['msg'] = 'stop vm begin query vm status'
         Log.logger.debug(
             "Query Task ID " + str(task_id) +
             " query Instance ID " + str(os_inst_id) +
@@ -116,7 +117,7 @@ def start_vm(task_id,result):
     try:
         nova_client.servers.start(os_inst_id)
         result['current_status'] = QUERY_VM
-        result['msg'] = 'start vm begin mount volume'
+        result['msg'] = 'start vm begin query vm status'
         Log.logger.debug(
             "Query Task ID " + str(task_id) +
             " query Instance ID " + str(os_inst_id) +
