@@ -62,27 +62,29 @@ def query_vm(task_id, result, resource):
                     result['current_status'] = RESIZE_FLAVOR
                     result['msg'] = 'vm status is shutoff  begin resize flavor'
                 else:
-                    result['status'] = "success"
-                    put_request_callback(task_id, result)
-                    TaskManager.task_exit(task_id)
+                    result['current_status'] = START_VM
+                    result['msg'] = 'vm status is shutoff  begin start vm'
+                    result['exit_state'] = 1
             elif  volume_exp_size == 0 :
                 old_flavor = inst.flavor.get("id")
                 if old_flavor != flavor:
                     result['current_status'] = RESIZE_FLAVOR
                     result['msg'] = 'vm status is shutoff  begin resize flavor'
                 else:
-                    result['status'] = "success"
-                    put_request_callback(task_id, result)
-                    TaskManager.task_exit(task_id)
+                    result['current_status'] = START_VM
+                    result['msg'] = 'vm status is shutoff  begin start vm'
+                    result['exit_state'] = 1
         elif inst.status == "ACTIVE" and not task_state:
-            if attach_state == 0 and confirm_state == 0:
+            exit_state = result.get("exit_state", 0)
+            if attach_state == 0 and confirm_state == 0 and exit_state == 0:
                 result['current_status'] = STOP_VM
                 result['msg'] = 'vm status is active  begin stop vm'
-            elif attach_state == 1 and confirm_state == 0:
+            elif attach_state == 1 and confirm_state == 0 and exit_state == 0:
                 result['current_status'] = MOUNT_VOLUME
                 result['msg'] = 'vm status is active  begin mount volume'
-            elif confirm_state == 1:
+            elif confirm_state == 1 or exit_state == 1:
                 result['status'] = "success"
+                result['msg'] = 'modify vm config success,exit'
                 put_request_callback(task_id, result)
                 TaskManager.task_exit(task_id)
         elif inst.status == "VERIFY_RESIZE" and not task_state:
@@ -104,7 +106,7 @@ def stop_vm(task_id,result):
     try:
         nova_client.servers.stop(os_inst_id)
         result['current_status'] = QUERY_VM
-        result['msg'] = 'stop vm begin query volume'
+        result['msg'] = 'stop vm begin query vm status'
         Log.logger.debug(
             "Query Task ID " + str(task_id) +
             " query Instance ID " + str(os_inst_id) +
@@ -120,7 +122,7 @@ def start_vm(task_id,result):
     try:
         nova_client.servers.start(os_inst_id)
         result['current_status'] = QUERY_VM
-        result['msg'] = 'start vm begin mount volume'
+        result['msg'] = 'start vm begin query vm status'
         Log.logger.debug(
             "Query Task ID " + str(task_id) +
             " query Instance ID " + str(os_inst_id) +
@@ -132,7 +134,7 @@ def start_vm(task_id,result):
 
 def resize_volume(task_id,result,resource):
     os_vol_id = resource.get('os_vol_id')
-    volume_exp_size = result.get("volume_exp_size", 0)
+    volume_exp_size = result.get("volume_exp_size",0)
     cinder_client = OpenStack.cinder_client
     try:
         volume = cinder_client.volumes.get(os_vol_id)
@@ -248,8 +250,6 @@ def mount_volume(task_id,result,resource):
         Log.logger.debug(
             "Query Task ID " + str(task_id) +
             " result " + result.__str__())
-        #put_request_callback(task_id, result)
-        #TaskManager.task_exit(task_id)
     except Exception as e:
         err_msg = "Mount volume error {e}".format(e=str(e))
         Log.logger.error(err_msg)
