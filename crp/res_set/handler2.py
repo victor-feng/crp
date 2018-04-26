@@ -1307,9 +1307,9 @@ class ResourceProviderTransitions2(object):
             response=neutron_client.update_port(port_id,{'port': {'allowed_address_pairs': map_list}})
             #执行arping命令
             scp_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m" \
-                      " copy -a 'src={dir}/asping.py dest=/tmp/ mode=777'".format(ip=ip, dir=self.dir)
+                      " copy -a 'src={dir}/arping.py dest=/tmp/ mode=777'".format(ip=ip, dir=self.dir)
             exec_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa " \
-                       "-m shell -a 'python /tmp/asping.py {ip}'".format(ip=ip, dir=self.dir)
+                       "-m shell -a 'python /tmp/arping.py {ip}'".format(ip=ip, dir=self.dir)
             exec_cmd_ten_times(ip, scp_cmd, 6)
             exec_cmd_ten_times(ip, exec_cmd, 6)
         except Exception as e:
