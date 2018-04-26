@@ -41,6 +41,7 @@ FILEBEAT_NAME = configs[APP_ENV].FILEBEAT_NAME
 SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
 APP_REQUESTS = configs[APP_ENV].APP_REQUESTS
 APP_LIMITS = configs[APP_ENV].APP_LIMITS
+MYSQL_NETWORK = configs[APP_ENV].MYSQL_NETWORK
 
 
 class AppDeploy(Resource):
@@ -1019,7 +1020,7 @@ class AppDeploy(Resource):
                             cmd1 = ""
                             cmd2 = "grant select, update, insert, alter,delete, execute on " + data_name + ".* to \'" + database_user + "\'@\'" + "172.%" + "\';\n"
                         else:
-                            cmd1 = "create user \'" + database_user + "\'@\'" + "172.%" + "\' identified by  \'" + database_password + "\' ;\n"
+                            cmd1 = "create user \'" + database_user + "\'@\'" + MYSQL_NETWORK + "\' identified by  \'" + database_password + "\' ;\n"
                             cmd2 = "grant select, update, insert, alter,delete, execute on " + data_name + ".* to \'" + database_user + "\'@\'" + "172.%" + "\';\n"
                         cmd += cmd1 + cmd2
                         create_path = self._excute_mysql_cmd(mysql_password, mysql_user, port, cmd)

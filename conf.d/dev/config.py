@@ -203,6 +203,8 @@ class DevelopmentConfig(BaseConfig):
     }
     IS_OPEN_AFFINITY_SCHEDULING = False
 
+    MYSQL_NETWORK = "172.%" #mysql数据库可以访问的网段
+
     #####################cloud2.0相关####################
     OPENRC2_PATH = "/root/openrc2"
     K8S_CONF_PATH = "/root/k8s.config"

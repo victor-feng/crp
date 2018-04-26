@@ -153,7 +153,7 @@ class ProdConfig(BaseConfig):
         "prod": "http://10.253.68.85/api/dnsapi.php",
     }
     IS_OPEN_AFFINITY_SCHEDULING = False
-
+    MYSQL_NETWORK = "10.%"  # mysql数据库可以访问的网段
 
 configs = {
     'prod': ProdConfig,
