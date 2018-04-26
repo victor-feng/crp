@@ -84,9 +84,9 @@ class ProdConfig(BaseConfig):
     OS_EXT_PHYSICAL_SERVER_ATTR = 'OS-EXT-SRV-ATTR:host'
 
     # res_callback
-    RES_CALLBACK = "".join(UOP_URL, 'api/res_callback/res')
-    RES_STATUS_CALLBACK = "".join(UOP_URL, 'api/res_callback/status')
-    DEP_STATUS_CALLBACK = "".join(UOP_URL, 'api/dep_result/status')
+    RES_CALLBACK = "".join([UOP_URL, 'api/res_callback/res'])
+    RES_STATUS_CALLBACK = "".join([UOP_URL, 'api/res_callback/status'])
+    DEP_STATUS_CALLBACK = "".join([UOP_URL, 'api/dep_result/status'])
     RES_STATUS_OK = "ok"
     RES_STATUS_FAIL = "fail"
     RES_STATUS_DEFAULT = 'unreserved'

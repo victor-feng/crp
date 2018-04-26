@@ -106,16 +106,16 @@ class DevelopmentConfig(BaseConfig):
 
     # res_callback
     RES_CALLBACK = {
-        "uop": "".join(UOP_URL, 'api/res_callback/res'),
+        "uop": "".join([UOP_URL, 'api/res_callback/res']),
         "cloud": 'http://172.28.50.18:5001/api/res_callback/callback'
     }
     RES_DELETE_CALL_BACK = {
-        "uop": "".join(UOP_URL, "api/res_callback/delete"),
+        "uop": "".join([UOP_URL, "api/res_callback/delete"]),
         "cloud": "http://172.28.50.18:5001/api/res_callback/callback"
     }
 
-    RES_STATUS_CALLBACK = "".join(UOP_URL, 'api/res_callback/status')
-    DEP_STATUS_CALLBACK = "".join(UOP_URL, 'api/dep_result/status')
+    RES_STATUS_CALLBACK = "".join([UOP_URL, 'api/res_callback/status'])
+    DEP_STATUS_CALLBACK = "".join([UOP_URL, 'api/dep_result/status'])
 
     RES_STATUS_OK = "ok"
     RES_STATUS_FAIL = "fail"
