@@ -11,7 +11,7 @@ class DevelopmentConfig(BaseConfig):
     TESTING = True
     DEBUG = True
 
-    UOP_URL = "http://172.28.20.124:5000/"
+    UOP_URL = "http://uop-dev.syswin.com/"
     MPC_URL = "http://mpc-dev.syswin.com/"
     OPENRC_PATH = "/root/openrc"
     DK_SOCK_URL = 'unix://var/run/docker.sock'
@@ -106,16 +106,16 @@ class DevelopmentConfig(BaseConfig):
 
     # res_callback
     RES_CALLBACK = {
-        "uop": 'http://uop-dev.syswin.com/api/res_callback/res',
+        "uop": "".join(UOP_URL, 'api/res_callback/res'),
         "cloud": 'http://172.28.50.18:5001/api/res_callback/callback'
     }
     RES_DELETE_CALL_BACK = {
-        "uop": "http://uop-dev.syswin.com/api/res_callback/delete",
+        "uop": "".join(UOP_URL, "api/res_callback/delete"),
         "cloud": "http://172.28.50.18:5001/api/res_callback/callback"
     }
 
-    RES_STATUS_CALLBACK = 'http://uop-dev.syswin.com/api/res_callback/status'
-    DEP_STATUS_CALLBACK = 'http://uop-dev.syswin.com/api/dep_result/status'
+    RES_STATUS_CALLBACK = "".join(UOP_URL, 'api/res_callback/status')
+    DEP_STATUS_CALLBACK = "".join(UOP_URL, 'api/dep_result/status')
 
     RES_STATUS_OK = "ok"
     RES_STATUS_FAIL = "fail"
