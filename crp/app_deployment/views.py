@@ -467,20 +467,42 @@ class AppDeploy(Resource):
                         host_mapping = i.get("host_mapping")
                         networkName = i.get("networkName")
                         tenantName = i.get("tenantName")
+                        replicas = i.get('replicas')
+                        ready_probe_path = i.get('ready_probe_path')
+                        port = int(i.get("port")) if i.get("port") else i.get("port")
                         app_requests = APP_REQUESTS.get(flavor)
                         app_limits = APP_LIMITS.get(flavor)
+                        filebeat_requests_flavor = '05002'
+                        filebeat_limits_flavor = '101'
+                        filebeat_requests = FILEBEAT_REQUESTS.get(filebeat_requests_flavor)
+                        filebeat_limits = FILEBEAT_LIMITS.get(filebeat_limits_flavor)
                         if host_env == "docker":
-                            update_image_deployment,update_object_err_msg = K8sDeployment.update_deployment_image_object(deployment_name,
-                                                                                                      FILEBEAT_NAME,
-                                                                                                      app_requests,
-                                                                                                      app_limits,
-                                                                                                      host_mapping,
-                                                                                                      networkName,
-                                                                                                      tenantName)
+                            # update_image_deployment,update_object_err_msg = K8sDeployment.update_deployment_image_object(deployment_name,
+                            #                                                                           FILEBEAT_NAME,
+                            #                                                                           app_requests,
+                            #                                                                           app_limits,
+                            #                                                                           host_mapping,
+                            #                                                                           networkName,
+                            #                                                                           tenantName)
+                            update_image_deployment, update_object_err_msg = K8sDeployment.create_deployment_object(
+                                deployment_name,
+                                FILEBEAT_NAME,
+                                FILEBEAT_IMAGE_URL,
+                                filebeat_requests,
+                                filebeat_limits,
+                                image_url,
+                                port,
+                                app_requests,
+                                app_limits,
+                                networkName,
+                                tenantName,
+                                host_mapping,
+                                replicas,
+                                ready_probe_path,
+                                )
                             if update_object_err_msg is None:
-                                Log.logger.info("111111111111111111111 {}".format(update_image_deployment))
                                 update_deployment_err_msg, update_deployment_err_code = K8sDeployment.update_deployment_image(
-                                    update_image_deployment, deployment_name, image_url, namespace)
+                                    update_image_deployment, deployment_name, namespace)
                                 end_flag = True
                                 if update_deployment_err_msg is None:
                                     #不报错开始检查应用和pod的状态

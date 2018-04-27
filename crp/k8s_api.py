@@ -306,7 +306,7 @@ class K8sDeploymentApi(object):
             err_msg = "Update deployment object error {e}".format(e=str(e))
         return update_image_deployment,err_msg
 
-    def update_deployment_image(self, update_image_deployment, deployment_name, new_image_url, namespace):
+    def update_deployment_image(self, update_image_deployment, deployment_name, namespace):
         """
         更新deployment
         :param api_instance:
@@ -321,12 +321,12 @@ class K8sDeploymentApi(object):
         try:
             api_instance = self.extensionsv1
             deployment_name = deployment_name.lower()
-            update_image_deployment.spec.template.spec.containers[1].image = new_image_url
+            #update_image_deployment.spec.template.spec.containers[1].image = new_image_url
             # Update pod label
             update_image_deployment.spec.template.metadata.labels["restartLatestTime"] = \
                 datetime.datetime.now().strftime("%Y%m%d%H%M%S")
             # Update the deployment
-            api_response = api_instance.patch_namespaced_deployment(
+            api_response = api_instance.replace_namespaced_deployment(
                 name=deployment_name,
                 namespace=namespace,
                 body=update_image_deployment)
