@@ -201,6 +201,13 @@ class DevelopmentConfig(BaseConfig):
         "prep": "http://10.253.68.85/namedmanager/api/dnsapi.php",
         "prod": "http://10.253.68.85/namedmanager/api/dnsapi.php",
     }
+
+    DISCONF_SERVER = {
+        "host": "172.28.11.111",
+        "port": "8081",
+        "user": "admin",
+        "password": "admin"
+    }
     IS_OPEN_AFFINITY_SCHEDULING = False
 
     MYSQL_NETWORK = "172.%" #mysql数据库可以访问的网段

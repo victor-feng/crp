@@ -29,6 +29,12 @@ class TestingConfig(BaseConfig):
     #NOTE: noused in uop
     #NOTE: config it !!!! TODO:
     #TODO:? hard code?
+    DISCONF_SERVER = {
+        "host": "172.28.11.111",
+        "port": "8081",
+        "user": "admin",
+        "password": "admin"
+    }
     AP_NETWORK_CONF = {
         'AZ_UOP': '7aca50a9-cf4b-4cc7-b078-be055dd7c6af',
         'hyperv_test': 'c12740e6-33c8-49e9-b17d-6255bb10cd0c'

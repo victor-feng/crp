@@ -27,6 +27,12 @@ class ProdConfig(BaseConfig):
     GLANCE_RESERVATION_QUANTITY = 100
     UPLOAD_FOLDER = '/data/'
 
+    DISCONF_SERVER = {
+        "host": "172.28.11.111",
+        "port": "8081",
+        "user": "admin",
+        "password": "admin"
+    }
     # TODO:
     AP_NETWORK_CONF = {
         'AZ_UOP': 'AZ-UOP-HYPERUOP-LXC-SAS-76' 

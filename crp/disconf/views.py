@@ -16,7 +16,7 @@ from crp.disconf import disconf_blueprint
 from crp.disconf.errors import disconf_errors
 from crp.disconf.disconf_api import *
 
-
+DISCONF_SERVER = configs[APP_ENV].DISCONF_SERVER
 
 disconf_api = Api(disconf_blueprint, errors=disconf_errors)
 
@@ -40,7 +40,7 @@ class DisconfAPI(Resource):
             resource = models.ResourceModel.objects.get(res_id=res_id)
             app_name = resource.ins_name
             app_desc = '{res_name} config generated.'.format(res_name=app_name)
-            disconf_api = DisconfServerApi('172.28.11.111')
+            disconf_api = DisconfServerApi(DISCONF_SERVER.get("host"))
             disconf_api.disconf_app(app_name, app_desc)
             app_id = disconf_api.disconf_app_id(app_name)
             env_id = disconf_api.disconf_env_id('rd')
@@ -78,7 +78,7 @@ class DisconfAPI(Resource):
                 if ins_info is not None:
                     result = {}
                     app_name = getattr(ins_info,'ins_name')
-                    disconf_api = DisconfServerApi('172.28.11.111')
+                    disconf_api = DisconfServerApi(DISCONF_SERVER.get("host"))
                     app_id = disconf_api.disconf_app_id(app_name=app_name)
                     env_id = disconf_api.disconf_env_id(env_name='rd')
                     version_id = disconf_api.disconf_version_list(app_id=app_id)
@@ -136,7 +136,7 @@ class DisconfItem(Resource):
             return ret, code
 
         app_name = resource.resource_name
-        disconf_api = DisconfServerApi('172.28.11.111')
+        disconf_api = DisconfServerApi(DISCONF_SERVER)
         ret, msg = disconf_api.disconf_session()
         if not ret:
             return msg, 200
@@ -175,10 +175,10 @@ class DisconfEnv(Resource):
             parser.add_argument('disconf_server', type=str, location='args')
             args = parser.parse_args()
             disconf_server = args.disconf_server
-            server_info = {'disconf_server_name':'172.28.11.111',
-                           'disconf_server_url':'http://172.28.11.111:8081',
-                           'disconf_server_user':'admin',
-                           'disconf_server_password':'admin',
+            server_info = {'disconf_server_name': DISCONF_SERVER.get("host"),
+                           'disconf_server_url': ":".join([DISCONF_SERVER.get("host"), DISCONF_SERVER.get("port")]),
+                           'disconf_server_user': DISCONF_SERVER.get("user"),
+                           'disconf_server_password': DISCONF_SERVER.get("password"),
                            }
             disconf_api = DisconfServerApi(server_info)
             env_list = disconf_api.disconf_env_list()
