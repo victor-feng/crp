@@ -178,32 +178,38 @@ class AppDeploy(Resource):
             parser.add_argument('appinfo', type=list, location='json')
             parser.add_argument('deploy_id', type=str)
             parser.add_argument('set_flag', type=str)
+            parser.add_argument('action', type=str)
             args = parser.parse_args()
             appinfo = args.appinfo
             deploy_id=args.deploy_id
             set_flag = args.set_flag
-            deploy_type=set_flag
-            msg_dict={
-                "increase":"应用扩容完成",
-                "reduce":"应用缩容完成",
-                "deploy_increase_nginx":"nginx增加扩容应用完成",
-                "deploy_reduce_nginx":"nginx缩减缩容应用完成",
-            }
-            for app in appinfo:
-                domain = app.get("domain")
-                port = app.get("port")
-                nginx_port = app.get("nginx_port")
-                if not nginx_port:
-                    app["nginx_port"] = port
-                if port:
-                    port = int(port)
-                if domain:
-                    self.do_app_push(app)
-            if appinfo:
-                _dep_detail_callback(deploy_id, "deploy_%s_nginx" % set_flag, set_flag, msg_dict["deploy_%s_nginx" % set_flag])
-                _dep_detail_callback(deploy_id, deploy_type, set_flag, msg_dict[set_flag])
-            elif not appinfo:
-                _dep_detail_callback(deploy_id, deploy_type, set_flag, msg_dict[set_flag])
+            action = args.action
+            if action == "update_nginx":
+                for app in appinfo:
+                    domain = app.get("domain")
+                    if domain:
+                        self.do_app_push(app)
+            else:
+                deploy_type=set_flag
+                msg_dict={
+                    "increase":"应用扩容完成",
+                    "reduce":"应用缩容完成",
+                    "deploy_increase_nginx":"nginx增加扩容应用完成",
+                    "deploy_reduce_nginx":"nginx缩减缩容应用完成",
+                }
+                for app in appinfo:
+                    domain = app.get("domain")
+                    port = app.get("port")
+                    nginx_port = app.get("nginx_port")
+                    if not nginx_port:
+                        app["nginx_port"] = port
+                    if domain:
+                        self.do_app_push(app)
+                if appinfo:
+                    _dep_detail_callback(deploy_id, "deploy_%s_nginx" % set_flag, set_flag, msg_dict["deploy_%s_nginx" % set_flag])
+                    _dep_detail_callback(deploy_id, deploy_type, set_flag, msg_dict[set_flag])
+                elif not appinfo:
+                    _dep_detail_callback(deploy_id, deploy_type, set_flag, msg_dict[set_flag])
         except Exception as e:
             Log.logger.error("AppDeploy put exception:%s " %str(e))
             code = 500
