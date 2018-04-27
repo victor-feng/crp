@@ -42,6 +42,7 @@ def exec_cmd_ten_times(ip,cmd,sleep):
             if not flag:continue
             stdout=exec_cmd(cmd)
             if "SUCCESS" in stdout:
+                Log.logger.debug(cmd)
                 Log.logger.debug(stdout)
                 break
         else:
