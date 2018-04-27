@@ -10,7 +10,6 @@ def config():
     #/tmp/update.py -certificate={certificate} -domain={domain} -ip={ip} -port={port}
     if len(sys.argv) < 5:
         print "Please Input certificate(False), domain, Ip:port"
-    print sys.argv, len(sys.argv)
     length_args = len(sys.argv)
     domain = sys.argv[2].split("=")[1]  if len(sys.argv[2].split("=")) == 2 else "" # 'api.wangyan.systoon.com'
     certificate = sys.argv[1].split("=")[1]  if len(sys.argv[1].split("=")) == 2 else ""# certificate or False
@@ -20,11 +19,8 @@ def config():
     port_list = [sys.argv[4].split("=")[1]] if len(sys.argv[4].split("=")) == 2 else []
     # ip_list = [sys.argv[2], sys.argv[3]]  # ['1.1.1.1', '2.2.2.2']
     # port_list = [sys.argv[4], sys.argv[5]]  # [11, 22]
-    print '-----', ip_list, port_list
     ip_port = resolve(ip_list, port_list)
-    print 'ip + port = ', ip_port
     ips = write_server_config(ip_port)
-    print "ips = ", ips
     subdomain = '.'.join(domain.split('.')[:-2])
 
     conf_url = '/usr/local/nginx/conf/servers_systoon'
