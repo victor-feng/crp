@@ -191,10 +191,14 @@ class AppDeploy(Resource):
             set_flag = args.set_flag
             action = args.action
             if action == "update_nginx":
+                @async
+                def async_do_app_push(app):
+                    self.do_app_push(app)
                 for app in appinfo:
                     domain = app.get("domain")
                     if domain:
-                        self.do_app_push(app)
+                        #self.do_app_push(app)
+                        async_do_app_push(app)
             else:
                 deploy_type=set_flag
                 msg_dict={
