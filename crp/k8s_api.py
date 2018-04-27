@@ -200,6 +200,7 @@ class K8sDeploymentApi(object):
                 }
             )
             spec = client.ExtensionsV1beta1DeploymentSpec(
+                revision_history_limit=10,
                 selector=selector,
                 replicas=replicas,
                 template=template,
