@@ -466,6 +466,7 @@ class AppDeploy(Resource):
                                                                                                       networkName,
                                                                                                       tenantName)
                             if update_object_err_msg is None:
+                                Log.logger.info("111111111111111111111 {}".format(update_image_deployment))
                                 update_deployment_err_msg, update_deployment_err_code = K8sDeployment.update_deployment_image(
                                     update_image_deployment, deployment_name, image_url, namespace)
                                 end_flag = True
