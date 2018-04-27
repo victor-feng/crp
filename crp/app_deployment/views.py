@@ -70,7 +70,6 @@ class AppDeploy(Resource):
             nip = kwargs.get('nip')
             certificate = kwargs.get('certificate', 0)
             template = "template_https" if certificate else "template_http"
-            Log.logger.debug('----->start push:{}dir:{}'.format(kwargs, selfdir))
             scp_update_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/update.py dest=/tmp/ mode=777'".format(
                     nip=nip, dir=selfdir)
             scp_template_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/{template} dest=/tmp/ mode=777'".format(
@@ -90,7 +89,6 @@ class AppDeploy(Resource):
                 return exec_flag, err_msg
             Log.logger.debug('------>上传配置文件完成')
             exec_flag, err_msg=exec_cmd_ten_times(nip, exec_shell_cmd, 1)
-            Log.logger.debug('------>end push')
             if not exec_flag:
                 return exec_flag, err_msg
 
@@ -99,7 +97,6 @@ class AppDeploy(Resource):
 
         real_ip = ''
         ips = app.get('ips')
-        Log.logger.debug("####current compute instance is:{}".format(app))
         domain_ip = app.get('domain_ip', "")
         domain = app.get('domain', '')
         certificate = app.get('certificate', "")
@@ -132,7 +129,6 @@ class AppDeploy(Resource):
         domain_list = kwargs.get("domain_list")
         disconf_list = kwargs.get("disconf_list")
         environment = kwargs.get("environment")
-        Log.logger.debug("--------->start delete nginx profiles")
         for dl in domain_list:
             nip = dl.get("domain_ip")
             domain = dl.get('domain')
@@ -151,7 +147,6 @@ class AppDeploy(Resource):
             #开始删除dns
             dns_api = NamedManagerApi(environment)
             res = dns_api.named_domain_delete(domain)
-            Log.logger.debug("--------->{}".format(res))
         Log.logger.debug("--------->stop delete nginx profiles: success")
 
     def delete(self):
@@ -383,7 +378,6 @@ class AppDeploy(Resource):
                 if len(domain_name.strip()) != 0 and len(domain_ip.strip()) != 0:
                     dns_api = NamedManagerApi(environment)
                     err_msg,res = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=domain_ip)
-                    Log.logger.debug('The dns add result: %s' % res)
                     if err_msg:
                         _dep_callback(deploy_id, "ip", "dns", err_msg, "active", False, "dns", True, 'deploy',
                                       unique_flag, cloud, deploy_name)
@@ -570,7 +564,6 @@ class AppDeploy(Resource):
                     #如果有集群拉取镜像失败，将这个集群从docker中删除
                     for err_docker in err_dockers:
                         docker.remove(err_docker)
-                        Log.logger.debug("The Latest Docker is " + str(docker))
                     #获取所有集群的ip
                     all_ips = []
                     for info in docker:
@@ -616,7 +609,6 @@ class AppDeploy(Resource):
             ips = info.get('ip')
             length_ip = len(ips)
             if length_ip > 0:
-                Log.logger.debug('ip and url: ' + str(ips) + str(info.get('url')))
                 ip = ips[0]
                 os_flag,vm_state,err_msg=self._deploy_query_instance_set_status(ip, image_uuid,appinfo,health_check)
                 #执行写日志的操作
@@ -630,13 +622,9 @@ class AppDeploy(Resource):
                     else:
                         msg=u"docker网络检查正常"
                     _dep_callback(deploy_id, ip, "docker", msg, vm_state, True, cluster_name,end_flag,deploy_type,unique_flag,cloud,deploy_name)
-                    Log.logger.debug(
-                        "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
                 else:
                     #如果索引为0，表示第一个ip部署失败，部署停止
                     ip_index = int(ip_index_dict[ip])
-                    Log.logger.debug(
-                        "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " ip_index:" + str(ip_index))
                     if ip_index == 0:
                         first_error_flag = True
                         for d_ip in ips:
@@ -647,9 +635,8 @@ class AppDeploy(Resource):
                         end_flag=True
                         deploy_flag = False
                     _dep_callback(deploy_id, ip, "docker", err_msg, vm_state, False,cluster_name,end_flag,deploy_type,unique_flag,cloud,deploy_name)
-                    Log.logger.debug(
-                        "Cluster name " + cluster_name + " IP is " + ip + " Status is " + vm_state + " self.all_ips:" + self.all_ips.__str__())
-                    if first_error_flag:break
+                    if first_error_flag:
+                        break
                 ips.pop(0)
             else:
                 break
@@ -674,9 +661,6 @@ class AppDeploy(Resource):
                 task_state = getattr(vm, 'OS-EXT-STS:task_state')
                 #check_res=True
                 check_res,check_msg=self.app_health_or_network_check(ip, HEALTH_CHECK_PORT, HEALTH_CHECK_PATH,health_check)
-                Log.logger.debug(
-                    " query Instance ID " + os_inst_id.__str__() + " Status is " + vm_state + " check res:" + str(
-                        check_res) + " Query Times is:" + str(i))
                 if vm_state == "error" and  "rebuild" not in str(task_state) :
                     os_flag=False
                     err_msg="vm status is error " + check_msg
@@ -898,9 +882,7 @@ class AppDeploy(Resource):
 
         local_path = path_filename[0]
         remote_path = '/tmp/' + path_filename[1]
-        Log.logger.debug("local_path and remote_path is %s-%s" % (local_path, remote_path))
         sh_path = self.mongodb_command_file(mongodb_password, mongodb_username, port, database, local_path)
-        Log.logger.debug("start deploy mongodb cluster %s", sh_path)
 
         # 只需要对主节点进行认证操作
         host_path = self.mongodb_hosts_file(vip)
@@ -1146,10 +1128,6 @@ class Upload(Resource):
             'msg': '上传成功！',
             'file_info': result,
         }
-
-
-
-
 
 
 app_deploy_api.add_resource(AppDeploy, '/deploys')
