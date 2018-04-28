@@ -5,6 +5,8 @@
 from crp.openstack import OpenStack
 from crp.openstack2 import OpenStack as OpenStack2
 from crp.log import Log
+from config import configs, APP_ENV
+OS_EXT_PHYSICAL_SERVER_ATTR=configs[APP_ENV].OS_EXT_PHYSICAL_SERVER_ATTR
 
 class OpenStack_Api(object):
 
@@ -74,7 +76,8 @@ class OpenStack_Api(object):
                 else:
                     ip = "127.0.0.1"
                 status = vm.status.lower()
-                vm_info_dict[os_inst_id] = [ip, status]
+                physical_server = getattr(vm, OS_EXT_PHYSICAL_SERVER_ATTR)
+                vm_info_dict[os_inst_id] = [ip, status,physical_server]
         except Exception as e:
             err_msg = str(e)
             Log.logger.error("CRP OpenStack get all vm status error %s", err_msg)
@@ -150,7 +153,8 @@ class OpenStack2_Api(object):
                 else:
                     ip = "127.0.0.1"
                 status = vm.status.lower()
-                vm_info_dict[os_inst_id] = [ip, status]
+                physical_server = getattr(vm, OS_EXT_PHYSICAL_SERVER_ATTR)
+                vm_info_dict[os_inst_id] = [ip, status,physical_server]
         except Exception as e:
             err_msg = str(e)
             Log.logger.error("CRP OpenStack2 get all vm status error %s", err_msg)

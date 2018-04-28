@@ -601,12 +601,13 @@ class K8sDeploymentApi(object):
             for i in api_response.items:
                 name = i.metadata.name
                 status = i.status.phase
+                physical_server = i.spec.node_name
                 if status == "Running":
                     vm_state = "active"
                 else:
                     vm_state = "shutoff"
                 ip = i.status.pod_ip
-                vm_info_dict[name] = [ip, vm_state]
+                vm_info_dict[name] = [ip, vm_state,physical_server]
         except Exception as e:
             code = get_k8s_err_code(e)
             err_msg = "get namespace pod list info error {e}".format(e=str(e))
