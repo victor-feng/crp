@@ -507,6 +507,7 @@ class ResourceProviderTransitions2(object):
                     propertys['instance'].append(
                         {
                             'host_env': host_env,
+                            'instance_type':'app_cluster',
                             'instance_name': cluster_name,
                             'username': DEFAULT_USERNAME,
                             'password': DEFAULT_PASSWORD,
@@ -566,6 +567,7 @@ class ResourceProviderTransitions2(object):
                     }
                     uop_os_inst_id_list.append(uopinst_info)
                     propertys['instance'].append({'host_env': host_env,
+                                                  'instance_type':"app_cluster",
                                                   'instance_name': instance_name,
                                                   'username': DEFAULT_USERNAME,
                                                   'password': DEFAULT_PASSWORD,

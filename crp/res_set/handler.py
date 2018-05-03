@@ -479,7 +479,7 @@ class ResourceProviderTransitions(object):
                         'os_inst_id': osint_id,
                     }
                     uop_os_inst_id_list.append(uopinst_info)
-                    propertys['instance'].append({'instance_type': host_env,
+                    propertys['instance'].append({'instance_type': "app_cluster",
                                                   'instance_name': instance_name,
                                                   'username': DEFAULT_USERNAME,
                                                   'password': DEFAULT_PASSWORD,
