@@ -164,7 +164,7 @@ def query_instance(task_id, result, resource):
                 result['deployment_state'] = 1
                 result['current_status'] = DELETE_VM
                 result['msg'] = 'deployment is exist  begin delete Deployment'
-                Log.logger.error(
+                Log.logger.debug(
                     "Query Task ID " + str(task_id) +
                     " result " + result.__str__())
             elif deployment_code == 404:
