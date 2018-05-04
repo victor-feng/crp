@@ -1058,7 +1058,7 @@ class AppDeploy(Resource):
 
     def _exec_ansible_cmd(self, cmd):
         (status, output) = commands.getstatusoutput(cmd)
-        if output.lower().find("success") > 0:
+        if output.lower().find("success") > 0 and output.lower().find("error") == -1:
             Log.logger.debug("ansible exec succeed,command: " + str(cmd) + " output: " + output)
             err_msg = None
             return True, err_msg
