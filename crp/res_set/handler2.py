@@ -992,7 +992,7 @@ class ResourceProviderTransitions2(object):
                           " copy -a 'src={dir}/write_host_info.py dest=/tmp/ mode=777'".format(ip=ip, dir=self.dir)
                 exec_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa " \
                            "-m shell -a 'python /tmp/write_host_info.py {dns_ip}'".format(ip=ip, dir=self.dir,dns_ip=dns_ip)
-                exec_flag, err_msg = exec_cmd_ten_times(ip, scp_cmd, 6)
+                exec_flag, err_msg = exec_cmd_ten_times(ip, scp_cmd, 20)
                 if exec_flag:
                     exec_flag, err_msg = exec_cmd_ten_times(ip, exec_cmd, 6)
                     if not exec_flag:
