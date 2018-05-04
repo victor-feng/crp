@@ -223,7 +223,7 @@ def make_docker_image(database_config,project_name,env,war_url, resource_id, set
                     err_msg = create_docker_file(project_name)
                     if not err_msg:
                         Log.logger.debug("Create Dockerfile successfully,the next step is build docker images !!!")
-                        image_url = "{harbor_url}/uop/{project_name}:v-1.0.1".format(harbor_url=HARBOR_URL,project_name=project_name.lower())
+                        image_url = "{harbor_url}/uop/{project_name}:{env}-v-1.0.1".format(harbor_url=HARBOR_URL,project_name=project_name.lower(),env=env)
                         # 开始构建镜像
                         res_instance_push_callback('', req_dict, 0, {}, {}, image_build_running, set_flag)
                         err_msg,image=build_dk_image(dk_client, dk_dir, image_url)
