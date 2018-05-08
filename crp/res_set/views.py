@@ -287,7 +287,7 @@ class ResourceSet(Resource):
             }
             return res, code
         else:
-            code = 200
+            code = 202
             res = {
                 "code": code,
                 "result": {
@@ -382,7 +382,7 @@ class ResourceDelete(Resource):
             }
             return res, code
         else:
-            code=200
+            code=202
             res = {
                 "code": code,
                 "result": {
