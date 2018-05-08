@@ -856,7 +856,7 @@ class ResourceProviderTransitions2(object):
                                         mapper.__str__())
                     result_inst_vol_id_list.append(uop_os_inst_id)
                 if vol_status == "error":
-                    self.error_msg = "create volume failed,volume status is error!!"
+                    self.error_msg = "create volume failed,volume status is error!! {}".format(vol.to_dict().__str__())
                     Log.logger.debug(
                         "Query Task ID " +
                         self.task_id.__str__() +
