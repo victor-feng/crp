@@ -154,8 +154,8 @@ class AppDeploy(Resource):
         msg = "ok"
         try:
             request_data = json.loads(request.data)
-            disconf_list = request_data.get('disconf_list')
-            domain_list = request_data.get('domain_list')
+            disconf_list = request_data.get('disconf_list',[])
+            domain_list = request_data.get('domain_list',[])
             environment = request_data.get('environment')
             self.run_delete_cmd(domain_list=domain_list, disconf_list=disconf_list,environment=environment)
         except Exception as msg:
