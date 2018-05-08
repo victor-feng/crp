@@ -252,9 +252,9 @@ class TestingConfig(BaseConfig):
             'name': 'basic',
             'port': '22'
         },
-        'java': {
-            'uuid': '44002594-587c-46bd-b3d0-cf5e75438cc1',
-            'name': 'tomcat30G20180308',
+         'java': {
+            'uuid': '60847610-0849-42c2-8300-484e04847338',
+            'name': 'tomcat2C2G30G-20180507',
             'port': '8081'
         }
     }
