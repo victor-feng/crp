@@ -121,6 +121,7 @@ class ResourceProviderTransitions2(object):
         self.result_inst_id_list = []
         self.result_inst_vol_id_list = []
         self.uop_os_inst_id_list = []
+        self.uop_os_inst_vol_id_list = []
         self.property_mappers_list = copy.deepcopy(property_mappers_list)
         self.property_mappers_list.reverse()
         self.push_mappers_list = []
@@ -237,7 +238,14 @@ class ResourceProviderTransitions2(object):
             self,
             resource_id,
             uop_os_inst_id_list,
-            result_uop_os_inst_id_list):
+            result_uop_os_inst_id_list,
+            uop_os_inst_vol_id_list):
+        tmp_list=[]
+        for os_inst in uop_os_inst_id_list:
+            for os_inst_vol  in uop_os_inst_vol_id_list:
+                if os_inst.get("os_inst_id") != os_inst_vol.get("os_inst_id"):
+                    tmp_list.append(os_inst)
+        uop_os_inst_id_list = result_uop_os_inst_id_list.extend(tmp_list)
         fail_list = self._uop_os_list_sub(
             uop_os_inst_id_list, result_uop_os_inst_id_list)
         Log.logger.debug(
@@ -684,7 +692,9 @@ class ResourceProviderTransitions2(object):
             self,
             uop_os_inst_id_list=None,
             result_inst_id_list=None,
-            result_mappers_list=None):
+            result_mappers_list=None,
+            uop_os_inst_vol_id_list=None
+            ):
         is_finish = False
         is_rollback = False
         # uop_os_inst_id_wait_query = list(set(uop_os_inst_id_list) - set(result_inst_id_list))
@@ -765,11 +775,12 @@ class ResourceProviderTransitions2(object):
                     inst.status)
                 if inst.status == 'ACTIVE':
                     cluster_type = uop_os_inst_id.get("cluster_type")
-                    volume_size = uop_os_inst_id.get("volume_size")
+                    volume_size = uop_os_inst_id.get("volume_size",0)
                     instance_name = uop_os_inst_id.get("instance_name")
                     quantity = uop_os_inst_id.get("quantity")
                     os_vol_id=create_volume_by_type(cluster_type, volume_size, quantity, os_inst_id, instance_name)
                     uop_os_inst_id["os_vol_id"] = os_vol_id
+                    uop_os_inst_vol_id_list.append(uop_os_inst_id)
                     _ips = self._get_ip_from_instance(inst)
                     _ip = _ips.pop() if _ips.__len__() >= 1 else ''
                     physical_server = getattr(inst, OS_EXT_PHYSICAL_SERVER_ATTR)
@@ -809,13 +820,14 @@ class ResourceProviderTransitions2(object):
     # 向openstack定时查询volume的状态
     def _query_volume_set_status(
             self,
-            uop_os_inst_id_list=None,
+            uop_os_inst_vol_id_list=None,
             result_inst_vol_id_list=None,
-            result_mappers_list=None):
+            result_mappers_list=None,
+            ):
         is_finish = False
         is_rollback = False
         uop_os_inst_id_wait_query = self._uop_os_list_sub(
-            uop_os_inst_id_list, result_inst_vol_id_list)
+            uop_os_inst_vol_id_list, result_inst_vol_id_list)
         cinder_client = OpenStack.cinder_client
         for uop_os_inst_id in uop_os_inst_id_wait_query:
             os_inst_id = uop_os_inst_id['os_inst_id']
@@ -862,7 +874,7 @@ class ResourceProviderTransitions2(object):
                     is_rollback = True
             else:
                 result_inst_vol_id_list.append(uop_os_inst_id)
-        if result_inst_vol_id_list.__len__() == uop_os_inst_id_list.__len__():
+        if result_inst_vol_id_list.__len__() == uop_os_inst_vol_id_list.__len__():
             is_finish = True
         # 回滚全部资源和容器
         return is_finish, is_rollback
@@ -962,9 +974,9 @@ class ResourceProviderTransitions2(object):
 
     @transition_state_logger
     def do_query_volume(self):
-        Log.logger.info("11111111111111111111111111111111111111{}".format(self.uop_os_inst_id_list))
+        Log.logger.info("11111111111111111111111111111111111111{}".format(self.uop_os_inst_vol_id_list))
         is_finished, self.is_need_rollback = self._query_volume_set_status(
-            self.uop_os_inst_id_list, self.result_inst_vol_id_list, self.result_mappers_list)
+            self.uop_os_inst_vol_id_list, self.result_inst_vol_id_list, self.result_mappers_list)
         if self.is_need_rollback:
             self.rollback()
         if is_finished is True:
