@@ -767,6 +767,7 @@ class ResourceProviderTransitions2(object):
                     cluster_type = uop_os_inst_id.get("cluster_type")
                     volume_size = uop_os_inst_id.get("volume_size")
                     instance_name = uop_os_inst_id.get("instance_name")
+                    quantity = uop_os_inst_id.get("quantity")
                     os_vol_id=create_volume_by_type(cluster_type, volume_size, quantity, os_inst_id, instance_name)
                     uop_os_inst_id["os_vol_id"] = os_vol_id
                     _ips = self._get_ip_from_instance(inst)
