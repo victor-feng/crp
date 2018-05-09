@@ -969,7 +969,7 @@ class ResourceProviderTransitions2(object):
     def do_query(self):
         Log.logger.info("0000000000000000000000000000000000000000000000{}".format(self.uop_os_inst_id_list))
         is_finished, self.is_need_rollback = self._query_resource_set_status(
-            self.uop_os_inst_id_list, self.result_inst_id_list, self.result_mappers_list)
+            self.uop_os_inst_id_list, self.result_inst_id_list, self.result_mappers_list,self.uop_os_inst_vol_id_list)
         if self.is_need_rollback:
             self.rollback()
         if is_finished is True:
