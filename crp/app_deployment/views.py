@@ -790,8 +790,9 @@ class AppDeploy(Resource):
                                 unique_flag=None, cloud=None,deploy_name=None,namespace=None):
         try:
             break_flag = False
+            n = CHECK_TIMEOUT / 10
             K8sDeployment = K8sDeploymentApi()
-            for i in range(10):
+            for i in range(n):
                 for j in range(10):
                     time.sleep(3)
                     deployment_status = K8sDeployment.get_deployment_status(namespace, deployment_name)
@@ -803,7 +804,7 @@ class AppDeploy(Resource):
                         break
                 else:
                     s_flag, err_msg = K8sDeployment.get_deployment_pod_status(namespace, deployment_name)
-                    if s_flag is not True and i >= 8:
+                    if s_flag is not True and i >= n - 2:
                         _dep_callback(deploy_id, '127.0.0.1', "docker", err_msg, "None", False,
                                       cluster_name, end_flag, deploy_type,
                                       unique_flag, cloud,deploy_name)

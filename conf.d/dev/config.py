@@ -299,6 +299,7 @@ class DevelopmentConfig(BaseConfig):
     }
 
     BASE_IMAGE_URL = "reg1.syswin.com/base/os69-tomcat7:v0.1"
+    #k8s检查应用的超时时间，时间为CHECK_TIMEOUT * 3
     CHECK_TIMEOUT = 200
 
 configs = {
