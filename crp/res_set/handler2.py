@@ -774,9 +774,6 @@ class ResourceProviderTransitions2(object):
                 if inst.status == 'ACTIVE':
                     _ips = self._get_ip_from_instance(inst)
                     _ip = _ips.pop() if _ips.__len__() >= 1 else ''
-                    #扩容时获取docker启动日志
-                    if self.set_flag == "increase":
-                        start_write_log(_ip)
                     physical_server = getattr(inst, OS_EXT_PHYSICAL_SERVER_ATTR)
                     for mapper in result_mappers_list:
                         value = mapper.values()[0]
