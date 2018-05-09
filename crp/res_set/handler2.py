@@ -565,7 +565,8 @@ class ResourceProviderTransitions2(object):
                     **{'name': 'create_resource_cluster_server_group', 'policies': ['anti-affinity']})
             for i in range(0, quantity, 1):
                 instance_name = '%s_%s_%s' % (self.req_dict["resource_name"],kvm_tag, i.__str__())
-                userdata ="{}/{}".format(self.dir,"test.py")
+                #userdata ="{}/{}".format(self.dir,"test.py")
+                userdata="touch /tmp/yangyang.txt"
                 err_msg,osint_id = self._create_instance_by_type(
                     language_env, instance_name, flavor, network_id,userdata,image_id, availability_zone, server_group)
                 if not err_msg:
