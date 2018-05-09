@@ -52,6 +52,7 @@ class K8sDeploymentApi(object):
         config.load_kube_config(config_file=K8S_CONF_PATH)
         self.corev1 = client.CoreV1Api()
         self.extensionsv1 = client.ExtensionsV1beta1Api()
+        self.deletev1 = client.V1DeleteOptions()
 
     def create_deployment_object(self,deployment_name,
                                  filebeat_name,
@@ -638,6 +639,18 @@ class K8sDeploymentApi(object):
             code = get_k8s_err_code(e)
             err_msg = "list namespace pod  info error {e}".format(e=str(e))
         return pod_info_list, err_msg, code
+
+    def delete_deployment_pod(self,name,namespace):
+        err_msg = None
+        code = 200
+        try:
+            api_instance = self.corev1
+            body = self.deletev1
+            api_response = api_instance.delete_namespaced_pod(name, namespace,body)
+        except Exception as e:
+            code = 500
+            err_msg = "delete deployment pod error {}".format(str(e))
+        return  err_msg,code
 
 
 

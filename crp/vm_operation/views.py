@@ -51,15 +51,16 @@ class VMOperation(Resource):
                     namespace = args.namespace if args.namespace else NAMESPACE
                     K8sDeployment = K8sDeploymentApi()
                     if args.operation == "restart":
-                        deployment_name = args.resource_name
-                        restart_deployment = K8sDeployment.restart_deployment_pod_object(deployment_name)
-                        msg,code = K8sDeployment.restart_deployment_pod(
-                            restart_deployment, deployment_name, namespace)
-                        if msg is not None:
+                        # deployment_name = args.resource_name
+                        # restart_deployment = K8sDeployment.restart_deployment_pod_object(deployment_name)
+                        # msg,code = K8sDeployment.restart_deployment_pod(
+                        #     restart_deployment, deployment_name, namespace)
+                        err_msg,code = K8sDeployment.delete_deployment_pod(args.vm_uuid,namespace)
+                        if err_msg is not None:
                             ret = {
                                 "code": code,
                                 "result": {
-                                    "msg": msg,
+                                    "msg": err_msg,
                                 }
                             }
                             return ret, code
