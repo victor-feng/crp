@@ -8,7 +8,7 @@ import re
 from transitions import Machine
 from flask import request
 from crp.taskmgr import *
-from mysql_volume2 import create_volume,instance_attach_volume
+from mysql_volume2 import create_volume_by_type,instance_attach_volume
 from crp.log import Log
 from crp.openstack2 import OpenStack
 from crp.utils.docker_tools import image_transit
@@ -631,22 +631,13 @@ class ResourceProviderTransitions2(object):
                 err_msg,osint_id = self._create_instance_by_type(
                     cluster_type, instance_name, flavor, network_id, image_id, availability_zone,server_group)
                 if not err_msg:
-                    if((cluster_type not in ["mycat", "redis"]) or (
-                        cluster_type in ["mycat", "redis"] and quantity == 1)) and volume_size > 0:
-                        #如果cluster_type是mysql 和 mongodb 就挂卷 或者 volume_size 不为0时
-                        vm = {
-                            'vm_name': instance_name,
-                            'os_inst_id': osint_id,
-                        }
-                        #创建volume
-                        volume=create_volume(vm, volume_size)
-                        os_vol_id = volume.id
-                    else:
-                        os_vol_id=None
                     uopinst_info = {
                         'uop_inst_id': cluster_id,
                         'os_inst_id': osint_id,
-                        'os_vol_id': os_vol_id
+                        'volume_size': volume_size,
+                        'cluster_type':cluster_type,
+                        'quantity':quantity,
+                        'instance_name': instance_name,
                     }
                     uop_os_inst_id_list.append(uopinst_info)
                     propertys['instance'].append({'instance_type': cluster_type,
@@ -763,7 +754,8 @@ class ResourceProviderTransitions2(object):
                             result_inst_id_list.append(uop_os_inst_id)
             else:
                 #openstack 虚机
-                inst = nova_client.servers.get(uop_os_inst_id['os_inst_id'])
+                os_inst_id = uop_os_inst_id['os_inst_id']
+                inst = nova_client.servers.get(os_inst_id)
                 Log.logger.debug(
                     "Query Task ID " +
                     self.task_id.__str__() +
@@ -772,6 +764,11 @@ class ResourceProviderTransitions2(object):
                     " Status is " +
                     inst.status)
                 if inst.status == 'ACTIVE':
+                    cluster_type = uop_os_inst_id.get("cluster_type")
+                    volume_size = uop_os_inst_id.get("volume_size")
+                    instance_name = uop_os_inst_id.get("instance_name")
+                    os_vol_id=create_volume_by_type(cluster_type, volume_size, quantity, os_inst_id, instance_name)
+                    uop_os_inst_id["os_vol_id"] = os_vol_id
                     _ips = self._get_ip_from_instance(inst)
                     _ip = _ips.pop() if _ips.__len__() >= 1 else ''
                     physical_server = getattr(inst, OS_EXT_PHYSICAL_SERVER_ATTR)
@@ -784,6 +781,7 @@ class ResourceProviderTransitions2(object):
                                     'os_inst_id') == uop_os_inst_id['os_inst_id']:
                                 instance['ip'] = _ip
                                 instance['physical_server'] = physical_server + '@'
+                                instance['os_vol_id'] = os_vol_id
                                 Log.logger.debug(
                                     "Query Task ID " +
                                     self.task_id.__str__() +
@@ -1479,68 +1477,6 @@ def do_transit_repo_items(
     property_mappers_list = transit_repo_items(
         property_json_mapper, request_items)
     return property_mappers_list
-
-
-# def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_info,set_flag):
-#     """
-#     crp 将预留资源时的状态和信息回调给uop
-#     :param task_id:
-#     :param req_dict:
-#     :param quantity:
-#     :param instance_info:
-#     :param db_push_info:
-#     :param set_flag:
-#     :return:
-#     """
-#     try:
-#         resource_id = req_dict["resource_id"]
-#         if instance_info:
-#             ip=instance_info.get('ip')
-#             instance_type=instance_info.get('instance_type')
-#             instance_name=instance_info.get('instance_name')
-#             os_inst_id=instance_info.get('os_inst_id')
-#             physical_server=instance_info.get('physical_server')
-#             instance={
-#                 "resource_id":resource_id,
-#                 "ip": ip,
-#                 "instance_name": instance_name,
-#                 "instance_type": instance_type,
-#                 "os_inst_id": os_inst_id,
-#                 "physical_server": physical_server,
-#                 "quantity":quantity,
-#                 "status":"active",
-#                 "from":'resource',
-#                 }
-#         else:
-#             instance=None
-#         if db_push_info:
-#             cluster_name=db_push_info.get('cluster_name')
-#             cluster_type=db_push_info.get('cluster_type')
-#             db_push={
-#                 "resource_id":resource_id,
-#                 "cluster_name":cluster_name,
-#                 "cluster_type":"push_%s" %cluster_type,
-#                 "status":"ok",
-#                 "from":'resource',
-#                 }
-#         else:
-#             db_push=None
-#         data={
-#             "instance":instance,
-#             "db_push":db_push,
-#             "set_flag":set_flag,
-#         }
-#         data_str=json.dumps(data)
-#         headers = {
-#         'Content-Type': 'application/json'
-#         }
-#         res = requests.post(RES_STATUS_CALLBACK,data=data_str,headers=headers)
-#         Log.logger.debug(res)
-#     except Exception as e:
-#         err_msg=e.args
-#         Log.logger.error("res_instance_push_callback error %s" % err_msg)
-
-
 
 
 
