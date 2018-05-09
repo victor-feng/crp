@@ -116,7 +116,6 @@ class TestingConfig(BaseConfig):
         "prep": 'AZ-UOP',
         "prod": 'AZ-UOP',
         }
-    DEV_NETWORK_ID = 'c3d17e45-ea99-4441-a745-275e803dff67'
     OS_EXT_PHYSICAL_SERVER_ATTR = 'OS-EXT-SRV-ATTR:host'
 
     # res_callback
