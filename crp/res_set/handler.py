@@ -515,8 +515,8 @@ class ResourceProviderTransitions(object):
         port = ''
         if not flavor:
             flavor = KVM_FLAVOR.get(str(cpu) + str(mem))
-        if cluster_type == "mysql" and str(cpu) == "2": # dev\test 环境
-            flavor = KVM_FLAVOR.get("mysql", 'uop-2C4G50G')
+            if cluster_type == "mysql" and str(cpu) == "2": # dev\test 环境
+                flavor = KVM_FLAVOR.get("mysql", 'uop-2C4G50G')
         if quantity >= 1:
             cluster_type_image_port_mapper = cluster_type_image_port_mappers.get(
                 cluster_type)
@@ -539,12 +539,13 @@ class ResourceProviderTransitions(object):
                 if cluster_type == 'mysql' and i == 3:
                     cluster_type = 'mycat'
                 instance_name = '%s_%s' % (cluster_name, i.__str__())
-                if cluster_type == "mycat":
+                if cluster_type == "mycat" and quantity > 1:
                     flavor = KVM_FLAVOR.get("mycat", 'uop-2C4G50G')
                 err_msg,osint_id = self._create_instance_by_type(
                     cluster_type, instance_name, flavor, network_id,image_id,availability_zone,server_group)
                 if not err_msg:
-                    if (cluster_type not in ["mycat","redis"]) and volume_size != 0:
+                    if ((cluster_type not in ["mycat", "redis"]) or (
+                            cluster_type in ["mycat", "redis"] and quantity == 1)) and volume_size > 0:
                         #如果cluster_type是mysql 和 mongodb 就挂卷 或者 volume_size 不为0时
                         vm = {
                             'vm_name': instance_name,

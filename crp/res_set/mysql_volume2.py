@@ -93,6 +93,7 @@ def create_volume(vm,volume_size):
         volume_name = vm.get("vm_name","") + "-vol"
         os_inst_id = vm.get("os_inst_id")
         volume = cinder_client.volumes.create(name=volume_name, size=volume_size,scheduler_hints={"local_to_instance":os_inst_id})
+        Log.logger.info("Create volume os_inst_id is {},volume is {}".format(os_inst_id,volume.to_dict().__str__()))
     except Exception as e:
         err_msg = "create volume error {e}".format(e=str(e))
         Log.logger.error(err_msg)
