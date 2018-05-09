@@ -251,7 +251,7 @@ class ResourceProviderTransitions2(object):
             " Failed instance id set is " +
             fail_list[:].__str__())
         # 删除全部，完成rollback
-        if self.code == 409 or (self.set_flag in ["reaudce","increase"] and self.resource_type == "app") :
+        if self.code == 409 or (self.set_flag in ["reaudce","increase"] and self.resource_type == "app") or self.resource_type == "mysql" :
             pass
         else:
             for uop_os_inst_id in uop_os_inst_id_list:
