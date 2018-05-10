@@ -772,6 +772,7 @@ class ResourceProviderTransitions2(object):
                                     result_inst_id_list.append(uop_os_inst_id)
                         else:
                             self.available_replicas = available_replicas
+                            self.check_times = 0
             else:
                 #openstack 虚机
                 os_inst_id = uop_os_inst_id['os_inst_id']

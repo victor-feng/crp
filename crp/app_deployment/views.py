@@ -817,6 +817,7 @@ class AppDeploy(Resource):
                                     break
                         else:
                             self.updated_replicas = updated_replicas
+                            self.check_times = 0
                 # for j in range(10):
                 #     time.sleep(3)
                 #     deployment_status = K8sDeployment.get_deployment_status(namespace, deployment_name)
