@@ -637,8 +637,9 @@ class ResourceProviderTransitions2(object):
                 instance_name = '%s_%s' % (cluster_name, i.__str__())
                 if cluster_type == "mycat" and quantity > 1:
                     flavor = KVM_FLAVOR.get("mycat", 'uop-2C4G50G')
+                userdata = "touch /tmp/yangyang.txt"
                 err_msg,osint_id = self._create_instance_by_type(
-                    cluster_type, instance_name, flavor, network_id, image_id, availability_zone,server_group)
+                    cluster_type, instance_name, flavor, network_id,userdata ,image_id, availability_zone,server_group)
                 if not err_msg:
                     uopinst_info = {
                         'uop_inst_id': cluster_id,
