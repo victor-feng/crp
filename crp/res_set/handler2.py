@@ -598,10 +598,12 @@ class ResourceProviderTransitions2(object):
         cluster_id = propertys.get('cluster_id')
         cluster_type = propertys.get('cluster_type')
         image_id = propertys.get('image_id')
+        image2_id = propertys.get('image2_id')
         version = propertys.get('version')
         cpu = propertys.get('cpu')
         mem = propertys.get('mem')
         flavor = propertys.get('flavor')
+        flavor2 = propertys.get('flavor2')
         disk = propertys.get('disk')
         quantity = propertys.get('quantity')
         volume_size=propertys.get('volume_size',0)
@@ -637,7 +639,7 @@ class ResourceProviderTransitions2(object):
                     cluster_type = 'mycat'
                 instance_name = '%s_%s' % (cluster_name, i.__str__())
                 if cluster_type == "mycat" and quantity > 1:
-                    flavor = KVM_FLAVOR.get("mycat", 'uop-2C4G50G')
+                    flavor = flavor2 if flavor2 else  KVM_FLAVOR.get("mycat", 'uop-2C4G50G')
                 userdata = "touch /tmp/yangyang.txt"
                 err_msg,osint_id = self._create_instance_by_type(
                     cluster_type, instance_name, flavor, network_id,userdata ,image_id, availability_zone,server_group)

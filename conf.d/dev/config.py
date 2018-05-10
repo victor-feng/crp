@@ -182,8 +182,10 @@ class DevelopmentConfig(BaseConfig):
             'volume_size': 'volume_size',
             'network_id': 'network_id',
             'image_id': 'image_id',
+            'image2_id': 'image2_id',
             'availability_zone':'availability_zone',
             'flavor': 'flavor',
+            'flavor2': 'flavor2',
             'volume_exp_size':'volume_exp_size',
         }
     }
