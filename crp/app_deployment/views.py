@@ -54,9 +54,11 @@ class AppDeploy(Resource):
 
     def __init__(self):
         self.all_ips=[]
+        self.updated_replicas = 0
+        self.check_times = 0
 
     def do_app_push(self, app):
-        # TODO: do app push
+
         def do_push_nginx_config(kwargs):
             """
             need the nip domain ip
@@ -790,26 +792,48 @@ class AppDeploy(Resource):
                                 unique_flag=None, cloud=None,deploy_name=None,namespace=None):
         try:
             break_flag = False
-            n = CHECK_TIMEOUT / 10
             K8sDeployment = K8sDeploymentApi()
-            for i in range(n):
-                for j in range(10):
-                    time.sleep(3)
-                    deployment_status = K8sDeployment.get_deployment_status(namespace, deployment_name)
-                    if deployment_status == "available":
-                        break_flag = True
-                        _dep_callback(deploy_id, '127.0.0.1', "docker", "None", "None", True, cluster_name, end_flag,
-                                      deploy_type,
-                                      unique_flag, cloud,deploy_name)
-                        break
+            for i in range(500):
+                time.sleep(3)
+                deployment_status = K8sDeployment.get_deployment_status(namespace, deployment_name)
+                if deployment_status == "available":
+                    _dep_callback(deploy_id, '127.0.0.1', "docker", "None", "None", True, cluster_name, end_flag,
+                                           deploy_type,
+                                           unique_flag, cloud,deploy_name)
+                    break
                 else:
-                    s_flag, err_msg = K8sDeployment.get_deployment_pod_status(namespace, deployment_name)
-                    if s_flag is not True and i >= n - 2:
-                        _dep_callback(deploy_id, '127.0.0.1', "docker", err_msg, "None", False,
-                                      cluster_name, end_flag, deploy_type,
-                                      unique_flag, cloud,deploy_name)
-                        break
-                if break_flag:break
+                    msg, code = K8sDeployment.get_deployment(namespace, deployment_name)
+                    if code == 200:
+                        unavailable_replicas = msg.unavailable_replicas
+                        updated_replicas = msg.updated_replicas
+                        if updated_replicas == self.updated_replicas and unavailable_replicas is not None:
+                            self.check_times = self.check_times + 1
+                            if self.check_times > CHECK_TIMEOUT:
+                                s_flag, err_msg = K8sDeployment.get_deployment_pod_status(namespace, deployment_name)
+                                if s_flag is not True:
+                                    _dep_callback(deploy_id, '127.0.0.1', "docker", err_msg, "None", False,
+                                                           cluster_name, end_flag, deploy_type,
+                                                           unique_flag, cloud,deploy_name)
+                                    break
+                        else:
+                            self.updated_replicas = updated_replicas
+                # for j in range(10):
+                #     time.sleep(3)
+                #     deployment_status = K8sDeployment.get_deployment_status(namespace, deployment_name)
+                #     if deployment_status == "available":
+                #         break_flag = True
+                #         _dep_callback(deploy_id, '127.0.0.1', "docker", "None", "None", True, cluster_name, end_flag,
+                #                       deploy_type,
+                #                       unique_flag, cloud,deploy_name)
+                #         break
+                # else:
+                #     s_flag, err_msg = K8sDeployment.get_deployment_pod_status(namespace, deployment_name)
+                #     if s_flag is not True and i >= n - 2:
+                #         _dep_callback(deploy_id, '127.0.0.1', "docker", err_msg, "None", False,
+                #                       cluster_name, end_flag, deploy_type,
+                #                       unique_flag, cloud,deploy_name)
+                #         break
+                # if break_flag:break
             else:
                 err_msg = "deploy deployment failed"
                 _dep_callback(deploy_id, '127.0.0.1', "docker", err_msg, "None", False,

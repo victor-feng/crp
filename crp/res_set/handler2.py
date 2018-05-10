@@ -141,6 +141,7 @@ class ResourceProviderTransitions2(object):
         self.os_ins_ip_list = req_dict["os_ins_ip_list"]
         self.code = None
         self.check_times = 0
+        self.available_replicas = 0
         # Initialize the state machine
         self.machine = Machine(
             model=self,
@@ -757,13 +758,20 @@ class ResourceProviderTransitions2(object):
                                     instance['os_inst_id'] = deployment_info.get("pod_name","")
                     result_inst_id_list.append(uop_os_inst_id)
                 else:
-                    s_flag,err_msg = K8sDeployment.get_deployment_pod_status(namespace,deployment_name)
-                    if s_flag is not True:
-                        self.check_times = self.check_times +1
-                        if self.check_times > CHECK_TIMEOUT:
-                            self.error_msg = err_msg
-                            is_rollback = True
-                            result_inst_id_list.append(uop_os_inst_id)
+                    msg,code = K8sDeployment.get_deployment(namespace,deployment_name)
+                    if code == 200:
+                        available_replicas = msg.available_replicas
+                        unavailable_replicas = msg.unavailable_replicas
+                        if self.available_replicas == available_replicas and unavailable_replicas is not None:
+                            self.check_times = self.check_times + 1
+                            if self.check_times > CHECK_TIMEOUT:
+                                s_flag,err_msg = K8sDeployment.get_deployment_pod_status(namespace,deployment_name)
+                                if s_flag is not True:
+                                    self.error_msg = err_msg
+                                    is_rollback = True
+                                    result_inst_id_list.append(uop_os_inst_id)
+                        else:
+                            self.available_replicas = available_replicas
             else:
                 #openstack 虚机
                 os_inst_id = uop_os_inst_id['os_inst_id']
