@@ -52,7 +52,10 @@ class K8sDeploymentApi(object):
         config.load_kube_config(config_file=K8S_CONF_PATH)
         self.corev1 = client.CoreV1Api()
         self.extensionsv1 = client.ExtensionsV1beta1Api()
-        self.deletev1 = client.V1DeleteOptions()
+        self.deletev1 = client.V1DeleteOptions(
+                    propagation_policy='Foreground',
+                    grace_period_seconds=5
+                    )
 
     def create_deployment_object(self,deployment_name,
                                  filebeat_name,
@@ -352,9 +355,7 @@ class K8sDeploymentApi(object):
             api_response = api_instance.delete_namespaced_deployment(
                 name=deployment_name,
                 namespace=namespace,
-                body=client.V1DeleteOptions(
-                    propagation_policy='Foreground',
-                    grace_period_seconds=5))
+                body=self.deletev1)
         except Exception as e:
             err_msg = "delete deployment error %s" %str(e)
             code = get_k8s_err_code(e)
@@ -789,6 +790,10 @@ class K8sIngressApi(object):
 
         config.load_kube_config(config_file=K8S_CONF_PATH)
         self.extensionsv1 = client.ExtensionsV1beta1Api()
+        self.deletev1 = client.V1DeleteOptions(
+            propagation_policy='Foreground',
+            grace_period_seconds=5
+        )
 
     def create_ingress_object(self,ingress_name,namespace,service_name,service_port,domain,lb_methods,domain_path):
         """
@@ -951,10 +956,7 @@ class K8sIngressApi(object):
             api_response = api_instance.delete_namespaced_ingress(
                 name=ingress_name,
                 namespace=namespace,
-                body=client.V1DeleteOptions(
-                    propagation_policy='Foreground',
-                    grace_period_seconds=5
-                )
+                body=self.deletev1
             )
         except Exception as e:
             err_msg = "delete ingress error %s" % str(e)
@@ -1028,6 +1030,10 @@ class K8sNamespaceApi(object):
     def __init__(self):
         config.load_kube_config(K8S_CONF_PATH)
         self.corev1 = client.CoreV1Api()
+        self.deletev1 = client.V1DeleteOptions(
+            propagation_policy='Foreground',
+            grace_period_seconds=5
+        )
 
 
     def create_namespace_object(self,namespace_name):
@@ -1056,8 +1062,7 @@ class K8sNamespaceApi(object):
         try:
             api_instance = self.corev1
             api_response = api_instance.delete_namespace(name=namespace_name,
-                                                         body=client.V1DeleteOptions(propagation_policy='Foreground',
-                                                                                     grace_period_seconds=5))
+                                                         body=self.deletev1)
         except Exception as e:
             code = get_k8s_err_code(e)
             err_msg = "delete namespace error {e}".format(e=str(e))
@@ -1096,6 +1101,10 @@ class K8sConfigMapApi(object):
     def __init__(self):
         config.load_kube_config(K8S_CONF_PATH)
         self.corev1 = client.CoreV1Api()
+        self.deletev1 = client.V1DeleteOptions(
+            propagation_policy='Foreground',
+            grace_period_seconds=5
+        )
 
     def create_config_map_object(self,config_map_nane,namespace,data):
 
@@ -1130,9 +1139,7 @@ class K8sConfigMapApi(object):
             api_response = api_instance.delete_namespaced_config_map(
                 name=config_map_nane,
                 namespace=namespace,
-                body=client.V1DeleteOptions(
-                    propagation_policy='Foreground',
-                    grace_period_seconds=5))
+                body=self.deletev1)
         except Exception as e:
             err_msg = "delete config map error %s" % str(e)
             code = get_k8s_err_code(e)
