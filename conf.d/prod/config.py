@@ -47,6 +47,11 @@ class ProdConfig(BaseConfig):
     MONGODB_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010'
     MONGODB_AUTH_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010 --authenticationDatabase admin -u admin -p 123456'
 
+    HARBOR_URL = "reg1.syswin.com"
+    HARBOR_USERNAME = "crm_test1"
+    HARBOR_PASSWORD = "syswin#"
+
+
     cluster_type_image_port_mappers = {
         'mysql': {
             'uuid': '4b6abfae-edd9-486f-8552-694504e9cd58',
@@ -67,6 +72,16 @@ class ProdConfig(BaseConfig):
             'uuid': 'aa80be12-b88d-477c-a2d8-443d09b81887',
             'name': 'mycat-50G-20170628',
             'port': '3316'
+        },
+        'kvm': {
+            'uuid': '75fadfb9-2e17-46ec-a3b7-da3b50a27735',
+            'name': 'basic-50G-20170428',
+            'port': '22'
+        },
+        'java': {
+            'uuid': 'abdc1770-ee4a-43a0-a83e-e5107a37012a',
+            'name': 'tomcat-30G-20180308',
+            'port': '8081'
         }
     }
 
