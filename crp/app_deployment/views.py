@@ -134,6 +134,7 @@ class AppDeploy(Resource):
         for dl in domain_list:
             nip = dl.get("domain_ip")
             domain = dl.get('domain')
+            named_url = dl.get('named_url')
             if not nip or not domain:
                 Log.logger.info("nginx ip or domain is null, do nothing")
                 continue
@@ -148,7 +149,7 @@ class AppDeploy(Resource):
             exec_cmd_ten_times(nip, exec_shell_cmd, 1)
             #开始删除dns
             dns_api = NamedManagerApi(environment)
-            res = dns_api.named_domain_delete(domain)
+            res = dns_api.named_domain_delete(domain,named_url)
         Log.logger.debug("--------->stop delete nginx profiles: success")
 
     def delete(self):
@@ -273,7 +274,10 @@ class AppDeploy(Resource):
             resource_id = args.resource_id
             self.resource_id = resource_id
             Log.logger.debug("Thread exec start")
-            t = threading.Thread(target=self.deploy_anything, args=((mongodb, mysql,docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud,resource_name,deploy_name,project_name,namespace)))
+            t = threading.Thread(target=self.deploy_anything, args=((mongodb, mysql, docker, dns, deploy_id, appinfo,
+                                                                     disconf_server_info, deploy_type, environment,
+                                                                     cloud, resource_name, deploy_name, project_name,
+                                                                     namespace)))
             t.start()
             Log.logger.debug("Thread exec done")
 
@@ -291,7 +295,8 @@ class AppDeploy(Resource):
         }
         return res, code
 
-    def deploy_anything(self,mongodb, mysql,docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud,resource_name,deploy_name,project_name,namespace):
+    def deploy_anything(self, mongodb, mysql, docker, dns, deploy_id, appinfo, disconf_server_info, deploy_type,
+                            environment, cloud, resource_name, deploy_name, project_name, namespace):
         try:
             lock = threading.RLock()
             lock.acquire()
@@ -376,10 +381,11 @@ class AppDeploy(Resource):
             for item in dns:
                 domain_name = item.get('domain', '')
                 domain_ip = item.get('domain_ip', '')
+                named_url = item.get('named_url','')
                 Log.logger.debug('domain_name:%s,domain_ip:%s' % (domain_name, domain_ip))
                 if len(domain_name.strip()) != 0 and len(domain_ip.strip()) != 0:
                     dns_api = NamedManagerApi(environment)
-                    err_msg,res = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=domain_ip)
+                    err_msg,res = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=domain_ip,named_url=named_url)
                     if err_msg:
                         _dep_callback(deploy_id, "ip", "dns", err_msg, "active", False, "dns", True, 'deploy',
                                       unique_flag, cloud, deploy_name)
