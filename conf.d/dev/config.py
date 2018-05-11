@@ -187,6 +187,7 @@ class DevelopmentConfig(BaseConfig):
             'flavor': 'flavor',
             'flavor2': 'flavor2',
             'volume_exp_size':'volume_exp_size',
+            "port":"port",
         }
     }
     SCRIPTPATH = r'crp/res_set/playbook-0830/'

@@ -512,7 +512,7 @@ class ResourceProviderTransitions(object):
         quantity = propertys.get('quantity')
         volume_size=propertys.get('volume_size',0)
         volume_size = volume_size / 10
-        port = propertys.get('port')
+        port = propertys.get('port', "22")
         #volume_size 默认为0
         port = ''
         if not flavor:

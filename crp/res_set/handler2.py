@@ -610,7 +610,7 @@ class ResourceProviderTransitions2(object):
         volume_exp_size = propertys.get('volume_exp_size', 0)
         network_id = propertys.get('network_id')
         availability_zone = propertys.get('availability_zone')
-        port = ''
+        port = propertys.get('port',"22")
         #volume_size 默认为0
         if not flavor:
             flavor = KVM_FLAVOR.get(str(cpu) + str(mem))
