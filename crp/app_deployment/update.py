@@ -61,7 +61,7 @@ def config():
     fp.close()
 
     # 执行nginx reload
-    subprocess.Popen("""sed -i 's/$//g' /usr/local/nginx/conf/servers_systoon/{}.format(domain)""", shell=True, stdout=subprocess.PIPE)
+    subprocess.Popen("""sed -i 's/$//g' /usr/local/nginx/conf/servers_systoon/{}""".format(domain), shell=True, stdout=subprocess.PIPE)
     subprocess.Popen('/usr/local/nginx/sbin/nginx -s reload', shell=True, stdout=subprocess.PIPE)
 
 
