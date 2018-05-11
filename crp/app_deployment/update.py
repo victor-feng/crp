@@ -35,8 +35,8 @@ def config():
 
     template = '/tmp/template_https' if certificate else '/tmp/template_http'
 
-    tp = open(template, 'r')
-    tp_str = tp.read()
+    tp = open(template, 'rb')
+    tp_str = tp.read().strip()
     tp.close()
 
     # 写nginx配置文件
@@ -45,7 +45,7 @@ def config():
     f_dst2 = re.sub(r'server  IpPort max_fails=1 fail_timeout=10s;', ips, f_dst1)
 
     f_dst4 = re.sub(r'ToonDomain', domain, f_dst2)
-    sub_domain = 'http://' + domain + '/'
+    sub_domain = r'http://' + domain + '/'
     f_dst5 = re.sub(r'http://ToonDomain/', sub_domain, f_dst4)
 
     if "innertoon.com" in domain:
@@ -61,8 +61,6 @@ def config():
     fp.close()
 
     # 执行nginx reload
-#     subprocess.Popen("""sed -i 's/
-# $//g' /usr/local/nginx/conf/servers_systoon/{domain}""".format(domain=domain), shell=True, stdout=subprocess.PIPE)
     subprocess.Popen('/usr/local/nginx/sbin/nginx -s reload', shell=True, stdout=subprocess.PIPE)
 
 
