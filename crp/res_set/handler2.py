@@ -763,8 +763,8 @@ class ResourceProviderTransitions2(object):
                 else:
                     msg,code = K8sDeployment.get_deployment(namespace,deployment_name)
                     if code == 200:
-                        available_replicas = msg.available_replicas
-                        unavailable_replicas = msg.unavailable_replicas
+                        available_replicas = msg.status.available_replicas
+                        unavailable_replicas = msg.status.unavailable_replicas
                         if self.available_replicas == available_replicas and unavailable_replicas is not None:
                             self.check_times = self.check_times + 1
                             if self.check_times > CHECK_TIMEOUT:
