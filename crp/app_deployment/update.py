@@ -42,7 +42,7 @@ def config():
     # 写nginx配置文件
     fp = open(nginx_conf, 'w')
     f_dst1 = re.sub(r't100ToonDomain', domain, tp_str)
-    f_dst2 = re.sub('server  IpPort max_fails=1 fail_timeout=10s;', ips, f_dst1)
+    f_dst2 = re.sub(r'server  IpPort max_fails=1 fail_timeout=10s;', ips, f_dst1)
 
     f_dst4 = re.sub(r'ToonDomain', domain, f_dst2)
     sub_domain = 'http://' + domain + '/'
