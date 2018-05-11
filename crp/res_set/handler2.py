@@ -619,7 +619,7 @@ class ResourceProviderTransitions2(object):
         if quantity >= 1:
             cluster_type_image_port_mapper = cluster_type_image_port_mappers.get(
                 cluster_type)
-            if cluster_type_image_port_mapper is not None:
+            if cluster_type_image_port_mapper is not None and not port:
                 port = cluster_type_image_port_mapper.get('port')
             propertys['ins_id'] = cluster_id
             propertys['cluster_type'] = cluster_type
