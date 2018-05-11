@@ -40,7 +40,7 @@ def config():
     tp.close()
 
     # 写nginx配置文件
-    fp = open(nginx_conf, 'w')
+    fp = open(nginx_conf, 'wb')
     f_dst1 = re.sub(r't100ToonDomain', domain, tp_str)
     f_dst2 = re.sub(r'server  IpPort max_fails=1 fail_timeout=10s;', ips, f_dst1)
 
