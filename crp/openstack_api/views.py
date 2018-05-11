@@ -240,12 +240,14 @@ class K8sNetwork(Resource):
     def get(self):
         parser = reqparse.RequestParser()
         parser.add_argument("env", type=str)
+        parser.add_argument("url", type=str)
         args = parser.parse_args()
         env = args.env
+        url = args.url
         data = {}
         res_list = []
         try:
-            url=K8S_NETWORK_URL[env]
+            url= url if url else K8S_NETWORK_URL[env]
             res=requests.get(url)
             res_list=res.json()
             data["res_list"] = res_list
