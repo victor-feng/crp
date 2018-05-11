@@ -810,8 +810,8 @@ class AppDeploy(Resource):
                 else:
                     msg,code = K8sDeployment.get_deployment(namespace, deployment_name)
                     if code == 200:
-                        unavailable_replicas = msg.staus.unavailable_replicas
-                        updated_replicas = msg.staus.updated_replicas
+                        unavailable_replicas = msg.status.unavailable_replicas
+                        updated_replicas = msg.status.updated_replicas
                         if updated_replicas == self.updated_replicas and unavailable_replicas is not None:
                             self.check_times = self.check_times + 1
                             if self.check_times > CHECK_TIMEOUT:
