@@ -88,6 +88,7 @@ def create_volume(vm,volume_size):
     :return:
     """
     volume = None
+    err_msg = None
     try:
         cinder_client = OpenStack.cinder_client
         volume_name = vm.get("vm_name","") + "-vol"
@@ -97,7 +98,7 @@ def create_volume(vm,volume_size):
     except Exception as e:
         err_msg = "create volume error {e}".format(e=str(e))
         Log.logger.error(err_msg)
-    return volume
+    return volume,err_msg
 
 
 
@@ -133,10 +134,13 @@ def create_volume_by_type(cluster_type,volume_size,quantity,os_inst_id,instance_
             'os_inst_id': os_inst_id,
         }
         #创建volume
-        volume=create_volume(vm, volume_size)
-        os_vol_id = volume.id
+        volume,err_msg=create_volume(vm, volume_size)
+        if not err_msg:
+            os_vol_id = volume.id
+        else:
+            os_vol_id = None
     else:
-        os_vol_id=None
+        os_vol_id = None
 
-    return  os_vol_id
+    return  os_vol_id,err_msg
 

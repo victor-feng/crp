@@ -555,8 +555,13 @@ class ResourceProviderTransitions(object):
                             'os_inst_id': osint_id,
                         }
                         #创建volume
-                        volume=create_volume(vm, volume_size)
-                        os_vol_id = volume.get('id')
+                        volume,err_msg=create_volume(vm, volume_size)
+                        if not err_msg:
+                            os_vol_id = volume.get('id')
+                        else:
+                            os_vol_id = None
+                            self.error_msg = err_msg
+                            is_rollback = True
                     else:
                         os_vol_id = None
                     uopinst_info = {

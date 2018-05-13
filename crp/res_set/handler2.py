@@ -792,38 +792,43 @@ class ResourceProviderTransitions2(object):
                     volume_size = uop_os_inst_id.get("volume_size",0)
                     instance_name = uop_os_inst_id.get("instance_name")
                     quantity = uop_os_inst_id.get("quantity")
-                    os_vol_id=create_volume_by_type(cluster_type, volume_size, quantity, os_inst_id, instance_name)
-                    uop_os_inst_id["os_vol_id"] = os_vol_id
-                    uop_os_inst_vol_id_list.append(uop_os_inst_id)
-                    _ips = self._get_ip_from_instance(inst)
-                    _ip = _ips.pop() if _ips.__len__() >= 1 else ''
-                    physical_server = getattr(inst, OS_EXT_PHYSICAL_SERVER_ATTR)
-                    for mapper in result_mappers_list:
-                        value = mapper.values()[0]
-                        quantity = value.get('quantity', 0)
-                        instances = value.get('instance',[])
-                        for instance in instances:
-                            if instance.get(
-                                    'os_inst_id') == uop_os_inst_id['os_inst_id']:
-                                instance['ip'] = _ip
-                                instance['physical_server'] = physical_server + '@'
-                                instance['os_vol_id'] = os_vol_id
-                                Log.logger.debug(
-                                    "Query Task ID " +
-                                    self.task_id.__str__() +
-                                    " Instance Info: " +
-                                    mapper.__str__())
-                                res_instance_push_callback(self.task_id, self.req_dict, quantity, instance, {},
-                                                           {},self.set_flag)
-                    result_inst_id_list.append(uop_os_inst_id)
+                    os_vol_id,err_msg=create_volume_by_type(cluster_type, volume_size, quantity, os_inst_id, instance_name)
+                    if not err_msg:
+                        uop_os_inst_id["os_vol_id"] = os_vol_id
+                        uop_os_inst_vol_id_list.append(uop_os_inst_id)
+                        _ips = self._get_ip_from_instance(inst)
+                        _ip = _ips.pop() if _ips.__len__() >= 1 else ''
+                        physical_server = getattr(inst, OS_EXT_PHYSICAL_SERVER_ATTR)
+                        for mapper in result_mappers_list:
+                            value = mapper.values()[0]
+                            quantity = value.get('quantity', 0)
+                            instances = value.get('instance',[])
+                            for instance in instances:
+                                if instance.get(
+                                        'os_inst_id') == uop_os_inst_id['os_inst_id']:
+                                    instance['ip'] = _ip
+                                    instance['physical_server'] = physical_server + '@'
+                                    instance['os_vol_id'] = os_vol_id
+                                    Log.logger.debug(
+                                        "Query Task ID " +
+                                        self.task_id.__str__() +
+                                        " Instance Info: " +
+                                        mapper.__str__())
+                                    res_instance_push_callback(self.task_id, self.req_dict, quantity, instance, {},
+                                                               {},self.set_flag)
+                        result_inst_id_list.append(uop_os_inst_id)
+                    else:
+                        self.error_msg = err_msg
+                        is_rollback = True
                 if inst.status == 'ERROR':
                     # 置回滚标志位
+                    err_msg = inst.to_dict().__str__()
                     Log.logger.debug(
                         "Query Task ID " +
                         self.task_id.__str__() +
                         " ERROR Instance Info: " +
-                        inst.to_dict().__str__())
-                    self.error_msg = inst.to_dict().__str__()
+                        err_msg)
+                    self.error_msg = err_msg
                     is_rollback = True
 
         if result_inst_id_list.__len__() == uop_os_inst_id_list.__len__():
