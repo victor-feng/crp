@@ -298,7 +298,7 @@ class ResourceProviderTransitions2(object):
             image,
             flavor,
             availability_zone,
-            network_id,userdata=None,meta=None, server_group=None):
+            network_id,meta=None, server_group=None):
         err_msg = None
         os_inst_id = None
         try:
@@ -318,7 +318,7 @@ class ResourceProviderTransitions2(object):
                                              availability_zone=availability_zone,
                                              nics=nics_list, scheduler_hints=server_group_dict)
             else:
-                int_ = nova_client.servers.create(name, image, flavor,userdata=userdata,meta=meta,
+                int_ = nova_client.servers.create(name, image, flavor,meta=meta,
                                              availability_zone=availability_zone,
                                              nics=nics_list)
             Log.logger.debug(
@@ -343,7 +343,7 @@ class ResourceProviderTransitions2(object):
             return None, None
 
     # 依据资源类型创建资源
-    def _create_instance_by_type(self, ins_type, name, flavor,network_id,userdata,image_id,availability_zone, server_group=None):
+    def _create_instance_by_type(self, ins_type, name, flavor,network_id,image_id,availability_zone, server_group=None):
         image_uuid = image_id
         if not image_id:
             image = cluster_type_image_port_mappers.get(ins_type)
@@ -362,7 +362,7 @@ class ResourceProviderTransitions2(object):
             image_uuid,
             flavor,
             availability_zone,
-            network_id,userdata,server_group)
+            network_id,server_group)
 
 
     def _create_app_cluster(self, property_mapper):
@@ -566,10 +566,8 @@ class ResourceProviderTransitions2(object):
                     **{'name': 'create_resource_cluster_server_group', 'policies': ['anti-affinity']})
             for i in range(0, quantity, 1):
                 instance_name = '%s_%s_%s' % (self.req_dict["resource_name"],kvm_tag, i.__str__())
-                #userdata ="{}/{}".format(self.dir,"test.py")
-                userdata="touch /tmp/yangyang.txt"
                 err_msg,osint_id = self._create_instance_by_type(
-                    language_env, instance_name, flavor, network_id,userdata,image_id, availability_zone, server_group)
+                    language_env, instance_name, flavor, network_id,image_id, availability_zone, server_group)
                 if not err_msg:
                     uopinst_info = {
                         'uop_inst_id': cluster_id,
@@ -641,9 +639,8 @@ class ResourceProviderTransitions2(object):
                 if cluster_type == "mycat" and quantity > 1:
                     flavor = flavor2 if flavor2 else  KVM_FLAVOR.get("mycat", 'uop-2C4G50G')
                     image_id = image2_id
-                userdata = "touch /tmp/yangyang.txt"
                 err_msg,osint_id = self._create_instance_by_type(
-                    cluster_type, instance_name, flavor, network_id,userdata ,image_id, availability_zone,server_group)
+                    cluster_type, instance_name, flavor, network_id ,image_id, availability_zone,server_group)
                 if not err_msg:
                     uopinst_info = {
                         'uop_inst_id': cluster_id,
