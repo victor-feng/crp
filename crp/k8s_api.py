@@ -415,14 +415,17 @@ class K8sDeploymentApi(object):
         :param deployment_name:
         :return:
         """
-        deployment_name = deployment_name.lower()
-        api_instance = self.extensionsv1
-        api_response = api_instance.read_namespaced_deployment_status(deployment_name, namespace)
-        available_replicas=api_response.status.available_replicas
-        replicas=api_response.status.replicas
-        if replicas is not None and replicas == available_replicas:
-            return 'available'
-        else:
+        try:
+            deployment_name = deployment_name.lower()
+            api_instance = self.extensionsv1
+            api_response = api_instance.read_namespaced_deployment_status(deployment_name, namespace)
+            available_replicas=api_response.status.available_replicas
+            replicas=api_response.status.replicas
+            if replicas is not None and replicas == available_replicas:
+                return 'available'
+            else:
+                return 'unavailable'
+        except Exception as e:
             return 'unavailable'
 
     def get_deployment_pod_info(self, namespace, deployment_name):
