@@ -228,7 +228,6 @@ class ResourceProviderTransitions2(object):
     @staticmethod
     def _uop_os_list_sub(uop_os_inst_id_list, result_uop_os_inst_id_list):
         uop_os_inst_id_wait_query = copy.deepcopy(uop_os_inst_id_list)
-        Log.logger.debug("5555555555555555555555555555555555555{}".format(uop_os_inst_id_wait_query))
         for i in result_uop_os_inst_id_list:
             for j in uop_os_inst_id_wait_query:
                 if j['os_inst_id'] == i['os_inst_id']:
@@ -242,15 +241,10 @@ class ResourceProviderTransitions2(object):
             uop_os_inst_id_list,
             result_uop_os_inst_id_list,
             uop_os_inst_vol_id_list):
-        Log.logger.debug("1111111111111111111111111111111111111111111111111{}".format(uop_os_inst_id_list))
-        Log.logger.debug("222222222222222222222222222222222222222222222222222222{}".format(result_uop_os_inst_id_list))
-        Log.logger.debug("333333333333333333333333333333333333333333333333{}".format(uop_os_inst_vol_id_list))
         if uop_os_inst_vol_id_list:
             tmp_list=[os_inst for os_inst in uop_os_inst_id_list for os_inst_vol in uop_os_inst_vol_id_list if
              os_inst.get("os_inst_id") != os_inst_vol.get("os_inst_id")]
             uop_os_inst_id_list = result_uop_os_inst_id_list + tmp_list
-            Log.logger.debug("7777777777777777777777777777777777777777777{}".format(tmp_list))
-        Log.logger.debug("4444444444444444444444444444444444444444{}".format(uop_os_inst_id_list))
         fail_list = self._uop_os_list_sub(
             uop_os_inst_id_list, result_uop_os_inst_id_list)
         Log.logger.debug(
@@ -1017,25 +1011,23 @@ class ResourceProviderTransitions2(object):
         host_env = app_cluster.get("host_env")
         instance = app_cluster.get('instance')
         if host_env == "kvm":
-            self.error_msg = ""
-            self.rollback()
-            # namedmanager_url=NAMEDMANAGER_URL.get(self.env)
-            # dns_ip = re.findall(r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b", namedmanager_url)[0]
-            # for _instance in instance:
-            #     ip = _instance.get('ip')
-            #     scp_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m" \
-            #               " copy -a 'src={dir}/write_host_info.py dest=/tmp/ mode=777'".format(ip=ip, dir=self.dir)
-            #     exec_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa " \
-            #                "-m shell -a 'python /tmp/write_host_info.py {dns_ip}'".format(ip=ip, dir=self.dir,dns_ip=dns_ip)
-            #     exec_flag, err_msg = exec_cmd_ten_times(ip, scp_cmd, 20)
-            #     if exec_flag:
-            #         exec_flag, err_msg = exec_cmd_ten_times(ip, exec_cmd, 6)
-            #         if not exec_flag:
-            #             self.error_msg = err_msg
-            #             self.rollback()
-            #     else:
-            #         self.error_msg = err_msg
-            #         self.rollback()
+            namedmanager_url=NAMEDMANAGER_URL.get(self.env)
+            dns_ip = re.findall(r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b", namedmanager_url)[0]
+            for _instance in instance:
+                ip = _instance.get('ip')
+                scp_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m" \
+                          " copy -a 'src={dir}/write_host_info.py dest=/tmp/ mode=777'".format(ip=ip, dir=self.dir)
+                exec_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa " \
+                           "-m shell -a 'python /tmp/write_host_info.py {dns_ip}'".format(ip=ip, dir=self.dir,dns_ip=dns_ip)
+                exec_flag, err_msg = exec_cmd_ten_times(ip, scp_cmd, 20)
+                if exec_flag:
+                    exec_flag, err_msg = exec_cmd_ten_times(ip, exec_cmd, 6)
+                    if not exec_flag:
+                        self.error_msg = err_msg
+                        self.rollback()
+                else:
+                    self.error_msg = err_msg
+                    self.rollback()
 
     @transition_state_logger
     def do_mysql_push(self):
