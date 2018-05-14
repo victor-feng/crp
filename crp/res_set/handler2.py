@@ -248,8 +248,8 @@ class ResourceProviderTransitions2(object):
         if uop_os_inst_vol_id_list:
             tmp_list=[os_inst for os_inst in uop_os_inst_id_list for os_inst_vol in uop_os_inst_vol_id_list if
              os_inst.get("os_inst_id") != os_inst_vol.get("os_inst_id")]
-            uop_os_inst_id_list = result_uop_os_inst_id_list.extend(tmp_list)
-            Log.logger.debug("7777777777777777777777777777777777777777777{}".format(uop_os_inst_id_list))
+            uop_os_inst_id_list = result_uop_os_inst_id_list + tmp_list
+            Log.logger.debug("7777777777777777777777777777777777777777777{}".format(tmp_list))
         Log.logger.debug("4444444444444444444444444444444444444444{}".format(uop_os_inst_id_list))
         fail_list = self._uop_os_list_sub(
             uop_os_inst_id_list, result_uop_os_inst_id_list)
