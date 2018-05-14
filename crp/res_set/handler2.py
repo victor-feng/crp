@@ -1012,6 +1012,7 @@ class ResourceProviderTransitions2(object):
         instance = app_cluster.get('instance')
         if host_env == "kvm":
             dns_ip_list = []
+            Log.logger.debug("Namedmanager url list is {}".format(self.named_url_list))
             for namedmanager_url in self.named_url_list:
                 dns_ip = re.findall(r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b", namedmanager_url)[0]
                 dns_ip_list.append(dns_ip)
