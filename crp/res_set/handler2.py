@@ -533,6 +533,7 @@ class ResourceProviderTransitions2(object):
                 is_rollback, uop_os_inst_id_list = self._create_kvm_cluster(property_mapper, cluster_id, host_env,
                                                                             image_id, port, cpu, mem, flavor,
                                                                             quantity, network_id,userdata, availability_zone,language_env)
+                userdata.close()
 
             else:
                 is_rollback = True
