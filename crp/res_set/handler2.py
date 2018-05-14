@@ -1102,7 +1102,7 @@ class ResourceProviderTransitions2(object):
                 jsq += 1
                 Log.logger.debug('check numbers: %s' % str(jsq))
                 if jsq == 30:
-                    Log.logger.debug('检查10次退出')
+                    Log.logger.debug('检查30次退出')
 
             p = subprocess.Popen(
                 cmd,
@@ -1346,8 +1346,8 @@ class ResourceProviderTransitions2(object):
                       " copy -a 'src={dir}/arping.py dest=/tmp/ mode=777'".format(ip=ip, dir=self.dir)
                 exec_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa " \
                        "-m shell -a 'python /tmp/arping.py {vip}'".format(ip=ip, dir=self.dir,vip=vip)
-                exec_cmd_ten_times(ip, scp_cmd, 20)
-                exec_cmd_ten_times(ip, exec_cmd, 20)
+                exec_cmd_ten_times(ip, scp_cmd, 12)
+                exec_cmd_ten_times(ip, exec_cmd, 12)
         except Exception as e:
             err_msg = "Created database cluster error {e}".format(e=str(e))
         return  err_msg
