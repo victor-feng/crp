@@ -15,7 +15,7 @@ from crp.utils.docker_tools import image_transit
 from config import configs, APP_ENV
 from crp.utils.aio import exec_cmd_ten_times,exec_cmd_one_times
 from crp.app_deployment.handler import start_write_log
-from del_handler2 import delete_instance_and_query2,QUERY_VOLUME
+from del_handler2 import delete_instance_and_query2,QUERY_VOLUME,QUERY_INGRESS
 from crp.k8s_api import K8sDeploymentApi,K8sIngressApi,K8sServiceApi
 from crp.utils.docker_image import make_docker_image
 from crp.utils import res_instance_push_callback
@@ -272,9 +272,13 @@ class ResourceProviderTransitions2(object):
                 resource["os_inst_id"]=os_inst_id
                 resource["os_vol_id"] = os_vol_id
                 #调用删除虚机和卷的接口进行回滚操作
+                if resource_type == "app":
+                    current_status = QUERY_INGRESS
+                else:
+                    current_status = QUERY_VOLUME
                 TaskManager.task_start(
                         SLEEP_TIME, TIMEOUT,
-                    {'current_status': QUERY_VOLUME,
+                    {'current_status': current_status,
                      "unique_flag": "",
                      "del_os_ins_ip_list": [],
                      "set_flag": "rollback",
