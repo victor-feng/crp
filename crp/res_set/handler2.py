@@ -529,7 +529,6 @@ class ResourceProviderTransitions2(object):
                 #创建虚拟化云
                 quantity=replicas
                 userdata = open("{}/test.sh".format(self.dir))
-                userdata.close()
                 is_rollback, uop_os_inst_id_list = self._create_kvm_cluster(property_mapper, cluster_id, host_env,
                                                                             image_id, port, cpu, mem, flavor,
                                                                             quantity, network_id,userdata, availability_zone,language_env)
