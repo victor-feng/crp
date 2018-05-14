@@ -37,7 +37,6 @@ SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
 AVAILABILITY_ZONE = configs[APP_ENV].AVAILABILITY_ZONE
 IS_OPEN_AFFINITY_SCHEDULING = configs[APP_ENV].IS_OPEN_AFFINITY_SCHEDULING
 ADD_LOG = configs[APP_ENV].ADD_LOG
-NAMEDMANAGER_URL = configs[APP_ENV].NAMEDMANAGER_URL
 # Transition state Log debug decorator
 
 
@@ -119,6 +118,7 @@ class ResourceProviderTransitions(object):
         self.env=req_dict["env"]
         self.project_name = req_dict["project_name"]
         self.resource_type = req_dict["resource_type"]
+        self.named_url_list = req_dict["named_url_list"]
         # Initialize the state machine
         self.machine = Machine(
             model=self,
@@ -857,23 +857,25 @@ class ResourceProviderTransitions(object):
         host_env = app_cluster.get("host_env")
         instance = app_cluster.get('instance')
         if host_env == "kvm":
-            namedmanager_url = NAMEDMANAGER_URL.get(self.env)
-            dns_ip = re.findall(
-                r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b",
-                namedmanager_url)[0]
+            dns_ip_list = []
+            for namedmanager_url in self.named_url_list:
+                dns_ip = re.findall(
+                    r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b",
+                    namedmanager_url)[0]
+                dns_ip_list.append(dns_ip)
             for _instance in instance:
                 ip = _instance.get('ip')
                 scp_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m" \
-                          "copy -a 'src={dir}/write_host_info.py dest=/tmp/'".format(ip=ip, dir=self.dir)
+                          " copy -a 'src={dir}/write_host_info.py dest=/tmp/ mode=777'".format(ip=ip, dir=self.dir)
                 exec_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa " \
-                           "-m shell -a 'python /tmp/write_host_info.py {dns_ip}'".format(ip=ip, dir=self.dir,dns_ip=dns_ip)
-                exec_flag, err_msg=exec_cmd_ten_times(ip, scp_cmd, 20)
+                           "-m shell -a 'python /tmp/write_host_info.py {dns_ip_list}'".format(ip=ip, dir=self.dir,
+                                                                                               dns_ip_list=dns_ip_list)
+                exec_flag, err_msg = exec_cmd_ten_times(ip, scp_cmd, 20)
                 if exec_flag:
-                    exec_flag, err_msg=exec_cmd_ten_times(ip, exec_cmd, 6)
+                    exec_flag, err_msg = exec_cmd_ten_times(ip, exec_cmd, 6)
                     if not exec_flag:
                         self.error_msg = err_msg
                         self.rollback()
-
                 else:
                     self.error_msg = err_msg
                     self.rollback()
