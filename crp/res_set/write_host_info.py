@@ -26,11 +26,12 @@ def write_host_info(dns_ip_list):
         dns_res = os.popen(check_dns_cmd).read().strip()
         if int(dns_res) == 0:
             with open(dns_path,"a+") as f:
-                f.write(dns_info)
+                f.write(dns_info + '\n')
 
 
 
 
 if __name__ == "__main__":
     dns_ip_list = sys.argv[1]
+    dns_ip_list = dns_ip_list.strip(']').strip('[').split(',')
     write_host_info(dns_ip_list)
