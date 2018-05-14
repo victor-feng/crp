@@ -771,18 +771,13 @@ class ResourceProviderTransitions2(object):
                         available_replicas = msg.status.available_replicas
                         unavailable_replicas = msg.status.unavailable_replicas
                         if self.available_replicas == available_replicas and unavailable_replicas is not None:
-                            Log.logger.info("0000000000000000000000000000000000000000000000 {}----{}---{}".format(available_replicas,unavailable_replicas,self.check_times))
                             self.check_times = self.check_times + 1
                             if self.check_times > CHECK_TIMEOUT:
                                 s_flag,err_msg = K8sDeployment.get_deployment_pod_status(namespace,deployment_name)
                                 if s_flag is not True:
                                     self.error_msg = err_msg
                                     is_rollback = True
-                                    result_inst_id_list.append(uop_os_inst_id)
                         else:
-                            Log.logger.info(
-                                "1111111111111111111111111111 {}----{}--{}".format(available_replicas,
-                                                                                                 unavailable_replicas,self.check_times))
                             self.available_replicas = available_replicas
                             self.check_times = 0
             else:
