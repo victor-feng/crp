@@ -640,10 +640,11 @@ class ResourceProviderTransitions2(object):
                 if cluster_type == "mycat" and quantity > 1:
                     flavor = flavor2 if flavor2 else  KVM_FLAVOR.get("mycat", 'uop-2C4G50G')
                     image_id = image2_id
-                userdata = open("{}/test.sh".format(self.dir))
+                #userdata = open("{}/test.sh".format(self.dir))
+                userdata = None
                 err_msg,osint_id = self._create_instance_by_type(
                     cluster_type, instance_name, flavor, network_id,userdata,image_id, availability_zone,server_group)
-                userdata.close()
+                #userdata.close()
                 if not err_msg:
                     uopinst_info = {
                         'uop_inst_id': cluster_id,
