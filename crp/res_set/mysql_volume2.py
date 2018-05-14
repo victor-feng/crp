@@ -125,7 +125,7 @@ def instance_attach_volume(os_inst_id, os_vol_id,device=None):
         return "AttachVolumeError"
 
 def create_volume_by_type(cluster_type,volume_size,quantity,os_inst_id,instance_name):
-
+    err_msg = None
     if((cluster_type not in ["mycat", "redis"]) or (
         cluster_type in ["mycat", "redis"] and quantity == 1)) and volume_size > 0:
         #如果cluster_type是mysql 和 mongodb 就挂卷 或者 volume_size 不为0时
