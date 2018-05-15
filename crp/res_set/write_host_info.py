@@ -33,5 +33,5 @@ def write_host_info(dns_ip_list):
 
 if __name__ == "__main__":
     dns_ip_list = sys.argv[1]
-    dns_ip_list = dns_ip_list.strip(']').strip('[').split(',')
+    dns_ip_list = dns_ip_list.strip().split(',')
     write_host_info(dns_ip_list)
