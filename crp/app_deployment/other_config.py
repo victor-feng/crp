@@ -7,6 +7,8 @@ import subprocess
 
 BASE_PATH = "/usr/local/nginx/conf/servers_systoon"
 TEMPLATE_PATH = "/tmp"
+# BASE_PATH = "/home/mcq/tmp"
+# TEMPLATE_PATH = "/home/mcq/tmp"
 
 
 def create(**kwargs):
@@ -40,23 +42,27 @@ def create(**kwargs):
 
     if os.path.exists(nginx_conf):
         with open(nginx_conf, 'rb') as f:
-            content = f.read().split("# --- divid ---")
+            all_c = f.read()
+            content = all_c.split("# --- divid ---")
 
-        if re.findall(project, content[0]):
-            print "Error: project already exists !"; return
-        if re.findall(project, content[2]):
-            print "Error: domain_path already exists !"; return
+        # if re.findall(project, content[0]):
+        #     print "Error: project already exists !"; return
+        # if re.findall(project, content[2]):
+        #     print "Error: domain_path already exists !"; return
 
 
         content[2] = "# --- divid ---" + content[2]
         tp = sub_content(
             template, project, ips, domain, domain_path, certificate).split("# --- divid ---")
-        tp = [i + "# --- divid ---" for i in tp]
 
-        content.insert(1, tp[0])
-        content.insert(4, tp[2])
-
-        content = "".join(content)
+        if re.findall(project, content[0]):
+            tmp = [i.strip() for i in content[0].split('upstream') if project in i]
+            content = re.sub(tmp[0], tp[0].lstrip('upstream').strip(), all_c)
+        else:
+            tp = [i + "# --- divid ---" for i in tp]
+            content.insert(1, tp[0])
+            content.insert(4, tp[2])
+            content = "".join(content)
     else:
         content =sub_content(
             template, project, ips, domain, domain_path, certificate)
@@ -65,51 +71,51 @@ def create(**kwargs):
     fp.write(content)
     fp.close()
 
-    reload nginx
+    # reload nginx
     subprocess.Popen('/usr/local/nginx/sbin/nginx -s reload', shell=True, stdout=subprocess.PIPE)
 
 
-def update(**kwargs):
-    """
-        update config
-    """
-    certificate = kwargs.get('-certificate', "")
-    project = kwargs.get('-project', "")
-    domain = kwargs.get('-domain', "")
-    domain_path = kwargs.get('-domain_path', "")
-    ip_list = kwargs.get('-ip', "").split(",")
-    port = kwargs.get('-port', 80)
-
-    template = '{}/other_template_https'.format(TEMPLATE_PATH) \
-            if certificate else '{}/other_template_http'.format(TEMPLATE_PATH)
-
-    nginx_conf = os.path.join(BASE_PATH, domain)
-    if not os.path.exists(nginx_conf):
-        return "Error: config file not exists"
-
-    ip_port = ['{}:{}'.format(i, port) for i in ip_list]
-    ips = write_server_config(ip_port)
-
-    if os.path.exists(nginx_conf):
-        with open(nginx_conf, 'rb') as f:
-            content = f.read()
-            fp = content.split("# --- divid ---")
-
-        if not re.findall(project, fp[0]):
-            return "Error: project not exists !"
-
-        tp = sub_content(
-            template, project, ips, domain, domain_path, certificate).split("# --- divid ---")
-
-        tmp = [i.strip() for i in fp[0].split('upstream') if project in i]
-        content = re.sub(tmp[0], tp[0].lstrip('upstream').strip(), content)
-
-    fp = open(nginx_conf, 'wb')
-    fp.write(content)
-    fp.close()
-
-    reload nginx
-    subprocess.Popen('/usr/local/nginx/sbin/nginx -s reload', shell=True, stdout=subprocess.PIPE)
+# def update(**kwargs):
+#     """
+#         update config
+#     """
+#     certificate = kwargs.get('-certificate', "")
+#     project = kwargs.get('-project', "")
+#     domain = kwargs.get('-domain', "")
+#     domain_path = kwargs.get('-domain_path', "")
+#     ip_list = kwargs.get('-ip', "").split(",")
+#     port = kwargs.get('-port', 80)
+# 
+#     template = '{}/other_template_https'.format(TEMPLATE_PATH) \
+#             if certificate else '{}/other_template_http'.format(TEMPLATE_PATH)
+# 
+#     nginx_conf = os.path.join(BASE_PATH, domain)
+#     if not os.path.exists(nginx_conf):
+#         return "Error: config file not exists"
+# 
+#     ip_port = ['{}:{}'.format(i, port) for i in ip_list]
+#     ips = write_server_config(ip_port)
+# 
+#     if os.path.exists(nginx_conf):
+#         with open(nginx_conf, 'rb') as f:
+#             content = f.read()
+#             fp = content.split("# --- divid ---")
+# 
+#         if not re.findall(project, fp[0]):
+#             return "Error: project not exists !"
+# 
+#         tp = sub_content(
+#             template, project, ips, domain, domain_path, certificate).split("# --- divid ---")
+# 
+#         tmp = [i.strip() for i in fp[0].split('upstream') if project in i]
+#         content = re.sub(tmp[0], tp[0].lstrip('upstream').strip(), content)
+# 
+#     fp = open(nginx_conf, 'wb')
+#     fp.write(content)
+#     fp.close()
+# 
+#     # reload nginx
+#     subprocess.Popen('/usr/local/nginx/sbin/nginx -s reload', shell=True, stdout=subprocess.PIPE)
 
 
 def delete(**kwargs):
@@ -165,6 +171,8 @@ def delete(**kwargs):
     # write file
     with open(nginx_conf, 'wb') as f:
         f.write('\n'.join(result))
+    # reload nginx
+    subprocess.Popen('/usr/local/nginx/sbin/nginx -s reload', shell=True, stdout=subprocess.PIPE)
 
 
 def sub_content(template, project, ips, domain, domain_path, certificate):
@@ -206,8 +214,6 @@ if __name__ == '__main__':
         create(**kwargs)
     elif cmd == '-d':
         delete(**kwargs)
-    elif cmd == '-u':
-        update(**kwargs)
     else:
         print """
             python other_config.py 
