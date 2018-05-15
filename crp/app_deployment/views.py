@@ -72,9 +72,21 @@ class AppDeploy(Resource):
             nip = kwargs.get('nip')
             domains = kwargs.get('domain')
             certificate = kwargs.get('certificate', 0)
-            template = "template_https" if certificate else "template_http"
-            scp_update_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/update.py dest=/tmp/ mode=777'".format(
-                    nip=nip, dir=selfdir)
+            cloud = kwargs.get('cloud')
+            resource_type = kwargs.get('resource_type')
+            project_name = kwargs.get('project_name')
+            domain_paths = kwargs.get('domain_path')
+            domain_list = domains.strip().split(',')
+            domain_path_list = domain_paths.strip().split(',')
+            domain_info_list = zip(domain_list, domain_path_list)
+            if cloud == "2" and resource_type =="app":
+                template = "template_https" if certificate else "template_http"
+                config_scripts = "update.py"
+            else:
+                template = "other_template_https" if certificate else "other_template_http"
+                config_scripts = "other_config.py"
+            scp_update_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/{config_scripts} dest=/tmp/ mode=777'".format(
+                    nip=nip, dir=selfdir,config_scripts=config_scripts)
             scp_template_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/{template} dest=/tmp/ mode=777'".format(
                     nip=nip, dir=selfdir, template=template)
             exec_flag, err_msg = exec_cmd_ten_times(nip, scp_update_cmd, 1)
@@ -84,14 +96,31 @@ class AppDeploy(Resource):
             if not exec_flag:
                 return exec_flag, err_msg
             Log.logger.debug('------>上传配置文件完成')
-            for domain in domains.strip().split(','):
-                exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/update.py -certificate={certificate} -domain={domain} -ip={ip} -port={port}"'.format(
+            for domain_info in domain_info_list:
+                domain = domain_info[0]
+                domain_path = domain_info[1]
+                if cloud == "2" and resource_type =="app":
+                    exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/{config_scripts} -certificate={certificate} -domain={domain} -ip={ip} -port={port}"'.format(
+                            nip=kwargs.get('nip'),
+                            dir=selfdir,
+                            certificate=certificate,
+                            domain=domain,
+                            ip=kwargs.get('ip'),
+                            port=kwargs.get('port'),
+                            config_scripts =config_scripts,)
+                else:
+                    exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/{config_scripts} -c -certificate={certificate} -project={project} -domain={domain} --domain_path={domain_path} -ip={ip} -port={port}"'.format(
                         nip=kwargs.get('nip'),
                         dir=selfdir,
                         certificate=certificate,
                         domain=domain,
                         ip=kwargs.get('ip'),
-                        port=kwargs.get('port'))
+                        port=kwargs.get('port'),
+                        config_scripts=config_scripts,
+                        domain_path = domain_path,
+                        project = project_name,
+                    )
+
                 exec_flag, err_msg=exec_cmd_ten_times(nip, exec_shell_cmd, 1)
                 if not exec_flag:
                     return exec_flag, err_msg
@@ -106,6 +135,7 @@ class AppDeploy(Resource):
         project_name = app.get("project_name","")
         cloud = app.get("cloud","")
         resource_type = app.get("resource_type","")
+        domain_path = app.get("domain_path","")
 
         for ip in ips:
             ip_str = ip + ','
@@ -119,7 +149,11 @@ class AppDeploy(Resource):
                                 'domain': domain,
                                 'ip': real_ip[:-1],
                                 'port': ports.strip(),
-                                'certificate': certificate})
+                                'certificate': certificate,
+                                'project_name':project_name,
+                                'cloud':cloud,
+                                'resource_type': resource_type,
+                                'domain_path':domain_path})
         except Exception as e:
             err_msg = "do nginx push error {e}".format(e=str(e))
             Log.logger.error("error:{}".format(e))
@@ -139,24 +173,52 @@ class AppDeploy(Resource):
         for dl in domain_list:
             nip = dl.get("domain_ip")
             domains = dl.get('domain')
+            domain_paths = dl.get('domain_paths')
+            cloud = dl.get("cloud")
+            project_name = dl.get("project_name")
+            resource_type = dl.get("resource_type")
             named_url = dl.get('named_url')
+            domain_list = domains.strip().split(',')
+            domain_path_list = domain_paths.strip().split(',')
+            domain_info_list = zip(domain_list, domain_path_list)
             if not nip or not domains:
                 Log.logger.info("nginx ip or domain is null, do nothing")
                 continue
-            scp_delete_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/delete.py dest=/tmp/ mode=777'".format(
-                    nip=nip, dir=selfdir)
-            for domain in domains.strip().split(','):
-                exec_shell_cmd='ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a ''"/tmp/delete.py {domain}"'.format(
-                        nip=nip,
-                        dir=selfdir,
-                        domain=domain)
-                exec_cmd_ten_times(nip,scp_delete_cmd,1)
+            if cloud == "2" and resource_type == "app":
+                config_scripts = "delete.py"
+            else:
+                config_scripts = "other_config.py"
+            scp_delete_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/{config_scripts} dest=/tmp/ mode=777'".format(
+                    nip=nip, dir=selfdir,config_scripts=config_scripts)
+            exec_cmd_ten_times(nip, scp_delete_cmd, 1)
             Log.logger.debug('------>上传删除脚本完成')
-            exec_cmd_ten_times(nip, exec_shell_cmd, 1)
+            for domain_info in domain_info_list:
+                domain = domain_info[0]
+                domain_path = domain_info[1]
+                if cloud == "2" and resource_type == "app":
+                    exec_shell_cmd='ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a ''"/tmp/{config_scripts} {domain}"'.format(
+                            nip=nip,
+                            dir=selfdir,
+                            domain=domain,
+                            config_scripts=config_scripts)
+                else:
+                    exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/{config_scripts} -d -certificate={certificate} -project={project} -domain={domain} --domain_path={domain_path} -ip={ip} -port={port}"'.format(
+                        nip=kwargs.get('nip'),
+                        dir=selfdir,
+                        certificate="",
+                        domain=domain,
+                        ip=kwargs.get('ip'),
+                        port=kwargs.get('port'),
+                        config_scripts=config_scripts,
+                        domain_path=domain_path,
+                        project=project_name,
+                    )
+
+                exec_cmd_ten_times(nip, exec_shell_cmd, 1)
             #开始删除dns
             dns_api = NamedManagerApi(environment)
             res = dns_api.named_domain_delete(domain,named_url)
-        Log.logger.debug("--------->stop delete nginx profiles: success")
+        Log.logger.debug("--------->stop delete nginx profiles: success,{res}".format(res=res))
 
     def delete(self):
         code = 200
