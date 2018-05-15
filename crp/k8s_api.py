@@ -798,7 +798,7 @@ class K8sIngressApi(object):
             grace_period_seconds=5
         )
 
-    def create_ingress_object(self,ingress_name,namespace,service_name,service_port,domain,lb_methods,domain_path):
+    def create_ingress_object(self,ingress_name,namespace,service_name,service_port,domains,lb_methods,domain_paths):
         """
 
         :param ingress_name:"tomcat-cssapi-ingress"
@@ -810,27 +810,34 @@ class K8sIngressApi(object):
         """
         service_name = service_name.lower()
         ingress_name = ingress_name.lower()
-        if not domain_path:
-            domain_path = "/"
-        else:
-            domain_path = "/{domain_path}".format(domain_path=domain_path)
-        spec = client.V1beta1IngressSpec(
-            rules=[
-                client.V1beta1IngressRule(
-                    host=domain,
-                    http=client.V1beta1HTTPIngressRuleValue(
-                        paths=[
-                            client.V1beta1HTTPIngressPath(
-                                path = domain_path,
-                                backend=client.V1beta1IngressBackend(
-                                    service_name=service_name,
-                                    service_port=service_port,
-                                )
+        rules=[]
+        domain_list = domains.strip().split(',') if  domains else []
+        domain_path_list = domain_paths.strip().split(',') if domain_paths else []
+        domain_info_list = zip(domain_list,domain_path_list)
+        for domain_info in domain_info_list:
+            domain = domain_info[0]
+            domain_path = domain_info[1]
+            if not domain_path:
+                domain_path = "/"
+            else:
+                domain_path = "/{domain_path}".format(domain_path=domain_path)
+            rule=client.V1beta1IngressRule(
+                host=domain,
+                http=client.V1beta1HTTPIngressRuleValue(
+                    paths=[
+                        client.V1beta1HTTPIngressPath(
+                            path=domain_path,
+                            backend=client.V1beta1IngressBackend(
+                                service_name=service_name,
+                                service_port=service_port,
                             )
-                        ]
-                    )
+                        )
+                    ]
                 )
-            ]
+            )
+            rules.append(rule)
+        spec = client.V1beta1IngressSpec(
+            rules=rules
         )
         ingress = client.V1beta1Ingress(
             api_version="extensions/v1beta1",
@@ -848,7 +855,7 @@ class K8sIngressApi(object):
 
         return ingress
 
-    def update_ingress_object(self,ingress_name,namespace,service_name,service_port,domain,domain_path):
+    def update_ingress_object(self,ingress_name,namespace,service_name,service_port,domains,domain_paths):
         """
         更新ingress
         :param ingress_name:
@@ -860,28 +867,34 @@ class K8sIngressApi(object):
         """
         service_name = service_name.lower()
         ingress_name = ingress_name.lower()
-        if not domain_path:
-            domain_path = "/"
-        else:
-            domain_path = "/{domain_path}".format(domain_path=domain_path)
-        spec = client.V1beta1IngressSpec(
-            rules=[
-                client.V1beta1IngressRule(
-                    # host="tomcat.k8s.me",
-                    host=domain,
-                    http=client.V1beta1HTTPIngressRuleValue(
-                        paths=[
-                            client.V1beta1HTTPIngressPath(
-                                path=domain_path,
-                                backend=client.V1beta1IngressBackend(
-                                    service_name=service_name,
-                                    service_port=service_port,
-                                )
+        rules = []
+        domain_list = domains.strip().split(',') if domains else []
+        domain_path_list = domain_paths.strip().split(',') if domain_paths else []
+        domain_info_list = zip(domain_list, domain_path_list)
+        for domain_info in domain_info_list:
+            domain = domain_info[0]
+            domain_path = domain_info[1]
+            if not domain_path:
+                domain_path = "/"
+            else:
+                domain_path = "/{domain_path}".format(domain_path=domain_path)
+            rule = client.V1beta1IngressRule(
+                host=domain,
+                http=client.V1beta1HTTPIngressRuleValue(
+                    paths=[
+                        client.V1beta1HTTPIngressPath(
+                            path=domain_path,
+                            backend=client.V1beta1IngressBackend(
+                                service_name=service_name,
+                                service_port=service_port,
                             )
-                        ]
-                    )
+                        )
+                    ]
                 )
-            ]
+            )
+            rules.append(rule)
+        spec = client.V1beta1IngressSpec(
+            rules=rules
         )
         ingress = client.V1beta1Ingress(
             api_version="extensions/v1beta1",

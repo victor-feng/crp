@@ -70,30 +70,31 @@ class AppDeploy(Resource):
             #exec_flag, err_msg = None,None
             selfdir = os.path.dirname(os.path.abspath(__file__))
             nip = kwargs.get('nip')
+            domains = kwargs.get('domain')
             certificate = kwargs.get('certificate', 0)
             template = "template_https" if certificate else "template_http"
             scp_update_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/update.py dest=/tmp/ mode=777'".format(
                     nip=nip, dir=selfdir)
             scp_template_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/{template} dest=/tmp/ mode=777'".format(
                     nip=nip, dir=selfdir, template=template)
-            exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/update.py -certificate={certificate} -domain={domain} -ip={ip} -port={port}"'.format(
-                    nip=kwargs.get('nip'),
-                    dir=selfdir,
-                    certificate=certificate,
-                    domain=kwargs.get('domain'),
-                    ip=kwargs.get('ip'),
-                    port=kwargs.get('port'))
-            exec_flag, err_msg=exec_cmd_ten_times(nip, scp_update_cmd, 1)
+            exec_flag, err_msg = exec_cmd_ten_times(nip, scp_update_cmd, 1)
             if not exec_flag:
                 return exec_flag, err_msg
-            exec_flag, err_msg=exec_cmd_ten_times(nip, scp_template_cmd, 1)
+            exec_flag, err_msg = exec_cmd_ten_times(nip, scp_template_cmd, 1)
             if not exec_flag:
                 return exec_flag, err_msg
             Log.logger.debug('------>上传配置文件完成')
-            exec_flag, err_msg=exec_cmd_ten_times(nip, exec_shell_cmd, 1)
-            if not exec_flag:
-                return exec_flag, err_msg
-
+            for domain in domains:
+                exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/update.py -certificate={certificate} -domain={domain} -ip={ip} -port={port}"'.format(
+                        nip=kwargs.get('nip'),
+                        dir=selfdir,
+                        certificate=certificate,
+                        domain=domain,
+                        ip=kwargs.get('ip'),
+                        port=kwargs.get('port'))
+                exec_flag, err_msg=exec_cmd_ten_times(nip, exec_shell_cmd, 1)
+                if not exec_flag:
+                    return exec_flag, err_msg
             return True,None
 
 
@@ -102,6 +103,10 @@ class AppDeploy(Resource):
         domain_ip = app.get('domain_ip', "")
         domain = app.get('domain', '')
         certificate = app.get('certificate', "")
+        project_name = app.get("project_name","")
+        cloud = app.get("cloud","")
+        resource_type = app.get("resource_type","")
+
         for ip in ips:
             ip_str = ip + ','
             real_ip += ip_str
@@ -133,18 +138,19 @@ class AppDeploy(Resource):
         environment = kwargs.get("environment")
         for dl in domain_list:
             nip = dl.get("domain_ip")
-            domain = dl.get('domain')
+            domains = dl.get('domain')
             named_url = dl.get('named_url')
-            if not nip or not domain:
+            if not nip or not domains:
                 Log.logger.info("nginx ip or domain is null, do nothing")
                 continue
             scp_delete_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/delete.py dest=/tmp/ mode=777'".format(
                     nip=nip, dir=selfdir)
-            exec_shell_cmd='ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a ''"/tmp/delete.py {domain}"'.format(
-                    nip=nip,
-                    dir=selfdir,
-                    domain=domain)
-            exec_cmd_ten_times(nip,scp_delete_cmd,1)
+            for domain in domains:
+                exec_shell_cmd='ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a ''"/tmp/delete.py {domain}"'.format(
+                        nip=nip,
+                        dir=selfdir,
+                        domain=domain)
+                exec_cmd_ten_times(nip,scp_delete_cmd,1)
             Log.logger.debug('------>上传删除脚本完成')
             exec_cmd_ten_times(nip, exec_shell_cmd, 1)
             #开始删除dns
