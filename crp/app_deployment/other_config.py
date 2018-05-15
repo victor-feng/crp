@@ -17,14 +17,14 @@ def create(**kwargs):
     """
     # params
     certificate = kwargs.get('-certificate', "")
-    project = kwargs.get('-project', "")
+    project = kwargs.get('-project', "") + ".com"
     domain = kwargs.get('-domain', "")
     domain_path = kwargs.get('-domain_path', "")
     ip_list = kwargs.get('-ip', "").split(",")
     port = kwargs.get('-port', 80)
 
-    template = '{}/other_template_https'.format(TEMPLATE_PATH) \
-            if certificate else '{}/other_template_http'.format(TEMPLATE_PATH)
+    template = '{path}/other_template_https'.format(path=TEMPLATE_PATH) \
+            if certificate else '{path}/other_template_http'.format(path=TEMPLATE_PATH)
 
     if not all([project, domain, ip_list]):
         print "Error: params value error"; return
@@ -32,12 +32,12 @@ def create(**kwargs):
     # dir
     if not os.path.isdir(BASE_PATH):
         subprocess.Popen(
-            'mkdir {}'.format(BASE_PATH), shell=True, stdout=subprocess.PIPE)
+            'mkdir {path}'.format(path=BASE_PATH), shell=True, stdout=subprocess.PIPE)
 
     nginx_conf = os.path.join(BASE_PATH, domain)
 
     # params contact
-    ip_port = ['{}:{}'.format(i, port) for i in ip_list]
+    ip_port = ['{i}:{port}'.format(i=i, port=port) for i in ip_list]
     ips = write_server_config(ip_port)
 
     if os.path.exists(nginx_conf):
@@ -122,12 +122,12 @@ def delete(**kwargs):
     """
         delete config 
     """
-    project = kwargs.get('-project', "")
+    project = kwargs.get('-project', "") + '.com'
     domain = kwargs.get('-domain', "")
 
     if not os.path.isdir(BASE_PATH):
         subprocess.Popen(
-            'mkdir {}'.format(BASE_PATH), shell=True, stdout=subprocess.PIPE)
+            'mkdir {path}'.format(path=BASE_PATH), shell=True, stdout=subprocess.PIPE)
 
     nginx_conf = os.path.join(BASE_PATH, domain)
     if not os.path.exists(nginx_conf):
@@ -144,7 +144,7 @@ def delete(**kwargs):
     if len(filter(lambda x: len(x) > 0, 
                   tp[0].strip().split('upstream'))) <= 1:
         subprocess.Popen(
-            'rm {}'.format(nginx_conf), shell=True, stdout=subprocess.PIPE)
+            'rm {conf}'.format(conf=nginx_conf), shell=True, stdout=subprocess.PIPE)
         return
 
     # upstream part
@@ -214,6 +214,8 @@ if __name__ == '__main__':
         create(**kwargs)
     elif cmd == '-d':
         delete(**kwargs)
+    elif cmd == '-u':
+        update(**kwargs)
     else:
         print """
             python other_config.py 

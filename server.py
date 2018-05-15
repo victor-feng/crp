@@ -42,6 +42,10 @@ def main():
         autoreload.start()
 
     app = create_app(APP_ENV)
+    os.system('rm -rf config.py')
+    os.system('rm -rf conf')
+    os.system('ln -s conf.d/%s  conf '%(options.deploy))
+    os.system('ln -s conf/config.py  config.py')
     http_server = HTTPServer(WSGIContainer(app))
     http_server.listen(options.port)
     logging.warn("[CRP] CRP is running on: localhost:%d", options.port)
@@ -69,7 +73,6 @@ def main():
     logger.handlers[0].setFormatter(fm)
 
     IOLoop.instance().start()
-
 
 if __name__ == '__main__':
     main()
