@@ -1023,6 +1023,7 @@ class ResourceProviderTransitions2(object):
                 dns_ip = re.findall(r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b", namedmanager_url)[0]
                 dns_ip_list.append(dns_ip)
             dns_ip_list = list(set(dns_ip_list))
+            Log.logger.debug("Namedmanager ip list is {}".format(dns_ip_list))
             for _instance in instance:
                 ip = _instance.get('ip')
                 scp_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m" \
