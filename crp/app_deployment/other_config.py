@@ -65,7 +65,7 @@ def create(**kwargs):
     fp.write(content)
     fp.close()
 
-    reload nginx
+    #reload nginx
     subprocess.Popen('/usr/local/nginx/sbin/nginx -s reload', shell=True, stdout=subprocess.PIPE)
 
 
