@@ -109,7 +109,7 @@ class AppDeploy(Resource):
                             port=kwargs.get('port'),
                             config_scripts =config_scripts,)
                 else:
-                    exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/{config_scripts} -c -certificate={certificate} -project={project} -domain={domain} --domain_path={domain_path} -ip={ip} -port={port}"'.format(
+                    exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/{config_scripts} -c -certificate={certificate} -project={project} -domain={domain} -domain_path={domain_path} -ip={ip} -port={port}"'.format(
                         nip=kwargs.get('nip'),
                         dir=selfdir,
                         certificate=certificate,
@@ -202,7 +202,7 @@ class AppDeploy(Resource):
                             domain=domain,
                             config_scripts=config_scripts)
                 else:
-                    exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/{config_scripts} -d -certificate={certificate} -project={project} -domain={domain} --domain_path={domain_path} -ip={ip} -port={port}"'.format(
+                    exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/{config_scripts} -d -certificate={certificate} -project={project} -domain={domain} -domain_path={domain_path} -ip={ip} -port={port}"'.format(
                         nip=kwargs.get('nip'),
                         dir=selfdir,
                         certificate="",
