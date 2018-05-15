@@ -109,7 +109,7 @@ class AppDeploy(Resource):
                             port=kwargs.get('port'),
                             config_scripts =config_scripts,)
                 else:
-                    exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/{config_scripts} -c -certificate={certificate} -project={project} -domain={domain} --domain_path={domain_path} -ip={ip} -port={port}"'.format(
+                    exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/{config_scripts} -c -certificate={certificate} -project={project} -domain={domain} -domain_path={domain_path} -ip={ip} -port={port}"'.format(
                         nip=kwargs.get('nip'),
                         dir=selfdir,
                         certificate=certificate,
@@ -202,7 +202,7 @@ class AppDeploy(Resource):
                             domain=domain,
                             config_scripts=config_scripts)
                 else:
-                    exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/{config_scripts} -d -certificate={certificate} -project={project} -domain={domain} --domain_path={domain_path} -ip={ip} -port={port}"'.format(
+                    exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/{config_scripts} -d -certificate={certificate} -project={project} -domain={domain} -domain_path={domain_path} -ip={ip} -port={port}"'.format(
                         nip=kwargs.get('nip'),
                         dir=selfdir,
                         certificate="",
@@ -218,7 +218,7 @@ class AppDeploy(Resource):
             #开始删除dns
             dns_api = NamedManagerApi(environment)
             res = dns_api.named_domain_delete(domain,named_url)
-        Log.logger.debug("--------->stop delete nginx profiles: success,{res}".format(res=res))
+        Log.logger.debug("--------->stop delete nginx profiles: success")
 
     def delete(self):
         code = 200
