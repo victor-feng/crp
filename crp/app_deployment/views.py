@@ -84,7 +84,7 @@ class AppDeploy(Resource):
             if not exec_flag:
                 return exec_flag, err_msg
             Log.logger.debug('------>上传配置文件完成')
-            for domain in domains:
+            for domain in domains.strip().split(','):
                 exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/update.py -certificate={certificate} -domain={domain} -ip={ip} -port={port}"'.format(
                         nip=kwargs.get('nip'),
                         dir=selfdir,
@@ -145,7 +145,7 @@ class AppDeploy(Resource):
                 continue
             scp_delete_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/delete.py dest=/tmp/ mode=777'".format(
                     nip=nip, dir=selfdir)
-            for domain in domains:
+            for domain in domains.strip().split(','):
                 exec_shell_cmd='ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a ''"/tmp/delete.py {domain}"'.format(
                         nip=nip,
                         dir=selfdir,
