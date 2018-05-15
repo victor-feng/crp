@@ -21,7 +21,7 @@ def write_host_info(dns_ip_list):
         with open(hosts_path,"a+") as f:
             f.write(host_info)
     for dns_ip in dns_ip_list:
-        dns_info = "nameserver  {dns_ip}".format(dns_ip=dns_ip)
+        dns_info = "nameserver {dns_ip}".format(dns_ip=dns_ip)
         check_dns_cmd = "cat {dns_path} | grep '{dns_info}' |wc -l".format(dns_path=dns_path,dns_info=dns_info)
         dns_res = os.popen(check_dns_cmd).read().strip()
         if int(dns_res) == 0:
