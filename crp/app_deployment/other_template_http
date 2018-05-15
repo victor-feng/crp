@@ -9,7 +9,7 @@
       access_log  logs/Domain.access.log  main;
 
       # --- divid --- 
-      location /DPath/ {
+      location /DPath {
           proxy_pass http://Project/;
           proxy_set_header Host             Project;
           proxy_set_header X-Real-IP        $remote_addr;
