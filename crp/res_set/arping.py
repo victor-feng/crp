@@ -17,4 +17,5 @@ for res in result:
         gateway = r[1]
         net = r[-1]
 arping_cmd = "arping -c 4 -I {net} -s {ip} {gateway}".format(net=net,ip=ip,gateway=gateway)
+print arping_cmd
 os.system(arping_cmd)
