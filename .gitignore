@@ -1,0 +1,10 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.swp
+.idea/
+conf
+config.py
+!conf.d/dev/config.py
+!conf.d/prod/config.py
+!conf.d/test/config.py
