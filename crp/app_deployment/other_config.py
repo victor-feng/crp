@@ -56,8 +56,16 @@ def create(**kwargs):
             template, project, ips, domain, domain_path, certificate).split("# --- divid ---")
 
         if re.findall(project, content[0]):
+            # replace ips
             tmp = [i.strip() for i in content[0].split('upstream') if project in i]
-            content = re.sub(tmp[0], tp[0].lstrip('upstream').strip(), all_c)
+            all_c = re.sub(tmp[0], tp[0].lstrip('upstream').strip(), all_c)
+            # replace damain_path
+            tmp_l = [i for i in content[2].split('location') if project in i]
+            d_path = tmp_l[0].split('{')[0].strip()
+            if d_path == '/':
+                content = re.sub('location / ', 'location /{d_path}/ '.format(d_path=domain_path), all_c)
+            else:
+                content = re.sub(d_path, '/{d_path}/'.format(d_path=domain_path), all_c)
         else:
             tp = [i + "# --- divid ---" for i in tp]
             content.insert(1, tp[0])
@@ -66,6 +74,7 @@ def create(**kwargs):
     else:
         content =sub_content(
             template, project, ips, domain, domain_path, certificate)
+        content = '  ' + content
 
     fp = open(nginx_conf, 'wb')
     fp.write(content)
