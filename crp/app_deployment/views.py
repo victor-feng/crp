@@ -170,10 +170,11 @@ class AppDeploy(Resource):
         domain_list = kwargs.get("domain_list")
         disconf_list = kwargs.get("disconf_list")
         environment = kwargs.get("environment")
+        Log.logger.info("Domain_list is {}".format(domain_list))
         for dl in domain_list:
             nip = dl.get("domain_ip")
-            domains = dl.get('domain')
-            domain_paths = dl.get('domain_paths')
+            domains = dl.get('domain',"")
+            domain_paths = dl.get('domain_path',"")
             cloud = dl.get("cloud")
             project_name = dl.get("project_name")
             resource_type = dl.get("resource_type")
