@@ -247,10 +247,10 @@ class ProdConfig(BaseConfig):
     }
     #NAMEDMANAGER_URL = 'http://10.253.68.85/api/dnsapi.php'   #已经找吴兆远确认 namedmanager 信息
     NAMEDMANAGER_URL = {
-        "dev": "http://172.28.4.228/api/dnsapi.php",
-        "test": "http://172.28.18.82/api/dnsapi.php",
-        "prep": "http://10.253.68.85/api/dnsapi.php",
-        "prod": "http://10.253.68.85/api/dnsapi.php",
+        "dev": "http://172.28.4.228/namedmanager/api/dnsapi.php",
+        "test": "http://172.28.18.82/namedmanager/api/dnsapi.php",
+        "prep": "http://10.253.68.85/namedmanager/api/dnsapi.php",
+        "prod": "http://10.253.68.85/namedmanager/api/dnsapi.php",
     }
 
     # openstack affinity config
