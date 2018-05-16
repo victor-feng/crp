@@ -1345,6 +1345,7 @@ class ResourceProviderTransitions2(object):
                 map = {"ip_address": vip}
                 map_list.append(map)
             response=neutron_client.update_port(port_id,{'port': {'allowed_address_pairs': map_list}})
+            Log.logger.debug("Mount vip end {},{}".format(response,map_list))
             #执行arping命令
             for vip in vip_list:
                 scp_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m" \

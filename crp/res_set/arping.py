@@ -14,7 +14,7 @@ gateway=os.popen(cmd).read().strip()
 for i in range(10):
     time.sleep(6)
     check_cmd = "ip addr | grep {ip} | wc -l ".format(ip=ip)
-    res = os.popen(cmd).read().strip()
+    res = os.popen(check_cmd).read().strip()
     if int(res) > 0:
         arping_cmd = "arping -c 4 -I {net} -s {ip} {gateway}".format(net=net,ip=ip,gateway=gateway)
         print arping_cmd
