@@ -35,17 +35,17 @@ def config():
 
     template = '/tmp/template_https' if certificate else '/tmp/template_http'
 
-    tp = open(template, 'r')
-    tp_str = tp.read()
+    tp = open(template, 'rb')
+    tp_str = tp.read().strip()
     tp.close()
 
     # 写nginx配置文件
-    fp = open(nginx_conf, 'w')
+    fp = open(nginx_conf, 'wb')
     f_dst1 = re.sub(r't100ToonDomain', domain, tp_str)
-    f_dst2 = re.sub('server  IpPort;', ips, f_dst1)
+    f_dst2 = re.sub(r'server  IpPort max_fails=1 fail_timeout=10s;', ips, f_dst1)
 
     f_dst4 = re.sub(r'ToonDomain', domain, f_dst2)
-    sub_domain = 'http://' + domain + '/'
+    sub_domain = r'http://' + domain + '/'
     f_dst5 = re.sub(r'http://ToonDomain/', sub_domain, f_dst4)
 
     if "innertoon.com" in domain:
@@ -78,7 +78,7 @@ def resolve(ip_list, port_list):
 def write_server_config(ip_port):
     content = ''
     for i in ip_port:
-        content += '\t' + 'server  ' + i + ';' + '\n'
+        content += '\t' + 'server  ' + i + ' max_fails=1 fail_timeout=10s'+ ';' + '\n'
     return content
 
 

@@ -39,7 +39,6 @@ SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
 AVAILABILITY_ZONE = configs[APP_ENV].AVAILABILITY_ZONE
 IS_OPEN_AFFINITY_SCHEDULING = configs[APP_ENV].IS_OPEN_AFFINITY_SCHEDULING
 ADD_LOG = configs[APP_ENV].ADD_LOG
-NAMEDMANAGER_URL = configs[APP_ENV].NAMEDMANAGER_URL
 # Transition state Log debug decorator
 
 
@@ -121,6 +120,7 @@ class ResourceProviderTransitions(object):
         self.env=req_dict["env"]
         self.project_name = req_dict["project_name"]
         self.resource_type = req_dict["resource_type"]
+        self.named_url_list = req_dict["named_url_list"]
         # Initialize the state machine
         self.machine = Machine(
             model=self,
@@ -481,7 +481,7 @@ class ResourceProviderTransitions(object):
                         'os_inst_id': osint_id,
                     }
                     uop_os_inst_id_list.append(uopinst_info)
-                    propertys['instance'].append({'instance_type': "app_cluster",
+                    propertys['instance'].append({'instance_type':host_env,
                                                   'instance_name': instance_name,
                                                   'username': DEFAULT_USERNAME,
                                                   'password': DEFAULT_PASSWORD,
@@ -504,25 +504,27 @@ class ResourceProviderTransitions(object):
         network_id = propertys.get('network_id')
         availability_zone = propertys.get('availability_zone')
         image_id = propertys.get('image_id')
+        image2_id = propertys.get('image2_id')
         version = propertys.get('version')
         cpu = propertys.get('cpu','2')
         mem = propertys.get('mem','4')
         flavor = propertys.get('flavor')
+        flavor2 = propertys.get('flavor2')
         disk = propertys.get('disk')
         quantity = propertys.get('quantity')
         volume_size=propertys.get('volume_size',0)
         volume_size = volume_size / 10
-        port = propertys.get('port')
+        port = propertys.get('port', "22")
         #volume_size 默认为0
         port = ''
         if not flavor:
             flavor = KVM_FLAVOR.get(str(cpu) + str(mem))
-        if cluster_type == "mysql" and str(cpu) == "2": # dev\test 环境
-            flavor = KVM_FLAVOR.get("mysql", 'uop-2C4G50G')
+            if cluster_type == "mysql" and str(cpu) == "2": # dev\test 环境
+                flavor = KVM_FLAVOR.get("mysql", 'uop-2C4G50G')
         if quantity >= 1:
             cluster_type_image_port_mapper = cluster_type_image_port_mappers.get(
                 cluster_type)
-            if cluster_type_image_port_mapper is not None:
+            if cluster_type_image_port_mapper is not None and not port:
                 port = cluster_type_image_port_mapper.get('port')
             propertys['ins_id'] = cluster_id
             propertys['cluster_type'] = cluster_type
@@ -541,20 +543,27 @@ class ResourceProviderTransitions(object):
                 if cluster_type == 'mysql' and i == 3:
                     cluster_type = 'mycat'
                 instance_name = '%s_%s' % (cluster_name, i.__str__())
-                if cluster_type == "mycat":
-                    flavor = KVM_FLAVOR.get("mycat", 'uop-2C4G50G')
+                if cluster_type == "mycat" and quantity > 1:
+                    flavor = flavor2 if flavor2 else  KVM_FLAVOR.get("mycat", 'uop-2C4G50G')
+                    image_id = image2_id
                 err_msg,osint_id = self._create_instance_by_type(
                     cluster_type, instance_name, flavor, network_id,image_id,availability_zone,server_group)
                 if not err_msg:
-                    if (cluster_type not in ["mycat","redis"]) and volume_size != 0:
+                    if ((cluster_type not in ["mycat", "redis"]) or (
+                            cluster_type in ["mycat", "redis"] and quantity == 1)) and volume_size > 0:
                         #如果cluster_type是mysql 和 mongodb 就挂卷 或者 volume_size 不为0时
                         vm = {
                             'vm_name': instance_name,
                             'os_inst_id': osint_id,
                         }
                         #创建volume
-                        volume=create_volume(vm, volume_size)
-                        os_vol_id = volume.get('id')
+                        volume,err_msg=create_volume(vm, volume_size)
+                        if not err_msg:
+                            os_vol_id = volume.get('id')
+                        else:
+                            os_vol_id = None
+                            self.error_msg = err_msg
+                            is_rollback = True
                     else:
                         os_vol_id = None
                     uopinst_info = {
@@ -850,23 +859,26 @@ class ResourceProviderTransitions(object):
         host_env = app_cluster.get("host_env")
         instance = app_cluster.get('instance')
         if host_env == "kvm":
-            namedmanager_url = NAMEDMANAGER_URL.get(self.env)
-            dns_ip = re.findall(
-                r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b",
-                namedmanager_url)[0]
+            dns_ip_list = []
+            for namedmanager_url in self.named_url_list:
+                dns_ip = re.findall(
+                    r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b",
+                    namedmanager_url)[0]
+                dns_ip_list.append(dns_ip)
+            dns_ip_list = ','.join(list(set(dns_ip_list)))
             for _instance in instance:
                 ip = _instance.get('ip')
                 scp_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m" \
-                          "copy -a 'src={dir}/write_host_info.py dest=/tmp/'".format(ip=ip, dir=self.dir)
+                          " copy -a 'src={dir}/write_host_info.py dest=/tmp/ mode=777'".format(ip=ip, dir=self.dir)
                 exec_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa " \
-                           "-m shell -a 'python /tmp/write_host_info.py {dns_ip}'".format(ip=ip, dir=self.dir,dns_ip=dns_ip)
-                exec_flag, err_msg=exec_cmd_ten_times(ip, scp_cmd, 6)
+                           "-m shell -a 'python /tmp/write_host_info.py {dns_ip_list}'".format(ip=ip, dir=self.dir,
+                                                                                               dns_ip_list=dns_ip_list)
+                exec_flag, err_msg = exec_cmd_ten_times(ip, scp_cmd, 20)
                 if exec_flag:
-                    exec_flag, err_msg=exec_cmd_ten_times(ip, exec_cmd, 6)
+                    exec_flag, err_msg = exec_cmd_ten_times(ip, exec_cmd, 6)
                     if not exec_flag:
                         self.error_msg = err_msg
                         self.rollback()
-
                 else:
                     self.error_msg = err_msg
                     self.rollback()

@@ -172,7 +172,10 @@ class Dockerlogs(Resource):
             if cloud == "2":
                 K8sLog = K8sLogApi()
                 deployment_name = resource_name
-                logs,code=K8sLog.get_deployment_log(deployment_name,namespace)
+                #logs,code=K8sLog.get_deployment_log(deployment_name,namespace)
+                pod_name = osid
+                container = "app"
+                logs, code = K8sLog.get_namespace_pod_log(pod_name,namespace,container)
             else:
                 os_log_dir = os.path.join(OS_DOCKER_LOGS, osid)
                 os_log_file = os.path.join(os_log_dir, "docker_start.log")
@@ -237,12 +240,14 @@ class K8sNetwork(Resource):
     def get(self):
         parser = reqparse.RequestParser()
         parser.add_argument("env", type=str)
+        parser.add_argument("url", type=str)
         args = parser.parse_args()
         env = args.env
+        url = args.url
         data = {}
         res_list = []
         try:
-            url=K8S_NETWORK_URL[env]
+            url= url if url else K8S_NETWORK_URL[env]
             res=requests.get(url)
             res_list=res.json()
             data["res_list"] = res_list

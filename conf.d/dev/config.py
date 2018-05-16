@@ -182,9 +182,12 @@ class DevelopmentConfig(BaseConfig):
             'volume_size': 'volume_size',
             'network_id': 'network_id',
             'image_id': 'image_id',
+            'image2_id': 'image2_id',
             'availability_zone':'availability_zone',
             'flavor': 'flavor',
+            'flavor2': 'flavor2',
             'volume_exp_size':'volume_exp_size',
+            "port":"port",
         }
     }
     SCRIPTPATH = r'crp/res_set/playbook-0830/'
@@ -249,8 +252,8 @@ class DevelopmentConfig(BaseConfig):
             'port': '22'
         },
         'java': {
-            'uuid': '44002594-587c-46bd-b3d0-cf5e75438cc1',
-            'name': 'tomcat30G20180308',
+            'uuid': '60847610-0849-42c2-8300-484e04847338',
+            'name': 'tomcat2C2G30G-20180507',
             'port': '8081'
         }
     }
@@ -299,6 +302,7 @@ class DevelopmentConfig(BaseConfig):
     }
 
     BASE_IMAGE_URL = "reg1.syswin.com/base/os69-tomcat7:v0.1"
+    #k8s检查应用的超时时间，时间为CHECK_TIMEOUT * 3
     CHECK_TIMEOUT = 200
 
 configs = {

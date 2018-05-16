@@ -52,6 +52,10 @@ class K8sDeploymentApi(object):
         config.load_kube_config(config_file=K8S_CONF_PATH)
         self.corev1 = client.CoreV1Api()
         self.extensionsv1 = client.ExtensionsV1beta1Api()
+        self.deletev1 = client.V1DeleteOptions(
+                    propagation_policy='Foreground',
+                    grace_period_seconds=5
+                    )
 
     def create_deployment_object(self,deployment_name,
                                  filebeat_name,
@@ -351,9 +355,7 @@ class K8sDeploymentApi(object):
             api_response = api_instance.delete_namespaced_deployment(
                 name=deployment_name,
                 namespace=namespace,
-                body=client.V1DeleteOptions(
-                    propagation_policy='Foreground',
-                    grace_period_seconds=5))
+                body=self.deletev1)
         except Exception as e:
             err_msg = "delete deployment error %s" %str(e)
             code = get_k8s_err_code(e)
@@ -413,14 +415,17 @@ class K8sDeploymentApi(object):
         :param deployment_name:
         :return:
         """
-        deployment_name = deployment_name.lower()
-        api_instance = self.extensionsv1
-        api_response = api_instance.read_namespaced_deployment_status(deployment_name, namespace)
-        available_replicas=api_response.status.available_replicas
-        replicas=api_response.status.replicas
-        if replicas is not None and replicas == available_replicas:
-            return 'available'
-        else:
+        try:
+            deployment_name = deployment_name.lower()
+            api_instance = self.extensionsv1
+            api_response = api_instance.read_namespaced_deployment_status(deployment_name, namespace)
+            available_replicas=api_response.status.available_replicas
+            replicas=api_response.status.replicas
+            if replicas is not None and replicas == available_replicas:
+                return 'available'
+            else:
+                return 'unavailable'
+        except Exception as e:
             return 'unavailable'
 
     def get_deployment_pod_info(self, namespace, deployment_name):
@@ -639,6 +644,18 @@ class K8sDeploymentApi(object):
             err_msg = "list namespace pod  info error {e}".format(e=str(e))
         return pod_info_list, err_msg, code
 
+    def delete_deployment_pod(self,name,namespace):
+        err_msg = None
+        code = 200
+        try:
+            api_instance = self.corev1
+            body = self.deletev1
+            api_response = api_instance.delete_namespaced_pod(name, namespace,body)
+        except Exception as e:
+            code = 500
+            err_msg = "delete deployment pod error {}".format(str(e))
+        return  err_msg,code
+
 
 
 
@@ -776,8 +793,12 @@ class K8sIngressApi(object):
 
         config.load_kube_config(config_file=K8S_CONF_PATH)
         self.extensionsv1 = client.ExtensionsV1beta1Api()
+        self.deletev1 = client.V1DeleteOptions(
+            propagation_policy='Foreground',
+            grace_period_seconds=5
+        )
 
-    def create_ingress_object(self,ingress_name,namespace,service_name,service_port,domain,lb_methods,domain_path):
+    def create_ingress_object(self,ingress_name,namespace,service_name,service_port,domains,lb_methods,domain_paths):
         """
 
         :param ingress_name:"tomcat-cssapi-ingress"
@@ -789,27 +810,34 @@ class K8sIngressApi(object):
         """
         service_name = service_name.lower()
         ingress_name = ingress_name.lower()
-        if not domain_path:
-            domain_path = "/"
-        else:
-            domain_path = "/{domain_path}".format(domain_path=domain_path)
-        spec = client.V1beta1IngressSpec(
-            rules=[
-                client.V1beta1IngressRule(
-                    host=domain,
-                    http=client.V1beta1HTTPIngressRuleValue(
-                        paths=[
-                            client.V1beta1HTTPIngressPath(
-                                path = domain_path,
-                                backend=client.V1beta1IngressBackend(
-                                    service_name=service_name,
-                                    service_port=service_port,
-                                )
+        rules=[]
+        domain_list = domains.strip().split(',')
+        domain_path_list = domain_paths.strip().split(',')
+        domain_info_list = zip(domain_list,domain_path_list)
+        for domain_info in domain_info_list:
+            domain = domain_info[0]
+            domain_path = domain_info[1]
+            if not domain_path:
+                domain_path = "/"
+            else:
+                domain_path = "/{domain_path}".format(domain_path=domain_path)
+            rule=client.V1beta1IngressRule(
+                host=domain,
+                http=client.V1beta1HTTPIngressRuleValue(
+                    paths=[
+                        client.V1beta1HTTPIngressPath(
+                            path=domain_path,
+                            backend=client.V1beta1IngressBackend(
+                                service_name=service_name,
+                                service_port=service_port,
                             )
-                        ]
-                    )
+                        )
+                    ]
                 )
-            ]
+            )
+            rules.append(rule)
+        spec = client.V1beta1IngressSpec(
+            rules=rules
         )
         ingress = client.V1beta1Ingress(
             api_version="extensions/v1beta1",
@@ -827,7 +855,7 @@ class K8sIngressApi(object):
 
         return ingress
 
-    def update_ingress_object(self,ingress_name,namespace,service_name,service_port,domain,domain_path):
+    def update_ingress_object(self,ingress_name,namespace,service_name,service_port,domains,domain_paths):
         """
         更新ingress
         :param ingress_name:
@@ -839,28 +867,34 @@ class K8sIngressApi(object):
         """
         service_name = service_name.lower()
         ingress_name = ingress_name.lower()
-        if not domain_path:
-            domain_path = "/"
-        else:
-            domain_path = "/{domain_path}".format(domain_path=domain_path)
-        spec = client.V1beta1IngressSpec(
-            rules=[
-                client.V1beta1IngressRule(
-                    # host="tomcat.k8s.me",
-                    host=domain,
-                    http=client.V1beta1HTTPIngressRuleValue(
-                        paths=[
-                            client.V1beta1HTTPIngressPath(
-                                path=domain_path,
-                                backend=client.V1beta1IngressBackend(
-                                    service_name=service_name,
-                                    service_port=service_port,
-                                )
+        rules = []
+        domain_list = domains.strip().split(',')
+        domain_path_list = domain_paths.strip().split(',')
+        domain_info_list = zip(domain_list, domain_path_list)
+        for domain_info in domain_info_list:
+            domain = domain_info[0]
+            domain_path = domain_info[1]
+            if not domain_path:
+                domain_path = "/"
+            else:
+                domain_path = "/{domain_path}".format(domain_path=domain_path)
+            rule = client.V1beta1IngressRule(
+                host=domain,
+                http=client.V1beta1HTTPIngressRuleValue(
+                    paths=[
+                        client.V1beta1HTTPIngressPath(
+                            path=domain_path,
+                            backend=client.V1beta1IngressBackend(
+                                service_name=service_name,
+                                service_port=service_port,
                             )
-                        ]
-                    )
+                        )
+                    ]
                 )
-            ]
+            )
+            rules.append(rule)
+        spec = client.V1beta1IngressSpec(
+            rules=rules
         )
         ingress = client.V1beta1Ingress(
             api_version="extensions/v1beta1",
@@ -938,10 +972,7 @@ class K8sIngressApi(object):
             api_response = api_instance.delete_namespaced_ingress(
                 name=ingress_name,
                 namespace=namespace,
-                body=client.V1DeleteOptions(
-                    propagation_policy='Foreground',
-                    grace_period_seconds=5
-                )
+                body=self.deletev1
             )
         except Exception as e:
             err_msg = "delete ingress error %s" % str(e)
@@ -1015,6 +1046,10 @@ class K8sNamespaceApi(object):
     def __init__(self):
         config.load_kube_config(K8S_CONF_PATH)
         self.corev1 = client.CoreV1Api()
+        self.deletev1 = client.V1DeleteOptions(
+            propagation_policy='Foreground',
+            grace_period_seconds=5
+        )
 
 
     def create_namespace_object(self,namespace_name):
@@ -1043,8 +1078,7 @@ class K8sNamespaceApi(object):
         try:
             api_instance = self.corev1
             api_response = api_instance.delete_namespace(name=namespace_name,
-                                                         body=client.V1DeleteOptions(propagation_policy='Foreground',
-                                                                                     grace_period_seconds=5))
+                                                         body=self.deletev1)
         except Exception as e:
             code = get_k8s_err_code(e)
             err_msg = "delete namespace error {e}".format(e=str(e))
@@ -1083,6 +1117,10 @@ class K8sConfigMapApi(object):
     def __init__(self):
         config.load_kube_config(K8S_CONF_PATH)
         self.corev1 = client.CoreV1Api()
+        self.deletev1 = client.V1DeleteOptions(
+            propagation_policy='Foreground',
+            grace_period_seconds=5
+        )
 
     def create_config_map_object(self,config_map_nane,namespace,data):
 
@@ -1117,9 +1155,7 @@ class K8sConfigMapApi(object):
             api_response = api_instance.delete_namespaced_config_map(
                 name=config_map_nane,
                 namespace=namespace,
-                body=client.V1DeleteOptions(
-                    propagation_policy='Foreground',
-                    grace_period_seconds=5))
+                body=self.deletev1)
         except Exception as e:
             err_msg = "delete config map error %s" % str(e)
             code = get_k8s_err_code(e)

@@ -51,10 +51,10 @@ def create_volume(vm,volume_size):
         Log.logger.debug(data_str)
         cv_result = requests.post(url=url, headers=headers, data=data_str)
     except requests.exceptions.ConnectionError as rq:
-        err_msg = rq.args
+        err_msg = "create volume error".format(str(rq))
         Log.logger.error('error msg: %s' % err_msg)
     except BaseException as e:
-        err_msg = e.args
+        err_msg = "create volume error".format(str(e))
         Log.logger.error('error msg: %s' % err_msg)
     finally:
         if err_msg:
@@ -68,7 +68,7 @@ def create_volume(vm,volume_size):
                 'display_name': volume.get('display_name', ''),
             }
             Log.logger.debug("CreateVolume success %s" % res)
-            return volume
+            return volume,err_msg
 
 def instance_attach_volume(os_inst_id, os_vol_id,device=None):
     """

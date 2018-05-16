@@ -125,6 +125,7 @@ class ResourceSet(Resource):
             parser.add_argument('department_id', type=str, location='json')
             parser.add_argument('project_name', type=str, location='json')
             parser.add_argument('os_ins_ip_list', type=list, location='json')
+            parser.add_argument('named_url_list', type=list, location='json')
             args = parser.parse_args()
 
             req_dict = {}
@@ -154,6 +155,7 @@ class ResourceSet(Resource):
             project_name = args.project_name
             module_id = args.module_id
             os_ins_ip_list = args.os_ins_ip_list
+            named_url_list = args.named_url_list
 
 
             Log.logger.debug(resource_list)
@@ -182,6 +184,7 @@ class ResourceSet(Resource):
             req_dict["project_name"] = project_name
             req_dict["module_id"] = module_id
             req_dict["os_ins_ip_list"] = os_ins_ip_list
+            req_dict["named_url_list"] = named_url_list
 
             # init default data
             Log.logger.debug('req_dict\'s object id is :')
@@ -287,7 +290,7 @@ class ResourceSet(Resource):
             }
             return res, code
         else:
-            code = 200
+            code = 202
             res = {
                 "code": code,
                 "result": {
@@ -382,7 +385,7 @@ class ResourceDelete(Resource):
             }
             return res, code
         else:
-            code=200
+            code=202
             res = {
                 "code": code,
                 "result": {

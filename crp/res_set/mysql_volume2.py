@@ -88,15 +88,17 @@ def create_volume(vm,volume_size):
     :return:
     """
     volume = None
+    err_msg = None
     try:
         cinder_client = OpenStack.cinder_client
         volume_name = vm.get("vm_name","") + "-vol"
         os_inst_id = vm.get("os_inst_id")
         volume = cinder_client.volumes.create(name=volume_name, size=volume_size,scheduler_hints={"local_to_instance":os_inst_id})
+        Log.logger.info("Create volume os_inst_id is {},volume is {}".format(os_inst_id,volume.to_dict().__str__()))
     except Exception as e:
         err_msg = "create volume error {e}".format(e=str(e))
         Log.logger.error(err_msg)
-    return volume
+    return volume,err_msg
 
 
 
@@ -121,3 +123,24 @@ def instance_attach_volume(os_inst_id, os_vol_id,device=None):
         err_msg=str(e)
         Log.logger.error('attach volume os_inst_id is %s os_vol_id is  error msg: %s' % (os_inst_id,os_vol_id,err_msg))
         return "AttachVolumeError"
+
+def create_volume_by_type(cluster_type,volume_size,quantity,os_inst_id,instance_name):
+    err_msg = None
+    if((cluster_type not in ["mycat", "redis"]) or (
+        cluster_type in ["mycat", "redis"] and quantity == 1)) and volume_size > 0:
+        #如果cluster_type是mysql 和 mongodb 就挂卷 或者 volume_size 不为0时
+        vm = {
+            'vm_name': instance_name,
+            'os_inst_id': os_inst_id,
+        }
+        #创建volume
+        volume,err_msg=create_volume(vm, volume_size)
+        if not err_msg:
+            os_vol_id = volume.id
+        else:
+            os_vol_id = None
+    else:
+        os_vol_id = None
+
+    return  os_vol_id,err_msg
+

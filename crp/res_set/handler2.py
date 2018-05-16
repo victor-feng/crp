@@ -8,7 +8,7 @@ import re
 from transitions import Machine
 from flask import request
 from crp.taskmgr import *
-from mysql_volume2 import create_volume,instance_attach_volume
+from mysql_volume2 import create_volume_by_type,instance_attach_volume
 from crp.log import Log
 from crp.openstack2 import OpenStack
 from crp.res_set.util import async
@@ -16,7 +16,7 @@ from crp.utils.docker_tools import image_transit
 from config import configs, APP_ENV
 from crp.utils.aio import exec_cmd_ten_times,exec_cmd_one_times
 from crp.app_deployment.handler import start_write_log
-from del_handler2 import delete_instance_and_query2,QUERY_VOLUME
+from del_handler2 import delete_instance_and_query2,QUERY_VOLUME,QUERY_INGRESS
 from crp.k8s_api import K8sDeploymentApi,K8sIngressApi,K8sServiceApi
 from crp.utils.docker_image import make_docker_image
 from crp.utils import res_instance_push_callback
@@ -39,7 +39,6 @@ DEFAULT_USERNAME = configs[APP_ENV].DEFAULT_USERNAME
 DEFAULT_PASSWORD = configs[APP_ENV].DEFAULT_PASSWORD
 SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
 IS_OPEN_AFFINITY_SCHEDULING = configs[APP_ENV].IS_OPEN_AFFINITY_SCHEDULING
-NAMEDMANAGER_URL = configs[APP_ENV].NAMEDMANAGER_URL
 
 #k8s相关
 NAMESPACE = configs[APP_ENV].NAMESPACE
@@ -122,6 +121,7 @@ class ResourceProviderTransitions2(object):
         self.result_inst_id_list = []
         self.result_inst_vol_id_list = []
         self.uop_os_inst_id_list = []
+        self.uop_os_inst_vol_id_list = []
         self.property_mappers_list = copy.deepcopy(property_mappers_list)
         self.property_mappers_list.reverse()
         self.push_mappers_list = []
@@ -141,6 +141,8 @@ class ResourceProviderTransitions2(object):
         self.os_ins_ip_list = req_dict["os_ins_ip_list"]
         self.code = None
         self.check_times = 0
+        self.available_replicas = 0
+        self.named_url_list = req_dict["named_url_list"]
         # Initialize the state machine
         self.machine = Machine(
             model=self,
@@ -238,7 +240,12 @@ class ResourceProviderTransitions2(object):
             self,
             resource_id,
             uop_os_inst_id_list,
-            result_uop_os_inst_id_list):
+            result_uop_os_inst_id_list,
+            uop_os_inst_vol_id_list):
+        if uop_os_inst_vol_id_list:
+            tmp_list=[os_inst for os_inst in uop_os_inst_id_list for os_inst_vol in uop_os_inst_vol_id_list if
+             os_inst.get("os_inst_id") != os_inst_vol.get("os_inst_id")]
+            uop_os_inst_id_list = result_uop_os_inst_id_list + tmp_list
         fail_list = self._uop_os_list_sub(
             uop_os_inst_id_list, result_uop_os_inst_id_list)
         Log.logger.debug(
@@ -252,7 +259,7 @@ class ResourceProviderTransitions2(object):
             " Failed instance id set is " +
             fail_list[:].__str__())
         # 删除全部，完成rollback
-        if self.code == 409 or (self.set_flag in ["reaudce","increase"] and self.resource_type == "app") :
+        if self.code == 409 or (self.set_flag in ["reduce","increase"] and self.resource_type == "app"):
             pass
         else:
             for uop_os_inst_id in uop_os_inst_id_list:
@@ -266,9 +273,13 @@ class ResourceProviderTransitions2(object):
                 resource["os_inst_id"]=os_inst_id
                 resource["os_vol_id"] = os_vol_id
                 #调用删除虚机和卷的接口进行回滚操作
+                if resource_type == "app":
+                    current_status = QUERY_INGRESS
+                else:
+                    current_status = QUERY_VOLUME
                 TaskManager.task_start(
                         SLEEP_TIME, TIMEOUT,
-                    {'current_status': QUERY_VOLUME,
+                    {'current_status': current_status,
                      "unique_flag": "",
                      "del_os_ins_ip_list": [],
                      "set_flag": "rollback",
@@ -291,7 +302,7 @@ class ResourceProviderTransitions2(object):
             image,
             flavor,
             availability_zone,
-            network_id, meta=None, server_group=None):
+            network_id,userdata=None,meta=None, server_group=None):
         err_msg = None
         os_inst_id = None
         try:
@@ -309,11 +320,11 @@ class ResourceProviderTransitions2(object):
                 server_group_dict = {'group': server_group.id}
                 int_ = nova_client.servers.create(name, image, flavor,meta=meta,
                                              availability_zone=availability_zone,
-                                             nics=nics_list, scheduler_hints=server_group_dict)
+                                             nics=nics_list, userdata=userdata,scheduler_hints=server_group_dict)
             else:
-                int_ = nova_client.servers.create(name, image, flavor, meta=meta,
+                int_ = nova_client.servers.create(name, image, flavor,meta=meta,
                                              availability_zone=availability_zone,
-                                             nics=nics_list)
+                                             nics=nics_list,userdata=userdata)
             Log.logger.debug(
                 "Task ID " +
                 self.task_id.__str__() +
@@ -336,7 +347,7 @@ class ResourceProviderTransitions2(object):
             return None, None
 
     # 依据资源类型创建资源
-    def _create_instance_by_type(self, ins_type, name, flavor,network_id,image_id,availability_zone, server_group=None):
+    def _create_instance_by_type(self, ins_type, name, flavor,network_id,userdata,image_id,availability_zone, server_group=None):
         image_uuid = image_id
         if not image_id:
             image = cluster_type_image_port_mappers.get(ins_type)
@@ -355,7 +366,7 @@ class ResourceProviderTransitions2(object):
             image_uuid,
             flavor,
             availability_zone,
-            network_id, server_group)
+            network_id,userdata,server_group)
 
 
     def _create_app_cluster(self, property_mapper):
@@ -522,9 +533,11 @@ class ResourceProviderTransitions2(object):
             elif host_env == "kvm":
                 #创建虚拟化云
                 quantity=replicas
+                userdata = open("{}/pinggate.sh".format(self.dir))
                 is_rollback, uop_os_inst_id_list = self._create_kvm_cluster(property_mapper, cluster_id, host_env,
                                                                             image_id, port, cpu, mem, flavor,
-                                                                            quantity, network_id, availability_zone,language_env)
+                                                                            quantity, network_id,userdata, availability_zone,language_env)
+                userdata.close()
 
             else:
                 is_rollback = True
@@ -532,7 +545,7 @@ class ResourceProviderTransitions2(object):
 
         return is_rollback, uop_os_inst_id_list
 
-    def _create_kvm_cluster(self,property_mapper,cluster_id, host_env,image_id,port,cpu,mem,flavor,quantity,network_id,availability_zone,language_env):
+    def _create_kvm_cluster(self,property_mapper,cluster_id, host_env,image_id,port,cpu,mem,flavor,quantity,network_id,userdata,availability_zone,language_env):
         is_rollback = False
         uop_os_inst_id_list = []
         kvm_tag = time.time().__str__()[6:10]
@@ -560,7 +573,7 @@ class ResourceProviderTransitions2(object):
             for i in range(0, quantity, 1):
                 instance_name = '%s_%s_%s' % (self.req_dict["resource_name"],kvm_tag, i.__str__())
                 err_msg,osint_id = self._create_instance_by_type(
-                    language_env, instance_name, flavor, network_id, image_id, availability_zone, server_group)
+                    language_env, instance_name, flavor, network_id,userdata,image_id ,availability_zone, server_group)
                 if not err_msg:
                     uopinst_info = {
                         'uop_inst_id': cluster_id,
@@ -568,7 +581,7 @@ class ResourceProviderTransitions2(object):
                     }
                     uop_os_inst_id_list.append(uopinst_info)
                     propertys['instance'].append({'host_env': host_env,
-                                                  'instance_type':"app_cluster",
+                                                  'instance_type':host_env,
                                                   'instance_name': instance_name,
                                                   'username': DEFAULT_USERNAME,
                                                   'password': DEFAULT_PASSWORD,
@@ -589,26 +602,28 @@ class ResourceProviderTransitions2(object):
         cluster_id = propertys.get('cluster_id')
         cluster_type = propertys.get('cluster_type')
         image_id = propertys.get('image_id')
+        image2_id = propertys.get('image2_id')
         version = propertys.get('version')
         cpu = propertys.get('cpu')
         mem = propertys.get('mem')
         flavor = propertys.get('flavor')
+        flavor2 = propertys.get('flavor2')
         disk = propertys.get('disk')
         quantity = propertys.get('quantity')
         volume_size=propertys.get('volume_size',0)
         volume_exp_size = propertys.get('volume_exp_size', 0)
         network_id = propertys.get('network_id')
         availability_zone = propertys.get('availability_zone')
-        port = ''
+        port = propertys.get('port',"22")
         #volume_size 默认为0
         if not flavor:
             flavor = KVM_FLAVOR.get(str(cpu) + str(mem))
-        if cluster_type == "mysql" and str(cpu) == "2": # dev\test 环境
-            flavor = KVM_FLAVOR.get("mysql", 'uop-2C4G50G')
+            if cluster_type == "mysql" and str(cpu) == "2": # dev\test 环境
+                flavor = KVM_FLAVOR.get("mysql", 'uop-2C4G50G')
         if quantity >= 1:
             cluster_type_image_port_mapper = cluster_type_image_port_mappers.get(
                 cluster_type)
-            if cluster_type_image_port_mapper is not None:
+            if cluster_type_image_port_mapper is not None and not port:
                 port = cluster_type_image_port_mapper.get('port')
             propertys['ins_id'] = cluster_id
             propertys['cluster_type'] = cluster_type
@@ -627,26 +642,22 @@ class ResourceProviderTransitions2(object):
                 if cluster_type == 'mysql' and i == 3:
                     cluster_type = 'mycat'
                 instance_name = '%s_%s' % (cluster_name, i.__str__())
-                if cluster_type == "mycat":
-                    flavor = KVM_FLAVOR.get("mycat", 'uop-2C4G50G')
+                if cluster_type == "mycat" and quantity > 1:
+                    flavor = flavor2 if flavor2 else  KVM_FLAVOR.get("mycat", 'uop-2C4G50G')
+                    image_id = image2_id
+                userdata = open("{}/pinggate.sh".format(self.dir))
+                #userdata = None
                 err_msg,osint_id = self._create_instance_by_type(
-                    cluster_type, instance_name, flavor, network_id, image_id, availability_zone,server_group)
+                    cluster_type, instance_name, flavor, network_id,userdata,image_id, availability_zone,server_group)
+                userdata.close()
                 if not err_msg:
-                    if (cluster_type not in ["mycat","redis"]) and volume_size != 0:
-                        #如果cluster_type是mysql 和 mongodb 就挂卷 或者 volume_size 不为0时
-                        vm = {
-                            'vm_name': instance_name,
-                            'os_inst_id': osint_id,
-                        }
-                        #创建volume
-                        volume=create_volume(vm, volume_size)
-                        os_vol_id = volume.id
-                    else:
-                        os_vol_id=None
                     uopinst_info = {
                         'uop_inst_id': cluster_id,
                         'os_inst_id': osint_id,
-                        'os_vol_id': os_vol_id
+                        'volume_size': volume_size,
+                        'cluster_type':cluster_type,
+                        'quantity':quantity,
+                        'instance_name': instance_name,
                     }
                     uop_os_inst_id_list.append(uopinst_info)
                     propertys['instance'].append({'instance_type': cluster_type,
@@ -693,7 +704,9 @@ class ResourceProviderTransitions2(object):
             self,
             uop_os_inst_id_list=None,
             result_inst_id_list=None,
-            result_mappers_list=None):
+            result_mappers_list=None,
+            uop_os_inst_vol_id_list=None
+            ):
         is_finish = False
         is_rollback = False
         # uop_os_inst_id_wait_query = list(set(uop_os_inst_id_list) - set(result_inst_id_list))
@@ -754,16 +767,24 @@ class ResourceProviderTransitions2(object):
                                     instance['os_inst_id'] = deployment_info.get("pod_name","")
                     result_inst_id_list.append(uop_os_inst_id)
                 else:
-                    s_flag,err_msg = K8sDeployment.get_deployment_pod_status(namespace,deployment_name)
-                    if s_flag is not True:
-                        self.check_times = self.check_times +1
-                        if self.check_times > CHECK_TIMEOUT:
-                            self.error_msg = err_msg
-                            is_rollback = True
-                            result_inst_id_list.append(uop_os_inst_id)
+                    msg,code = K8sDeployment.get_deployment(namespace,deployment_name)
+                    if code == 200:
+                        available_replicas = msg.status.available_replicas
+                        unavailable_replicas = msg.status.unavailable_replicas
+                        if self.available_replicas == available_replicas and unavailable_replicas is not None:
+                            self.check_times = self.check_times + 1
+                            if self.check_times > CHECK_TIMEOUT:
+                                s_flag,err_msg = K8sDeployment.get_deployment_pod_status(namespace,deployment_name)
+                                if s_flag is not True:
+                                    self.error_msg = err_msg
+                                    is_rollback = True
+                        else:
+                            self.available_replicas = available_replicas
+                            self.check_times = 0
             else:
                 #openstack 虚机
-                inst = nova_client.servers.get(uop_os_inst_id['os_inst_id'])
+                os_inst_id = uop_os_inst_id['os_inst_id']
+                inst = nova_client.servers.get(os_inst_id)
                 Log.logger.debug(
                     "Query Task ID " +
                     self.task_id.__str__() +
@@ -772,37 +793,47 @@ class ResourceProviderTransitions2(object):
                     " Status is " +
                     inst.status)
                 if inst.status == 'ACTIVE':
-                    _ips = self._get_ip_from_instance(inst)
-                    _ip = _ips.pop() if _ips.__len__() >= 1 else ''
-                    #扩容时获取docker启动日志
-                    if self.set_flag == "increase":
-                        start_write_log(_ip)
-                    physical_server = getattr(inst, OS_EXT_PHYSICAL_SERVER_ATTR)
-                    for mapper in result_mappers_list:
-                        value = mapper.values()[0]
-                        quantity = value.get('quantity', 0)
-                        instances = value.get('instance',[])
-                        for instance in instances:
-                            if instance.get(
-                                    'os_inst_id') == uop_os_inst_id['os_inst_id']:
-                                instance['ip'] = _ip
-                                instance['physical_server'] = physical_server + '@'
-                                Log.logger.debug(
-                                    "Query Task ID " +
-                                    self.task_id.__str__() +
-                                    " Instance Info: " +
-                                    mapper.__str__())
-                                res_instance_push_callback(self.task_id, self.req_dict, quantity, instance, {},
-                                                           {},self.set_flag)
-                    result_inst_id_list.append(uop_os_inst_id)
+                    cluster_type = uop_os_inst_id.get("cluster_type")
+                    volume_size = uop_os_inst_id.get("volume_size",0)
+                    instance_name = uop_os_inst_id.get("instance_name")
+                    quantity = uop_os_inst_id.get("quantity")
+                    os_vol_id,err_msg=create_volume_by_type(cluster_type, volume_size, quantity, os_inst_id, instance_name)
+                    if not err_msg:
+                        uop_os_inst_id["os_vol_id"] = os_vol_id
+                        uop_os_inst_vol_id_list.append(uop_os_inst_id)
+                        _ips = self._get_ip_from_instance(inst)
+                        _ip = _ips.pop() if _ips.__len__() >= 1 else ''
+                        physical_server = getattr(inst, OS_EXT_PHYSICAL_SERVER_ATTR)
+                        for mapper in result_mappers_list:
+                            value = mapper.values()[0]
+                            quantity = value.get('quantity', 0)
+                            instances = value.get('instance',[])
+                            for instance in instances:
+                                if instance.get(
+                                        'os_inst_id') == uop_os_inst_id['os_inst_id']:
+                                    instance['ip'] = _ip
+                                    instance['physical_server'] = physical_server + '@'
+                                    instance['os_vol_id'] = os_vol_id
+                                    Log.logger.debug(
+                                        "Query Task ID " +
+                                        self.task_id.__str__() +
+                                        " Instance Info: " +
+                                        mapper.__str__())
+                                    res_instance_push_callback(self.task_id, self.req_dict, quantity, instance, {},
+                                                               {},self.set_flag)
+                        result_inst_id_list.append(uop_os_inst_id)
+                    else:
+                        self.error_msg = err_msg
+                        is_rollback = True
                 if inst.status == 'ERROR':
                     # 置回滚标志位
+                    err_msg = inst.to_dict().__str__()
                     Log.logger.debug(
                         "Query Task ID " +
                         self.task_id.__str__() +
                         " ERROR Instance Info: " +
-                        inst.to_dict().__str__())
-                    self.error_msg = inst.to_dict().__str__()
+                        err_msg)
+                    self.error_msg = err_msg
                     is_rollback = True
 
         if result_inst_id_list.__len__() == uop_os_inst_id_list.__len__():
@@ -813,13 +844,14 @@ class ResourceProviderTransitions2(object):
     # 向openstack定时查询volume的状态
     def _query_volume_set_status(
             self,
-            uop_os_inst_id_list=None,
+            uop_os_inst_vol_id_list=None,
             result_inst_vol_id_list=None,
-            result_mappers_list=None):
+            result_mappers_list=None,
+            ):
         is_finish = False
         is_rollback = False
         uop_os_inst_id_wait_query = self._uop_os_list_sub(
-            uop_os_inst_id_list, result_inst_vol_id_list)
+            uop_os_inst_vol_id_list, result_inst_vol_id_list)
         cinder_client = OpenStack.cinder_client
         for uop_os_inst_id in uop_os_inst_id_wait_query:
             os_inst_id = uop_os_inst_id['os_inst_id']
@@ -857,7 +889,7 @@ class ResourceProviderTransitions2(object):
                                         mapper.__str__())
                     result_inst_vol_id_list.append(uop_os_inst_id)
                 if vol_status == "error":
-                    self.error_msg = "create volume failed,volume status is error!!"
+                    self.error_msg = "create volume failed,volume status is error!! {}".format(vol.to_dict().__str__())
                     Log.logger.debug(
                         "Query Task ID " +
                         self.task_id.__str__() +
@@ -866,7 +898,7 @@ class ResourceProviderTransitions2(object):
                     is_rollback = True
             else:
                 result_inst_vol_id_list.append(uop_os_inst_id)
-        if result_inst_vol_id_list.__len__() == uop_os_inst_id_list.__len__():
+        if result_inst_vol_id_list.__len__() == uop_os_inst_vol_id_list.__len__():
             is_finish = True
         # 回滚全部资源和容器
         return is_finish, is_rollback
@@ -930,7 +962,8 @@ class ResourceProviderTransitions2(object):
         self._rollback_all(
             self.resource_id,
             self.uop_os_inst_id_list,
-            self.result_inst_id_list)
+            self.result_inst_id_list,
+            self.uop_os_inst_vol_id_list)
         self.fail()
 
     @transition_state_logger
@@ -957,7 +990,7 @@ class ResourceProviderTransitions2(object):
     @transition_state_logger
     def do_query(self):
         is_finished, self.is_need_rollback = self._query_resource_set_status(
-            self.uop_os_inst_id_list, self.result_inst_id_list, self.result_mappers_list)
+            self.uop_os_inst_id_list, self.result_inst_id_list, self.result_mappers_list,self.uop_os_inst_vol_id_list)
         if self.is_need_rollback:
             self.rollback()
         if is_finished is True:
@@ -966,7 +999,7 @@ class ResourceProviderTransitions2(object):
     @transition_state_logger
     def do_query_volume(self):
         is_finished, self.is_need_rollback = self._query_volume_set_status(
-            self.uop_os_inst_id_list, self.result_inst_vol_id_list, self.result_mappers_list)
+            self.uop_os_inst_vol_id_list, self.result_inst_vol_id_list, self.result_mappers_list)
         if self.is_need_rollback:
             self.rollback()
         if is_finished is True:
@@ -985,15 +1018,20 @@ class ResourceProviderTransitions2(object):
         host_env = app_cluster.get("host_env")
         instance = app_cluster.get('instance')
         if host_env == "kvm":
-            namedmanager_url=NAMEDMANAGER_URL.get(self.env)
-            dns_ip = re.findall(r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b", namedmanager_url)[0]
+            dns_ip_list = []
+            Log.logger.debug("Namedmanager url list is {}".format(self.named_url_list))
+            for namedmanager_url in self.named_url_list:
+                dns_ip = re.findall(r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b", namedmanager_url)[0]
+                dns_ip_list.append(dns_ip)
+            dns_ip_list = ','.join(list(set(dns_ip_list)))
+            Log.logger.debug("Namedmanager ip list is {}".format(dns_ip_list))
             for _instance in instance:
                 ip = _instance.get('ip')
                 scp_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m" \
                           " copy -a 'src={dir}/write_host_info.py dest=/tmp/ mode=777'".format(ip=ip, dir=self.dir)
                 exec_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa " \
-                           "-m shell -a 'python /tmp/write_host_info.py {dns_ip}'".format(ip=ip, dir=self.dir,dns_ip=dns_ip)
-                exec_flag, err_msg = exec_cmd_ten_times(ip, scp_cmd, 6)
+                           "-m shell -a 'python /tmp/write_host_info.py {dns_ip_list}'".format(ip=ip, dir=self.dir,dns_ip_list=dns_ip_list)
+                exec_flag, err_msg = exec_cmd_ten_times(ip, scp_cmd, 20)
                 if exec_flag:
                     exec_flag, err_msg = exec_cmd_ten_times(ip, exec_cmd, 6)
                     if not exec_flag:
@@ -1070,7 +1108,7 @@ class ResourceProviderTransitions2(object):
                 jsq += 1
                 Log.logger.debug('check numbers: %s' % str(jsq))
                 if jsq == 30:
-                    Log.logger.debug('检查10次退出')
+                    Log.logger.debug('检查30次退出')
 
             p = subprocess.Popen(
                 cmd,
@@ -1308,14 +1346,15 @@ class ResourceProviderTransitions2(object):
                 map = {"ip_address": vip}
                 map_list.append(map)
             response=neutron_client.update_port(port_id,{'port': {'allowed_address_pairs': map_list}})
+            Log.logger.debug("Mount vip end {},{}".format(response,map_list))
             #执行arping命令
             for vip in vip_list:
                 scp_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa -m" \
                       " copy -a 'src={dir}/arping.py dest=/tmp/ mode=777'".format(ip=ip, dir=self.dir)
                 exec_cmd = "ansible {ip} --private-key={dir}/mongo_script/old_id_rsa " \
                        "-m shell -a 'python /tmp/arping.py {vip}'".format(ip=ip, dir=self.dir,vip=vip)
-                exec_cmd_ten_times(ip, scp_cmd, 20)
-                exec_cmd_ten_times(ip, exec_cmd, 20)
+                exec_cmd_ten_times(ip, scp_cmd, 12)
+                exec_cmd_ten_times(ip, exec_cmd, 12)
         except Exception as e:
             err_msg = "Created database cluster error {e}".format(e=str(e))
         return  err_msg
@@ -1482,68 +1521,6 @@ def do_transit_repo_items(
     property_mappers_list = transit_repo_items(
         property_json_mapper, request_items)
     return property_mappers_list
-
-
-# def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_info,set_flag):
-#     """
-#     crp 将预留资源时的状态和信息回调给uop
-#     :param task_id:
-#     :param req_dict:
-#     :param quantity:
-#     :param instance_info:
-#     :param db_push_info:
-#     :param set_flag:
-#     :return:
-#     """
-#     try:
-#         resource_id = req_dict["resource_id"]
-#         if instance_info:
-#             ip=instance_info.get('ip')
-#             instance_type=instance_info.get('instance_type')
-#             instance_name=instance_info.get('instance_name')
-#             os_inst_id=instance_info.get('os_inst_id')
-#             physical_server=instance_info.get('physical_server')
-#             instance={
-#                 "resource_id":resource_id,
-#                 "ip": ip,
-#                 "instance_name": instance_name,
-#                 "instance_type": instance_type,
-#                 "os_inst_id": os_inst_id,
-#                 "physical_server": physical_server,
-#                 "quantity":quantity,
-#                 "status":"active",
-#                 "from":'resource',
-#                 }
-#         else:
-#             instance=None
-#         if db_push_info:
-#             cluster_name=db_push_info.get('cluster_name')
-#             cluster_type=db_push_info.get('cluster_type')
-#             db_push={
-#                 "resource_id":resource_id,
-#                 "cluster_name":cluster_name,
-#                 "cluster_type":"push_%s" %cluster_type,
-#                 "status":"ok",
-#                 "from":'resource',
-#                 }
-#         else:
-#             db_push=None
-#         data={
-#             "instance":instance,
-#             "db_push":db_push,
-#             "set_flag":set_flag,
-#         }
-#         data_str=json.dumps(data)
-#         headers = {
-#         'Content-Type': 'application/json'
-#         }
-#         res = requests.post(RES_STATUS_CALLBACK,data=data_str,headers=headers)
-#         Log.logger.debug(res)
-#     except Exception as e:
-#         err_msg=e.args
-#         Log.logger.error("res_instance_push_callback error %s" % err_msg)
-
-
 
 
 

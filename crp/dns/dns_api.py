@@ -265,7 +265,7 @@ class NamedManagerApi(object):
     def __init__(self,env):
         self.env=env
 
-    def named_zone_query(self,zone_name):
+    def named_zone_query(self,zone_name,named_url):
         """
         data格式：
         {"method":"getdomains"}
@@ -274,7 +274,7 @@ class NamedManagerApi(object):
         """
         try:
             data = {"method":"getdomains"}
-            url=NAMEDMANAGER_URL.get(self.env)
+            url = named_url if named_url else NAMEDMANAGER_URL.get(self.env)
             rep = requests.post(url, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS,timeout=120)
             ret_json = json.loads(rep.text)
             result = ret_json.get('zone')
@@ -289,7 +289,7 @@ class NamedManagerApi(object):
             raise ServerError(str(e))
         return res
 
-    def named_domain_query(self,domain_name):
+    def named_domain_query(self,domain_name,named_url):
         """
         data 格式：
         {"method":"getDns","domain":"syswin.com","recordname":"shulitest"}
@@ -301,7 +301,7 @@ class NamedManagerApi(object):
             domain = exchange_result.get('zone')
             record_name = exchange_result.get('record_name')
             data = {"method":"getDns","domain":domain,"recordname":record_name}
-            url = NAMEDMANAGER_URL.get(self.env)
+            url = named_url if named_url else NAMEDMANAGER_URL.get(self.env)
             rep = requests.post(url, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS,timeout=120)
             ret_json = json.loads(rep.text)
             if ret_json.get('result') == 'success':
@@ -312,7 +312,7 @@ class NamedManagerApi(object):
             raise ServerError(str(e))
         return res
 
-    def named_domain_add(self,domain_name,domain_ip):
+    def named_domain_add(self,domain_name,domain_ip,named_url):
         """
         data格式：
         {"method":"adddns","domain":"syswin.com","recordname":"testgg","hostip":"172.28.31.33"}
@@ -325,7 +325,7 @@ class NamedManagerApi(object):
             domain = exchange_result.get('zone')
             record_name = exchange_result.get('record_name')
             data = {"method":"adddns","domain":domain,"recordname":record_name,"hostip":domain_ip}
-            url = NAMEDMANAGER_URL.get(self.env)
+            url = named_url if named_url else NAMEDMANAGER_URL.get(self.env)
             rep = requests.post(url, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS,timeout=120)
             ret_json = json.loads(rep.text)
             if ret_json.get('result') == 'success':
@@ -336,14 +336,14 @@ class NamedManagerApi(object):
             raise ServerError(str(e))
         return res
 
-    def named_domain_delete(self,domain_name):
+    def named_domain_delete(self,domain_name,named_url):
         res = None
         try:
             exchange_result = exchange_domain_to_zone_and_name(domain_name)
             domain = exchange_result.get('zone')
             record_name = exchange_result.get('record_name')
             data = {"method":"delDns","domain":domain,"recordname":record_name}
-            url = NAMEDMANAGER_URL.get(self.env)
+            url =  named_url if named_url else NAMEDMANAGER_URL.get(self.env)
             rep = requests.post(url, data=json.dumps(data), headers=NAMEDMANAGER_HEADERS,timeout=120)
             ret_json = json.loads(rep.text)
             if ret_json.get('result') == 'success':
@@ -352,7 +352,7 @@ class NamedManagerApi(object):
             raise ServerError(str(e))
         return res
 
-    def named_dns_domain_add(self, domain_name, domain_ip):
+    def named_dns_domain_add(self, domain_name, domain_ip,named_url):
         """
         添加的时候做了域是否存在的判断；
         :param domain_name:
@@ -363,12 +363,12 @@ class NamedManagerApi(object):
         try:
             exchange_result = exchange_domain_to_zone_and_name(domain_name)
             domain = exchange_result.get('zone')
-            zone_result = self.named_zone_query(zone_name=domain)
+            zone_result = self.named_zone_query(zone_name=domain,named_url=named_url)
             if len(zone_result) != 0:
                 #domainip = self.named_domain_query(domain_name)
                 #判断域名是否已经添加，注册了就不再添加
                 #if not domainip:
-                self.named_domain_add(domain_name=domain_name,domain_ip=domain_ip)
+                self.named_domain_add(domain_name=domain_name,domain_ip=domain_ip,named_url=named_url)
                 res = 'name: {domain_name}, ip: {domain_ip}'.format(domain_name=domain_name,domain_ip=domain_ip)
             else:
                 raise ServerError('The zone [{zone_name}] does not exist'.format(zone_name=domain))

@@ -54,9 +54,11 @@ class AppDeploy(Resource):
 
     def __init__(self):
         self.all_ips=[]
+        self.updated_replicas = 0
+        self.check_times = 0
 
     def do_app_push(self, app):
-        # TODO: do app push
+
         def do_push_nginx_config(kwargs):
             """
             need the nip domain ip
@@ -68,30 +70,60 @@ class AppDeploy(Resource):
             #exec_flag, err_msg = None,None
             selfdir = os.path.dirname(os.path.abspath(__file__))
             nip = kwargs.get('nip')
+            domains = kwargs.get('domain')
             certificate = kwargs.get('certificate', 0)
-            template = "template_https" if certificate else "template_http"
-            scp_update_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/update.py dest=/tmp/ mode=777'".format(
-                    nip=nip, dir=selfdir)
+            cloud = kwargs.get('cloud')
+            resource_type = kwargs.get('resource_type')
+            project_name = kwargs.get('project_name')
+            domain_paths = kwargs.get('domain_path')
+            domain_list = domains.strip().split(',')
+            domain_path_list = domain_paths.strip().split(',')
+            domain_info_list = zip(domain_list, domain_path_list)
+            if cloud == "2" and resource_type =="app":
+                template = "template_https" if certificate else "template_http"
+                config_scripts = "update.py"
+            else:
+                template = "other_template_https" if certificate else "other_template_http"
+                config_scripts = "other_config.py"
+            scp_update_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/{config_scripts} dest=/tmp/ mode=777'".format(
+                    nip=nip, dir=selfdir,config_scripts=config_scripts)
             scp_template_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/{template} dest=/tmp/ mode=777'".format(
                     nip=nip, dir=selfdir, template=template)
-            exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/update.py -certificate={certificate} -domain={domain} -ip={ip} -port={port}"'.format(
-                    nip=kwargs.get('nip'),
-                    dir=selfdir,
-                    certificate=certificate,
-                    domain=kwargs.get('domain'),
-                    ip=kwargs.get('ip'),
-                    port=kwargs.get('port'))
-            exec_flag, err_msg=exec_cmd_ten_times(nip, scp_update_cmd, 1)
+            exec_flag, err_msg = exec_cmd_ten_times(nip, scp_update_cmd, 1)
             if not exec_flag:
                 return exec_flag, err_msg
-            exec_flag, err_msg=exec_cmd_ten_times(nip, scp_template_cmd, 1)
+            exec_flag, err_msg = exec_cmd_ten_times(nip, scp_template_cmd, 1)
             if not exec_flag:
                 return exec_flag, err_msg
             Log.logger.debug('------>上传配置文件完成')
-            exec_flag, err_msg=exec_cmd_ten_times(nip, exec_shell_cmd, 1)
-            if not exec_flag:
-                return exec_flag, err_msg
+            for domain_info in domain_info_list:
+                domain = domain_info[0]
+                domain_path = domain_info[1]
+                if cloud == "2" and resource_type =="app":
+                    exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/{config_scripts} -certificate={certificate} -domain={domain} -ip={ip} -port={port}"'.format(
+                            nip=kwargs.get('nip'),
+                            dir=selfdir,
+                            certificate=certificate,
+                            domain=domain,
+                            ip=kwargs.get('ip'),
+                            port=kwargs.get('port'),
+                            config_scripts =config_scripts,)
+                else:
+                    exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/{config_scripts} -c -certificate={certificate} -project={project} -domain={domain} -domain_path={domain_path} -ip={ip} -port={port}"'.format(
+                        nip=kwargs.get('nip'),
+                        dir=selfdir,
+                        certificate=certificate,
+                        domain=domain,
+                        ip=kwargs.get('ip'),
+                        port=kwargs.get('port'),
+                        config_scripts=config_scripts,
+                        domain_path = domain_path,
+                        project = project_name,
+                    )
 
+                exec_flag, err_msg=exec_cmd_ten_times(nip, exec_shell_cmd, 1)
+                if not exec_flag:
+                    return exec_flag, err_msg
             return True,None
 
 
@@ -100,6 +132,11 @@ class AppDeploy(Resource):
         domain_ip = app.get('domain_ip', "")
         domain = app.get('domain', '')
         certificate = app.get('certificate', "")
+        project_name = app.get("project_name","")
+        cloud = app.get("cloud","")
+        resource_type = app.get("resource_type","")
+        domain_path = app.get("domain_path","")
+
         for ip in ips:
             ip_str = ip + ','
             real_ip += ip_str
@@ -112,7 +149,11 @@ class AppDeploy(Resource):
                                 'domain': domain,
                                 'ip': real_ip[:-1],
                                 'port': ports.strip(),
-                                'certificate': certificate})
+                                'certificate': certificate,
+                                'project_name':project_name,
+                                'cloud':cloud,
+                                'resource_type': resource_type,
+                                'domain_path':domain_path})
         except Exception as e:
             err_msg = "do nginx push error {e}".format(e=str(e))
             Log.logger.error("error:{}".format(e))
@@ -129,24 +170,55 @@ class AppDeploy(Resource):
         domain_list = kwargs.get("domain_list")
         disconf_list = kwargs.get("disconf_list")
         environment = kwargs.get("environment")
+        Log.logger.info("Domain_list is {}".format(domain_list))
         for dl in domain_list:
             nip = dl.get("domain_ip")
-            domain = dl.get('domain')
-            if not nip or not domain:
+            domains = dl.get('domain',"")
+            domain_paths = dl.get('domain_path',"")
+            cloud = dl.get("cloud")
+            project_name = dl.get("project_name")
+            resource_type = dl.get("resource_type")
+            named_url = dl.get('named_url')
+            domain_list = domains.strip().split(',')
+            domain_path_list = domain_paths.strip().split(',')
+            domain_info_list = zip(domain_list, domain_path_list)
+            if not nip or not domains:
                 Log.logger.info("nginx ip or domain is null, do nothing")
                 continue
-            scp_delete_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/delete.py dest=/tmp/ mode=777'".format(
-                    nip=nip, dir=selfdir)
-            exec_shell_cmd='ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a ''"/tmp/delete.py {domain}"'.format(
-                    nip=nip,
-                    dir=selfdir,
-                    domain=domain)
-            exec_cmd_ten_times(nip,scp_delete_cmd,1)
+            if cloud == "2" and resource_type == "app":
+                config_scripts = "delete.py"
+            else:
+                config_scripts = "other_config.py"
+            scp_delete_cmd="ansible {nip} --private-key={dir}/id_rsa_98 -m copy -a 'src={dir}/{config_scripts} dest=/tmp/ mode=777'".format(
+                    nip=nip, dir=selfdir,config_scripts=config_scripts)
+            exec_cmd_ten_times(nip, scp_delete_cmd, 1)
             Log.logger.debug('------>上传删除脚本完成')
-            exec_cmd_ten_times(nip, exec_shell_cmd, 1)
+            for domain_info in domain_info_list:
+                domain = domain_info[0]
+                domain_path = domain_info[1]
+                if cloud == "2" and resource_type == "app":
+                    exec_shell_cmd='ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a ''"/tmp/{config_scripts} {domain}"'.format(
+                            nip=nip,
+                            dir=selfdir,
+                            domain=domain,
+                            config_scripts=config_scripts)
+                else:
+                    exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/{config_scripts} -d -certificate={certificate} -project={project} -domain={domain} -domain_path={domain_path} -ip={ip} -port={port}"'.format(
+                        nip=kwargs.get('nip'),
+                        dir=selfdir,
+                        certificate="",
+                        domain=domain,
+                        ip=kwargs.get('ip'),
+                        port=kwargs.get('port'),
+                        config_scripts=config_scripts,
+                        domain_path=domain_path,
+                        project=project_name,
+                    )
+
+                exec_cmd_ten_times(nip, exec_shell_cmd, 1)
             #开始删除dns
             dns_api = NamedManagerApi(environment)
-            res = dns_api.named_domain_delete(domain)
+            res = dns_api.named_domain_delete(domain,named_url)
         Log.logger.debug("--------->stop delete nginx profiles: success")
 
     def delete(self):
@@ -154,8 +226,8 @@ class AppDeploy(Resource):
         msg = "ok"
         try:
             request_data = json.loads(request.data)
-            disconf_list = request_data.get('disconf_list')
-            domain_list = request_data.get('domain_list')
+            disconf_list = request_data.get('disconf_list',[])
+            domain_list = request_data.get('domain_list',[])
             environment = request_data.get('environment')
             self.run_delete_cmd(domain_list=domain_list, disconf_list=disconf_list,environment=environment)
         except Exception as msg:
@@ -271,7 +343,10 @@ class AppDeploy(Resource):
             resource_id = args.resource_id
             self.resource_id = resource_id
             Log.logger.debug("Thread exec start")
-            t = threading.Thread(target=self.deploy_anything, args=((mongodb, mysql,docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud,resource_name,deploy_name,project_name,namespace)))
+            t = threading.Thread(target=self.deploy_anything, args=((mongodb, mysql, docker, dns, deploy_id, appinfo,
+                                                                     disconf_server_info, deploy_type, environment,
+                                                                     cloud, resource_name, deploy_name, project_name,
+                                                                     namespace)))
             t.start()
             Log.logger.debug("Thread exec done")
 
@@ -289,7 +364,8 @@ class AppDeploy(Resource):
         }
         return res, code
 
-    def deploy_anything(self,mongodb, mysql,docker, dns, deploy_id, appinfo, disconf_server_info,deploy_type,environment,cloud,resource_name,deploy_name,project_name,namespace):
+    def deploy_anything(self, mongodb, mysql, docker, dns, deploy_id, appinfo, disconf_server_info, deploy_type,
+                            environment, cloud, resource_name, deploy_name, project_name, namespace):
         try:
             lock = threading.RLock()
             lock.acquire()
@@ -374,10 +450,11 @@ class AppDeploy(Resource):
             for item in dns:
                 domain_name = item.get('domain', '')
                 domain_ip = item.get('domain_ip', '')
+                named_url = item.get('named_url','')
                 Log.logger.debug('domain_name:%s,domain_ip:%s' % (domain_name, domain_ip))
                 if len(domain_name.strip()) != 0 and len(domain_ip.strip()) != 0:
                     dns_api = NamedManagerApi(environment)
-                    err_msg,res = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=domain_ip)
+                    err_msg,res = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=domain_ip,named_url=named_url)
                     if err_msg:
                         _dep_callback(deploy_id, "ip", "dns", err_msg, "active", False, "dns", True, 'deploy',
                                       unique_flag, cloud, deploy_name)
@@ -791,24 +868,48 @@ class AppDeploy(Resource):
         try:
             break_flag = False
             K8sDeployment = K8sDeploymentApi()
-            for i in range(10):
-                for j in range(10):
-                    time.sleep(3)
-                    deployment_status = K8sDeployment.get_deployment_status(namespace, deployment_name)
-                    if deployment_status == "available":
-                        break_flag = True
-                        _dep_callback(deploy_id, '127.0.0.1', "docker", "None", "None", True, cluster_name, end_flag,
-                                      deploy_type,
-                                      unique_flag, cloud,deploy_name)
-                        break
+            for i in range(500):
+                time.sleep(3)
+                deployment_status = K8sDeployment.get_deployment_status(namespace, deployment_name)
+                if deployment_status == "available":
+                    _dep_callback(deploy_id, '127.0.0.1', "docker", "None", "None", True, cluster_name, end_flag,
+                                           deploy_type,
+                                           unique_flag, cloud,deploy_name)
+                    break
                 else:
-                    s_flag, err_msg = K8sDeployment.get_deployment_pod_status(namespace, deployment_name)
-                    if s_flag is not True and i >= 8:
-                        _dep_callback(deploy_id, '127.0.0.1', "docker", err_msg, "None", False,
-                                      cluster_name, end_flag, deploy_type,
-                                      unique_flag, cloud,deploy_name)
-                        break
-                if break_flag:break
+                    msg,code = K8sDeployment.get_deployment(namespace, deployment_name)
+                    if code == 200:
+                        unavailable_replicas = msg.status.unavailable_replicas
+                        updated_replicas = msg.status.updated_replicas
+                        if updated_replicas == self.updated_replicas and unavailable_replicas is not None:
+                            self.check_times = self.check_times + 1
+                            if self.check_times > CHECK_TIMEOUT:
+                                s_flag, err_msg = K8sDeployment.get_deployment_pod_status(namespace, deployment_name)
+                                if s_flag is not True:
+                                    _dep_callback(deploy_id, '127.0.0.1', "docker", err_msg, "None", False,
+                                                           cluster_name, end_flag, deploy_type,
+                                                           unique_flag, cloud,deploy_name)
+                                    break
+                        else:
+                            self.updated_replicas = updated_replicas
+                            self.check_times = 0
+                # for j in range(10):
+                #     time.sleep(3)
+                #     deployment_status = K8sDeployment.get_deployment_status(namespace, deployment_name)
+                #     if deployment_status == "available":
+                #         break_flag = True
+                #         _dep_callback(deploy_id, '127.0.0.1', "docker", "None", "None", True, cluster_name, end_flag,
+                #                       deploy_type,
+                #                       unique_flag, cloud,deploy_name)
+                #         break
+                # else:
+                #     s_flag, err_msg = K8sDeployment.get_deployment_pod_status(namespace, deployment_name)
+                #     if s_flag is not True and i >= n - 2:
+                #         _dep_callback(deploy_id, '127.0.0.1', "docker", err_msg, "None", False,
+                #                       cluster_name, end_flag, deploy_type,
+                #                       unique_flag, cloud,deploy_name)
+                #         break
+                # if break_flag:break
             else:
                 err_msg = "deploy deployment failed"
                 _dep_callback(deploy_id, '127.0.0.1', "docker", err_msg, "None", False,
@@ -1058,7 +1159,7 @@ class AppDeploy(Resource):
 
     def _exec_ansible_cmd(self, cmd):
         (status, output) = commands.getstatusoutput(cmd)
-        if output.lower().find("success") > 0:
+        if output.lower().find("success") > 0 and output.lower().find("error") == -1:
             Log.logger.debug("ansible exec succeed,command: " + str(cmd) + " output: " + output)
             err_msg = None
             return True, err_msg
