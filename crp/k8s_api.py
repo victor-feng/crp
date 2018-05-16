@@ -581,7 +581,6 @@ class K8sDeploymentApi(object):
                         if cond.status == 'False':
                             err_msg = cond.message
                             s_flag = False
-                            return s_flag, err_msg
                     phase = res.status.phase
                     container_statuses=res.status.container_statuses
                     if container_statuses:
@@ -589,9 +588,10 @@ class K8sDeploymentApi(object):
                         if phase is not None and waiting is not None:
                             message = waiting.message
                             if message is not None:
-                                err_msg = waiting.message
+                                err_msg = str(err_msg) + " , " + waiting.message
                                 s_flag = False
-                                return s_flag, err_msg
+                if not s_flag:
+                    return s_flag, err_msg
         except Exception as e:
             Log.logger.error("get deployment's pod status error: %s" ,str(e))
         return s_flag, err_msg
