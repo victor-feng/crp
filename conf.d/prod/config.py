@@ -51,6 +51,24 @@ class ProdConfig(BaseConfig):
     HARBOR_USERNAME = "crm_test1"
     HARBOR_PASSWORD = "syswin#"
 
+    ADD_LOG = {
+        "WAR_DICT":
+            [
+                "war_to_image_running",
+                "war_to_image_success"
+            ],
+        "BUILD_IMAGE":
+            [
+                "build_image_running",
+                "build_image_success"
+            ],
+        "PUSH_IMAGE":
+            [
+                "push_image_running",
+                "push_image_success"
+            ]
+
+    }
 
     cluster_type_image_port_mappers = {
         'mysql': {
