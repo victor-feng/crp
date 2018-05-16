@@ -27,4 +27,5 @@ ansible==2.3.0.0
 docker==2.3.0
 
 kubernetes==4.0.0
-oslo_utils==3.36.2
+oslo-utils==3.36.2
+oslo-i18n==3.20.0
