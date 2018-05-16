@@ -2,6 +2,7 @@
 import os
 import json
 import time
+import threading
 import subprocess
 import requests
 import re
@@ -11,6 +12,7 @@ from crp.taskmgr import *
 from mysql_volume import create_volume,instance_attach_volume
 from crp.log import Log
 from crp.openstack import OpenStack
+from crp.res_set.util import async
 from crp.utils.docker_tools import image_transit
 from config import configs, APP_ENV
 from crp.utils.aio import exec_cmd_ten_times,exec_cmd_one_times
@@ -1500,6 +1502,7 @@ class MongodbCluster(object):
                 with open('/etc/ansible/hosts', 'a+') as f:
                     f.write('%s\n' % ip)
 
+    @async
     def telnet_ack(self):
         start_time = time.time()
         while not self.flag:
@@ -1522,7 +1525,7 @@ class MongodbCluster(object):
                     self.mongodb_cluster_push(ip)
                     self.ip.remove(ip)
             end_time = time.time()
-            if start_time - end_time > 180:
+            if end_time - start_time > 180:
                 break
             if len(self.ip) == 0:
                 self.flag = True
