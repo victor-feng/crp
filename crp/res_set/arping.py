@@ -2,20 +2,22 @@
 #coding:utf-8
 
 
-import os,sys
+import os,sys,time
 
 
 
 ip = sys.argv[1]
-cmd = "route -n"
+cmd = "route -n  | grep -w UG | awk '{print $2}'"
 gateway = '.'.join(ip.split('.')[:3]) + '.1'
 net = "eth0"
-result=os.popen(cmd).read().strip().split('\n')
-for res in result:
-    r=res.split()
-    if "UG" in r:
-        gateway = r[1]
-        net = r[-1]
-arping_cmd = "arping -c 4 -I {net} -s {ip} {gateway}".format(net=net,ip=ip,gateway=gateway)
-print arping_cmd
-os.system(arping_cmd)
+gateway=os.popen(cmd).read().strip()
+for i in range(10):
+    time(6)
+    check_cmd = "ip addr | grep {ip} | wc -l ".format(ip=ip)
+    res = os.popen(cmd).read().strip()
+    if int(res) > 0:
+        arping_cmd = "arping -c 4 -I {net} -s {ip} {gateway}".format(net=net,ip=ip,gateway=gateway)
+        print arping_cmd
+        os.system(arping_cmd)
+else:
+    print "execute arping failed"
