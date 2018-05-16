@@ -1514,7 +1514,6 @@ class MongodbCluster(object):
                 with open('/etc/ansible/hosts', 'a+') as f:
                     f.write('%s\n' % ip)
 
-    @async
     def telnet_ack(self):
         start_time = time.time()
         while not self.flag:
