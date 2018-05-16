@@ -19,5 +19,6 @@ for i in range(10):
         arping_cmd = "arping -c 4 -I {net} -s {ip} {gateway}".format(net=net,ip=ip,gateway=gateway)
         print arping_cmd
         os.system(arping_cmd)
+        break
 else:
     print "execute arping failed"
