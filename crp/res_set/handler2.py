@@ -1065,14 +1065,6 @@ class ResourceProviderTransitions2(object):
 
             vid1, vip1 = self.create_vip_port(mysql_ip_info[0][0],network_id)
             vid2, vip2 = self.create_vip_port(mysql_ip_info[0][0],network_id)
-            for _instance in instance:
-                dbtype = _instance.get("dbtype")
-                if dbtype in ["master","slave1"]:
-                    self.monut_vip(network_id,_instance['ip'],[vip2])
-                if  dbtype == "slave1":
-                    self.monut_vip(network_id, _instance['ip'], [vip2,vip1])
-                if dbtype in ["slave2","lvs1","lvs2"]:
-                    self.monut_vip(network_id, _instance['ip'], [vip1])
             ip_info = mysql_ip_info + mycat_ip_info
             ip_info.append(('vip1', vip1))
             ip_info.append(('vip2', vip2))
@@ -1084,7 +1076,6 @@ class ResourceProviderTransitions2(object):
                 for host_name, ip in ip_info:
                     f.write(host_name + os.linesep)
                     f.write(ip + os.linesep)
-
             path = SCRIPTPATH + 'mysqlmha'
             cmd = '/bin/sh {0}/mlm.sh {0}'.format(path)
             strout = ''
@@ -1118,6 +1109,14 @@ class ResourceProviderTransitions2(object):
             for line in p.stdout.readlines():
                 strout += line + os.linesep
             Log.logger.debug('mysql cluster push result:%s' % strout)
+            for _instance in instance:
+                dbtype = _instance.get("dbtype")
+                if dbtype in ["master","slave1"]:
+                    self.monut_vip(network_id,_instance['ip'],[vip2])
+                if  dbtype == "slave1":
+                    self.monut_vip(network_id, _instance['ip'], [vip2,vip1])
+                if dbtype in ["slave2","lvs1","lvs2"]:
+                    self.monut_vip(network_id, _instance['ip'], [vip1])
             if volume_size >0:
                 for ip in mysql_ip_list:
                     self.mount_volume(ip,"mysql")
