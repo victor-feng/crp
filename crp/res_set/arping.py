@@ -12,7 +12,7 @@ gateway = '.'.join(ip.split('.')[:3]) + '.1'
 net = "eth0"
 gateway=os.popen(cmd).read().strip()
 for i in range(10):
-    time.sleep(6)
+    time.sleep(1)
     check_cmd = "ip addr | grep {ip} | wc -l ".format(ip=ip)
     res = os.popen(check_cmd).read().strip()
     if int(res) > 0:
