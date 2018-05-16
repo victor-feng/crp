@@ -204,12 +204,12 @@ class AppDeploy(Resource):
                             config_scripts=config_scripts)
                 else:
                     exec_shell_cmd = 'ansible {nip} --private-key={dir}/id_rsa_98 -m shell -a "/tmp/{config_scripts} -d -certificate={certificate} -project={project} -domain={domain} -domain_path={domain_path} -ip={ip} -port={port}"'.format(
-                        nip=kwargs.get('nip'),
+                        nip=nip,
                         dir=selfdir,
                         certificate="",
                         domain=domain,
-                        ip=kwargs.get('ip'),
-                        port=kwargs.get('port'),
+                        ip="",
+                        port="",
                         config_scripts=config_scripts,
                         domain_path=domain_path,
                         project=project_name,
