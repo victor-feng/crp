@@ -154,7 +154,7 @@ class ProdConfig(BaseConfig):
     #micro server health check path
     HEALTH_CHECK_PATH = "admin/health"
     #Cloud1.0 docker logs, at CRP node,ignore if use Cloud2.0
-    OS_DOCKER_LOGS = "/os_docker_logs"
+    OS_DOCKER_LOGS = "/data/os_docker_logs"
 
     # Define Request JSON Format
     items_sequence_list_config = [
@@ -212,6 +212,9 @@ class ProdConfig(BaseConfig):
             'image_id': 'image_id',
             'availability_zone': 'availability_zone',
             'flavor': 'flavor',
+            'flavor2': 'flavor2',
+            'volume_exp_size':'volume_exp_size',
+            "port":"port",
         }
     }
 
