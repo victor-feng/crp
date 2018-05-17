@@ -29,6 +29,7 @@ def exec_cmd_ten_times(ip,cmd,sleep):
     """
     exec_flag = True
     err_msg = None
+    stdout = None
     try:
         check_cmd="cat /etc/ansible/hosts | grep  -w '%s'" % ip
         res=os.popen(check_cmd).read().strip().split('\n')
