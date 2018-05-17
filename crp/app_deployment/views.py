@@ -70,12 +70,12 @@ class AppDeploy(Resource):
             #exec_flag, err_msg = None,None
             selfdir = os.path.dirname(os.path.abspath(__file__))
             nip = kwargs.get('nip')
-            domains = kwargs.get('domain')
+            domains = kwargs.get('domain','')
             certificate = kwargs.get('certificate', 0)
             cloud = kwargs.get('cloud')
             resource_type = kwargs.get('resource_type')
             project_name = kwargs.get('project_name')
-            domain_paths = kwargs.get('domain_path')
+            domain_paths = kwargs.get('domain_path','')
             domain_list = domains.strip().split(',')
             domain_path_list = domain_paths.strip().split(',')
             domain_info_list = zip(domain_list, domain_path_list)
@@ -456,22 +456,24 @@ class AppDeploy(Resource):
                 _dep_detail_callback(deploy_id, "deploy_nginx", "res")
             #配置dns
             for item in dns:
-                domain_name = item.get('domain', '')
+                domains = item.get('domain', '')
                 domain_ip = item.get('domain_ip', '')
                 named_url = item.get('named_url','')
                 Log.logger.debug('domain_name:%s,domain_ip:%s' % (domain_name, domain_ip))
-                if len(domain_name.strip()) != 0 and len(domain_ip.strip()) != 0:
-                    dns_api = NamedManagerApi(environment)
-                    err_msg,res = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=domain_ip,named_url=named_url)
-                    if err_msg:
-                        _dep_callback(deploy_id, "ip", "dns", err_msg, "active", False, "dns", True, 'deploy',
-                                      unique_flag, cloud, deploy_name)
-                        code = 400
-                        return code, err_msg
-                else:
-                    Log.logger.debug(
-                        'domain_name:{domain_name},domain_ip:{domain_ip} is null'.format(domain_name=domain_name,
-                                                                                         domain_ip=domain_ip))
+                domain_list = domains.strip().split(',') if domains else []
+                for domain_name in domain_list:
+                    if len(domain_name.strip()) != 0 and len(domain_ip.strip()) != 0:
+                        dns_api = NamedManagerApi(environment)
+                        err_msg,res = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=domain_ip,named_url=named_url)
+                        if err_msg:
+                            _dep_callback(deploy_id, "ip", "dns", err_msg, "active", False, "dns", True, 'deploy',
+                                          unique_flag, cloud, deploy_name)
+                            code = 400
+                            return code, err_msg
+                    else:
+                        Log.logger.debug(
+                            'domain_name:{domain_name},domain_ip:{domain_ip} is null'.format(domain_name=domain_name,
+                                                                                             domain_ip=domain_ip))
             if dns:
                 _dep_detail_callback(deploy_id, "deploy_dns", "res")
             Log.logger.debug("All Docker is " + str(docker))
