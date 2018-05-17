@@ -1275,8 +1275,8 @@ class ResourceProviderTransitions2(object):
                 " copy -a 'src={dir}/volume.py dest=/tmp/ mode=777'".format(ip=ip,dir=self.dir)
         exec_cmd="ansible {ip} --private-key={dir}/mongo_script/old_id_rsa " \
                  "-m shell -a 'python /tmp/volume.py {cluster_type}'".format(ip=ip, dir=self.dir,cluster_type=cluster_type)
-        exec_cmd_ten_times(ip, scp_cmd,6)
-        exec_cmd_ten_times(ip, exec_cmd,6)
+        exec_cmd_ten_times(ip, scp_cmd,1)
+        exec_cmd_ten_times(ip, exec_cmd,1)
 
     def _excute_mongo_cmd(self, ip):
         sh_path = os.path.join(UPLOAD_FOLDER, 'mongodb', 'mongodb_single.sh')
