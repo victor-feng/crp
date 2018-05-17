@@ -395,13 +395,15 @@ class AppDeploy(Resource):
                 ingress_name = resource_name + "-" + "ingress"
                 if ingress_flag == "update":
                     #更新ingress域名
-                    ingress = K8sIngress.update_ingress_object(ingress_name,namespace,service_name,service_port,domain,domain_path)
-                    ingress_err_msg, ingress_err_code=K8sIngress.update_ingress(ingress,ingress_name, namespace)
-                    if ingress_err_msg:
-                        _dep_callback(deploy_id, '127.0.0.1', "docker", ingress_err_msg, "None", False,
-                                      "", True, deploy_type,
-                                      unique_flag, cloud, deploy_name,o_domain,o_port,"True")
-                        return
+                    ingress_ret, ingress_code = K8sIngress.get_ingress(ingress_name, namespace)
+                    if ingress_code == 200:
+                        ingress = K8sIngress.update_ingress_object(ingress_name,namespace,service_name,service_port,domain,domain_path)
+                        ingress_err_msg, ingress_err_code=K8sIngress.update_ingress(ingress,ingress_name, namespace)
+                        if ingress_err_msg:
+                            _dep_callback(deploy_id, '127.0.0.1', "docker", ingress_err_msg, "None", False,
+                                          "", True, deploy_type,
+                                          unique_flag, cloud, deploy_name,o_domain,o_port,"True")
+                            return
                 elif ingress_flag == "create":
                     service_ret, service_code = K8sService.get_service(service_name, namespace)
                     if service_code != 200:
@@ -419,27 +421,30 @@ class AppDeploy(Resource):
                                               "", True, deploy_type,
                                               unique_flag, cloud, deploy_name,o_domain,o_port,"True")
                                 return
-                        else:
+                        elif service_err_msg:
                             _dep_callback(deploy_id, '127.0.0.1', "docker", service_err_msg, "None", False,
                                           "", True, deploy_type,
                                           unique_flag, cloud, deploy_name,o_domain,o_port,"True")
                             return
                 elif ingress_flag == "delete":
                     #删除ingress和service
-                    ingress_err_msg, ingress_err_code=K8sIngress.delete_ingress(ingress_name, namespace)
-                    if not ingress_err_msg:
-                        service_err_msg, service_err_code=K8sService.delete_service(service_name, namespace)
-                        if service_err_msg:
+                    ingress_ret, ingress_code = K8sIngress.get_ingress(ingress_name, namespace)
+                    if ingress_code == 200:
+                        ingress_err_msg, ingress_err_code=K8sIngress.delete_ingress(ingress_name, namespace)
+                        service_ret, service_code = K8sService.get_service(service_name, namespace)
+                        if not ingress_err_msg and service_code == 200:
+                            service_err_msg, service_err_code=K8sService.delete_service(service_name, namespace)
+                            if service_err_msg:
+                                _dep_callback(deploy_id, '127.0.0.1', "docker", ingress_err_msg, "None", False,
+                                              "", True, deploy_type,
+                                              unique_flag, cloud, deploy_name,o_domain,o_port,"True")
+                                return
+
+                        elif ingress_err_msg:
                             _dep_callback(deploy_id, '127.0.0.1', "docker", ingress_err_msg, "None", False,
                                           "", True, deploy_type,
                                           unique_flag, cloud, deploy_name,o_domain,o_port,"True")
                             return
-
-                    else:
-                        _dep_callback(deploy_id, '127.0.0.1', "docker", ingress_err_msg, "None", False,
-                                      "", True, deploy_type,
-                                      unique_flag, cloud, deploy_name,o_domain,o_port,"True")
-                        return
                 if domain:
                     err_msg=self.do_app_push(app)
                     if err_msg:
