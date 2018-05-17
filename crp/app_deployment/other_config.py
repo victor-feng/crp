@@ -65,7 +65,8 @@ def create(**kwargs):
             if d_path == '/':
                 content = re.sub('location / ', 'location /{d_path}/ '.format(d_path=domain_path), all_c)
             else:
-                content = re.sub(d_path, '/{d_path}/'.format(d_path=domain_path), all_c)
+                domain_path = '/' + domain_path + '/' if domain_path else '/'
+                content = re.sub(d_path, domain_path, all_c)
         else:
             tp = [i + "# --- divid ---" for i in tp]
             content.insert(1, tp[0])
@@ -219,6 +220,16 @@ def write_server_config(ip_port):
 if __name__ == '__main__':
     cmd = sys.argv[1]
     kwargs = dict([sys.argv[i].split("=") for i in range(2, len(sys.argv))])
+
+    # domain exists
+    domain = kwargs.get('-domain', '')
+    nginx_conf = os.path.join(BASE_PATH, domain)
+    if os.path.exists(nginx_conf):
+        with open(nginx_conf, 'rb') as f:
+            fp = f.read()
+        my_domain = re.findall(r'# --- divid ---', fp, flags=re.M)
+        assert my_domain, "Domain already used in {p}".format(p=BASE_PATH)
+
     if cmd == '-c':
         create(**kwargs)
     elif cmd == '-d':

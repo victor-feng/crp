@@ -1201,8 +1201,6 @@ class ResourceProviderTransitions2(object):
             instance[1]['dbtype'] = 'slave'
             redis['vip'] = vip
             redis['vid'] = vid
-            self.monut_vip(network_id, ip1, [vip])
-            self.monut_vip(network_id, ip2, [vip])
             cmd = 'python {0}script/redis_cluster.py {1} {2} {3}'.format(
                 SCRIPTPATH, ip1, ip2, vip)
             error_time = 0
@@ -1245,6 +1243,8 @@ class ResourceProviderTransitions2(object):
 
             instance[0]['dbtype'] = 'master'
             instance[1]['dbtype'] = 'slave'
+            self.monut_vip(network_id, ip1, [vip])
+            self.monut_vip(network_id, ip2, [vip])
             if error_time == 10:
                 Log.logger.debug('redis cluster 重试10次失败')
         else:
