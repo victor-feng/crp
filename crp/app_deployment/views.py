@@ -216,9 +216,9 @@ class AppDeploy(Resource):
                     )
 
                 exec_cmd_ten_times(nip, exec_shell_cmd, 1)
-            #开始删除dns
-            dns_api = NamedManagerApi(environment)
-            res = dns_api.named_domain_delete(domain,named_url)
+                #开始删除dns
+                dns_api = NamedManagerApi(environment)
+                res = dns_api.named_domain_delete(domain,named_url)
         Log.logger.debug("--------->stop delete nginx profiles: success")
 
     def delete(self):
