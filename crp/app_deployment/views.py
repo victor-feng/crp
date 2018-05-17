@@ -403,24 +403,27 @@ class AppDeploy(Resource):
                                       unique_flag, cloud, deploy_name,o_domain,o_port,"True")
                         return
                 elif ingress_flag == "create":
-                    #创建service和ingress
-                    service = K8sService.create_service_object(service_name, namespace, service_port)
-                    service_err_msg, service_err_code = K8sService.create_service(service, namespace)
-                    if service_err_msg is None:
-                        # 创建ingress
-                        ingress = K8sIngress.create_ingress_object(ingress_name, namespace, service_name,
-                                                                      service_port, domain, lb_methods,domain_path)
-                        ingress_err_msg, ingress_err_code = K8sIngress.create_ingress(ingress, namespace)
-                        if ingress_err_msg:
-                            _dep_callback(deploy_id, '127.0.0.1', "docker", ingress_err_msg, "None", False,
+                    service_ret, service_code = K8sService.get_service(service_name, namespace)
+                    if service_code != 200:
+                        #创建service和ingress
+                        service = K8sService.create_service_object(service_name, namespace, service_port)
+                        service_err_msg, service_err_code = K8sService.create_service(service, namespace)
+                        ingress_ret, ingress_code = K8sIngress.get_ingress(ingress_name, namespace)
+                        if service_err_msg is None and ingress_code != 200:
+                            # 创建ingress
+                            ingress = K8sIngress.create_ingress_object(ingress_name, namespace, service_name,
+                                                                          service_port, domain, lb_methods,domain_path)
+                            ingress_err_msg, ingress_err_code = K8sIngress.create_ingress(ingress, namespace)
+                            if ingress_err_msg:
+                                _dep_callback(deploy_id, '127.0.0.1', "docker", ingress_err_msg, "None", False,
+                                              "", True, deploy_type,
+                                              unique_flag, cloud, deploy_name,o_domain,o_port,"True")
+                                return
+                        else:
+                            _dep_callback(deploy_id, '127.0.0.1', "docker", service_err_msg, "None", False,
                                           "", True, deploy_type,
                                           unique_flag, cloud, deploy_name,o_domain,o_port,"True")
                             return
-                    else:
-                        _dep_callback(deploy_id, '127.0.0.1', "docker", service_err_msg, "None", False,
-                                      "", True, deploy_type,
-                                      unique_flag, cloud, deploy_name,o_domain,o_port,"True")
-                        return
                 elif ingress_flag == "delete":
                     #删除ingress和service
                     ingress_err_msg, ingress_err_code=K8sIngress.delete_ingress(ingress_name, namespace)
