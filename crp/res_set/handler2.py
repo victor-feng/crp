@@ -1094,12 +1094,12 @@ class ResourceProviderTransitions2(object):
                     return True
 
             jsq = 0
-            while not _check_mysql_server_ready(path) and jsq <10:
-                time.sleep(5)
+            while not _check_mysql_server_ready(path) and jsq < 60:
+                time.sleep(10)
                 jsq += 1
                 Log.logger.debug('check numbers: %s' % str(jsq))
                 if jsq == 30:
-                    Log.logger.debug('检查30次退出')
+                    Log.logger.debug('检查100次退出')
 
             p = subprocess.Popen(
                 cmd,
