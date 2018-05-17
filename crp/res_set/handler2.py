@@ -1099,7 +1099,7 @@ class ResourceProviderTransitions2(object):
                 jsq += 1
                 Log.logger.debug('check numbers: %s' % str(jsq))
                 if jsq == 30:
-                    Log.logger.debug('检查100次退出')
+                    Log.logger.debug('检查60次退出')
 
             p = subprocess.Popen(
                 cmd,
