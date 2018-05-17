@@ -29,7 +29,7 @@ def exec_cmd_ten_times(ip,cmd,sleep):
     """
     exec_flag = True
     err_msg = None
-    stdout = None
+    out = ""
     try:
         check_cmd="cat /etc/ansible/hosts | grep  -w '%s'" % ip
         res=os.popen(check_cmd).read().strip().split('\n')
@@ -42,12 +42,13 @@ def exec_cmd_ten_times(ip,cmd,sleep):
             flag=check_remote_host(ip)
             if not flag:continue
             stdout=exec_cmd(cmd)
+            out = out + ','+ stdout
             if "SUCCESS" in stdout:
                 Log.logger.debug(cmd)
                 Log.logger.debug(stdout)
                 break
         else:
-            stdout = stdout if stdout else ''
+            stdout = out.split(',')[-1] if out.split(',') else ''
             err_msg = 'execute %s %s cmd 10 times failed %s'% (ip,cmd,stdout)
             exec_flag = False
             Log.logger.debug(err_msg)
