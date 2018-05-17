@@ -228,14 +228,14 @@ if __name__ == '__main__':
         with open(nginx_conf, 'rb') as f:
             fp = f.read()
         my_domain = re.findall(r'# --- divid ---', fp, flags=re.M)
-        assert my_domain, "Domain already used in {p}".format(p=BASE_PATH)
+        assert my_domain, "Domain already existed in {p},used in k8s app".format(p=BASE_PATH)
 
     if cmd == '-c':
         create(**kwargs)
     elif cmd == '-d':
         delete(**kwargs)
-    elif cmd == '-u':
-        update(**kwargs)
+    # elif cmd == '-u':
+    #     update(**kwargs)
     else:
         print """
             python other_config.py 

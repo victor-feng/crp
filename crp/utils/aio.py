@@ -46,7 +46,8 @@ def exec_cmd_ten_times(ip,cmd,sleep):
                 Log.logger.debug(stdout)
                 break
         else:
-            err_msg = 'execute %s %s cmd 10 times failed'% (ip,cmd)
+            stdout = stdout if stdout else ''
+            err_msg = 'execute %s %s cmd 10 times failed %s'% (ip,cmd,stdout)
             exec_flag = False
             Log.logger.debug(err_msg)
     except Exception as e:
