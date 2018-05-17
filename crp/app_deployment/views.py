@@ -459,9 +459,9 @@ class AppDeploy(Resource):
                 domains = item.get('domain', '')
                 domain_ip = item.get('domain_ip', '')
                 named_url = item.get('named_url','')
-                Log.logger.debug('domain_name:%s,domain_ip:%s' % (domain_name, domain_ip))
                 domain_list = domains.strip().split(',') if domains else []
                 for domain_name in domain_list:
+                    Log.logger.debug('domain_name:%s,domain_ip:%s' % (domain_name, domain_ip))
                     if len(domain_name.strip()) != 0 and len(domain_ip.strip()) != 0:
                         dns_api = NamedManagerApi(environment)
                         err_msg,res = dns_api.named_dns_domain_add(domain_name=domain_name, domain_ip=domain_ip,named_url=named_url)
