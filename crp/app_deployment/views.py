@@ -449,7 +449,7 @@ class AppDeploy(Resource):
                     err_msg=self.do_app_push(app)
                     if err_msg:
                         _dep_callback(deploy_id, "ip", "nginx", err_msg, "active", False, "nginx", True, 'deploy',
-                                      unique_flag, cloud, deploy_name)
+                                      unique_flag, cloud, deploy_name,o_domain,o_port,"True")
                         code = 400
                         return code, err_msg
             if appinfo:
