@@ -577,10 +577,11 @@ class K8sDeploymentApi(object):
                 if deployment_name in pod_name:
                     res = api_instance.read_namespaced_pod(pod_name, namespace)
                     conditions = res.status.conditions
-                    for cond in conditions:
-                        if cond.status == 'False':
-                            err_msg = cond.message
-                            s_flag = False
+                    if conditions:
+                        for cond in conditions:
+                            if cond.status == 'False':
+                                err_msg = cond.message
+                                s_flag = False
                     phase = res.status.phase
                     container_statuses=res.status.container_statuses
                     if container_statuses:
@@ -590,6 +591,10 @@ class K8sDeploymentApi(object):
                             if message is not None:
                                 err_msg = str(err_msg) + " , " + waiting.message
                                 s_flag = False
+                    mesg = res.status.message
+                    if mesg and phase != "Running":
+                        err_msg = str(err_msg) + " , " + mesg
+                        s_flag = False
                 if not s_flag:
                     return s_flag, err_msg
         except Exception as e:
