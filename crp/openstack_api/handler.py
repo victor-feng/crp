@@ -67,8 +67,9 @@ class OpenStack_Api(object):
             err_msg = str(e)
             Log.logger.error("CRP OpenStack get vm status error %s", err_msg)
         return  vm_state
-    @isopenrc(OPENRC_PATH,res={})
+
     @classmethod
+    @isopenrc(OPENRC_PATH, res={})
     def get_all_vm_status(cls):
         vm_info_dict = {}
         try:
