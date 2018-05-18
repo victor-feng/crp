@@ -926,6 +926,7 @@ class ResourceProviderTransitions(object):
                 for t in tup:
                     ip = t[1]
                     r_flag=check_remote_host(ip)
+                    Log.logger.debug("Remote mysql server {ip} is {r_flag}".format(ip=ip,r_flag=r_flag))
                     if not r_flag:
                         return r_flag
                 return  True
@@ -1049,6 +1050,7 @@ class ResourceProviderTransitions(object):
             def _check_redis_server_ready():
                 for ip in [ip1,ip2]:
                     r_flag=check_remote_host(ip)
+                    Log.logger.debug("Remote redis server {ip} is {r_flag}".format(ip=ip, r_flag=r_flag))
                     if not r_flag:
                         return r_flag
                 return  True
