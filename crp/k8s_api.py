@@ -56,6 +56,9 @@ class K8sDeploymentApi(object):
                     propagation_policy='Foreground',
                     grace_period_seconds=5
                     )
+        self.force_deletev1 = client.V1DeleteOptions(
+                     propagation_policy='Background',
+                     grace_period_seconds=5)
 
     def create_deployment_object(self,deployment_name,
                                  filebeat_name,
@@ -356,6 +359,28 @@ class K8sDeploymentApi(object):
                 name=deployment_name,
                 namespace=namespace,
                 body=self.deletev1)
+        except Exception as e:
+            err_msg = "delete deployment error %s" %str(e)
+            code = get_k8s_err_code(e)
+        return err_msg,code
+
+    def delete_force_deployment(self, deployment_name, namespace):
+        """
+        删除deployment
+        :param api_instance:ExtensionsV1beta1Api()
+        :param deployment_name:
+        :return:
+        """
+        # Delete deployment
+        err_msg = None
+        code=200
+        try:
+            deployment_name = deployment_name.lower()
+            api_instance = self.extensionsv1
+            api_response = api_instance.delete_namespaced_deployment(
+                name=deployment_name,
+                namespace=namespace,
+                body=self.force_deletev1)
         except Exception as e:
             err_msg = "delete deployment error %s" %str(e)
             code = get_k8s_err_code(e)
@@ -802,6 +827,9 @@ class K8sIngressApi(object):
             propagation_policy='Foreground',
             grace_period_seconds=5
         )
+        self.force_deletev1 = client.V1DeleteOptions(
+            propagation_policy='Background',
+            grace_period_seconds=5)
 
     def create_ingress_object(self,ingress_name,namespace,service_name,service_port,domains,lb_methods,domain_paths):
         """
@@ -978,6 +1006,28 @@ class K8sIngressApi(object):
                 name=ingress_name,
                 namespace=namespace,
                 body=self.deletev1
+            )
+        except Exception as e:
+            err_msg = "delete ingress error %s" % str(e)
+            code = get_k8s_err_code(e)
+        return err_msg,code
+    def delete_force_ingress(self,ingress_name,namespace):
+        """
+        删除ingress
+        :param api_instance:ExtensionsV1beta1Api()
+        :param ingress_name:
+        :param namespace:
+        :return:
+        """
+        err_msg=None
+        code=200
+        try:
+            ingress_name = ingress_name.lower()
+            api_instance = self.extensionsv1
+            api_response = api_instance.delete_namespaced_ingress(
+                name=ingress_name,
+                namespace=namespace,
+                body=self.force_deletev1
             )
         except Exception as e:
             err_msg = "delete ingress error %s" % str(e)
