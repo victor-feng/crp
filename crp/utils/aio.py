@@ -20,7 +20,7 @@ def async(fun):
 
 def isopenrc(rc_path,res):
     def _deco(func):
-        def wrapper(*args, **kwargs):
+        def wrapper(cls,*args, **kwargs):
             if rc_path:
                 ret=func( *args, **kwargs)
             else:
