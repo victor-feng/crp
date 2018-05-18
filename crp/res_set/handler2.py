@@ -246,6 +246,7 @@ class ResourceProviderTransitions2(object):
             tmp_list=[os_inst for os_inst in uop_os_inst_id_list for os_inst_vol in uop_os_inst_vol_id_list if
              os_inst.get("os_inst_id") != os_inst_vol.get("os_inst_id")]
             uop_os_inst_id_list = result_uop_os_inst_id_list + tmp_list
+        Log.logger.debug("This is uop_os_inst_id_list {}".format(uop_os_inst_id_list))
         fail_list = self._uop_os_list_sub(
             uop_os_inst_id_list, result_uop_os_inst_id_list)
         Log.logger.debug(
@@ -259,7 +260,7 @@ class ResourceProviderTransitions2(object):
             " Failed instance id set is " +
             fail_list[:].__str__())
         # 删除全部，完成rollback
-        if self.code == 409 or (self.set_flag in ["reduce","increase"] and self.resource_type == "app"):
+        if self.code == 409 or (self.set_flag in ["reduce","increase"] and self.resource_type == "app") or self.resource_type == "kvm":
             pass
         else:
             for uop_os_inst_id in uop_os_inst_id_list:
