@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-
+import os
 from keystoneauth1.identity import v2
 from keystoneauth1 import session
 from novaclient import client as nova_client
@@ -47,8 +47,9 @@ class AuthInfo(object):
         self.user_password = None
         self.auth_url = None
         self.keystone_token = None
-        with open(rc_file, 'r') as f:
-            self.rc = f.read().split('\n')
+        self.rc = os.popen("cat {f} | grep -v ^#".format(f=rc_file)).read().strip().split('\n')
+        # with open(rc_file, 'r') as f:
+        #     self.rc = f.read().split('\n')
 
     @classmethod
     def _value_inline(cls,line):
