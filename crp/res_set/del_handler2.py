@@ -9,6 +9,7 @@ from crp.taskmgr import *
 from config import APP_ENV, configs
 from crp.res_set import  delete_request_callback
 NAMESPACE = configs[APP_ENV].NAMESPACE
+CHECK_TIMEOUT = configs[APP_ENV].CHECK_TIMEOUT
 RES_DELETE_CALL_BACK = configs[APP_ENV].RES_DELETE_CALL_BACK
 
 QUERY_VOLUME = 0
@@ -42,6 +43,7 @@ def query_ingress(task_id, result):
                 result['msg'] = 'Ingress is exist  begin delete Ingress'
                 result['current_status'] = DELETE_INGRESS
                 result['ingress_state'] = 1
+                result['igs_check_times'] = result['igs_check_times'] + 1
             elif ingress_code == 404:
                 result['current_status'] = QUERY_SERVICE
                 ingress_state = result.get('ingress_state', 0)
@@ -68,7 +70,11 @@ def delete_ingress(task_id, result):
     try:
         namespace = result.get('namespace') if result.get('namespace') else NAMESPACE
         K8sIngress = K8sIngressApi()
-        K8sIngress.delete_ingress(ingress_name, namespace)
+        igs_check_times = result['igs_check_times']
+        if igs_check_times > CHECK_TIMEOUT:
+            K8sIngress.delete_force_ingress(ingress_name, namespace)
+        else:
+            K8sIngress.delete_ingress(ingress_name, namespace)
         result['current_status'] = QUERY_INGRESS
         result['msg'] = 'delete ingress begin query ingress status'
         Log.logger.debug(
@@ -162,6 +168,7 @@ def query_instance(task_id, result, resource):
             deployment_ret,deployment_code=K8sDeployment.get_deployment(namespace,resource_name)
             if deployment_code == 200:
                 result['deployment_state'] = 1
+                result['dep_check_times'] = result['dep_check_times'] + 1
                 result['current_status'] = DELETE_VM
                 result['msg'] = 'deployment is exist  begin delete Deployment'
                 Log.logger.debug(
@@ -241,8 +248,12 @@ def delete_instance(task_id, result):
     try:
         if resource_type == "app":
             namespace = result.get('namespace') if result.get('namespace') else NAMESPACE
+            dep_check_times = result['dep_check_times']
             K8sDeployment = K8sDeploymentApi()
-            K8sDeployment.delete_deployment(resource_name,namespace)
+            if dep_check_times > CHECK_TIMEOUT:
+                K8sDeployment.delete_force_deployment(resource_name, namespace)
+            else:
+                K8sDeployment.delete_deployment(resource_name,namespace)
             result['msg'] = 'delete deployment begin query deployment status'
         else:
             nova_client.servers.delete(os_inst_id)

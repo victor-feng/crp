@@ -339,6 +339,8 @@ class ResourceDelete(Resource):
                          'syswin_project':syswin_project,
                          'namespace':namespace,
                          'resource_id':resource_id,
+                         "dep_check_times": 0,
+                         "igs_check_times": 0,
                          },
                         delete_instance_and_query2, {})
                 else:
