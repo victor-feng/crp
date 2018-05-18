@@ -18,11 +18,13 @@ def async(fun):
     return wraps
 
 
-def isopenrc(rc_path,res):
+def isopenrc(cls,rc_path,res):
     def _deco(func):
-        def wrapper(cls,*args, **kwargs):
+        def wrapper(*args, **kwargs):
             if rc_path:
+                cls.acquire()
                 ret=func( *args, **kwargs)
+                cls.acquire()
             else:
                 ret = res
             return  ret
