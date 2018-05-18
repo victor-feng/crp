@@ -15,7 +15,7 @@ from crp.openstack import OpenStack
 from crp.res_set.util import async
 from crp.utils.docker_tools import image_transit
 from config import configs, APP_ENV
-from crp.utils.aio import exec_cmd_ten_times,exec_cmd_one_times
+from crp.utils.aio import exec_cmd_ten_times,exec_cmd_one_times,check_remote_host
 from crp.app_deployment.handler import start_write_log
 from del_handler import delete_instance_and_query,QUERY_VOLUME
 from crp.utils.docker_image import make_docker_image
@@ -922,22 +922,16 @@ class ResourceProviderTransitions(object):
             path = SCRIPTPATH + 'mysqlmha'
             cmd = '/bin/sh {0}/mlm.sh {0}'.format(path)
             strout = ''
-            def _check_mysql_server_ready(path):
-                test_sh = "/bin/sh {0}/check.sh {0}".format(path)
-                mysql_respones = subprocess.Popen(
-                    test_sh,
-                    shell=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT)
-                content = mysql_respones.stdout.read()
-                Log.logger.debug('mysql cluster check result:%s' % content)
-                if ('FAILED!' in content) or ('UNREACHABLE!' in content):
-                    return False
-                else:
-                    return True
+            def _check_mysql_server_ready():
+                for t in tup:
+                    ip = t[1]
+                    r_flag=check_remote_host(ip)
+                    if not r_flag:
+                        return r_flag
+                return  True
 
             jsq = 0
-            while not _check_mysql_server_ready(path) and jsq <= 20:
+            while not _check_mysql_server_ready() and jsq <= 20:
                 time.sleep(10)
                 jsq += 1
                 Log.logger.debug('check numbers: %s' % str(jsq))
@@ -1038,7 +1032,6 @@ class ResourceProviderTransitions(object):
             redis['vid'] = vid
             cmd = 'python {0}script/redis_cluster.py {1} {2} {3}'.format(
                 SCRIPTPATH, ip1, ip2, vip)
-            error_time = 0
 
             def _redis_push():
                 out = ''
@@ -1053,28 +1046,20 @@ class ResourceProviderTransitions(object):
                 Log.logger.debug('redis cluster push result:%s' % out)
                 return out
 
-            def _check_redis_server_ready(ip):
-                redis_status_cmd = "redis-cli -h %s -p 7389 info Replication|grep connected_slaves|awk -F: '{print $NF}'"
-                redis_cmd_rst = subprocess.Popen(
-                    redis_status_cmd%(ip),
-                    shell=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT)
-
-                slave_num = redis_cmd_rst.stdout.read()
-                Log.logger.debug('check redis slave num:%s' % slave_num)
-                if slave_num.startswith('1'):
-                    return True
-                else:
-                    return False
-
-            # 执行命令 如果失败 连续重复尝试3次
-            _redis_push()
-
-            while not _check_redis_server_ready(ip1) and error_time < 2:
-                _redis_push()
+            def _check_redis_server_ready():
+                for ip in [ip1,ip2]:
+                    r_flag=check_remote_host(ip)
+                    if not r_flag:
+                        return r_flag
+                return  True
+            error_time = 0
+            while not _check_redis_server_ready() and error_time <= 20:
                 error_time += 1
                 time.sleep(10)
+                if error_time == 20:
+                    Log.logger.debug('检查20次退出检查')
+
+            _redis_push()
 
             instance[0]['dbtype'] = 'master'
             instance[1]['dbtype'] = 'slave'
