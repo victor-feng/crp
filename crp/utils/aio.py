@@ -18,6 +18,17 @@ def async(fun):
     return wraps
 
 
+def isopenrc(rc_path,res):
+    def _deco(func):
+        def wrapper(*args, **kwargs):
+            if rc_path:
+                ret=func( *args, **kwargs)
+            else:
+                ret = res
+            return  ret
+        return wrapper
+    return _deco
+
 
 def exec_cmd_ten_times(ip,cmd,sleep):
     """

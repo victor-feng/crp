@@ -6,6 +6,7 @@ from crp.openstack import OpenStack
 from crp.openstack2 import OpenStack as OpenStack2
 from crp.log import Log
 from config import configs, APP_ENV
+from crp.utils.aio import isopenrc
 OS_EXT_PHYSICAL_SERVER_ATTR=configs[APP_ENV].OS_EXT_PHYSICAL_SERVER_ATTR
 OPENRC_PATH = configs[APP_ENV].OPENRC_PATH
 OPENRC2_PATH = configs[APP_ENV].OPENRC2_PATH
@@ -66,24 +67,24 @@ class OpenStack_Api(object):
             err_msg = str(e)
             Log.logger.error("CRP OpenStack get vm status error %s", err_msg)
         return  vm_state
-
+    @isopenrc(OPENRC_PATH,res={})
     @classmethod
     def get_all_vm_status(cls):
         vm_info_dict = {}
         try:
-            if OPENRC_PATH:
-                nova_cli = OpenStack.nova_client
-                vms = nova_cli.servers.list()
-                for vm in vms:
-                    os_inst_id = vm.id
-                    ips = vm.networks
-                    if ips:
-                        ip = vm.networks.values()[0][0]
-                    else:
-                        ip = "127.0.0.1"
-                    status = vm.status.lower()
-                    physical_server = getattr(vm, OS_EXT_PHYSICAL_SERVER_ATTR)
-                    vm_info_dict[os_inst_id] = [ip, status,physical_server]
+            #if OPENRC_PATH:
+            nova_cli = OpenStack.nova_client
+            vms = nova_cli.servers.list()
+            for vm in vms:
+                os_inst_id = vm.id
+                ips = vm.networks
+                if ips:
+                    ip = vm.networks.values()[0][0]
+                else:
+                    ip = "127.0.0.1"
+                status = vm.status.lower()
+                physical_server = getattr(vm, OS_EXT_PHYSICAL_SERVER_ATTR)
+                vm_info_dict[os_inst_id] = [ip, status,physical_server]
         except Exception as e:
             err_msg = str(e)
             Log.logger.error("CRP OpenStack get all vm status error %s", err_msg)
