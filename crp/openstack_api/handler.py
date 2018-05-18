@@ -14,29 +14,29 @@ OPENRC2_PATH = configs[APP_ENV].OPENRC2_PATH
 class OpenStack_Api(object):
 
     @classmethod
+    @isopenrc(OPENRC_PATH, res={})
     def get_network_info(cls):
         subnet_info = {}
         name2id = {}
         try:
-            if OPENRC_PATH:
-                net_cli = OpenStack.neutron_client
-                networks = net_cli.list_networks()
-                networks = networks.get('networks', [])
-                subnets = net_cli.list_subnets()["subnets"]
-                for subnet in subnets:
-                    network_id = subnet["network_id"]
-                    sub_vlan=subnet["cidr"]
-                    if network_id in subnet_info.keys():
-                        subnet_info[network_id].append(sub_vlan)
-                    else:
-                        subnet_info[network_id] = [sub_vlan]
-                for network in networks:
-                    name = network.get('name')
-                    id_ = network.get('id')
-                    for network_id in subnet_info.keys():
-                        if network_id == id_:
-                            sub_vlans=subnet_info[network_id]
-                            name2id[name] = [id_,sub_vlans,"1"]
+            net_cli = OpenStack.neutron_client
+            networks = net_cli.list_networks()
+            networks = networks.get('networks', [])
+            subnets = net_cli.list_subnets()["subnets"]
+            for subnet in subnets:
+                network_id = subnet["network_id"]
+                sub_vlan=subnet["cidr"]
+                if network_id in subnet_info.keys():
+                    subnet_info[network_id].append(sub_vlan)
+                else:
+                    subnet_info[network_id] = [sub_vlan]
+            for network in networks:
+                name = network.get('name')
+                id_ = network.get('id')
+                for network_id in subnet_info.keys():
+                    if network_id == id_:
+                        sub_vlans=subnet_info[network_id]
+                        name2id[name] = [id_,sub_vlans,"1"]
         except Exception as e:
             err_msg=str(e)
             Log.logger.error("CRP OpenStack get network info error %s",err_msg)
