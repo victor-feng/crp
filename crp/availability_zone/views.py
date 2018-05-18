@@ -54,7 +54,9 @@ class HostsListAPI(Resource):
        Log.logger.debug('HostsListAPI: query %s' % host_set)
 
        try:
-           hosts = OpenStack2_Api.get_hypervisor_hosts(host_set)
+           host1s = OpenStack_Api.get_hypervisor_hosts(host_set)
+           host2s = OpenStack2_Api.get_hypervisor_hosts(host_set)
+           hosts = host1s + host2s
        except Exception as e:
            Log.logger.error('get hosts err: %s' % e.args)
            res = {
@@ -81,7 +83,9 @@ class StatisticAPI(Resource):
    def get(self):
 
        try:
-           hypervisors_statistics = OpenStack2_Api.get_hypervisor_statistics()
+           hypervisors_statistics2 = OpenStack2_Api.get_hypervisor_statistics()
+           hypervisors_statistics1 = OpenStack_Api.get_hypervisor_statistics()
+           hypervisors_statistics = hypervisors_statistics1 + hypervisors_statistics2
        except Exception as e:
            Log.logger.error('get hypervisors_statistics err: %s' % e.args)
            res = {

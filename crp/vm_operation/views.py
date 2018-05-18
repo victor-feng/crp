@@ -12,6 +12,8 @@ from config import configs, APP_ENV
 
 vm_operation_api = Api(vm_operation_blueprint, errors=vm_operation_errors)
 NAMESPACE = configs[APP_ENV].NAMESPACE
+OPENRC_PATH = configs[APP_ENV].OPENRC_PATH
+OPENRC2_PATH = configs[APP_ENV].OPENRC2_PATH
 
 OpenStack_info={
     "1":OpenStack,
@@ -65,23 +67,24 @@ class VMOperation(Resource):
                             }
                             return ret, code
             else:
-                nova_client = OpenStack_info[cloud].nova_client
-                if args.operation == "restart":
-                    reboot_type = args.reboot_type if args.reboot_type else "SOFT"
-                    inst = nova_client.servers.reboot(args.vm_uuid,reboot_type=reboot_type)
-                elif args.operation == "stop":
-                    inst = nova_client.servers.stop(args.vm_uuid)
-                elif args.operation == "start":
-                    inst = nova_client.servers.start(args.vm_uuid)
-                else:
-                    code = 500
-                    ret = {
-                        "code": code,
-                        "result": {
-                            "msg": "vm operation receive invalid operation",
+                if OPENRC_PATH:
+                    nova_client = OpenStack_info[cloud].nova_client
+                    if args.operation == "restart":
+                        reboot_type = args.reboot_type if args.reboot_type else "SOFT"
+                        inst = nova_client.servers.reboot(args.vm_uuid,reboot_type=reboot_type)
+                    elif args.operation == "stop":
+                        inst = nova_client.servers.stop(args.vm_uuid)
+                    elif args.operation == "start":
+                        inst = nova_client.servers.start(args.vm_uuid)
+                    else:
+                        code = 500
+                        ret = {
+                            "code": code,
+                            "result": {
+                                "msg": "vm operation receive invalid operation",
+                            }
                         }
-                    }
-                    return ret, code
+                        return ret, code
         except Exception as e:
             code = 500
             msg=str(e)
