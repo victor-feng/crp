@@ -366,7 +366,7 @@ class K8sDeploymentApi(object):
 
     def delete_force_deployment(self, deployment_name, namespace):
         """
-        删除deployment
+        强制删除deployment
         :param api_instance:ExtensionsV1beta1Api()
         :param deployment_name:
         :return:
@@ -1013,7 +1013,7 @@ class K8sIngressApi(object):
         return err_msg,code
     def delete_force_ingress(self,ingress_name,namespace):
         """
-        删除ingress
+        强制删除ingress
         :param api_instance:ExtensionsV1beta1Api()
         :param ingress_name:
         :param namespace:
