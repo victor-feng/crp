@@ -1,5 +1,9 @@
   upstream  Project {
-    server  IpPort max_fails=1 fail_timeout=10s;
+    server  IpPort max_fails=0;
+
+	check interval=2000 fall=2 rise=2 timeout=1000 default_down=true type=http;
+	check_http_send "HEAD /healthz HTTP/1.0\r\n\r\n";
+	keepalive 16;
   }
 
   # --- divid --- 

@@ -58,7 +58,8 @@ def create(**kwargs):
         if re.findall(project, content[0]):
             # replace ips
             tmp = [i.strip() for i in content[0].split('upstream') if project in i]
-            all_c = re.sub(tmp[0], tp[0].lstrip('upstream').strip(), all_c)
+            all_c = all_c.replace(tmp[0], tp[0].lstrip('upstream').strip())
+            # all_c = re.sub(tmp[0], tp[0].lstrip('upstream').strip(), all_c)
             # replace damain_path
             tmp_l = [i for i in content[2].split('location') if project in i]
             d_path = tmp_l[0].split('{')[0].strip()
@@ -191,7 +192,7 @@ def sub_content(template, project, ips, domain, domain_path, certificate):
 
     content = re.sub(r'Project', project, tp_str)
     content = re.sub(
-        r'server  IpPort max_fails=1 fail_timeout=10s;', ips, content)
+        r'server  IpPort max_fails=0;', ips, content)
 
     content = re.sub(r'Domain', domain, content)
     if domain_path:
@@ -213,7 +214,7 @@ def sub_content(template, project, ips, domain, domain_path, certificate):
 def write_server_config(ip_port):
     content = ''
     for i in ip_port:
-        content += '\t' + 'server  ' + i + ' max_fails=1 fail_timeout=10s'+ ';' + '\n'
+        content += '\t' + 'server  ' + i + ' max_fails=0'+ ';' + '\n'
     return content.lstrip('\t').rstrip('\n')
 
 
@@ -234,8 +235,6 @@ if __name__ == '__main__':
         create(**kwargs)
     elif cmd == '-d':
         delete(**kwargs)
-    # elif cmd == '-u':
-    #     update(**kwargs)
     else:
         print """
             python other_config.py 
