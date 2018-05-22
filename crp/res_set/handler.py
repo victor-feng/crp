@@ -934,8 +934,8 @@ class ResourceProviderTransitions(object):
             cmd = '/bin/sh {0}/mlm.sh {0}'.format(path)
             strout = ''
             def _check_mysql_server_ready():
-                for t in tup:
-                    ip = t[1]
+                for _instance in instance:
+                    ip = _instance['ip']
                     r_flag=check_remote_host(ip)
                     Log.logger.debug("Remote mysql server {ip} is {r_flag}".format(ip=ip,r_flag=r_flag))
                     if not r_flag:
