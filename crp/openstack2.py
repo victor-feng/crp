@@ -34,6 +34,8 @@ def openstack2_client_setting():
     OpenStack.cinder_client = cinder_client.Client('2.0',info.user_name, info.user_password,
                                                    info.tenant_name, info.auth_url)
     OpenStack.cinder_client.format = 'json'
+    token = sess.get_token()
+    return token
 
 
 
