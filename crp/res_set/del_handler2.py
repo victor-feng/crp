@@ -10,7 +10,6 @@ from config import APP_ENV, configs
 from crp.res_set import  delete_request_callback
 NAMESPACE = configs[APP_ENV].NAMESPACE
 CHECK_TIMEOUT = configs[APP_ENV].CHECK_TIMEOUT
-RES_DELETE_CALL_BACK = configs[APP_ENV].RES_DELETE_CALL_BACK
 
 QUERY_VOLUME = 0
 DETACH_VOLUME = 1
@@ -200,11 +199,13 @@ def query_instance(task_id, result, resource):
             inst = nova_client.servers.get(os_inst_id)
             task_state=getattr(inst,'OS-EXT-STS:task_state')
             result['inst_state'] = 1
+            result['vm_check_times'] = result['vm_check_times'] + 1
             Log.logger.debug(
             "Query Task ID " + str(task_id) +
             " query Instance ID " + os_inst_id +
             " Status is " + inst.status + " Instance task state is " + str(task_state))
-            if  task_state != 'deleting' and inst.status != 'DELETED':
+            vm_check_times = result['vm_check_times']
+            if  (task_state != 'deleting' and inst.status != 'DELETED' and inst.status != "BUILD") or vm_check_times > CHECK_TIMEOUT:
                 result['current_status'] = DELETE_VM
                 result['msg']='instance is exist  begin delete Instance'
     except Exception as e:

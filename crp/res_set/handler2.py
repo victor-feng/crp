@@ -287,7 +287,11 @@ class ResourceProviderTransitions2(object):
                      'syswin_project': "uop",
                      "resource_type":resource_type,
                      "resource_name":self.req_dict["resource_name"],
-                     'namespace':namespace,},
+                     'namespace':namespace,
+                     "dep_check_times": 0,
+                     "igs_check_times": 0,
+                     "vm_check_times": 0,
+                     },
                     delete_instance_and_query2, resource)
             Log.logger.debug(
                 "Task ID " +

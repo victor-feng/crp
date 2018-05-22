@@ -242,7 +242,8 @@ class ResourceProviderTransitions(object):
                  "unique_flag": "",
                  "del_os_ins_ip_list": [],
                  'syswin_project': "uop",
-                 "set_flag": "rollback"},
+                 "set_flag": "rollback",
+                 "vm_check_times": 0,},
                 delete_instance_and_query, resource)
         Log.logger.debug(
             "Task ID " +
