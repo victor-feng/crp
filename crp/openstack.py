@@ -28,10 +28,8 @@ def openstack_client_setting():
     OpenStack.nova_client = nova_client.Client("2.0", session=sess)
     # OpenStack.keystone_client = keystone_client.Client(username=info.user_name, password=info.user_password,
     #                                                    tenant_name=info.tenant_name, auth_url=info.auth_url)
-    OpenStack.neutron_client = neutron_client.Client('2.0', username=info.user_name, password=info.user_password,
-                                                     tenant_name=info.tenant_name, auth_url=info.auth_url)
-    OpenStack.cinder_client = cinder_client.Client('1.0',info.user_name, info.user_password,
-                                                   info.tenant_name, info.auth_url)
+    OpenStack.neutron_client = neutron_client.Client('2.0',  session=sess)
+    OpenStack.cinder_client = cinder_client.Client('1.0',session=sess)
     OpenStack.cinder_client.format = 'json'
 
 
