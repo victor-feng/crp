@@ -341,6 +341,7 @@ class ResourceDelete(Resource):
                          'resource_id':resource_id,
                          "dep_check_times": 0,
                          "igs_check_times": 0,
+                         "vm_check_times":0,
                          },
                         delete_instance_and_query2, {})
                 else:
@@ -352,6 +353,7 @@ class ResourceDelete(Resource):
                              "del_os_ins_ip_list":del_os_ins_ip_list,
                              "set_flag":set_flag,
                              'syswin_project': syswin_project,
+                             "vm_check_times": 0,
                              },
                              delete_instance_and_query2, resource)
                 # 删除虚IP
@@ -366,6 +368,7 @@ class ResourceDelete(Resource):
                          "del_os_ins_ip_list":del_os_ins_ip_list,
                          "set_flag":set_flag,
                          'syswin_project': syswin_project,
+                         "vm_check_times": 0,
                          },
                          delete_instance_and_query, resource)
                 #删除虚IP
