@@ -59,8 +59,7 @@ def main():
     if OPENRC_PATH:
         openstack_client_setting()
     if OPENRC2_PATH:
-        token = openstack2_client_setting()
-        logging.warn("11111111111111111111111 {}".format(token))
+        openstack2_client_setting()
     logging.warn("[CRP] Openstack client is inited")
     MPC_URL = app.config['MPC_URL']
 

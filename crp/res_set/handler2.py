@@ -994,21 +994,33 @@ class ResourceProviderTransitions2(object):
 
     @transition_state_logger
     def do_query(self):
-        is_finished, self.is_need_rollback = self._query_resource_set_status(
-            self.uop_os_inst_id_list, self.result_inst_id_list, self.result_mappers_list,self.uop_os_inst_vol_id_list)
-        if self.is_need_rollback:
+        try:
+            is_finished, self.is_need_rollback = self._query_resource_set_status(
+                self.uop_os_inst_id_list, self.result_inst_id_list, self.result_mappers_list,self.uop_os_inst_vol_id_list)
+            if self.is_need_rollback:
+                self.rollback()
+            if is_finished is True:
+                self.next_phase()
+        except Exception as e:
+            err_msg = "Query Vm status error {e}".format(e=str(e))
+            self.error_msg = err_msg
             self.rollback()
-        if is_finished is True:
-            self.next_phase()
+
 
     @transition_state_logger
     def do_query_volume(self):
-        is_finished, self.is_need_rollback = self._query_volume_set_status(
-            self.uop_os_inst_vol_id_list, self.result_inst_vol_id_list, self.result_mappers_list)
-        if self.is_need_rollback:
+        try:
+            is_finished, self.is_need_rollback = self._query_volume_set_status(
+                self.uop_os_inst_vol_id_list, self.result_inst_vol_id_list, self.result_mappers_list)
+            if self.is_need_rollback:
+                self.rollback()
+            if is_finished is True:
+                self.next_phase()
+        except Exception as e:
+            err_msg = "Query Volume status error {e}".format(e=str(e))
+            self.error_msg = err_msg
             self.rollback()
-        if is_finished is True:
-            self.next_phase()
+
 
     @transition_state_logger
     def do_status(self):
