@@ -1710,6 +1710,7 @@ class MongodbCluster(object):
         172.28.36.231
         :param cmd_list:
         """
+        Log.logger.info("The ip list is {}".format(ip_list))
         self.dir = os.path.dirname(
             os.path.abspath(__file__)) + '/' + 'mongo_script'
         self.current_dir = os.path.dirname(os.path.abspath(__file__))
