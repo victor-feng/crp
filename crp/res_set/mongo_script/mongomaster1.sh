@@ -41,7 +41,7 @@ EOF
 
 ###########
 sleep 2
-#pkill mongo
+pkill mongo
 #pid=`ps -ef|grep mongo|awk -F " " '{print $2}'|sed -n '1p'`
 #kill -9 $pid
-runuser -c "/opt/mongodb/bin/mongod --config=/data/mongodb/conf/mongodb.conf --shutdown" mongodb01
+#runuser -c "/opt/mongodb/bin/mongod --config=/data/mongodb/conf/mongodb.conf --shutdown" mongodb01
