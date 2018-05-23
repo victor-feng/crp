@@ -984,12 +984,16 @@ class AppDeploy(Resource):
         ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + sh_path + ' dest=' + remote_path + '"'
         ansible_sh_cmd = ansible_cmd + ' shell -a "%s < %s"' % (configs[APP_ENV].MONGODB_PATH, remote_path)
         ans_res, err_msg = self._exec_ansible_cmd(ansible_sql_cmd)
+        Log.logger.info("1-----The ansible sql cmd is {}\n The ansible sh cmd is {}\n".format(ansible_sql_cmd, ansible_sh_cmd))
         if ans_res:
             ans_res, err_msg = self._exec_ansible_cmd(ansible_sh_cmd)
             if ans_res:
                 sh_path = self.mongodb_command_file(mongodb_password, mongodb_username, port, database, "")
                 ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + sh_path + ' dest=' + remote_path + '"'
                 query_current_db = ansible_cmd + 'shell -a "%s < %s"' % (configs[APP_ENV].MONGODB_PATH, remote_path)
+
+                Log.logger.info("2-----The ansible_sql_cmd is {}\n The query_current_db is {}\n".format(ansible_sql_cmd,
+                                                                                                       query_current_db))
 
                 ans_res, err_msg = self._exec_ansible_cmd(ansible_sql_cmd)
                 if ans_res:
@@ -1009,6 +1013,11 @@ class AppDeploy(Resource):
                         ansible_sql_cmd = ansible_cmd + ' copy -a "src=' + auth_path + ' dest=' + remote_path + '"'
                         exec_auth_file = ansible_cmd + ' shell -a "%s < %s"' % \
                                                        (configs[APP_ENV].MONGODB_AUTH_PATH, remote_path)
+
+                        Log.logger.info(
+                            "3-----The ansible_sql_cmd is {}\n The exec_auth_file is {}\n".format(ansible_sql_cmd,
+                                                                                                 exec_auth_file))
+
                         Log.logger.debug("start upload auth file")
                         ans_res, err_msg = self._exec_ansible_cmd(ansible_sql_cmd)
                         if ans_res:
