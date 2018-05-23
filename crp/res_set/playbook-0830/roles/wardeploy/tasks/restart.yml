@@ -10,8 +10,8 @@
 - name: start tomcat
   shell: nohup /home/java/starttomcat.sh
 
-#- name: tomcat startup?
-#  shell: /home/java/checkstartup.sh
+- name: tomcat startup?
+  shell: /home/java/checkstartup.sh
 
 #- name: 服务是否正常?
 #  shell: /home/java/chkhealth.sh
