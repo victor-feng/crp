@@ -9,6 +9,7 @@ import logging
 import subprocess
 
 from tornado.options import define, options
+from config import APP_ENV, configs
 
 class MongodbCluster(object):
 
@@ -32,7 +33,7 @@ class MongodbCluster(object):
             self.ip_master1: 'mongomaster1.sh',
             }
         self.cmd = ['ansible {vip} -u root --private-key={rsa_dir}/old_id_rsa -m script -a '
-                    '"{dir}/mongomaster2.sh sys95"'.format(vip=self.ip_master2, rsa_dir=self.dir, dir=self.dir)]
+                    '"{dir}/mongomaster2.sh {db_name}"'.format(vip=self.ip_master2, rsa_dir=self.dir, dir=self.dir, db_name=configs[APP_ENV].MONGODB_NAME)]
         self.ip = [self.ip_slave1, self.ip_slave2, self.ip_master1]
         self.new_host = '[new_host]'
         self.write_ip_to_server()
@@ -90,8 +91,8 @@ class MongodbCluster(object):
             f.write('%s\n' % ip)
         script = self.d.get(ip)
         # if str(ip) != '172.28.36.105':
-        cmd_s = 'ansible {vip} -u root --private-key={rsa_dir}/old_id_rsa -m script -a "{dir}/{s} sys95"'.\
-                format(vip=ip, rsa_dir=self.dir, dir=self.dir, s=script)
+        cmd_s = 'ansible {vip} -u root --private-key={rsa_dir}/old_id_rsa -m script -a "{dir}/{s} {db_name}"'.\
+                format(vip=ip, rsa_dir=self.dir, dir=self.dir, s=script, db_name=configs[APP_ENV].MONGODB_NAME)
         logging.info("[MISC] cmd_s: %s", cmd_s)
 
         # else:

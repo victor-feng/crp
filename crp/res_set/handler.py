@@ -1483,10 +1483,11 @@ class MongodbCluster(object):
         }
         self.cmd = [
             'ansible {vip} -u root --private-key={rsa_dir}/old_id_rsa -m script -a '
-            '"{dir}/mongomaster2.sh sys95"'.format(
+            '"{dir}/mongomaster2.sh {db_name}"'.format(
                 vip=self.ip_master2,
                 rsa_dir=self.dir,
-                dir=self.dir)]
+                dir=self.dir,
+                db_name=configs[APP_ENV].MONGODB_NAME)]
         self.ip = [self.ip_slave1, self.ip_slave2, self.ip_master1]
         self.new_host = '[new_host]'
         self.write_ip_to_server()
@@ -1564,8 +1565,8 @@ class MongodbCluster(object):
             f.write('%s\n' % ip)
         print '-----', ip, type(ip)
         script = self.d.get(ip)
-        cmd_s = 'ansible {vip} -u root --private-key={rsa_dir}/old_id_rsa -m script -a "{dir}/{s} sys95"'.\
-                format(vip=ip, rsa_dir=self.dir, dir=self.dir, s=script)
+        cmd_s = 'ansible {vip} -u root --private-key={rsa_dir}/old_id_rsa -m script -a "{dir}/{s} {db_name}"'.\
+                format(vip=ip, rsa_dir=self.dir, dir=self.dir, s=script, db_name=configs[APP_ENV].MONGODB_NAME)
         p = subprocess.Popen(
             cmd_s,
             shell=True,

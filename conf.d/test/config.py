@@ -42,6 +42,7 @@ class TestingConfig(BaseConfig):
 
     MONGODB_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010'
     MONGODB_AUTH_PATH = '/opt/mongodb/bin/mongo 127.0.0.1:28010 --authenticationDatabase admin -u admin -p 123456'
+    MONGODB_NAME = 'sys95'
 
     HARBOR_URL = "reg1.syswin.com"
     HARBOR_USERNAME = "crm_test1"
