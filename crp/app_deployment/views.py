@@ -1080,8 +1080,12 @@ class AppDeploy(Resource):
 
     def mongodb_hosts_file(self, ip):
         path = os.path.join('/etc', 'ansible', 'hosts')
-        with open(path, "wb+") as file_object:
-            file_object.write('{}\n'.format(ip))
+        check_cmd = "cat {path} | grep -w '{ip}' | wc -l".format(path=path,ip=ip)
+        res = os.popen(check_cmd).read().strip()
+        # 向ansible配置文件中追加ip，如果存在不追加
+        if int(res) == 0:
+            with open(path, "a+") as file_object:
+                file_object.write('{}\n'.format(ip))
         return path
 
     def exec_final_script(self, cmd):
@@ -1091,7 +1095,7 @@ class AppDeploy(Resource):
                 print line,
 
     def clear_hosts_file(self, work_dir):
-        with open(work_dir + '/hosts', 'w') as f:
+        with open(work_dir + '/hosts', 'a+') as f:
             f.write(' ')
 
     def _deploy_mysql(self, mysql, docker, environment):
@@ -1190,9 +1194,13 @@ class AppDeploy(Resource):
 
     def _make_hosts_file(self, ip):
         myhosts_path = os.path.join(UPLOAD_FOLDER, 'mysql', 'myhosts')
-        with open(myhosts_path, "wb+") as file_object:
-            file_object.write('[ip]' + os.linesep)
-            file_object.write(ip)
+        check_cmd = "cat {path} | grep -w '{ip}' | wc -l".format(path=myhosts_path, ip=ip)
+        res = os.popen(check_cmd).read().strip()
+        # 向ansible配置文件中追加ip，如果存在不追加
+        if int(res) == 0:
+            with open(myhosts_path, "a+") as file_object:
+                file_object.write('[ip]' + os.linesep)
+                file_object.write(ip)
         return myhosts_path
 
 
