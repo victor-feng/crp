@@ -42,10 +42,10 @@ def exec_cmd_ten_times(ip,cmd,sleep):
     err_msg = None
     out = ""
     try:
-        check_cmd="cat /etc/ansible/hosts | grep  -w '%s'" % ip
-        res=os.popen(check_cmd).read().strip().split('\n')
+        check_cmd="cat /etc/ansible/hosts | grep  -w '%s' | wc -l" % ip
+        res=os.popen(check_cmd).read().strip()
         #向ansible配置文件中追加ip，如果存在不追加
-        if ip not in res:
+        if int(res) == 0:
             with open('/etc/ansible/hosts', 'a+') as f:
                 f.write('%s\n' % ip)
         for i in range(10):
