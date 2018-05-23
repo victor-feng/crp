@@ -8,9 +8,10 @@ sed -i 's/#  clusterAuthMode: keyFile/   clusterAuthMode: keyFile/g' /data/mongo
 sed -i 's/#  authorization: enabled/   authorization: enabled/g' /data/mongodb/conf/mongodb.conf
 sed -i 's/#  replSetName: pmm-mongo/   replSetName: '$1' /g' /data/mongodb/conf/mongodb.conf
 runuser -c "/usr/bin/numactl --interleave=all /opt/mongodb/bin/mongod --config=/data/mongodb/conf/mongodb.conf" mongodb01
-sleep 2
+sleep 4
 MongoDB='/opt/mongodb/bin/mongo '$mip':28010 -uadmin -p123456 --authenticationDatabase admin'
 $MongoDB <<EOF
+use admin
 rs.initiate(
    {
       _id: "$1",

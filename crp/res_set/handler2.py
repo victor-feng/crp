@@ -260,7 +260,7 @@ class ResourceProviderTransitions2(object):
             " Failed instance id set is " +
             fail_list[:].__str__())
         # 删除全部，完成rollback
-        if self.code == 409 or (self.set_flag in ["reduce","increase"] and self.resource_type == "app") or self.resource_type == "kvm":
+        if self.code == 409 or (self.set_flag in ["reduce","increase"] and self.resource_type == "app"):
             pass
         else:
             for uop_os_inst_id in uop_os_inst_id_list:
@@ -994,21 +994,33 @@ class ResourceProviderTransitions2(object):
 
     @transition_state_logger
     def do_query(self):
-        is_finished, self.is_need_rollback = self._query_resource_set_status(
-            self.uop_os_inst_id_list, self.result_inst_id_list, self.result_mappers_list,self.uop_os_inst_vol_id_list)
-        if self.is_need_rollback:
+        try:
+            is_finished, self.is_need_rollback = self._query_resource_set_status(
+                self.uop_os_inst_id_list, self.result_inst_id_list, self.result_mappers_list,self.uop_os_inst_vol_id_list)
+            if self.is_need_rollback:
+                self.rollback()
+            if is_finished is True:
+                self.next_phase()
+        except Exception as e:
+            err_msg = "Query Vm status error {e}".format(e=str(e))
+            self.error_msg = err_msg
             self.rollback()
-        if is_finished is True:
-            self.next_phase()
+
 
     @transition_state_logger
     def do_query_volume(self):
-        is_finished, self.is_need_rollback = self._query_volume_set_status(
-            self.uop_os_inst_vol_id_list, self.result_inst_vol_id_list, self.result_mappers_list)
-        if self.is_need_rollback:
+        try:
+            is_finished, self.is_need_rollback = self._query_volume_set_status(
+                self.uop_os_inst_vol_id_list, self.result_inst_vol_id_list, self.result_mappers_list)
+            if self.is_need_rollback:
+                self.rollback()
+            if is_finished is True:
+                self.next_phase()
+        except Exception as e:
+            err_msg = "Query Volume status error {e}".format(e=str(e))
+            self.error_msg = err_msg
             self.rollback()
-        if is_finished is True:
-            self.next_phase()
+
 
     @transition_state_logger
     def do_status(self):
@@ -1085,8 +1097,8 @@ class ResourceProviderTransitions2(object):
             cmd = '/bin/sh {0}/mlm.sh {0}'.format(path)
             strout = ''
             def _check_mysql_server_ready():
-                for t in tup:
-                    ip = t[1]
+                for _instance in instance:
+                    ip = _instance['ip']
                     r_flag=check_remote_host(ip)
                     Log.logger.debug("Remote mysql server {ip} is {r_flag}".format(ip=ip, r_flag=r_flag))
                     if not r_flag:
@@ -1698,6 +1710,7 @@ class MongodbCluster(object):
         172.28.36.231
         :param cmd_list:
         """
+        Log.logger.info("The ip list is {}".format(ip_list))
         self.dir = os.path.dirname(
             os.path.abspath(__file__)) + '/' + 'mongo_script'
         self.current_dir = os.path.dirname(os.path.abspath(__file__))
