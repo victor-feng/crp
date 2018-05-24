@@ -30,5 +30,5 @@
   }
 
 {% for obj in objs %}
-#-->{"domain": "{{obj.domain}}", "project": "{{obj.project}}", "dpath": "{{obj.dpath}}", "ips": {{obj.ips}}, "template": "{{obj.template}}", "certificate": "{{obj.certificate}}"}
+#<Necessary>{"domain": "{{obj.domain}}", "project": "{{obj.project}}", "dpath": "{{obj.dpath}}", "ips": {{obj.ips}}, "template": "{{obj.template}}", "certificate": "{{obj.certificate}}"}
 {% endfor %}

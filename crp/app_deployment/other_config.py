@@ -50,7 +50,7 @@ def update_or_extend(new_obj, conf_path):
         更新或扩展
     """
     with open(conf_path, 'rb') as f:
-        content_list = f.read().split('#-->')
+        content_list = f.read().split('#<Necessary>')
 
     old_objs = []
     for i in range(1, len(content_list)):
@@ -68,7 +68,7 @@ def update_or_extend(new_obj, conf_path):
 
 def remove(del_obj, conf_path):
     with open(conf_path, 'rb') as f:
-        content_list = f.read().split('#-->')
+        content_list = f.read().split('#<Necessary>')
 
     old_objs = []
     for i in range(1, len(content_list)):
@@ -140,7 +140,7 @@ if __name__ == '__main__':
     if os.path.exists(nginx_conf):
         with open(nginx_conf, 'rb') as f:
             fp = f.read()
-        my_domain = re.findall(r'#-->', fp, flags=re.M)
+        my_domain = re.findall(r'#<Necessary>', fp, flags=re.M)
         assert my_domain, "Domain already existed in {p},used in k8s app".format(p=BASE_PATH)
 
     if cmd == '-c':
