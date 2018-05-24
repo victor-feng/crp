@@ -1194,13 +1194,13 @@ class AppDeploy(Resource):
 
     def _make_hosts_file(self, ip):
         myhosts_path = os.path.join(UPLOAD_FOLDER, 'mysql', 'myhosts')
-        check_cmd = "cat {path} | grep -w '{ip}' | wc -l".format(path=myhosts_path, ip=ip)
-        res = os.popen(check_cmd).read().strip()
-        # 向ansible配置文件中追加ip，如果存在不追加
-        if int(res) == 0:
-            with open(myhosts_path, "a+") as file_object:
-                file_object.write('[ip]' + os.linesep)
-                file_object.write(ip)
+        # check_cmd = "cat {path} | grep -w '{ip}' | wc -l".format(path=myhosts_path, ip=ip)
+        # res = os.popen(check_cmd).read().strip()
+        # # 向ansible配置文件中追加ip，如果存在不追加
+        # if int(res) == 0:
+        with open(myhosts_path, "wb+") as file_object:
+            file_object.write('[ip]' + os.linesep)
+            file_object.write(ip)
         return myhosts_path
 
 
