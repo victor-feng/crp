@@ -5,9 +5,9 @@
     server  {{ ip }} max_fails=0;
   {% endfor %}
 
-	check interval=2000 fall=2 rise=2 timeout=1000 default_down=true type=http;
-	check_http_send "HEAD /healthz HTTP/1.0\r\n\r\n";
-	keepalive 16;
+    check interval=2000 fall=2 rise=2 timeout=1000 default_down=true type=http;
+    check_http_send "HEAD /healthz HTTP/1.0\r\n\r\n";
+    keepalive 16;
   }
   {% endfor %}
 
