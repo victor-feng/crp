@@ -216,7 +216,7 @@ def make_docker_image(database_config,project_name,env,war_url, resource_id, set
                 req_dict["deploy_id"] = deploy_id
                 # war包转镜像完成
                 if deploy_id:
-                    _dep_detail_callback(deploy_id,deploy_type,set_flag,war_to_image_success)
+                    _dep_detail_callback(deploy_id,deploy_type,set_flag,"war包转镜像完成")
                 else:
                     res_instance_push_callback('', req_dict, 0, {}, {}, war_to_image_success, set_flag)
                 Log.logger.debug("Create context.xml and server.xml successfully,the next step is unzip war!!!")
@@ -230,27 +230,27 @@ def make_docker_image(database_config,project_name,env,war_url, resource_id, set
                         image_url = "{harbor_url}/uop/{project_name}:{env}-v-1.0.1".format(harbor_url=HARBOR_URL,project_name=project_name.lower(),env=env)
                         # 开始构建镜像
                         if deploy_id:
-                            _dep_detail_callback(deploy_id, deploy_type, set_flag, image_build_running)
+                            _dep_detail_callback(deploy_id, deploy_type, set_flag, "镜像构建中")
                         else:
                             res_instance_push_callback('', req_dict, 0, {}, {}, image_build_running, set_flag)
                         err_msg,image=build_dk_image(dk_client, dk_dir, image_url)
                         if not err_msg:
                             # 构建镜像完成
                             if deploy_id:
-                                _dep_detail_callback(deploy_id, deploy_type, set_flag, image_build_success)
+                                _dep_detail_callback(deploy_id, deploy_type, set_flag, "镜像构建完成")
                             else:
                                 res_instance_push_callback('', req_dict, 0, {}, {}, image_build_success, set_flag)
                             Log.logger.debug("Build docker images successfully,the next step is push docker image to harbor!!!,image url is {image_url}".format(image_url=image_url))
                             # 开始推镜像
                             if deploy_id:
-                                _dep_detail_callback(deploy_id, deploy_type, set_flag, push_image_running)
+                                _dep_detail_callback(deploy_id, deploy_type, set_flag, "推送镜像中")
                             else:
                                 res_instance_push_callback('', req_dict, 0, {}, {}, push_image_running, set_flag)
                             err_msg = push_dk_image(dk_client, image_url)
                             if not err_msg:
                                 # 推镜像完成
                                 if deploy_id:
-                                    _dep_detail_callback(deploy_id, deploy_type, set_flag, push_image_success)
+                                    _dep_detail_callback(deploy_id, deploy_type, set_flag, "镜像推送完成")
                                 else:
                                     res_instance_push_callback('', req_dict, 0, {}, {}, push_image_success, set_flag)
                                 Log.logger.debug(
