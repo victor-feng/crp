@@ -9,6 +9,7 @@ from config import APP_ENV, configs
 from crp.utils.docker_tools import _dk_py_cli
 from crp.app_deployment.handler import get_war_from_ftp,_dep_detail_callback
 from crp.utils import res_instance_push_callback
+from crp.utils.aio import exec_cmd
 
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 SCRIPTPATH = configs[APP_ENV].SCRIPTPATH
@@ -137,14 +138,6 @@ def replace_file_text(base_path,remote_path,old_text,new_text):
         f.truncate()
         f.write(res)
 
-def exec_cmd(cmd):
-    p = subprocess.Popen(
-        cmd,
-        shell=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT)
-    stdout = p.stdout.read()
-    return stdout
 
 def deal_templates_xml(database_config,project_name,base_context_path,remote_context_path,base_server_path, remote_server_path):
     err_msg = None
