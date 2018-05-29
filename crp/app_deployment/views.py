@@ -324,7 +324,6 @@ class AppDeploy(Resource):
             parser.add_argument('project_name', type=str,location='json')
             parser.add_argument('namespace', type=str, location='json')
             parser.add_argument('resource_id', type=str, location='json')
-            parser.add_argument('set_flag', type=str, location='json')
             args = parser.parse_args()
             Log.logger.debug("AppDeploy receive post request. args is " + str(args))
             deploy_id = args.deploy_id
@@ -343,12 +342,11 @@ class AppDeploy(Resource):
             project_name = args.project_name
             namespace = args.namespace if args.namespace else NAMESPACE
             resource_id = args.resource_id
-            set_flag = args.set_flag
             Log.logger.debug("Thread exec start")
             t = threading.Thread(target=self.deploy_anything, args=((mongodb, mysql, docker, dns, deploy_id, appinfo,
                                                                      disconf_server_info, deploy_type, environment,
                                                                      cloud, resource_name, deploy_name, project_name,
-                                                                     namespace,resource_id,set_flag)))
+                                                                     namespace,resource_id)))
             t.start()
             Log.logger.debug("Thread exec done")
 
@@ -367,7 +365,7 @@ class AppDeploy(Resource):
         return res, code
 
     def deploy_anything(self, mongodb, mysql, docker, dns, deploy_id, appinfo, disconf_server_info, deploy_type,
-                            environment, cloud, resource_name, deploy_name, project_name, namespace,resource_id,set_flag):
+                            environment, cloud, resource_name, deploy_name, project_name, namespace,resource_id):
         try:
             lock = threading.RLock()
             lock.acquire()
@@ -377,6 +375,7 @@ class AppDeploy(Resource):
             K8sDeployment = K8sDeploymentApi()
             K8sIngress = K8sIngressApi()
             K8sService = K8sServiceApi()
+            set_flag = deploy_type if deploy_type != "deploy" else "res"
             if not appinfo:
                 Log.logger.info("No nginx ip information, no need to push nginx something")
             for app in appinfo:
@@ -637,8 +636,25 @@ class AppDeploy(Resource):
                         cluster_name = i.get("ins_name", "")
                         ip=i.get('ip',[])
                         ip=','.join(ip)
+                        deploy_source = i.get("deploy_source")
+                        database_config = i.get("database_config")
                         host_env = i.get("host_env")
                         if host_env == "docker":
+                            if host_env == "docker":
+                                if deploy_source == "war":
+                                    war_url = image_url
+                                    err_msg, img_url = make_docker_image(database_config, project_name, environment,
+                                                                         war_url, resource_id, set_flag, deploy_id)
+                                    Log.logger.debug(
+                                        "CRP make docker image err_msg:{err_msg}--------image_url:{img_url}".format(
+                                            err_msg=err_msg, img_url=img_url))
+                                    if err_msg:
+                                        end_flag = True
+                                        _dep_callback(deploy_id, '127.0.0.1', host_env, err_msg, "None",
+                                                      False, cluster_name, end_flag, deploy_type,
+                                                      unique_flag, cloud, deploy_name)
+                                    else:
+                                        image_url = img_url
                             if image_url in id2name.keys():
                                 image_uuid = id2name.get(image_url)
                                 i["image_uuid"] = image_uuid
