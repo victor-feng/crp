@@ -309,6 +309,14 @@ class DevelopmentConfig(BaseConfig):
     CHECK_TIMEOUT = 200
     GIT_USER = "jenkins"
     GIT_PASSWORD = "syswin#123"
+    FTP_USR = "ftpuser"
+    FTP_PASSWORD = "syswin#123"
+    FTP_HOST = {
+        "dev":"172.28.26.210",
+        "test":"172.28.26.210",
+        "prep": "172.28.26.210",
+        "prod": "172.28.26.210",
+    }
 configs = {
     'development': DevelopmentConfig,
 }
