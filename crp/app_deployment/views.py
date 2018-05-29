@@ -569,7 +569,7 @@ class AppDeploy(Resource):
                             if deploy_source == "war":
                                 war_url = image_url
                                 err_msg, img_url = make_docker_image(database_config, project_name, environment,
-                                                                     war_url, resource_id, set_flag, deploy_id)
+                                                                     war_url, resource_id, set_flag, deploy_id,deploy_type)
                                 Log.logger.debug(
                                     "CRP make docker image err_msg:{err_msg}--------image_url:{img_url}".format(
                                         err_msg=err_msg, img_url=img_url))
@@ -644,7 +644,7 @@ class AppDeploy(Resource):
                                 if deploy_source == "war":
                                     war_url = image_url
                                     err_msg, img_url = make_docker_image(database_config, project_name, environment,
-                                                                         war_url, resource_id, set_flag, deploy_id)
+                                                                         war_url, resource_id, set_flag, deploy_id,deploy_type)
                                     Log.logger.debug(
                                         "CRP make docker image err_msg:{err_msg}--------image_url:{img_url}".format(
                                             err_msg=err_msg, img_url=img_url))

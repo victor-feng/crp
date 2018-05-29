@@ -7,7 +7,7 @@ import re
 from crp.log import Log
 from config import APP_ENV, configs
 from crp.utils.docker_tools import _dk_py_cli
-from crp.app_deployment.handler import get_war_from_ftp
+from crp.app_deployment.handler import get_war_from_ftp,_dep_detail_callback
 from crp.utils import res_instance_push_callback
 
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
@@ -197,7 +197,7 @@ def create_docker_file(project_name):
 
 
 
-def make_docker_image(database_config,project_name,env,war_url, resource_id, set_flag,deploy_id = None):
+def make_docker_image(database_config,project_name,env,war_url, resource_id, set_flag,deploy_id = None,deploy_type = None):
     err_msg = None
     image_url = None
     try:
@@ -215,7 +215,10 @@ def make_docker_image(database_config,project_name,env,war_url, resource_id, set
                 req_dict = {"resource_id": resource_id}
                 req_dict["deploy_id"] = deploy_id
                 # war包转镜像完成
-                res_instance_push_callback('', req_dict, 0, {}, {}, war_to_image_success, set_flag)
+                if deploy_id:
+                    _dep_detail_callback(deploy_id,deploy_type,set_flag,war_to_image_success)
+                else:
+                    res_instance_push_callback('', req_dict, 0, {}, {}, war_to_image_success, set_flag)
                 Log.logger.debug("Create context.xml and server.xml successfully,the next step is unzip war!!!")
                 unzip_cmd = "unzip -oq {dk_dir}/{project_name}_{env}.war -d {dk_dir}/{project_name}".format(dk_dir=dk_dir,project_name=project_name,env=env)
                 code,msg = commands.getstatusoutput(unzip_cmd)
@@ -226,18 +229,30 @@ def make_docker_image(database_config,project_name,env,war_url, resource_id, set
                         Log.logger.debug("Create Dockerfile successfully,the next step is build docker images !!!")
                         image_url = "{harbor_url}/uop/{project_name}:{env}-v-1.0.1".format(harbor_url=HARBOR_URL,project_name=project_name.lower(),env=env)
                         # 开始构建镜像
-                        res_instance_push_callback('', req_dict, 0, {}, {}, image_build_running, set_flag)
+                        if deploy_id:
+                            _dep_detail_callback(deploy_id, deploy_type, set_flag, image_build_running)
+                        else:
+                            res_instance_push_callback('', req_dict, 0, {}, {}, image_build_running, set_flag)
                         err_msg,image=build_dk_image(dk_client, dk_dir, image_url)
                         if not err_msg:
                             # 构建镜像完成
-                            res_instance_push_callback('', req_dict, 0, {}, {}, image_build_success, set_flag)
+                            if deploy_id:
+                                _dep_detail_callback(deploy_id, deploy_type, set_flag, image_build_success)
+                            else:
+                                res_instance_push_callback('', req_dict, 0, {}, {}, image_build_success, set_flag)
                             Log.logger.debug("Build docker images successfully,the next step is push docker image to harbor!!!,image url is {image_url}".format(image_url=image_url))
                             # 开始推镜像
-                            res_instance_push_callback('', req_dict, 0, {}, {}, push_image_running, set_flag)
+                            if deploy_id:
+                                _dep_detail_callback(deploy_id, deploy_type, set_flag, push_image_running)
+                            else:
+                                res_instance_push_callback('', req_dict, 0, {}, {}, push_image_running, set_flag)
                             err_msg = push_dk_image(dk_client, image_url)
                             if not err_msg:
                                 # 推镜像完成
-                                res_instance_push_callback('', req_dict, 0, {}, {}, push_image_success, set_flag)
+                                if deploy_id:
+                                    _dep_detail_callback(deploy_id, deploy_type, set_flag, push_image_success)
+                                else:
+                                    res_instance_push_callback('', req_dict, 0, {}, {}, push_image_success, set_flag)
                                 Log.logger.debug(
                                     "Push docker image to harbor successfull,docker image url is {image_url}".format(image_url=image_url))
                 else:
