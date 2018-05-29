@@ -20,6 +20,7 @@ from del_handler2 import delete_instance_and_query2,QUERY_VOLUME,QUERY_INGRESS
 from crp.k8s_api import K8sDeploymentApi,K8sIngressApi,K8sServiceApi
 from crp.utils.docker_image import make_docker_image
 from crp.utils import res_instance_push_callback
+from crp.utils.git_tools import git_code_to_war
 
 TIMEOUT = 5000
 SLEEP_TIME = 3
@@ -400,6 +401,8 @@ class ResourceProviderTransitions2(object):
         host_mapping = propertys.get('host_mapping') if propertys.get('host_mapping') else json.dumps(HOST_MAPPING)
         image_url = propertys.get('image_url')
         replicas = propertys.get('quantity')
+        pom_path = propertys.get('pom_path')
+        branch = propertys.get('branch')
         cpu = propertys.get('cpu','2')
         mem = propertys.get('mem', '2')
         #flavor={"cpu": 2, "memory": "2Gi"}
@@ -423,6 +426,28 @@ class ResourceProviderTransitions2(object):
                 K8sIngress = K8sIngressApi()
                 K8sService = K8sServiceApi()
                 ingress_flag = 0
+                if deploy_source == "git":
+                    git_url = image_url
+                    err_msg,war_url = git_code_to_war(git_url,branch,self.project_name,pom_path,self.env,language_env)
+                    Log.logger.debug(
+                        "CRP git code to war  err_msg:{err_msg}--------war_url:{war_url}".format(err_msg=err_msg,
+                                                                                                    war_url=war_url))
+                    if not err_msg:
+                        err_msg, img_url = make_docker_image(database_config, self.project_name, self.env, war_url,
+                                                             self.resource_id, self.set_flag)
+                        Log.logger.debug(
+                            "CRP make docker image err_msg:{err_msg}--------image_url:{img_url}".format(err_msg=err_msg,
+                                                                                                        img_url=img_url))
+                        if err_msg:
+                            self.error_msg = err_msg
+                            is_rollback = True
+                            return is_rollback, uop_os_inst_id_list
+                        else:
+                            image_url = img_url
+                    else:
+                        self.error_msg = err_msg
+                        is_rollback = True
+                        return is_rollback, uop_os_inst_id_list
                 if deploy_source == "war":
                     #执行war包打镜像的操作
                     war_url = image_url
@@ -541,7 +566,7 @@ class ResourceProviderTransitions2(object):
                 userdata = open("{}/pinggate.sh".format(self.dir))
                 is_rollback, uop_os_inst_id_list = self._create_kvm_cluster(property_mapper, cluster_id, host_env,
                                                                             image_id, port, cpu, mem, flavor,
-                                                                            quantity, network_id,userdata, availability_zone,language_env)
+                                                                            quantity, network_id,userdata, availability_zone,language_env,pom_path,branch)
                 userdata.close()
 
             else:
@@ -550,7 +575,7 @@ class ResourceProviderTransitions2(object):
 
         return is_rollback, uop_os_inst_id_list
 
-    def _create_kvm_cluster(self,property_mapper,cluster_id, host_env,image_id,port,cpu,mem,flavor,quantity,network_id,userdata,availability_zone,language_env):
+    def _create_kvm_cluster(self,property_mapper,cluster_id, host_env,image_id,port,cpu,mem,flavor,quantity,network_id,userdata,availability_zone,language_env,pom_path,branch):
         is_rollback = False
         uop_os_inst_id_list = []
         kvm_tag = time.time().__str__()[6:10]

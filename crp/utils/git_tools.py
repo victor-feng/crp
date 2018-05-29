@@ -40,33 +40,42 @@ def write_build_log(context,project_name,env):
     with open(build_log_file1,"wb") as f:
         f.write(context)
 
-def git_code_to_war(git_url,branch,project_name,pom_path,env):
+def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env):
     err_msg = None
     out_context = ""
     try:
-        git_url = deal_git_url(git_url)
-        repo_path = os.path.join(UPLOAD_FOLDER,"repo")
-        if not os.path.exists(repo_path):
-            os.makedirs(repo_path)
-        git_http_url = "http://{git_user}:{git_password}@{git_url}".format(git_user=GIT_USER,git_password=GIT_PASSWORD,git_url=git_url)
-        project_path = os.path.join(repo_path,project_name)
-        if os.path.exists(project_path):
-            git_pull_cmd = "cd {project_path} && git pull origin {branch}".format(project_path=project_path,branch=branch)
-            stdout = exec_cmd(git_pull_cmd)
-        else:
-            git_clone_cmd = "git clone -b {branch} {git_http_url}".format(branch=branch, git_http_url=git_http_url)
-            stdout = exec_cmd(git_clone_cmd)
-        out_context = out_context + '\n' + stdout
-        if "error" in stdout.lower():
-            err_msg = "git clone or pull error"
-            return err_msg
-        pom_path = os.path.join(project_path,pom_path)
-        mvn_to_war_cmd = "mvn -B -f {pom_path} clean package -U -Dmaven.test.skip=true".format(pom_path=pom_path)
-        stdout = exec_cmd(mvn_to_war_cmd)
-        out_context = out_context + '\n' + stdout
-        if "error" in stdout.lower():
-            err_msg = "maven build war error"
-            return err_msg
+        if language_env == "java":
+            git_url = deal_git_url(git_url)
+            repo_path = os.path.join(UPLOAD_FOLDER,"repo")
+            if not os.path.exists(repo_path):
+                os.makedirs(repo_path)
+            git_http_url = "http://{git_user}:{git_password}@{git_url}".format(git_user=GIT_USER,git_password=GIT_PASSWORD,git_url=git_url)
+            project_path = os.path.join(repo_path,project_name)
+            if os.path.exists(project_path):
+                git_pull_cmd = "cd {project_path} && git pull origin {branch}".format(project_path=project_path,branch=branch)
+                stdout = exec_cmd(git_pull_cmd)
+            else:
+                git_clone_cmd = "git clone -b {branch} {git_http_url}".format(branch=branch, git_http_url=git_http_url)
+                stdout = exec_cmd(git_clone_cmd)
+            out_context = out_context + '\n' + stdout
+            if "error" in stdout.lower():
+                err_msg = "git clone or pull error"
+                return err_msg
+            pom_path = os.path.join(project_path,pom_path)
+            mvn_to_war_cmd = "mvn -B -f {pom_path} clean package -U -Dmaven.test.skip=true".format(pom_path=pom_path)
+            stdout = exec_cmd(mvn_to_war_cmd)
+            out_context = out_context + '\n' + stdout
+            if "error" in stdout.lower():
+                err_msg = "maven build war error"
+                return err_msg
+            base_war_name = "{project_name}.war".format(project_name=project_name)
+            remote_war_name = "{project_name}_{env}.war".format(project_name=project_name,env=env)
+            base_war = os.path.join(os.path.join(project_name,"target"),base_war_name)
+            project_war_path = os.path.join(os.path.join(UPLOAD_FOLDER, "war"), project_name)
+            if not project_war_path:
+                os.makedirs(project_war_path)
+            remote_war = os.path.join(project_war_path,remote_war_name)
+            os.rename(base_war,remote_war)
     except Exception as e:
         err_msg = "Git code to war error {e}".format(e=str(e))
         out_context = out_context + '\n' + err_msg

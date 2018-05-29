@@ -170,6 +170,8 @@ class DevelopmentConfig(BaseConfig):
             'ready_probe_path':'ready_probe_path',
             'domain_path':'domain_path',
             'host_mapping':'host_mapping',
+            'pom_path':'pom_path',
+            'branch':'branch',
         },
         'resource_cluster': {
             'cluster_name': 'instance_name',
