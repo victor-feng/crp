@@ -197,7 +197,7 @@ def create_docker_file(project_name):
 
 
 
-def make_docker_image(database_config,project_name,env,war_url, resource_id, set_flag):
+def make_docker_image(database_config,project_name,env,war_url, resource_id, set_flag,deploy_id = None):
     err_msg = None
     image_url = None
     try:
@@ -213,6 +213,7 @@ def make_docker_image(database_config,project_name,env,war_url, resource_id, set
             if not err_msg:
                 Log.logger.info("Successful pull the var package")
                 req_dict = {"resource_id": resource_id}
+                req_dict["deploy_id"] = deploy_id
                 # war包转镜像完成
                 res_instance_push_callback('', req_dict, 0, {}, {}, war_to_image_success, set_flag)
                 Log.logger.debug("Create context.xml and server.xml successfully,the next step is unzip war!!!")

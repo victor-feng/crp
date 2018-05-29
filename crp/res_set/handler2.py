@@ -423,7 +423,7 @@ class ResourceProviderTransitions2(object):
                 K8sIngress = K8sIngressApi()
                 K8sService = K8sServiceApi()
                 ingress_flag = 0
-                if deploy_source == "war" and self.set_flag == "res":
+                if deploy_source == "war":
                     #执行war包打镜像的操作
                     war_url = image_url
                     err_msg,img_url = make_docker_image(database_config,self.project_name,self.env,war_url,self.resource_id,self.set_flag)
