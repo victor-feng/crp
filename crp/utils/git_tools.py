@@ -3,6 +3,7 @@
 
 
 import os
+import datetime
 from crp.log import Log
 from config import APP_ENV, configs
 from crp.utils.aio import exec_cmd
@@ -15,6 +16,7 @@ GIT_PASSWORD = configs[APP_ENV].GIT_PASSWORD
 FTP_USER = configs[APP_ENV].FTP_USER
 FTP_PASSWORD = configs[APP_ENV].FTP_PASSWORD
 FTP_HOST = configs[APP_ENV].FTP_HOST
+FTP_DIR = configs[APP_ENV].FTP_DIR
 
 def deal_git_url(git_url):
     if  git_url.startswith("http"):
@@ -46,6 +48,7 @@ def write_build_log(context,project_name,env):
 def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env):
     err_msg = None
     out_context = ""
+    war_url = None
     try:
         if language_env == "java":
             git_url = deal_git_url(git_url)
@@ -71,31 +74,35 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env):
             if "error" in stdout.lower():
                 err_msg = "maven build war error"
                 return err_msg
-            # base_war_name = "{project_name}.war".format(project_name=project_name)
-            # remote_war_name = "{project_name}_{env}.war".format(project_name=project_name,env=env)
-            # base_war = os.path.join(os.path.join(project_name,"target"),base_war_name)
-            # project_war_path = os.path.join(os.path.join(UPLOAD_FOLDER, "war"), project_name)
-            # if not project_war_path:
-            #     os.makedirs(project_war_path)
-            # remote_war = os.path.join(project_war_path,remote_war_name)
-            # os.rename(base_war,remote_war)
-            # 往ftp服务器推送war包
+            base_war_name = "{project_name}.war".format(project_name=project_name)
+            base_war = os.path.join(os.path.join(project_path,"target"),base_war_name)
+            err_msg,war_url = put_war_to_ftp(env, project_name, base_war)
     except Exception as e:
         err_msg = "Git code to war error {e}".format(e=str(e))
         out_context = out_context + '\n' + err_msg
         Log.logger.error(err_msg)
     write_build_log(out_context, project_name, env)
-    return  err_msg
+    return  err_msg,war_url
 
 
-def put_war_to_ftp(env,base_war):
+def put_war_to_ftp(env,project_name,base_war):
     err_msg = None
+    war_url = None
     try:
+        war_name = "{project_name}.war".format(project_name=project_name)
+        tag = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
         ftp_host = FTP_HOST[env]
         ftp_user = FTP_USER
         ftp_passwd = FTP_PASSWORD
         ftp = FTP(host=ftp_host, user=ftp_user, passwd=ftp_passwd)
-
-
+        remote_dir = "{ftp_dir}/uop/{project_name}_{emv}_{tag}".format(ftp_dir=FTP_DIR,env=env,project_name=project_name,tag=tag)
+        ftp.mkd(remote_dir)
+        remote_war = os.path.join(remote_dir,war_name)
+        f = open(base_war, "rb")
+        ftp.storbinary('STOR {remote_war}'.format(remote_war=remote_war), f, 1024)
+        f.close()
+        war_url = "http://{ftp_hsot}/uop/{project_name}_{env}_{tag}/{war_name}".format(ftp_dir=FTP_DIR,env=env,project_name=project_name,tag=tag,war_name=war_name)
     except Exception as e:
-        pass
+        err_msg = "Put war to ftp server error {e}".format(e=str(e))
+        Log.logger.error(err_msg)
+    return  err_msg ,war_url

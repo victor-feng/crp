@@ -311,6 +311,7 @@ class DevelopmentConfig(BaseConfig):
     GIT_PASSWORD = "syswin#123"
     FTP_USR = "ftpuser"
     FTP_PASSWORD = "syswin#123"
+    FTP_DIR = "/data/ftpdata"
     FTP_HOST = {
         "dev":"172.28.26.210",
         "test":"172.28.26.210",
