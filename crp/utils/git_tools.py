@@ -41,7 +41,7 @@ def write_build_log(context,project_name,resource_name):
     if os.path.exists(build_log_file1):
         os.rename(build_log_file1,build_log_file2)
     if os.path.exists(build_log_file2):
-        os.rename(build_log_file1,build_log_file3)
+        os.rename(build_log_file2,build_log_file3)
     with open(build_log_file1,"wb") as f:
         f.write(context)
 
@@ -68,7 +68,7 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
                 err_msg = "git clone or pull error"
                 return err_msg
             pom_path = os.path.join(project_path,pom_path)
-            mvn_to_war_cmd = "mvn -B -f {pom_path} clean package -U -Dmaven.test.skip=true".format(pom_path=pom_path)
+            mvn_to_war_cmd = "/usr/local/maven/bin/mvn -B -f {pom_path} clean package -U -Dmaven.test.skip=true".format(pom_path=pom_path)
             stdout = exec_cmd(mvn_to_war_cmd)
             out_context = out_context + '\n' + stdout
             if "error" in stdout.lower():
