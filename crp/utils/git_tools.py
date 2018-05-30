@@ -68,7 +68,7 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
                 err_msg = "git clone or pull error"
                 return err_msg,war_url
             pom_path = os.path.join(project_path,pom_path)
-            mvn_to_war_cmd = "source /etc/profile && /usr/local/maven/bin/mvn -B -f {pom_path} clean package -U -Dmaven.test.skip=true".format(pom_path=pom_path)
+            mvn_to_war_cmd = "source /etc/profile\n/usr/local/maven/bin/mvn -B -f {pom_path} clean package -U -Dmaven.test.skip=true".format(pom_path=pom_path)
             stdout = exec_cmd(mvn_to_war_cmd)
             out_context = out_context + '\n' + stdout
             if "error" in stdout.lower():
