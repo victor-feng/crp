@@ -29,7 +29,7 @@ def deal_git_url(git_url):
 
 
 def write_build_log(context,project_name,env):
-    build_log_path = os.path.exists(UPLOAD_FOLDER, "build_log")
+    build_log_path = os.path.join(UPLOAD_FOLDER, "build_log")
     if not build_log_path:
         os.makedirs(build_log_path)
     file_name1 = "{project_name}_{env}_1".format(project_name=project_name,env=env)
