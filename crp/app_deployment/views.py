@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import json
 import commands
 import time
@@ -1267,5 +1268,39 @@ class Upload(Resource):
         }
 
 
+class DeployLogApi(Resource):
+    """
+        构建日志获取
+    """
+
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument("resource_name", type=str, location='args')
+        parser.add_argument("project_name", type=str, location='args')
+        parser.add_argument("version", type=int, location='args')
+        args = parser.parse_args()
+
+        version = args.version if args.version else 1
+        filename = "/data/build_log/{p}/{r}_{v}".format(
+            p=args.project_name, r=args.resource_name, v=version)
+
+        if not os.path.exists(filename):
+            return {
+                'code': 400,
+                'msg': 'Log not exists',
+                'data': None
+            }
+
+        with open(filename, 'rb') as f:
+            content = f.read()
+
+        return {
+            'code': 200,
+            'msg': 'Get log success',
+            'data': content
+        }
+
+
 app_deploy_api.add_resource(AppDeploy, '/deploys')
 app_deploy_api.add_resource(Upload, '/upload')
+app_deploy_api.add_resource(DeployLogApi, '/log_detail')
