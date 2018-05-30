@@ -97,15 +97,13 @@ def put_war_to_ftp(env,project_name,base_war):
         ftp_user = FTP_USER
         ftp_passwd = FTP_PASSWORD
         ftp = FTP(host=ftp_host, user=ftp_user, passwd=ftp_passwd)
-        Log.logger.info("000000000000000000000000001{}".format(ftp_host))
-        Log.logger.info("1111111111111111111111111111111{}".format(ftp))
         remote_dir = "{ftp_dir}/uop/{project_name}_{env}_{tag}".format(ftp_dir=FTP_DIR,env=env,project_name=project_name,tag=tag)
         ftp.mkd(remote_dir)
         remote_war = os.path.join(remote_dir,war_name)
         f = open(base_war, "rb")
         ftp.storbinary('STOR {remote_war}'.format(remote_war=remote_war), f, 1024)
         f.close()
-        war_url = "http://{ftp_host}/uop/{project_name}_{env}_{tag}/{war_name}".format(ftp_dir=ftp_host,env=env,project_name=project_name,tag=tag,war_name=war_name)
+        war_url = "http://{ftp_host}/uop/{project_name}_{env}_{tag}/{war_name}".format(ftp_host=ftp_host,env=env,project_name=project_name,tag=tag,war_name=war_name)
     except Exception as e:
         err_msg = "Put war to ftp server error {e}".format(e=str(e))
         Log.logger.error(err_msg)
