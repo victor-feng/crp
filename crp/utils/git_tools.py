@@ -80,7 +80,7 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
                 return err_msg,war_url
             base_war_name = "{project_name}.war".format(project_name=project_name)
             Log.logger.info("33333333333333333333333333333333333 {}".format(pom_paths))
-            if pom_paths.__str__() > 1:
+            if len(pom_paths) > 1:
                 pom_dir = pom_paths[:-1]
                 base_war = os.path.join(os.path.join(os.path.join(project_path, pom_dir), "targer"),base_war_name)
             else:
