@@ -19,6 +19,7 @@ FTP_HOST = configs[APP_ENV].FTP_HOST
 FTP_DIR = configs[APP_ENV].FTP_DIR
 
 def deal_git_url(git_url):
+    Log.logger.info("11111111111111111111111111111111111111111 {}".format(git_url))
     git_dir=git_url.strip().split('/')[-1].split('.')[0]
     if  git_url.startswith("http"):
         git_url = git_url.strip().split("//")[1]
@@ -71,7 +72,6 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
             pom_path = os.path.join(project_path,pom_path)
             mvn_to_war_cmd = "source /etc/profile && /usr/local/maven/bin/mvn -B -f {pom_path} clean package -U -Dmaven.test.skip=true".format(pom_path=pom_path)
             stdout = exec_cmd(mvn_to_war_cmd)
-            #stdout = os.popen(mvn_to_war_cmd).read()
             out_context = out_context + '\n' + stdout
             if "error" in stdout.lower():
                 err_msg = "maven build war error"
