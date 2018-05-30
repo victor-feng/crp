@@ -66,14 +66,14 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
             out_context = out_context + '\n' + stdout
             if "error" in stdout.lower():
                 err_msg = "git clone or pull error"
-                return err_msg
+                return err_msg,war_url
             pom_path = os.path.join(project_path,pom_path)
             mvn_to_war_cmd = "source /etc/profile && /usr/local/maven/bin/mvn -B -f {pom_path} clean package -U -Dmaven.test.skip=true".format(pom_path=pom_path)
             stdout = exec_cmd(mvn_to_war_cmd)
             out_context = out_context + '\n' + stdout
             if "error" in stdout.lower():
                 err_msg = "maven build war error"
-                return err_msg
+                return err_msg,war_url
             base_war_name = "{project_name}.war".format(project_name=project_name)
             base_war = os.path.join(os.path.join(project_path,"target"),base_war_name)
             err_msg,war_url = put_war_to_ftp(env, project_name, base_war)
