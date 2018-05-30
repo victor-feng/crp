@@ -54,7 +54,7 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
     war_url = None
     try:
         if language_env == "java":
-            poms = pom_path.split('/')
+            pom_paths = pom_path.split('/')
             git_url,git_dir = deal_git_url(git_url)
             repo_path = os.path.join(UPLOAD_FOLDER,"repo")
             if not os.path.exists(repo_path):
@@ -79,11 +79,13 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
                 err_msg = "maven build war error"
                 return err_msg,war_url
             base_war_name = "{project_name}.war".format(project_name=project_name)
-            if poms.__str__() > 1:
-                pom_dir = poms[:-1]
+            Log.logger.info("33333333333333333333333333333333333 {}".format(pom_paths))
+            if pom_paths.__str__() > 1:
+                pom_dir = pom_paths[:-1]
                 base_war = os.path.join(os.path.join(os.path.join(project_path, pom_dir), "targer"),base_war_name)
             else:
                 base_war = os.path.join(os.path.join(project_path,"target"),base_war_name)
+            Log.logger.info("44444444444444444444444444444444444444{}".format(base_war))
             err_msg,war_url = put_war_to_ftp(env, project_name, base_war)
     except Exception as e:
         err_msg = "Git code to war error {e}".format(e=str(e))
