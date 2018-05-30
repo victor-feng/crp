@@ -61,16 +61,16 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
                 git_pull_cmd = "cd {project_path} && git pull origin {branch}".format(project_path=project_path,branch=branch)
                 stdout = exec_cmd(git_pull_cmd)
             else:
-                git_clone_cmd = "git clone -b {branch} {git_http_url}".format(branch=branch, git_http_url=git_http_url)
+                git_clone_cmd = "cd {repo_path} && git clone -b {branch} {git_http_url}".format(repo_path=repo_path,branch=branch, git_http_url=git_http_url)
                 stdout = exec_cmd(git_clone_cmd)
             out_context = out_context + '\n' + stdout
-            if "error" in stdout.lower():
+            if "error" in stdout.lower() or "fatal" in stdout.lower():
                 err_msg = "git clone or pull error"
                 return err_msg,war_url
             pom_path = os.path.join(project_path,pom_path)
             mvn_to_war_cmd = "source /etc/profile && /usr/local/maven/bin/mvn -B -f {pom_path} clean package -U -Dmaven.test.skip=true".format(pom_path=pom_path)
-            #stdout = exec_cmd(mvn_to_war_cmd)
-            stdout = os.popen(mvn_to_war_cmd).read()
+            stdout = exec_cmd(mvn_to_war_cmd)
+            #stdout = os.popen(mvn_to_war_cmd).read()
             out_context = out_context + '\n' + stdout
             if "error" in stdout.lower():
                 err_msg = "maven build war error"
