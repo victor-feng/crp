@@ -572,7 +572,6 @@ class ResourceProviderTransitions2(object):
 
             elif host_env == "kvm":
                 #创建虚拟化云
-                war_url = ""
                 if deploy_source == "git":
                     git_url = image_url
                     err_msg,war_url = git_code_to_war(
