@@ -77,7 +77,12 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
                 err_msg = "maven build war error"
                 return err_msg,war_url
             base_war_name = "{project_name}.war".format(project_name=project_name)
-            base_war = os.path.join(os.path.join(project_path,"target"),base_war_name)
+            poms=pom_path.split('/')
+            if poms.__str__() > 1:
+                pom_dir = poms[:-1]
+                base_war = os.path.join(os.path.join(os.path.join(project_path, pom_dir), "targer"),base_war_name)
+            else:
+                base_war = os.path.join(os.path.join(project_path,"target"),base_war_name)
             err_msg,war_url = put_war_to_ftp(env, project_name, base_war)
     except Exception as e:
         err_msg = "Git code to war error {e}".format(e=str(e))
