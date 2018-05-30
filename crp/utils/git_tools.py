@@ -19,13 +19,14 @@ FTP_HOST = configs[APP_ENV].FTP_HOST
 FTP_DIR = configs[APP_ENV].FTP_DIR
 
 def deal_git_url(git_url):
+    git_dir=git_url.strip().split('/')[-1].split('.')[0]
     if  git_url.startswith("http"):
         git_url = git_url.strip().split("//")[1]
     elif git_url.startswith("git"):
         git_url = git_url.strip().split("@")[1].replace(":", "/")
     else:
         raise Exception("git url format error,url is {git_url}".format(git_url=git_url))
-    return git_url
+    return git_url,git_dir
 
 
 def write_build_log(context,project_name,resource_name):
@@ -51,12 +52,12 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
     war_url = None
     try:
         if language_env == "java":
-            git_url = deal_git_url(git_url)
+            git_url,git_dir = deal_git_url(git_url)
             repo_path = os.path.join(UPLOAD_FOLDER,"repo")
             if not os.path.exists(repo_path):
                 os.makedirs(repo_path)
             git_http_url = "http://{git_user}:{git_password}@{git_url}".format(git_user=GIT_USER,git_password=GIT_PASSWORD,git_url=git_url)
-            project_path = os.path.join(repo_path,project_name)
+            project_path = os.path.join(repo_path,git_dir)
             if os.path.exists(project_path):
                 git_pull_cmd = "cd {project_path} && git pull origin {branch}".format(project_path=project_path,branch=branch)
                 stdout = exec_cmd(git_pull_cmd)
