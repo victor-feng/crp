@@ -73,7 +73,7 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
                 stdout = exec_cmd(git_pull_cmd)
                 # success
                 if deploy_id:
-                    _dep_detail_callback(deploy_id, deploy_type, set_flag, "pull code from github success!")
+                    _dep_detail_callback(deploy_id, deploy_type, set_flag, "更新git代码成功")
                 else:
                     res_instance_push_callback('', req_dict, 0, {}, {}, pull_code_success, set_flag)
             else:
@@ -81,7 +81,7 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
                 stdout = exec_cmd(git_clone_cmd)
                 # success
                 if deploy_id:
-                    _dep_detail_callback(deploy_id, deploy_type, set_flag, "clone branch success!")
+                    _dep_detail_callback(deploy_id, deploy_type, set_flag, "拉取git代码成功")
                 else:
                     res_instance_push_callback('', req_dict, 0, {}, {}, clone_branch_success, set_flag)
             out_context = out_context + '\n' + stdout
@@ -98,7 +98,7 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
 
             # success
             if deploy_id:
-                _dep_detail_callback(deploy_id, deploy_type, set_flag, "package code success!")
+                _dep_detail_callback(deploy_id, deploy_type, set_flag, "war包构建成功")
             else:
                 res_instance_push_callback('', req_dict, 0, {}, {}, package_success, set_flag)
 
