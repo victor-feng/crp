@@ -21,6 +21,7 @@ FTP_DIR = configs[APP_ENV].FTP_DIR
 def deal_git_url(git_url):
     Log.logger.info("11111111111111111111111111111111111111111 {}".format(git_url))
     git_dir=git_url.strip().split('/')[-1].split('.')[0]
+    Log.logger.info("2222222222222222222222222222 {}".format(git_url))
     if  git_url.startswith("http"):
         git_url = git_url.strip().split("//")[1]
     elif git_url.startswith("git"):
