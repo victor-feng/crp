@@ -309,7 +309,7 @@ class DevelopmentConfig(BaseConfig):
     CHECK_TIMEOUT = 200
     GIT_USER = "jenkins"
     GIT_PASSWORD = "syswin#123"
-    FTP_USR = "ftpuser"
+    FTP_USER = "ftpuser"
     FTP_PASSWORD = "syswin#123"
     FTP_DIR = "/data/ftpdata"
     FTP_HOST = {
