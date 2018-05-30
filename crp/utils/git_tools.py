@@ -38,10 +38,10 @@ def write_build_log(context,project_name,resource_name):
     build_log_file1 = os.path.join(build_log_path,file_name1)
     build_log_file2 = os.path.join(build_log_path,file_name2)
     build_log_file3 = os.path.join(build_log_path, file_name3)
-    if os.path.exists(build_log_file1):
-        os.rename(build_log_file1,build_log_file2)
     if os.path.exists(build_log_file2):
         os.rename(build_log_file2,build_log_file3)
+    if os.path.exists(build_log_file1):
+        os.rename(build_log_file1,build_log_file2)
     with open(build_log_file1,"wb") as f:
         f.write(context)
 

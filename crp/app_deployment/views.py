@@ -24,6 +24,7 @@ from crp.utils.aio import exec_cmd_ten_times,async
 from handler import _dep_detail_callback,_dep_callback,closed_nginx_conf,\
     open_nginx_conf,start_write_log,get_war_from_ftp,make_database_config
 from crp.utils.docker_image import make_docker_image
+from crp.utils.git_tools import git_code_to_war
 
 import sys
 reload(sys)
@@ -559,6 +560,9 @@ class AppDeploy(Resource):
                         port = int(i.get("port")) if i.get("port") else i.get("port")
                         deploy_source = i.get("deploy_source")
                         database_config = i.get("database_config")
+                        branch = i.get("branch")
+                        pom_path = i.get("pom_path")
+                        language_env = i.get("language_env")
                         app_requests = APP_REQUESTS.get(flavor)
                         app_limits = APP_LIMITS.get(flavor)
                         filebeat_requests_flavor = '05002'
@@ -566,6 +570,29 @@ class AppDeploy(Resource):
                         filebeat_requests = FILEBEAT_REQUESTS.get(filebeat_requests_flavor)
                         filebeat_limits = FILEBEAT_LIMITS.get(filebeat_limits_flavor)
                         if host_env == "docker":
+                            if deploy_source == "git":
+                                git_url = image_url
+                                err_msg, war_url = git_code_to_war(git_url, branch, project_name, pom_path,
+                                                                   environment, language_env, deployment_name)
+                                if not err_msg:
+                                    err_msg, img_url = make_docker_image(database_config, project_name, environment,
+                                                                         war_url, resource_id, set_flag, deploy_id,
+                                                                         deploy_type)
+                                    Log.logger.debug(
+                                        "CRP make docker image err_msg:{err_msg}--------image_url:{img_url}".format(
+                                            err_msg=err_msg, img_url=img_url))
+                                    if err_msg:
+                                        end_flag = True
+                                        _dep_callback(deploy_id, '127.0.0.1', host_env, err_msg, "None",
+                                                      False, cluster_name, end_flag, deploy_type,
+                                                      unique_flag, cloud, deploy_name)
+                                    else:
+                                        image_url = img_url
+                                else:
+                                    end_flag = True
+                                    _dep_callback(deploy_id, '127.0.0.1', host_env, err_msg, "None",
+                                                  False, cluster_name, end_flag, deploy_type,
+                                                  unique_flag, cloud, deploy_name)
                             if deploy_source == "war":
                                 war_url = image_url
                                 err_msg, img_url = make_docker_image(database_config, project_name, environment,
@@ -604,7 +631,7 @@ class AppDeploy(Resource):
                                     #不报错开始检查应用和pod的状态
                                     self._check_deployment_status(deployment_name, deploy_id, cluster_name,
                                                            end_flag, deploy_type,
-                                                           unique_flag, cloud,deploy_name,namespace)
+                                                           unique_flag, cloud,deploy_name,namespace,war_url)
                                 else:
                                     _dep_callback(deploy_id, '127.0.0.1', host_env, update_deployment_err_msg, "None", False, cluster_name, end_flag, deploy_type,
                                                   unique_flag,cloud,deploy_name)
@@ -614,13 +641,24 @@ class AppDeploy(Resource):
                                               False, cluster_name, end_flag, deploy_type,
                                               unique_flag, cloud, deploy_name)
                         elif host_env == "kvm":
+                            if deploy_source == "git":
+                                git_url = image_url
+                                err_msg, war_url = git_code_to_war(git_url, branch, project_name, pom_path,
+                                                                   environment, language_env, deployment_name)
+                                i["url"] = war_url
+                                if err_msg:
+                                    end_flag = True
+                                    _dep_callback(deploy_id, '127.0.0.1', host_env, update_object_err_msg, "None",
+                                                  False, cluster_name, end_flag, deploy_type,
+                                                  unique_flag, cloud, deploy_name)
+                                    return
                             deploy_kvm_flag, msg=self.deploy_kvm(project_name,i,environment)
                             end_flag = True
                             if deploy_kvm_flag:
                                 _dep_callback(deploy_id, '127.0.0.1', host_env, msg, "None", True, cluster_name,
                                               end_flag,
                                               deploy_type,
-                                              unique_flag, cloud, deploy_name)
+                                              unique_flag, cloud, deploy_name,war_url=war_url)
                             else:
                                 _dep_callback(deploy_id, '127.0.0.1',host_env, msg, "None", False,
                                               cluster_name, end_flag, deploy_type,
@@ -901,7 +939,7 @@ class AppDeploy(Resource):
                 return res,msg_str % res_dict[res]
 
     def _check_deployment_status(self, deployment_name=None, deploy_id=None, cluster_name=None, end_flag=None, deploy_type=None,
-                                unique_flag=None, cloud=None,deploy_name=None,namespace=None):
+                                unique_flag=None, cloud=None,deploy_name=None,namespace=None,war_url=None):
         try:
             K8sDeployment = K8sDeploymentApi()
             for i in range(600):
@@ -910,7 +948,7 @@ class AppDeploy(Resource):
                 if deployment_status == "available":
                     _dep_callback(deploy_id, '127.0.0.1', "docker", "None", "None", True, cluster_name, end_flag,
                                            deploy_type,
-                                           unique_flag, cloud,deploy_name)
+                                           unique_flag, cloud,deploy_name,war_url=war_url)
                     break
                 else:
                     msg,code = K8sDeployment.get_deployment(namespace, deployment_name)
