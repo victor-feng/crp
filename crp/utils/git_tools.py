@@ -95,7 +95,7 @@ def put_war_to_ftp(env,project_name,base_war):
         ftp_user = FTP_USER
         ftp_passwd = FTP_PASSWORD
         ftp = FTP(host=ftp_host, user=ftp_user, passwd=ftp_passwd)
-        remote_dir = "{ftp_dir}/uop/{project_name}_{emv}_{tag}".format(ftp_dir=FTP_DIR,env=env,project_name=project_name,tag=tag)
+        remote_dir = "{ftp_dir}/uop/{project_name}_{env}_{tag}".format(ftp_dir=FTP_DIR,env=env,project_name=project_name,tag=tag)
         ftp.mkd(remote_dir)
         remote_war = os.path.join(remote_dir,war_name)
         f = open(base_war, "rb")
