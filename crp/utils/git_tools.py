@@ -19,9 +19,7 @@ FTP_HOST = configs[APP_ENV].FTP_HOST
 FTP_DIR = configs[APP_ENV].FTP_DIR
 
 def deal_git_url(git_url):
-    Log.logger.info("11111111111111111111111111111111111111111 {}".format(git_url))
     git_dir=git_url.strip().split('/')[-1].split('.')[0]
-    Log.logger.info("2222222222222222222222222222 {}".format(git_url))
     if  git_url.startswith("http"):
         git_url = git_url.strip().split("//")[1]
     elif git_url.startswith("git"):
@@ -79,16 +77,11 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
                 err_msg = "maven build war error"
                 return err_msg,war_url
             base_war_name = "{project_name}.war".format(project_name=project_name)
-            Log.logger.info("33333333333333333333333333333333333 {}".format(pom_paths))
             if len(pom_paths) > 1:
-                Log.logger.info("11111111122223333 {}".format(pom_paths))
                 pom_dir = '/'.join(pom_paths[:-1])
-                Log.logger.info("1111111112222333322222222222222222222 {}".format(pom_dir))
-                base_war = os.path.join(os.path.join(os.path.join(project_path, pom_dir), "targer"),base_war_name)
-                Log.logger.info("555555555555555555555555555555555555555555{}".format(base_war))
+                base_war = os.path.join(os.path.join(os.path.join(project_path, pom_dir), "target"),base_war_name)
             else:
                 base_war = os.path.join(os.path.join(project_path,"target"),base_war_name)
-            Log.logger.info("44444444444444444444444444444444444444{}".format(base_war))
             err_msg,war_url = put_war_to_ftp(env, project_name, base_war)
     except Exception as e:
         err_msg = "Git code to war error {e}".format(e=str(e))
