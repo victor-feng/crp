@@ -586,6 +586,7 @@ class AppDeploy(Resource):
                                         _dep_callback(deploy_id, '127.0.0.1', host_env, err_msg, "None",
                                                       False, cluster_name, end_flag, deploy_type,
                                                       unique_flag, cloud, deploy_name)
+                                        return
                                     else:
                                         image_url = img_url
                                 else:
@@ -593,6 +594,7 @@ class AppDeploy(Resource):
                                     _dep_callback(deploy_id, '127.0.0.1', host_env, err_msg, "None",
                                                   False, cluster_name, end_flag, deploy_type,
                                                   unique_flag, cloud, deploy_name)
+                                    return
                             if deploy_source == "war":
                                 war_url = image_url
                                 err_msg, img_url = make_docker_image(database_config, project_name, environment,
