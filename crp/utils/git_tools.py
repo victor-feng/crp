@@ -32,9 +32,9 @@ def write_build_log(context,project_name,resource_name):
     build_log_path = os.path.join(os.path.join(UPLOAD_FOLDER, "build_log"),project_name)
     if not os.path.exists(build_log_path):
         os.makedirs(build_log_path)
-    file_name1 = "{resource_name}_1".format(resource_nam=resource_name)
-    file_name2 = "{resource_name}_2".format(resource_nam=resource_name)
-    file_name3 = "{resource_name}_3".format(resource_nam=resource_name)
+    file_name1 = "{resource_name}_1".format(resource_name=resource_name)
+    file_name2 = "{resource_name}_2".format(resource_name=resource_name)
+    file_name3 = "{resource_name}_3".format(resource_name=resource_name)
     build_log_file1 = os.path.join(build_log_path,file_name1)
     build_log_file2 = os.path.join(build_log_path,file_name2)
     build_log_file3 = os.path.join(build_log_path, file_name3)
