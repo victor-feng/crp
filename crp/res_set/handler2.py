@@ -428,7 +428,7 @@ class ResourceProviderTransitions2(object):
                 ingress_flag = 0
                 if deploy_source == "git":
                     git_url = image_url
-                    err_msg,war_url = git_code_to_war(git_url,branch,self.project_name,pom_path,self.env,language_env)
+                    err_msg,war_url = git_code_to_war(git_url,branch,self.project_name,pom_path,self.env,language_env,deployment_name)
                     Log.logger.debug(
                         "CRP git code to war  err_msg:{err_msg}--------war_url:{war_url}".format(err_msg=err_msg,
                                                                                                     war_url=war_url))
@@ -565,7 +565,7 @@ class ResourceProviderTransitions2(object):
                 war_url = ""
                 if deploy_source == "git":
                     git_url = image_url
-                    err_msg,war_url = git_code_to_war(git_url,branch,self.project_name,pom_path,self.env,language_env)
+                    err_msg,war_url = git_code_to_war(git_url,branch,self.project_name,pom_path,self.env,language_env,deployment_name)
                     Log.logger.debug(
                         "CRP git code to war  err_msg:{err_msg}--------war_url:{war_url}".format(err_msg=err_msg,
                                                                                                     war_url=war_url))

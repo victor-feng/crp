@@ -28,13 +28,13 @@ def deal_git_url(git_url):
     return git_url
 
 
-def write_build_log(context,project_name,env):
-    build_log_path = os.path.join(UPLOAD_FOLDER, "build_log")
-    if not build_log_path:
+def write_build_log(context,project_name,resource_name):
+    build_log_path = os.path.join(os.path.join(UPLOAD_FOLDER, "build_log"),project_name)
+    if not os.path.exists(build_log_path):
         os.makedirs(build_log_path)
-    file_name1 = "{project_name}_{env}_1".format(project_name=project_name,env=env)
-    file_name2 = "{project_name}_{env}_2".format(project_name=project_name, env=env)
-    file_name3 = "{project_name}_{env}_3".format(project_name=project_name, env=env)
+    file_name1 = "{resource_name}_1".format(resource_nam=resource_name)
+    file_name2 = "{resource_name}_2".format(resource_nam=resource_name)
+    file_name3 = "{resource_name}_3".format(resource_nam=resource_name)
     build_log_file1 = os.path.join(build_log_path,file_name1)
     build_log_file2 = os.path.join(build_log_path,file_name2)
     build_log_file3 = os.path.join(build_log_path, file_name3)
@@ -45,7 +45,7 @@ def write_build_log(context,project_name,env):
     with open(build_log_file1,"wb") as f:
         f.write(context)
 
-def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env):
+def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resource_name):
     err_msg = None
     out_context = ""
     war_url = None
@@ -81,7 +81,7 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env):
         err_msg = "Git code to war error {e}".format(e=str(e))
         out_context = out_context + '\n' + err_msg
         Log.logger.error(err_msg)
-    write_build_log(out_context, project_name, env)
+    write_build_log(out_context,project_name, resource_name)
     return  err_msg,war_url
 
 
