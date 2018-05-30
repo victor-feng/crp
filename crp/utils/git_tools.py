@@ -82,7 +82,7 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
             Log.logger.info("33333333333333333333333333333333333 {}".format(pom_paths))
             if len(pom_paths) > 1:
                 Log.logger.info("11111111122223333 {}".format(pom_paths))
-                pom_dir = pom_paths[:-1]
+                pom_dir = '/'.join(pom_paths[:-1])
                 Log.logger.info("1111111112222333322222222222222222222 {}".format(pom_dir))
                 base_war = os.path.join(os.path.join(os.path.join(project_path, pom_dir), "targer"),base_war_name)
                 Log.logger.info("555555555555555555555555555555555555555555{}".format(base_war))
