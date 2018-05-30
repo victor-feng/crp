@@ -573,7 +573,8 @@ class AppDeploy(Resource):
                             if deploy_source == "git":
                                 git_url = image_url
                                 err_msg, war_url = git_code_to_war(git_url, branch, project_name, pom_path,
-                                                                   environment, language_env, deployment_name)
+                                                                   environment, language_env, deployment_name,
+                                                                   deploy_id, deploy_type, set_flag, resource_id)
                                 if not err_msg:
                                     err_msg, img_url = make_docker_image(database_config, project_name, environment,
                                                                          war_url, resource_id, set_flag, deploy_id,
@@ -646,7 +647,8 @@ class AppDeploy(Resource):
                             if deploy_source == "git":
                                 git_url = image_url
                                 err_msg, war_url = git_code_to_war(git_url, branch, project_name, pom_path,
-                                                                   environment, language_env, deployment_name)
+                                                                   environment, language_env, deployment_name,
+                                                                   deploy_id, deploy_type, set_flag, resource_id)
                                 i["url"] = war_url
                                 if err_msg:
                                     end_flag = True

@@ -1,13 +1,19 @@
 # -*- coding: utf-8 -*-
-
-
-
 import os
 import datetime
 from crp.log import Log
 from config import APP_ENV, configs
 from crp.utils.aio import exec_cmd
 from ftplib import FTP
+from crp.utils import res_instance_push_callback
+from crp.app_deployment.handler import _dep_detail_callback
+ADD_LOG = configs[APP_ENV].ADD_LOG
+
+pull_code_success = ADD_LOG.get("GIT_PACKAGE")[0]
+clone_branch_success = ADD_LOG.get("GIT_PACKAGE")[1]
+package_success = ADD_LOG.get("GIT_PACKAGE")[2]
+pull_or_clone_error = ADD_LOG.get("GIT_PACKAGE")[3]
+package_error = ADD_LOG.get("GIT_PACKAGE")[4]
 
 
 UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
@@ -17,6 +23,7 @@ FTP_USER = configs[APP_ENV].FTP_USER
 FTP_PASSWORD = configs[APP_ENV].FTP_PASSWORD
 FTP_HOST = configs[APP_ENV].FTP_HOST
 FTP_DIR = configs[APP_ENV].FTP_DIR
+
 
 def deal_git_url(git_url):
     git_dir=git_url.strip().split('/')[-1].split('.')[0]
@@ -46,10 +53,12 @@ def write_build_log(context,project_name,resource_name):
     with open(build_log_file1,"wb") as f:
         f.write(context)
 
-def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resource_name):
+
+def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resource_name,deploy_id=None,deploy_type=None, set_flag=None, resource_id=None):
     err_msg = None
     out_context = ""
     war_url = None
+    req_dict = {"resource_id": resource_id}
     try:
         if language_env == "java":
             pom_paths = pom_path.split('/')
@@ -62,19 +71,44 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
             if os.path.exists(project_path):
                 git_pull_cmd = "cd {project_path} && git pull origin {branch}".format(project_path=project_path,branch=branch)
                 stdout = exec_cmd(git_pull_cmd)
+                # success
+                if deploy_id:
+                    _dep_detail_callback(deploy_id, deploy_type, set_flag, "pull code from github success!")
+                else:
+                    res_instance_push_callback('', req_dict, 0, {}, {}, pull_code_success, set_flag)
             else:
                 git_clone_cmd = "cd {repo_path} && git clone -b {branch} {git_http_url}".format(repo_path=repo_path,branch=branch, git_http_url=git_http_url)
                 stdout = exec_cmd(git_clone_cmd)
+                # success
+                if deploy_id:
+                    _dep_detail_callback(deploy_id, deploy_type, set_flag, "clone branch success!")
+                else:
+                    res_instance_push_callback('', req_dict, 0, {}, {}, clone_branch_success, set_flag)
             out_context = out_context + '\n' + stdout
             if "error" in stdout.lower() or "fatal" in stdout.lower():
                 err_msg = "git clone or pull error"
+                if deploy_id:
+                    _dep_detail_callback(deploy_id, deploy_type, set_flag, err_msg)
+                else:
+                    res_instance_push_callback('', req_dict, 0, {}, {}, pull_or_clone_error, set_flag)
                 return err_msg,war_url
             pom_path = os.path.join(project_path,pom_path)
             mvn_to_war_cmd = "source /etc/profile && /usr/local/maven/bin/mvn -B -f {pom_path} clean package -U -Dmaven.test.skip=true".format(pom_path=pom_path)
             stdout = exec_cmd(mvn_to_war_cmd)
+
+            # success
+            if deploy_id:
+                _dep_detail_callback(deploy_id, deploy_type, set_flag, "package code success!")
+            else:
+                res_instance_push_callback('', req_dict, 0, {}, {}, package_success, set_flag)
+
             out_context = out_context + '\n' + stdout
             if "error" in stdout.lower():
                 err_msg = "maven build war error"
+                if deploy_id:
+                    _dep_detail_callback(deploy_id, deploy_type, set_flag, err_msg)
+                else:
+                    res_instance_push_callback('', req_dict, 0, {}, {}, package_error, set_flag)
                 return err_msg,war_url
             base_war_name = "{project_name}.war".format(project_name=project_name)
             if len(pom_paths) > 1:
