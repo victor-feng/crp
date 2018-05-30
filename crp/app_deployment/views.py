@@ -776,7 +776,7 @@ class AppDeploy(Resource):
                                                   unique_flag, cloud, deploy_name)
                                     return
                             end_flag = True
-                            deploy_kvm_flag, msg = self.deploy_kvm(project_name, i, environment)
+                            deploy_kvm_flag, msg = self.deploy_kvm(project_name, info, environment)
                             if deploy_kvm_flag:
                                 _dep_callback(deploy_id, '127.0.0.1', host_env, msg, "None", True, cluster_name,
                                               end_flag,
