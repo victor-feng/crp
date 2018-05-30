@@ -377,6 +377,7 @@ class ResourceProviderTransitions2(object):
 
     def _create_app_cluster(self, property_mapper):
         img_url = None
+        war_url = None
         is_rollback = False
         uop_os_inst_id_list = []
         propertys = property_mapper.get('app_cluster')
@@ -556,7 +557,7 @@ class ResourceProviderTransitions2(object):
                             'domain': domain,
                             'port': port,
                             'os_inst_id': os_inst_id,
-                            'img_url':img_url,
+                            'img_url':war_url,
                             'deploy_source':deploy_source,
                         })
 
