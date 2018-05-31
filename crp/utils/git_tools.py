@@ -73,7 +73,7 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
                 stdout = exec_cmd(git_pull_cmd)
                 # success
                 if deploy_id:
-                    _dep_detail_callback(deploy_id, deploy_type, set_flag, "更新git代码成功")
+                    _dep_detail_callback(deploy_id, deploy_type, set_flag, "更新代码成功")
                 else:
                     res_instance_push_callback('', req_dict, 0, {}, {}, pull_code_success, set_flag)
             else:
@@ -81,14 +81,14 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
                 stdout = exec_cmd(git_clone_cmd)
                 # success
                 if deploy_id:
-                    _dep_detail_callback(deploy_id, deploy_type, set_flag, "拉取git代码成功")
+                    _dep_detail_callback(deploy_id, deploy_type, set_flag, "拉取代码成功")
                 else:
                     res_instance_push_callback('', req_dict, 0, {}, {}, clone_branch_success, set_flag)
             out_context = out_context + '\n' + stdout
             if "error" in stdout.lower() or "fatal" in stdout.lower():
                 err_msg = "git clone or pull error"
                 if deploy_id:
-                    _dep_detail_callback(deploy_id, deploy_type, set_flag, "git 代码获取失败 {err_msg}".format(err_msg=err_msg))
+                    _dep_detail_callback(deploy_id, deploy_type, set_flag, "代码获取失败 {err_msg}".format(err_msg=err_msg))
                 else:
                     res_instance_push_callback('', req_dict, 0, {}, {}, pull_or_clone_error, set_flag)
                 return err_msg,war_url
@@ -98,7 +98,7 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
 
             # success
             if deploy_id:
-                _dep_detail_callback(deploy_id, deploy_type, set_flag, "war包构建成功")
+                _dep_detail_callback(deploy_id, deploy_type, set_flag, "包构建成功")
             else:
                 res_instance_push_callback('', req_dict, 0, {}, {}, package_success, set_flag)
 
@@ -106,7 +106,7 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
             if "error" in stdout.lower():
                 err_msg = "maven build war error"
                 if deploy_id:
-                    _dep_detail_callback(deploy_id, deploy_type, set_flag, "war包构建失败 {err_msg}".format(err_msg=err_msg))
+                    _dep_detail_callback(deploy_id, deploy_type, set_flag, "包构建失败 {err_msg}".format(err_msg=err_msg))
                 else:
                     res_instance_push_callback('', req_dict, 0, {}, {}, package_error, set_flag)
                 return err_msg,war_url
