@@ -105,7 +105,7 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
                 res_instance_push_callback('', req_dict, 0, {}, {}, package_success, set_flag)
 
             out_context = out_context + '\n' + stdout
-            if "error" in stdout.lower():
+            if "BUILD SUCCESS" not  in stdout:
                 err_msg = "maven build war error"
                 if deploy_id:
                     _dep_detail_callback(deploy_id, deploy_type, set_flag, "包构建失败 {err_msg}".format(err_msg=err_msg))
