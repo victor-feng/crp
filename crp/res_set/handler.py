@@ -472,28 +472,9 @@ class ResourceProviderTransitions(object):
                         self.error_type = 'notfound'
                         self.error_msg="the image is not found, image url is {image_url}".format(image_url=image_url)
             elif host_env == "kvm":
-                if deploy_source == "git":
-                    git_url = image_url
-                    err_msg,war_url = git_code_to_war(
-                        git_url,
-                        branch,
-                        self.project_name,
-                        pom_path,
-                        self.env,
-                        language_env,
-                        resource_name,
-                        resource_id=self.resource_id
-                    )
-                    Log.logger.debug(
-                        "CRP git code to war  err_msg:{err_msg}--------war_url:{war_url}".format(err_msg=err_msg,
-                                                                                                    war_url=war_url))
-                    if err_msg:
-                        self.error_msg = err_msg
-                        is_rollback = True
-                        return is_rollback, uop_os_inst_id_list
                 is_rollback, uop_os_inst_id_list = self._create_kvm_cluster(property_mapper, cluster_id, host_env,
                                                                             image_id, port, cpu, mem, flavor,
-                                                                            quantity, network_id, availability_zone,language_env,war_url)
+                                                                            quantity, network_id, availability_zone,language_env)
             else:
                 is_rollback = True
                 self.error_msg = "Please pass in the correct parameters,host_env must be 'docker' or 'kvm'"
@@ -501,7 +482,7 @@ class ResourceProviderTransitions(object):
 
     #创建kvm集群资源
     def _create_kvm_cluster(self, property_mapper, cluster_id, host_env, image_id, port, cpu, mem, flavor,
-                            quantity, network_id, availability_zone,language_env,war_url=None):
+                            quantity, network_id, availability_zone,language_env):
         is_rollback = False
         uop_os_inst_id_list = []
         kvm_tag = time.time().__str__()[6:10]
