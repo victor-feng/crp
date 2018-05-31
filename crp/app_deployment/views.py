@@ -1366,15 +1366,28 @@ class DeployLogApi(Resource):
         args = parser.parse_args()
 
         version = args.version if args.version else 1
-        filename = "/data/build_log/{p}/{r}_{v}".format(
-            p=args.project_name, r=args.resource_name, v=version)
+        base_path = "/data/build_log/{p}/".format(p=args.project_name)
 
+        bad_request = {
+            'code': 400,
+            'msg': 'Log not exists',
+            'count': 0,
+            'data': None
+        }
+
+        if not os.path.exists(base_path):
+            return bad_request
+
+        count = 0
+        for _, _, files in os.walk(base_path):
+            for i in files:
+                count += 1
+
+        filename = "{b}{r}_{v}".format(
+            b=base_path, r=args.resource_name, v=version)
         if not os.path.exists(filename):
-            return {
-                'code': 400,
-                'msg': 'Log not exists',
-                'data': None
-            }
+            bad_request['count'] = count
+            return bad_request
 
         with open(filename, 'rb') as f:
             content = f.read()
@@ -1382,6 +1395,7 @@ class DeployLogApi(Resource):
         return {
             'code': 200,
             'msg': 'Get log success',
+            'count': count,
             'data': content
         }
 
