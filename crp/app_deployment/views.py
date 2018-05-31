@@ -1381,7 +1381,7 @@ class DeployLogApi(Resource):
         count = 0
         for _, _, files in os.walk(base_path):
             for i in files:
-                count += 1
+                count = count + 1 if args.resource_name in i else count
 
         filename = "{b}{r}_{v}".format(
             b=base_path, r=args.resource_name, v=version)
