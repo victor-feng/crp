@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import json
 import commands
 import time
@@ -652,7 +653,7 @@ class AppDeploy(Resource):
                                 i["url"] = war_url
                                 if err_msg:
                                     end_flag = True
-                                    _dep_callback(deploy_id, '127.0.0.1', host_env, update_object_err_msg, "None",
+                                    _dep_callback(deploy_id, '127.0.0.1', host_env, err_msg, "None",
                                                   False, cluster_name, end_flag, deploy_type,
                                                   unique_flag, cloud, deploy_name)
                                     return
@@ -678,25 +679,8 @@ class AppDeploy(Resource):
                         cluster_name = i.get("ins_name", "")
                         ip=i.get('ip',[])
                         ip=','.join(ip)
-                        deploy_source = i.get("deploy_source")
-                        database_config = i.get("database_config")
                         host_env = i.get("host_env")
                         if host_env == "docker":
-                            if host_env == "docker":
-                                if deploy_source == "war":
-                                    war_url = image_url
-                                    err_msg, img_url = make_docker_image(database_config, project_name, environment,
-                                                                         war_url, resource_id, set_flag, deploy_id,deploy_type)
-                                    Log.logger.debug(
-                                        "CRP make docker image err_msg:{err_msg}--------image_url:{img_url}".format(
-                                            err_msg=err_msg, img_url=img_url))
-                                    if err_msg:
-                                        end_flag = True
-                                        _dep_callback(deploy_id, '127.0.0.1', host_env, err_msg, "None",
-                                                      False, cluster_name, end_flag, deploy_type,
-                                                      unique_flag, cloud, deploy_name)
-                                    else:
-                                        image_url = img_url
                             if image_url in id2name.keys():
                                 image_uuid = id2name.get(image_url)
                                 i["image_uuid"] = image_uuid
@@ -729,16 +713,76 @@ class AppDeploy(Resource):
                     #部署
                     for info in docker:
                         host_env = info.get("host_env")
+                        image_url = info.get('url', '')
+                        deploy_source = info.get("deploy_source")
+                        database_config = info.get("database_config")
+                        host_env = info.get("host_env")
+                        branch = info.get("branch")
+                        pom_path = info.get("pom_path")
+                        language_env = info.get("language_env")
                         if host_env == "docker":
-                            self._image_transit(deploy_id, info,appinfo,deploy_type,unique_flag,cloud,deploy_name)
+                            if deploy_source == "git":
+                                git_url = image_url
+                                err_msg, war_url = git_code_to_war(git_url, branch, project_name, pom_path,
+                                                                   environment, language_env, resource_name,
+                                                                   deploy_id, deploy_type, set_flag, resource_id)
+                                if not err_msg:
+                                    err_msg, img_url = make_docker_image(database_config, project_name, environment,
+                                                                         war_url, resource_id, set_flag, deploy_id,
+                                                                         deploy_type)
+                                    Log.logger.debug(
+                                        "CRP make docker image err_msg:{err_msg}--------image_url:{img_url}".format(
+                                            err_msg=err_msg, img_url=img_url))
+                                    if err_msg:
+                                        end_flag = True
+                                        _dep_callback(deploy_id, '127.0.0.1', host_env, err_msg, "None",
+                                                      False, cluster_name, end_flag, deploy_type,
+                                                      unique_flag, cloud, deploy_name)
+                                        return
+                                    else:
+                                        image_url = img_url
+                                else:
+                                    end_flag = True
+                                    _dep_callback(deploy_id, '127.0.0.1', host_env, err_msg, "None",
+                                                  False, cluster_name, end_flag, deploy_type,
+                                                  unique_flag, cloud, deploy_name)
+                                    return
+                            if deploy_source == "war":
+                                war_url = image_url
+                                err_msg, img_url = make_docker_image(database_config, project_name, environment,
+                                                                     war_url, resource_id, set_flag, deploy_id,
+                                                                     deploy_type)
+                                Log.logger.debug(
+                                    "CRP make docker image err_msg:{err_msg}--------image_url:{img_url}".format(
+                                        err_msg=err_msg, img_url=img_url))
+                                if err_msg:
+                                    end_flag = True
+                                    _dep_callback(deploy_id, '127.0.0.1', host_env, err_msg, "None",
+                                                  False, cluster_name, end_flag, deploy_type,
+                                                  unique_flag, cloud, deploy_name)
+                                else:
+                                    info['url'] = img_url
+                            self._image_transit(deploy_id, info,appinfo,deploy_type,unique_flag,cloud,deploy_name,war_url)
                         elif host_env == "kvm":
+                            if deploy_source == "git":
+                                git_url = image_url
+                                err_msg, war_url = git_code_to_war(git_url, branch, project_name, pom_path,
+                                                                   environment, language_env, resource_name,
+                                                                   deploy_id, deploy_type, set_flag, resource_id)
+                                i["url"] = war_url
+                                if err_msg:
+                                    end_flag = True
+                                    _dep_callback(deploy_id, '127.0.0.1', host_env, err_msg, "None",
+                                                  False, cluster_name, end_flag, deploy_type,
+                                                  unique_flag, cloud, deploy_name)
+                                    return
                             end_flag = True
-                            deploy_kvm_flag, msg = self.deploy_kvm(project_name, i, environment)
+                            deploy_kvm_flag, msg = self.deploy_kvm(project_name, info, environment)
                             if deploy_kvm_flag:
                                 _dep_callback(deploy_id, '127.0.0.1', host_env, msg, "None", True, cluster_name,
                                               end_flag,
                                               deploy_type,
-                                              unique_flag, cloud, deploy_name)
+                                              unique_flag, cloud, deploy_name,war_url=war_url)
                             else:
                                 _dep_callback(deploy_id, '127.0.0.1', host_env, msg, "None", False,
                                               cluster_name, end_flag, deploy_type,
@@ -750,7 +794,7 @@ class AppDeploy(Resource):
             Log.logger.error(msg)
         return code, msg
 
-    def _deploy_docker(self, info,deploy_id, image_uuid,appinfo,deploy_type,unique_flag,cloud,deploy_name):
+    def _deploy_docker(self, info,deploy_id, image_uuid,appinfo,deploy_type,unique_flag,cloud,deploy_name,war_url):
         deploy_flag=True
         end_flag=False
         first_error_flag=False
@@ -777,7 +821,7 @@ class AppDeploy(Resource):
                         msg=u"应用健康检查正常"
                     else:
                         msg=u"docker网络检查正常"
-                    _dep_callback(deploy_id, ip, "docker", msg, vm_state, True, cluster_name,end_flag,deploy_type,unique_flag,cloud,deploy_name)
+                    _dep_callback(deploy_id, ip, "docker", msg, vm_state, True, cluster_name,end_flag,deploy_type,unique_flag,cloud,deploy_name,war_url)
                 else:
                     #如果索引为0，表示第一个ip部署失败，部署停止
                     ip_index = int(ip_index_dict[ip])
@@ -864,15 +908,15 @@ class AppDeploy(Resource):
             return os_flag,None,err_msg
 
 
-    def _image_transit(self,deploy_id, info,appinfo,deploy_type,unique_flag,cloud,deploy_name):
+    def _image_transit(self,deploy_id, info,appinfo,deploy_type,unique_flag,cloud,deploy_name,war_url):
         result_list = []
         timeout = 10000
-        TaskManager.task_start(SLEEP_TIME, timeout, result_list, self._image_transit_task, deploy_id, info, appinfo,deploy_type,unique_flag,cloud,deploy_name)
+        TaskManager.task_start(SLEEP_TIME, timeout, result_list, self._image_transit_task, deploy_id, info, appinfo,deploy_type,unique_flag,cloud,deploy_name,war_url)
 
-    def _image_transit_task(self,task_id=None, result_list=None, deploy_id=None, info=None, appinfo=[],deploy_type=None,unique_flag=None,cloud=None,deploy_name=None):
+    def _image_transit_task(self,task_id=None, result_list=None, deploy_id=None, info=None, appinfo=[],deploy_type=None,unique_flag=None,cloud=None,deploy_name=None,war_url=None):
         image_uuid = info.get("image_uuid")
         if self._check_image_status(image_uuid):
-            deploy_flag = self._deploy_docker(info, deploy_id, image_uuid, appinfo, deploy_type,unique_flag,cloud,deploy_name)
+            deploy_flag = self._deploy_docker(info, deploy_id, image_uuid, appinfo, deploy_type,unique_flag,cloud,deploy_name,war_url)
             if not deploy_flag:
                 TaskManager.task_exit(task_id)
         else:
@@ -1309,5 +1353,39 @@ class Upload(Resource):
         }
 
 
+class DeployLogApi(Resource):
+    """
+        构建日志获取
+    """
+
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument("resource_name", type=str, location='args')
+        parser.add_argument("project_name", type=str, location='args')
+        parser.add_argument("version", type=int, location='args')
+        args = parser.parse_args()
+
+        version = args.version if args.version else 1
+        filename = "/data/build_log/{p}/{r}_{v}".format(
+            p=args.project_name, r=args.resource_name, v=version)
+
+        if not os.path.exists(filename):
+            return {
+                'code': 400,
+                'msg': 'Log not exists',
+                'data': None
+            }
+
+        with open(filename, 'rb') as f:
+            content = f.read()
+
+        return {
+            'code': 200,
+            'msg': 'Get log success',
+            'data': content
+        }
+
+
 app_deploy_api.add_resource(AppDeploy, '/deploys')
 app_deploy_api.add_resource(Upload, '/upload')
+app_deploy_api.add_resource(DeployLogApi, '/log_detail')
