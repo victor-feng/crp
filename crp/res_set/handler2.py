@@ -627,7 +627,6 @@ class ResourceProviderTransitions2(object):
                                                   'username': DEFAULT_USERNAME,
                                                   'password': DEFAULT_PASSWORD,
                                                   'port': port,
-                                                  'img_url': war_url,
                                                   'os_inst_id': osint_id})
                 else:
                     self.error_msg = err_msg
