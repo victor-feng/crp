@@ -91,6 +91,8 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
                     _dep_detail_callback(deploy_id, deploy_type, set_flag, "代码获取失败 {err_msg}".format(err_msg=err_msg))
                 else:
                     res_instance_push_callback('', req_dict, 0, {}, {}, pull_or_clone_error, set_flag)
+                Log.logger.debug(out_context)
+                write_build_log(out_context, project_name, resource_name)
                 return err_msg,war_url
             pom_path = os.path.join(project_path,pom_path)
             mvn_to_war_cmd = "source /etc/profile && /usr/local/maven/bin/mvn -B -f {pom_path} clean package -U -Dmaven.test.skip=true".format(pom_path=pom_path)
@@ -109,6 +111,8 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
                     _dep_detail_callback(deploy_id, deploy_type, set_flag, "包构建失败 {err_msg}".format(err_msg=err_msg))
                 else:
                     res_instance_push_callback('', req_dict, 0, {}, {}, package_error, set_flag)
+                Log.logger.debug(out_context)
+                write_build_log(out_context, project_name, resource_name)
                 return err_msg,war_url
             base_war_name = "{project_name}.war".format(project_name=project_name)
             if len(pom_paths) > 1:
