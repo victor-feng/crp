@@ -8,6 +8,8 @@ ADD_LOG = configs[APP_ENV].ADD_LOG
 WAR_DICT = ADD_LOG.get("WAR_DICT")
 BUILD_IMAGE = ADD_LOG.get("BUILD_IMAGE")
 PUSH_IMAGE = ADD_LOG.get("PUSH_IMAGE")
+GIT_PACKAGE = ADD_LOG.get("GIT_PACKAGE")
+
 
 def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_info, add_log, set_flag):
     """
@@ -20,6 +22,11 @@ def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_i
     :param set_flag:
     :return:
     """
+    war_dict = {}
+    db_push = {}
+    build_image = {}
+    push_image = {}
+    git_package = {}
     try:
         resource_id = req_dict["resource_id"]
         if instance_info:
@@ -51,40 +58,39 @@ def res_instance_push_callback(task_id,req_dict,quantity,instance_info,db_push_i
                 "status":"ok",
                 "from":'resource',
                 }
-        else:
-            db_push=None
 
         if add_log in WAR_DICT:
             war_dict = {
                 "war_to_image_status": add_log,
                 "resource_id": resource_id
             }
-        else:
-            war_dict = {}
 
         if add_log in BUILD_IMAGE:
             build_image = {
                 "resource_id": resource_id,
                 "build_image_status": add_log,
             }
-        else:
-            build_image = {}
 
         if add_log in PUSH_IMAGE:
             push_image = {
                 "resource_id": resource_id,
                 "push_image_status": add_log
             }
-        else:
-            push_image = {}
+
+        if add_log in GIT_PACKAGE:
+            git_package = {
+                "resource_id": resource_id,
+                "git_package_status": add_log
+            }
 
         data={
-            "instance":instance,
-            "db_push":db_push,
-            "set_flag":set_flag,
+            "instance": instance,
+            "db_push": db_push,
+            "set_flag": set_flag,
             "war_dict": war_dict,
             "build_image": build_image,
-            "push_image": push_image
+            "push_image": push_image,
+            "git_package": git_package
         }
         data_str=json.dumps(data)
         headers = {
