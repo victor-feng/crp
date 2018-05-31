@@ -20,6 +20,7 @@ from crp.app_deployment.handler import start_write_log
 from del_handler import delete_instance_and_query,QUERY_VOLUME
 from crp.utils.docker_image import make_docker_image
 from crp.utils import res_instance_push_callback
+from crp.utils.git_tools import git_code_to_war
 
 TIMEOUT = 5000
 SLEEP_TIME = 3
@@ -333,6 +334,7 @@ class ResourceProviderTransitions(object):
     # 申请应用集群docker资源
     def _create_app_cluster(self, property_mapper):
         img_url = None
+        war_url = None
         is_rollback = False
         uop_os_inst_id_list = []
         docker_tag = time.time().__str__()[6:10]
@@ -354,6 +356,9 @@ class ResourceProviderTransitions(object):
         language_env = propertys.get('language_env')
         deploy_source = propertys.get('deploy_source')
         database_config = propertys.get('database_config')
+        branch = propertys.get('branch')
+        pom_path = propertys.get('pom_path')
+        resource_name = self.req_dict["resource_name"]
         if not flavor:
             flavor = DOCKER_FLAVOR.get(str(cpu) + str(mem))
         if quantity >= 1:
@@ -367,9 +372,39 @@ class ResourceProviderTransitions(object):
             # 针对servers_group 亲和调度操作 , 需要创建亲和调度
             nova_client = OpenStack.nova_client
             server_group = None
-
             if host_env == "docker":
-                if deploy_source == "war" and self.set_flag == "res":
+                if deploy_source == "git":
+                    git_url = image_url
+                    err_msg,war_url = git_code_to_war(
+                        git_url,
+                        branch,
+                        self.project_name,
+                        pom_path,
+                        self.env,
+                        language_env,
+                        resource_name,
+                        resource_id=self.resource_id
+                    )
+                    Log.logger.debug(
+                        "CRP git code to war  err_msg:{err_msg}--------war_url:{war_url}".format(err_msg=err_msg,
+                                                                                                    war_url=war_url))
+                    if not err_msg:
+                        err_msg, img_url = make_docker_image(database_config, self.project_name, self.env, war_url,
+                                                             self.resource_id, self.set_flag)
+                        Log.logger.debug(
+                            "CRP make docker image err_msg:{err_msg}--------image_url:{img_url}".format(err_msg=err_msg,
+                                                                                                        img_url=img_url))
+                        if err_msg:
+                            self.error_msg = err_msg
+                            is_rollback = True
+                            return is_rollback, uop_os_inst_id_list
+                        else:
+                            image_url = img_url
+                    else:
+                        self.error_msg = err_msg
+                        is_rollback = True
+                        return is_rollback, uop_os_inst_id_list
+                if deploy_source == "war":
                     # 执行war包打镜像的操作
                     war_url = image_url
                     err_msg, img_url = make_docker_image(
@@ -417,7 +452,7 @@ class ResourceProviderTransitions(object):
                                     'domain': domain,
                                     'port': port,
                                     'os_inst_id': osint_id,
-                                    'img_url': img_url,
+                                    'img_url': war_url,
                                     'deploy_source': deploy_source,
                                     'host_env': host_env,
                                 })
@@ -437,9 +472,28 @@ class ResourceProviderTransitions(object):
                         self.error_type = 'notfound'
                         self.error_msg="the image is not found, image url is {image_url}".format(image_url=image_url)
             elif host_env == "kvm":
+                if deploy_source == "git":
+                    git_url = image_url
+                    err_msg,war_url = git_code_to_war(
+                        git_url,
+                        branch,
+                        self.project_name,
+                        pom_path,
+                        self.env,
+                        language_env,
+                        resource_name,
+                        resource_id=self.resource_id
+                    )
+                    Log.logger.debug(
+                        "CRP git code to war  err_msg:{err_msg}--------war_url:{war_url}".format(err_msg=err_msg,
+                                                                                                    war_url=war_url))
+                    if err_msg:
+                        self.error_msg = err_msg
+                        is_rollback = True
+                        return is_rollback, uop_os_inst_id_list
                 is_rollback, uop_os_inst_id_list = self._create_kvm_cluster(property_mapper, cluster_id, host_env,
                                                                             image_id, port, cpu, mem, flavor,
-                                                                            quantity, network_id, availability_zone,language_env)
+                                                                            quantity, network_id, availability_zone,language_env,war_url)
             else:
                 is_rollback = True
                 self.error_msg = "Please pass in the correct parameters,host_env must be 'docker' or 'kvm'"
@@ -447,7 +501,7 @@ class ResourceProviderTransitions(object):
 
     #创建kvm集群资源
     def _create_kvm_cluster(self, property_mapper, cluster_id, host_env, image_id, port, cpu, mem, flavor,
-                            quantity, network_id, availability_zone,language_env):
+                            quantity, network_id, availability_zone,language_env,war_url=None):
         is_rollback = False
         uop_os_inst_id_list = []
         kvm_tag = time.time().__str__()[6:10]
@@ -487,6 +541,7 @@ class ResourceProviderTransitions(object):
                                                   'username': DEFAULT_USERNAME,
                                                   'password': DEFAULT_PASSWORD,
                                                   'port': port,
+                                                  'img_url': war_url,
                                                   'os_inst_id': osint_id})
                 else:
                     self.error_msg = err_msg

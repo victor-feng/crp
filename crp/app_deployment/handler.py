@@ -24,7 +24,7 @@ UPLOAD_FOLDER = configs[APP_ENV].UPLOAD_FOLDER
 war_to_image_running = ADD_LOG.get("WAR_DICT")[0]
 
 
-def _dep_callback(deploy_id,ip,res_type,msg,vm_state,success,cluster_name,end_flag,deploy_type,unique_flag,cloud=None,deploy_name=None,o_domain=None,o_port=None,domain_flag=None):
+def _dep_callback(deploy_id,ip,res_type,msg,vm_state,success,cluster_name,end_flag,deploy_type,unique_flag,cloud=None,deploy_name=None,o_domain=None,o_port=None,domain_flag=None,war_url=None):
     """
     将部署的状态和日志，以及错误信息回调给uop
     :param deploy_id:
@@ -52,6 +52,7 @@ def _dep_callback(deploy_id,ip,res_type,msg,vm_state,success,cluster_name,end_fl
     data["deploy_name"] = deploy_name
     data["o_port"] = o_port
     data["domain_flag"] = domain_flag
+    data["war_url"] = war_url
     if success:
         data["result"] = "success"
     else:

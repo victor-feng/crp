@@ -46,6 +46,15 @@ class DevelopmentConfig(BaseConfig):
             [
                 "push_image_running",
                 "push_image_success"
+            ],
+        "GIT_PACKAGE":
+            [
+                "pull_code_success",
+                "clone_branch_success",
+                "package_success",
+
+                "pull_or_clone_error",
+                "package_error"
             ]
 
     }
@@ -309,6 +318,15 @@ class DevelopmentConfig(BaseConfig):
     CHECK_TIMEOUT = 200
     GIT_USER = "jenkins"
     GIT_PASSWORD = "syswin#123"
+    FTP_USER = "ftpuser"
+    FTP_PASSWORD = "syswin#123"
+    FTP_DIR = "/data/ftpdata"
+    FTP_HOST = {
+        "dev":"172.28.26.210",
+        "test":"172.28.26.210",
+        "prep": "172.28.26.210",
+        "prod": "172.28.26.210",
+    }
 configs = {
     'development': DevelopmentConfig,
 }

@@ -194,6 +194,8 @@ def make_docker_image(database_config,project_name,env,war_url, resource_id, set
     err_msg = None
     image_url = None
     try:
+        if set_flag in ["increase","reduce"]:
+            resource_id = None
         dk_client = _dk_py_cli()
         dk_dir = os.path.join(os.path.join(UPLOAD_FOLDER,"war"),project_name)
         err_msg = get_war_from_ftp(project_name, war_url, env, resource_id, set_flag)
