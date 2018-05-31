@@ -196,8 +196,8 @@ class ProdConfig(BaseConfig):
             'domain': 'domain',
             'image_url': 'image_url',
             'cpu': 'cpu',
-            'domain_ip': 'domain_ip',
             'mem': 'mem',
+            'domain_ip': 'domain_ip',
             'port': 'port',
             'meta': 'meta',
             'quantity': 'quantity',
@@ -216,6 +216,8 @@ class ProdConfig(BaseConfig):
             'ready_probe_path': 'ready_probe_path',
             'domain_path': 'domain_path',
             'host_mapping': 'host_mapping',
+            'pom_path': 'pom_path',
+            'branch': 'branch',
         },
         'resource_cluster': {
             'cluster_name': 'instance_name',
@@ -229,14 +231,14 @@ class ProdConfig(BaseConfig):
             'volume_size': 'volume_size',
             'network_id': 'network_id',
             'image_id': 'image_id',
+            'image2_id': 'image2_id',
             'availability_zone': 'availability_zone',
             'flavor': 'flavor',
             'flavor2': 'flavor2',
-            'volume_exp_size':'volume_exp_size',
-            "port":"port",
+            'volume_exp_size': 'volume_exp_size',
+            "port": "port",
         }
     }
-
     #playbook path
     SCRIPTPATH = r'crp/res_set/playbook-0830/'
     #DNS配置

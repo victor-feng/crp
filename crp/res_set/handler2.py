@@ -573,30 +573,11 @@ class ResourceProviderTransitions2(object):
 
             elif host_env == "kvm":
                 #创建虚拟化云
-                if deploy_source == "git":
-                    git_url = image_url
-                    err_msg,war_url = git_code_to_war(
-                        git_url,
-                        branch,
-                        self.project_name,
-                        pom_path,
-                        self.env,
-                        language_env,
-                        deployment_name,
-                        resource_id=self.resource_id
-                    )
-                    Log.logger.debug(
-                        "CRP git code to war  err_msg:{err_msg}--------war_url:{war_url}".format(err_msg=err_msg,
-                                                                                                    war_url=war_url))
-                    if err_msg:
-                        self.error_msg = err_msg
-                        is_rollback = True
-                        return is_rollback, uop_os_inst_id_list
                 quantity=replicas
                 userdata = open("{}/pinggate.sh".format(self.dir))
                 is_rollback, uop_os_inst_id_list = self._create_kvm_cluster(property_mapper, cluster_id, host_env,
                                                                             image_id, port, cpu, mem, flavor,
-                                                                            quantity, network_id,userdata, availability_zone,language_env,war_url)
+                                                                            quantity, network_id,userdata, availability_zone,language_env)
                 userdata.close()
 
             else:
@@ -605,7 +586,7 @@ class ResourceProviderTransitions2(object):
 
         return is_rollback, uop_os_inst_id_list
 
-    def _create_kvm_cluster(self,property_mapper,cluster_id, host_env,image_id,port,cpu,mem,flavor,quantity,network_id,userdata,availability_zone,language_env,war_url=None):
+    def _create_kvm_cluster(self,property_mapper,cluster_id, host_env,image_id,port,cpu,mem,flavor,quantity,network_id,userdata,availability_zone,language_env):
         is_rollback = False
         uop_os_inst_id_list = []
         kvm_tag = time.time().__str__()[6:10]
@@ -646,7 +627,6 @@ class ResourceProviderTransitions2(object):
                                                   'username': DEFAULT_USERNAME,
                                                   'password': DEFAULT_PASSWORD,
                                                   'port': port,
-                                                  'img_url': war_url,
                                                   'os_inst_id': osint_id})
                 else:
                     self.error_msg = err_msg
