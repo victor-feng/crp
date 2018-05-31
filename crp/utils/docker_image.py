@@ -196,6 +196,7 @@ def make_docker_image(database_config,project_name,env,war_url, resource_id, set
     try:
         if set_flag in ["increase","reduce"]:
             resource_id = None
+        req_dict = {"resource_id": resource_id}
         dk_client = _dk_py_cli()
         dk_dir = os.path.join(os.path.join(UPLOAD_FOLDER,"war"),project_name)
         err_msg = get_war_from_ftp(project_name, war_url, env, resource_id, set_flag)
@@ -207,8 +208,6 @@ def make_docker_image(database_config,project_name,env,war_url, resource_id, set
             err_msg=deal_templates_xml(database_config,project_name,base_context_path,remote_context_path,base_server_path, remote_server_path)
             if not err_msg:
                 Log.logger.info("Successful pull the var package")
-                req_dict = {"resource_id": resource_id}
-                req_dict["deploy_id"] = deploy_id
                 # war包转镜像完成
                 if deploy_id:
                     _dep_detail_callback(deploy_id,deploy_type,set_flag,"war包转镜像完成")

@@ -58,8 +58,10 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
     err_msg = None
     out_context = ""
     war_url = None
-    req_dict = {"resource_id": resource_id}
     try:
+        if set_flag in ["increase","reduce"]:
+            resource_id = None
+        req_dict = {"resource_id": resource_id}
         if language_env == "java":
             pom_paths = pom_path.split('/')
             git_url,git_dir = deal_git_url(git_url)
