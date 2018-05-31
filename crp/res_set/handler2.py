@@ -461,7 +461,8 @@ class ResourceProviderTransitions2(object):
                 if deploy_source == "war":
                     #执行war包打镜像的操作
                     war_url = image_url
-                    err_msg,img_url = make_docker_image(database_config,self.project_name,self.env,war_url,self.resource_id,self.set_flag)
+                    err_msg, img_url = make_docker_image(database_config, self.project_name, self.env, war_url,
+                                                         self.resource_id, self.set_flag)
                     Log.logger.debug("CRP make docker image err_msg:{err_msg}--------image_url:{img_url}".format(err_msg=err_msg,img_url=img_url))
                     if err_msg:
                         self.error_msg = err_msg
