@@ -546,6 +546,7 @@ class AppDeploy(Resource):
 
             if docker:
             #部署应用
+                war_url = ''
                 if cloud == "2":
                     deployment_name=resource_name
                     for i in docker:
