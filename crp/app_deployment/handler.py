@@ -218,6 +218,7 @@ def get_war_from_ftp(project_name,war_url,env, resource_id=None, set_flag=None):
         base_war_name = "{project_name}.war".format(project_name=project_name)
         war_name = "{project_name}_{env}.war".format(project_name=project_name,env=env)
         url_war_name = war_url.split("/")[-1]
+        Log.logger.info("11111111111111111111111111111111111111111111111111111111111 {}2222{}".format(project_name,war_url))
         if base_war_name != url_war_name:
             err_msg = "The war url is error,url war name is not project war name "
             return err_msg
