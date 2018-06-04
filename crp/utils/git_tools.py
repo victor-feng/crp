@@ -116,11 +116,15 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
                 Log.logger.debug(out_context)
                 write_build_log(out_context, project_name, resource_name)
                 return err_msg,war_url
-            base_war_name = "{project_name}.war".format(project_name=project_name)
+            war_name = "{project_name}.war".format(project_name=project_name)
             if len(pom_paths) > 1:
                 pom_dir = '/'.join(pom_paths[:-1])
+                base_war_dir = os.path.join(os.path.join(project_path, pom_dir), "target")
+                base_war_name = get_war_file(base_war_dir) if get_war_file(base_war_dir) else war_name
                 base_war = os.path.join(os.path.join(os.path.join(project_path, pom_dir), "target"),base_war_name)
             else:
+                base_war_dir = os.path.join(project_path,"target")
+                base_war_name = get_war_file(base_war_dir) if get_war_file(base_war_dir) else war_name
                 base_war = os.path.join(os.path.join(project_path,"target"),base_war_name)
             err_msg,war_url = put_war_to_ftp(env, project_name, base_war)
     except Exception as e:
@@ -153,3 +157,18 @@ def put_war_to_ftp(env,project_name,base_war):
         err_msg = "Put war to ftp server error {e}".format(e=str(e))
         Log.logger.error(err_msg)
     return  err_msg ,war_url
+
+
+def get_war_file(path):
+    war_file = None
+    try:
+        files = os.listdir(path)
+        for file in files:
+            if file.endswith(".war"):
+                war_file = file
+    except Exception as e:
+        raise Exception("Get war file error {e}".format(e=str(e)))
+    return war_file
+
+
+
