@@ -679,7 +679,7 @@ class K8sDeploymentApi(object):
         code = 200
         try:
             api_instance = self.corev1
-            body = self.deletev1
+            body = client.V1DeleteOptions()
             api_response = api_instance.delete_namespaced_pod(name, namespace,body)
         except Exception as e:
             code = 500
