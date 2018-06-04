@@ -405,7 +405,8 @@ class ResourceDelete(Resource):
 def delete_resource_log(resource_name):
     project_name = resource_name.split('_')[0]
 
-    base_path = "/data/build_log/{p}/".format(p=project_name)
+    base_path = "{u}build_log/{p}/".format(
+        u=configs[APP_ENV].UPLOAD_FOLDER, p=project_name)
     if not os.path.exists(base_path):
         return
 

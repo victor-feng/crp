@@ -1367,7 +1367,8 @@ class DeployLogApi(Resource):
         args = parser.parse_args()
 
         version = args.version if args.version else 1
-        base_path = "/data/build_log/{p}/".format(p=args.project_name)
+        base_path = "{u}build_log/{p}/".format(
+            u=UPLOAD_FOLDER, p=args.project_name)
 
         bad_request = {
             'code': 400,
