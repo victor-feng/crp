@@ -126,7 +126,8 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
                 base_war_dir = os.path.join(project_path,"target")
                 base_war_name = get_war_file(base_war_dir) if get_war_file(base_war_dir) else war_name
                 base_war = os.path.join(os.path.join(project_path,"target"),base_war_name)
-            err_msg,war_url = put_war_to_ftp(env, project_name, base_war)
+            Log.logger.info("3333333333333333333333333 {} 444 {}".format(base_war_name,base_war))
+            err_msg,war_url = put_war_to_ftp(env, project_name, base_war,base_war_name)
     except Exception as e:
         err_msg = "Git code to war error {e}".format(e=str(e))
         out_context = out_context + '\n' + err_msg
@@ -136,11 +137,11 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
     return  err_msg,war_url
 
 
-def put_war_to_ftp(env,project_name,base_war):
+def put_war_to_ftp(env,project_name,base_war,base_war_name):
     err_msg = None
     war_url = None
     try:
-        war_name = "{project_name}.war".format(project_name=project_name)
+        war_name = base_war_name
         tag = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
         ftp_host = FTP_HOST[env]
         ftp_user = FTP_USER
