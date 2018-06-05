@@ -823,10 +823,7 @@ class K8sIngressApi(object):
 
         config.load_kube_config(config_file=K8S_CONF_PATH)
         self.extensionsv1 = client.ExtensionsV1beta1Api()
-        self.deletev1 = client.V1DeleteOptions(
-            propagation_policy='Foreground',
-            grace_period_seconds=5
-        )
+        self.deletev1 = client.V1DeleteOptions()
         self.force_deletev1 = client.V1DeleteOptions(
             propagation_policy='Background',
             grace_period_seconds=5)
