@@ -126,7 +126,7 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
                 base_war_dir = os.path.join(project_path,"target")
                 base_war_name = get_war_file(base_war_dir) if get_war_file(base_war_dir) else war_name
                 base_war = os.path.join(os.path.join(project_path,"target"),base_war_name)
-            err_msg,war_url = put_war_to_ftp(env, project_name, base_war,base_war_name)
+                war_url = put_war_to_ftp(env, project_name, base_war,base_war_name)
     except Exception as e:
         err_msg = "Git code to war error {e}".format(e=str(e))
         out_context = out_context + '\n' + err_msg
@@ -137,7 +137,6 @@ def git_code_to_war(git_url,branch,project_name,pom_path,env,language_env,resour
 
 
 def put_war_to_ftp(env,project_name,base_war,base_war_name):
-    err_msg = None
     war_url = None
     try:
         war_name = base_war_name
@@ -155,8 +154,8 @@ def put_war_to_ftp(env,project_name,base_war,base_war_name):
         war_url = "http://{ftp_host}/uop/{project_name}_{env}_{tag}/{war_name}".format(ftp_host=ftp_host,env=env,project_name=project_name,tag=tag,war_name=war_name)
     except Exception as e:
         err_msg = "Put war to ftp server error {e}".format(e=str(e))
-        Log.logger.error(err_msg)
-    return  err_msg ,war_url
+        raise Exception(err_msg)
+    return  war_url
 
 
 def get_war_file(path):
