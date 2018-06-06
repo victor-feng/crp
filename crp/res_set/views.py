@@ -159,10 +159,6 @@ class ResourceSet(Resource):
             os_ins_ip_list = args.os_ins_ip_list
             named_url_list = args.named_url_list
 
-
-            Log.logger.debug(resource_list)
-            Log.logger.debug(compute_list)
-
             req_dict["unit_name"] = unit_name
             req_dict["unit_id"] = unit_id
             req_dict["unit_des"] = unit_des
