@@ -71,7 +71,8 @@ def delete_ingress(task_id, result):
         K8sIngress = K8sIngressApi()
         igs_check_times = result['igs_check_times']
         if igs_check_times > CHECK_TIMEOUT:
-            K8sIngress.delete_force_ingress(ingress_name, namespace)
+            # K8sIngress.delete_force_ingress(ingress_name, namespace)
+            K8sIngress.delete_ingress(ingress_name, namespace)
         else:
             K8sIngress.delete_ingress(ingress_name, namespace)
         result['current_status'] = QUERY_INGRESS
@@ -252,7 +253,8 @@ def delete_instance(task_id, result):
             dep_check_times = result['dep_check_times']
             K8sDeployment = K8sDeploymentApi()
             if dep_check_times > CHECK_TIMEOUT:
-                K8sDeployment.delete_force_deployment(resource_name, namespace)
+                # K8sDeployment.delete_force_deployment(resource_name, namespace)
+                K8sDeployment.delete_deployment(resource_name, namespace)
             else:
                 K8sDeployment.delete_deployment(resource_name,namespace)
             result['msg'] = 'delete deployment begin query deployment status'

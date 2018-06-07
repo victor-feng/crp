@@ -63,7 +63,7 @@ class DisconfServerApi(object):
         user_info = self.disconf_user_info
         SIGNIN = self.SIGNIN
         try:
-            res = session.post(SIGNIN, data=user_info)
+            res = session.post(SIGNIN, data=user_info,timeout=120)
             ret_json = json.loads(res.text)
             result = ret_json.get('success')
 
@@ -80,7 +80,7 @@ class DisconfServerApi(object):
         APP = self.APP
         try:
             self.disconf_session()
-            rep = session.post(APP, data=app_info)
+            rep = session.post(APP, data=app_info,timeout=120)
             ret_json = json.loads(rep.text)
             result = ret_json.get('success')
 
@@ -104,7 +104,7 @@ class DisconfServerApi(object):
 
             self.disconf_session()
             FILE = self.FILE
-            rep = session.post(FILE, files=file_content)
+            rep = session.post(FILE, files=file_content,timeout=120)
             ret_json = json.loads(rep.text)
             result = ret_json.get('success')
 
@@ -128,7 +128,7 @@ class DisconfServerApi(object):
                         }
             self.disconf_session()
             FILETEXT = self.FILETEXT
-            rep = session.post(FILETEXT, data=filetext)
+            rep = session.post(FILETEXT, data=filetext,timeout=120)
             ret_json = json.loads(rep.text)
             result = ret_json.get('success')
 
@@ -148,7 +148,7 @@ class DisconfServerApi(object):
                         'fileContent': filecontent
                         }
             self.disconf_session()
-            rep = session.put(url, data=filetext)
+            rep = session.put(url, data=filetext,timeout=120)
             ret_json = json.loads(rep.text)
             result = ret_json.get('success')
 

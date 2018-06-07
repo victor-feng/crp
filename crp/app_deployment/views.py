@@ -546,6 +546,7 @@ class AppDeploy(Resource):
 
             if docker:
             #部署应用
+                war_url = ''
                 if cloud == "2":
                     deployment_name=resource_name
                     for i in docker:
@@ -1061,7 +1062,7 @@ class AppDeploy(Resource):
                 deploy_kvm_flag = True
             else:
                 Log.logger.debug("Deploy war res is {res}".format(res=res))
-                msg = "Deploy war to kvm failed,failed msg is {res}".format(res=res)
+                msg = "Deploy war to kvm failed,failed msg is \n {res}".format(res=res)
                 deploy_kvm_flag = False
         except Exception as e:
             msg = "Deploy war to kvm error,error msg is {e}".format(e=str(e))
@@ -1366,15 +1367,29 @@ class DeployLogApi(Resource):
         args = parser.parse_args()
 
         version = args.version if args.version else 1
-        filename = "/data/build_log/{p}/{r}_{v}".format(
-            p=args.project_name, r=args.resource_name, v=version)
+        base_path = "{u}build_log/{p}/".format(
+            u=UPLOAD_FOLDER, p=args.project_name)
 
+        bad_request = {
+            'code': 400,
+            'msg': 'Log not exists',
+            'count': 0,
+            'data': None
+        }
+
+        if not os.path.exists(base_path):
+            return bad_request
+
+        count = 0
+        for _, _, files in os.walk(base_path):
+            for i in files:
+                count = count + 1 if args.resource_name in i else count
+
+        filename = "{b}{r}_{v}".format(
+            b=base_path, r=args.resource_name, v=version)
         if not os.path.exists(filename):
-            return {
-                'code': 400,
-                'msg': 'Log not exists',
-                'data': None
-            }
+            bad_request['count'] = count
+            return bad_request
 
         with open(filename, 'rb') as f:
             content = f.read()
@@ -1382,6 +1397,7 @@ class DeployLogApi(Resource):
         return {
             'code': 200,
             'msg': 'Get log success',
+            'count': count,
             'data': content
         }
 

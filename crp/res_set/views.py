@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import os
+import re
 import json
 import uuid
 from flask_restful import reqparse, Api, Resource
@@ -156,10 +158,6 @@ class ResourceSet(Resource):
             module_id = args.module_id
             os_ins_ip_list = args.os_ins_ip_list
             named_url_list = args.named_url_list
-
-
-            Log.logger.debug(resource_list)
-            Log.logger.debug(compute_list)
 
             req_dict["unit_name"] = unit_name
             req_dict["unit_id"] = unit_id
@@ -374,8 +372,8 @@ class ResourceDelete(Resource):
                 #删除虚IP
                 for port_id in vid_list:
                     delete_vip(port_id)
-
-
+            # 删除构建日志
+            delete_resource_log(resource_name)
         except Exception as e:
             err_msg=str(e)
             Log.logger.error(
@@ -400,6 +398,23 @@ class ResourceDelete(Resource):
             return res, code
 
 
+def delete_resource_log(resource_name):
+    project_name = resource_name.split('_')[0]
+
+    base_path = "{u}build_log/{p}/".format(
+        u=configs[APP_ENV].UPLOAD_FOLDER, p=project_name)
+    if not os.path.exists(base_path):
+        return
+
+    match_resource = "{r}_.".format(r=resource_name)
+    for fl in os.listdir(base_path): 
+        match = re.match(match_resource, fl)
+        if match:
+            os.remove(os.path.join(base_path, match.group()))
+
+    if not os.listdir(base_path):
+        os.rmdir(base_path)
+    return
 
 
 resource_set_api.add_resource(ResourceSet, '/sets')

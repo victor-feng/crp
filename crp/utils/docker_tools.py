@@ -78,6 +78,8 @@ def _dk_img_save(dk_cli, _image_url):
     #DK_TAR_PATH = current_app.config['DK_TAR_PATH']
     tar_name = str(uuid.uuid1()) + '.tar'
     tar_file = DK_TAR_PATH + tar_name
+    if not os.path.exists(DK_TAR_PATH):
+        os.makedirs(DK_TAR_PATH)
     cmd = 'docker save --output '+tar_file+' '+_image_url
     try:
         code, msg = commands.getstatusoutput(cmd)

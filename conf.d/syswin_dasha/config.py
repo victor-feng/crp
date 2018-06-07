@@ -190,6 +190,9 @@ class TestingConfig(BaseConfig):
             'ready_probe_path': 'ready_probe_path',
             'domain_path': 'domain_path',
             'host_mapping': 'host_mapping',
+            'pom_path': 'pom_path',
+            'branch': 'branch',
+            'git_res_url': 'git_res_url',
         },
         'resource_cluster': {
             'cluster_name': 'instance_name',
@@ -203,8 +206,12 @@ class TestingConfig(BaseConfig):
             'volume_size': 'volume_size',
             'network_id': 'network_id',
             'image_id': 'image_id',
+            'image2_id': 'image2_id',
             'availability_zone': 'availability_zone',
             'flavor': 'flavor',
+            'flavor2': 'flavor2',
+            'volume_exp_size': 'volume_exp_size',
+            "port": "port",
         }
     }
     SCRIPTPATH = r'crp/res_set/playbook-0830/'
@@ -312,6 +319,17 @@ class TestingConfig(BaseConfig):
 
     BASE_IMAGE_URL = "reg1.syswin.com/base/os69-tomcat7:v0.1"
     CHECK_TIMEOUT = 200
+    GIT_USER = "jenkins"
+    GIT_PASSWORD = "syswin#123"
+    FTP_USER = "ftpuser"
+    FTP_PASSWORD = "syswin#123"
+    FTP_DIR = "/data/ftpdata"
+    FTP_HOST = {
+        "dev": "172.28.26.210",
+        "test": "172.28.26.210",
+        "prep": "172.28.26.210",
+        "prod": "172.28.26.210",
+    }
 
 configs = {
     'syswin_dasha': TestingConfig,

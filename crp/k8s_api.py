@@ -679,7 +679,7 @@ class K8sDeploymentApi(object):
         code = 200
         try:
             api_instance = self.corev1
-            body = self.deletev1
+            body = client.V1DeleteOptions()
             api_response = api_instance.delete_namespaced_pod(name, namespace,body)
         except Exception as e:
             code = 500
@@ -823,10 +823,7 @@ class K8sIngressApi(object):
 
         config.load_kube_config(config_file=K8S_CONF_PATH)
         self.extensionsv1 = client.ExtensionsV1beta1Api()
-        self.deletev1 = client.V1DeleteOptions(
-            propagation_policy='Foreground',
-            grace_period_seconds=5
-        )
+        self.deletev1 = client.V1DeleteOptions()
         self.force_deletev1 = client.V1DeleteOptions(
             propagation_policy='Background',
             grace_period_seconds=5)
