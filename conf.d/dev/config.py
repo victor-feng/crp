@@ -181,6 +181,7 @@ class DevelopmentConfig(BaseConfig):
             'host_mapping':'host_mapping',
             'pom_path':'pom_path',
             'branch':'branch',
+            'git_res_url':'git_res_url',
         },
         'resource_cluster': {
             'cluster_name': 'instance_name',

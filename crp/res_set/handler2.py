@@ -404,6 +404,7 @@ class ResourceProviderTransitions2(object):
         replicas = propertys.get('quantity')
         pom_path = propertys.get('pom_path')
         branch = propertys.get('branch')
+        git_res_url = propertys.get('git_res_url')
         cpu = propertys.get('cpu','2')
         mem = propertys.get('mem', '2')
         #flavor={"cpu": 2, "memory": "2Gi"}
@@ -427,6 +428,10 @@ class ResourceProviderTransitions2(object):
                 K8sIngress = K8sIngressApi()
                 K8sService = K8sServiceApi()
                 ingress_flag = 0
+                #git 扩缩容直接拉取war包
+                if self.set_flag in ["increase","reduce"] and deploy_source == "git":
+                    deploy_source = "war"
+                    image_url = git_res_url
                 if deploy_source == "git":
                     git_url = image_url
                     err_msg,war_url = git_code_to_war(

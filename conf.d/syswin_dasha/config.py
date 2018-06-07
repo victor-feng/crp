@@ -183,6 +183,7 @@ class TestingConfig(BaseConfig):
             'host_mapping': 'host_mapping',
             'pom_path': 'pom_path',
             'branch': 'branch',
+            'git_res_url': 'git_res_url',
         },
         'resource_cluster': {
             'cluster_name': 'instance_name',
@@ -309,6 +310,17 @@ class TestingConfig(BaseConfig):
 
     BASE_IMAGE_URL = "reg1.syswin.com/base/os69-tomcat7:v0.1"
     CHECK_TIMEOUT = 200
+    GIT_USER = "jenkins"
+    GIT_PASSWORD = "syswin#123"
+    FTP_USER = "ftpuser"
+    FTP_PASSWORD = "syswin#123"
+    FTP_DIR = "/data/ftpdata"
+    FTP_HOST = {
+        "dev": "172.28.26.210",
+        "test": "172.28.26.210",
+        "prep": "172.28.26.210",
+        "prod": "172.28.26.210",
+    }
 
 configs = {
     'syswin_dasha': TestingConfig,
