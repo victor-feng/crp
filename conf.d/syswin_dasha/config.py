@@ -58,6 +58,15 @@ class TestingConfig(BaseConfig):
             [
                 "push_image_running",
                 "push_image_success"
+            ],
+        "GIT_PACKAGE":
+            [
+                "pull_code_success",
+                "clone_branch_success",
+                "package_success",
+
+                "pull_or_clone_error",
+                "package_error"
             ]
 
     }
